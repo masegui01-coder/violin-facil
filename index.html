@@ -145,6 +145,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .beats span.accent { outline: 2px solid var(--accent); outline-offset: 3px; }
 .beats span.on { background: var(--accent); transform: scale(1.15); }
 .metro-play { width: 100%; padding: 16px; font-size: 1.1rem; }
+.lesson-metro { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.round.mini { width: 36px; height: 36px; font-size: 1.2rem; }
+#lessonMetro { font-variant-numeric: tabular-nums; transition: background .06s; }
+#lessonMetro[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+#lessonMetro.tick { background: var(--accent-soft); }
 .seg.three { grid-template-columns: repeat(4, 1fr); }
 
 /* Feedback */
@@ -232,6 +237,11 @@ textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px so
     <div class="row" style="justify-content:center">
       <button id="playRef" class="btn ghost small" type="button">🔊 Escuchar nota</button>
       <button id="skipNote" class="btn ghost small" type="button">Saltar ›</button>
+    </div>
+    <div class="lesson-metro">
+      <button id="lmDown" class="round mini" type="button" aria-label="Metrónomo más lento">−</button>
+      <button id="lessonMetro" class="btn ghost small" type="button" aria-pressed="false">Metrónomo · <span id="lmBpm">80</span></button>
+      <button id="lmUp" class="round mini" type="button" aria-label="Metrónomo más rápido">+</button>
     </div>
   </section>
 
@@ -404,6 +414,7 @@ const saved = loadSaved();
 let prefs = {
   nom: saved.nom === 'us' ? 'us' : 'eu', stars: saved.stars || {},
   bpm: Number.isFinite(saved.bpm) ? saved.bpm : 80, meter: [1, 2, 3, 4].includes(saved.meter) ? saved.meter : 4,
+  lessonMetro: saved.lessonMetro === true,
 };
 function setPrefs(patch) { prefs = { ...prefs, ...patch }; save(prefs); }
 
@@ -583,6 +594,7 @@ function startLesson(idx) {
   $('micGate').hidden = !!audio.analyser;
   $('micError').hidden = true;
   show('lesson');
+  if (prefs.lessonMetro) startMetro();
   updateLessonUi();
   setStatus(audio.analyser ? 'Toca la nota' : '');
 }
@@ -617,8 +629,17 @@ function advance(skipped) {
   run.peak = 0; run.releaseWait = 0;
   updateLessonUi();
 }
+const MASKED = Object.freeze({ masked: true });
 function lessonTick(p, dt) {
   const target = run.notes[run.pos];
+  if (p === MASKED) {
+    // durante un clic del metrónomo se mantiene lo que ya sonaba afinado
+    if (run.hold > 0 && !run.needRelease) {
+      run.hold += dt;
+      if (run.hold >= HOLD_MS) { setStatus('¡Bien!', 'var(--ok)'); advance(false); }
+    }
+    return;
+  }
   if (!p || p.freq === null) {
     run.hold = 0; run.wrong = 0; run.needRelease = false;
     $('heard').innerHTML = '&nbsp;';
@@ -706,7 +727,7 @@ function loop() {
   const dt = Math.min(100, now - lastFrame);
   lastFrame = now;
   if (!audio.analyser) return;
-  if (!$('lesson').hidden && run && !run.finished) lessonTick(readPitch(), dt);
+  if (!$('lesson').hidden && run && !run.finished) lessonTick(clickMasked() ? MASKED : readPitch(), dt);
   else if (!$('tuner').hidden && tunerOn) tunerTick(readPitch());
 }
 
@@ -714,7 +735,8 @@ function loop() {
 // Los clics se programan en el reloj de audio con antelación, así el pulso no depende de los temporizadores del navegador.
 const BPM_MIN = 30, BPM_MAX = 220, LOOKAHEAD_S = 0.12, SCHED_MS = 25, TAP_RESET_MS = 2000;
 const TEMPO_NAMES = [[60, 'Largo'], [66, 'Larghetto'], [76, 'Adagio'], [108, 'Andante'], [120, 'Moderato'], [156, 'Allegro'], [176, 'Vivace'], [200, 'Presto'], [Infinity, 'Prestissimo']];
-const metro = { on: false, nextTime: 0, beat: 0, timer: 0, queue: [], taps: [] };
+const CLICK_MASK_BEFORE_S = 0.02, CLICK_MASK_AFTER_S = 0.13;
+const metro = { on: false, nextTime: 0, beat: 0, timer: 0, queue: [], clicks: [], taps: [] };
 function clampBpm(v) { return Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(v))); }
 function tempoName(bpm) { return TEMPO_NAMES.find(([max]) => bpm < max)[1]; }
 function renderMetro() {
@@ -725,6 +747,19 @@ function renderMetro() {
   document.querySelectorAll('[data-meter]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.meter) === prefs.meter));
   $('beats').innerHTML = Array.from({ length: prefs.meter }, (_, i) => `<span class="${i === 0 && prefs.meter > 1 ? 'accent' : ''}"></span>`).join('');
   $('metroToggle').textContent = metro.on ? '■ Parar' : '▶ Empezar';
+  $('lmBpm').textContent = prefs.bpm;
+  $('lessonMetro').setAttribute('aria-pressed', metro.on);
+}
+// El micrófono oye los clics: durante cada clic (más la latencia del altavoz) no se analiza el tono.
+function clickMasked() {
+  if (!metro.on) return false;
+  const ctx = audio.ctx;
+  const t = ctx.currentTime - (ctx.outputLatency || 0) - (ctx.baseLatency || 0);
+  return metro.clicks.some(c => t - c > -CLICK_MASK_BEFORE_S && t - c < CLICK_MASK_AFTER_S);
+}
+function flashLessonMetro() {
+  $('lessonMetro').classList.add('tick');
+  setTimeout(() => $('lessonMetro').classList.remove('tick'), 100);
 }
 function setBpm(v) { setPrefs({ bpm: clampBpm(v) }); renderMetro(); }
 function scheduleClick(time, accent) {
@@ -743,6 +778,7 @@ function metroScheduler() {
     const beat = metro.beat % prefs.meter;
     scheduleClick(metro.nextTime, beat === 0 && prefs.meter > 1);
     metro.queue.push({ time: metro.nextTime, beat });
+    metro.clicks = [...metro.clicks.filter(c => c > ctx.currentTime - 1), metro.nextTime];
     metro.nextTime += 60 / prefs.bpm;
     metro.beat = beat + 1;
   }
@@ -751,11 +787,13 @@ function metroScheduler() {
   while (metro.queue.length && metro.queue[0].time <= ctx.currentTime) current = metro.queue.shift();
   if (current) {
     $('beats').querySelectorAll('span').forEach((s, i) => s.classList.toggle('on', i === current.beat));
+    if (!$('lesson').hidden) flashLessonMetro();
   }
 }
 function startMetro() {
   const ctx = ensureCtx();
-  metro.on = true; metro.beat = 0; metro.queue = [];
+  if (metro.on) return;
+  metro.on = true; metro.beat = 0; metro.queue = []; metro.clicks = [];
   metro.nextTime = ctx.currentTime + 0.08;
   metro.timer = setInterval(metroScheduler, SCHED_MS);
   metroScheduler();
@@ -832,6 +870,12 @@ document.querySelectorAll('[data-meter]').forEach(b => b.addEventListener('click
 }));
 $('playRef').addEventListener('click', () => { if (run) playTone(run.notes[run.pos]); });
 $('skipNote').addEventListener('click', () => { if (run && !run.finished) advance(true); });
+$('lessonMetro').addEventListener('click', () => {
+  if (metro.on) stopMetro(); else startMetro();
+  setPrefs({ lessonMetro: metro.on });
+});
+$('lmDown').addEventListener('click', () => setBpm(prefs.bpm - 2));
+$('lmUp').addEventListener('click', () => setBpm(prefs.bpm + 2));
 $('resRetry').addEventListener('click', () => startLesson(run.idx));
 $('resNext').addEventListener('click', () => startLesson(run.idx + 1));
 $('resHome').addEventListener('click', () => show('home'));
