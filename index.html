@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#9C3D1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Ejercicios progresivos de violín que te escuchan por el micrófono. Beta.">
+<title>Violín Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una sola columna estrecha tipo app móvil; pantallas que se alternan (inicio, lección, resultado, afinador). */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #18202B; --muted: #5B6676; --line: #D9DFE7;
+  --accent: #9C3D1A; --accent-soft: #F6E4DA; --ok: #1F8A55; --bad: #C2362F; --warn: #B57A0E;
+  --staff: #3A4452;
+  --f-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161C; --surface: #1B212A; --ink: #E8ECF1; --muted: #9AA5B4; --line: #2C3542;
+    --accent: #E07A45; --accent-soft: #3A2419; --ok: #3FC383; --bad: #EF6A62; --warn: #E2AE3E;
+    --staff: #B9C2CE; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161C; --surface: #1B212A; --ink: #E8ECF1; --muted: #9AA5B4; --line: #2C3542;
+  --accent: #E07A45; --accent-soft: #3A2419; --ok: #3FC383; --bad: #EF6A62; --warn: #E2AE3E;
+  --staff: #B9C2CE; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+.app { max-width: 520px; margin: 0 auto; padding-block: 18px 40px; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; margin: 0; text-wrap: balance; }
+h1 { font-size: 2rem; line-height: 1.1; }
+h2 { font-size: 1.35rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--accent); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.btn {
+  border: 0; border-radius: 999px; padding: 12px 20px; font-weight: 600;
+  background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.small { padding: 8px 14px; font-size: .9rem; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.spread { justify-content: space-between; }
+
+/* Inicio */
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.beta { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 9px 8px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.setting { display: flex; flex-direction: column; gap: 8px; }
+.setting label { font-size: .85rem; font-weight: 600; }
+
+.tuner-card { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; width: 100%; text-align: left; }
+.tuner-card .strings { display: flex; gap: 4px; }
+.tuner-card .strings span { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); }
+.tuner-card div:last-child { min-width: 0; }
+
+.level { display: flex; flex-direction: column; gap: 8px; }
+.level-head { display: flex; align-items: baseline; gap: 8px; }
+.level-head h3 { font-size: 1.05rem; }
+.lessons { display: flex; flex-direction: column; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.lesson { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 0; background: transparent; text-align: left; border-top: 1px solid var(--line); }
+.lesson:first-child { border-top: 0; }
+.lesson .num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--bg); font-variant-numeric: tabular-nums; }
+.lesson.done .num { background: var(--ok); color: #fff; }
+.lesson .t { font-weight: 600; }
+.lesson .s { font-size: .85rem; color: var(--muted); }
+.lesson > div { min-width: 0; }
+.stars { color: var(--warn); letter-spacing: 1px; font-size: .95rem; white-space: nowrap; }
+.stars .off { color: var(--line); }
+.tips { font-size: .9rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 12px; }
+
+/* Lección */
+.bar { display: flex; align-items: center; gap: 12px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 1.1rem; flex: none; }
+.progress { flex: 1; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .25s; }
+.count { font-variant-numeric: tabular-nums; font-weight: 600; font-size: .9rem; color: var(--muted); min-width: 3.5em; text-align: right; }
+.staff-wrap { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 8px 0; overflow: hidden; }
+.staff { display: block; width: 100%; height: auto; }
+#notesG { transition: transform .35s ease; }
+@media (prefers-reduced-motion: reduce) { #notesG, .progress i { transition: none; } }
+.target { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.target .name { font-family: var(--f-display); font-size: 3.4rem; line-height: 1; transition: color .15s; }
+.target .name.ok { color: var(--ok); }
+.target .name.bad { color: var(--bad); }
+.target .hint { font-weight: 600; color: var(--muted); }
+.meter { position: relative; height: 36px; }
+.meter .track { position: absolute; left: 0; right: 0; top: 16px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--bad), var(--warn) 30%, var(--ok) 42%, var(--ok) 58%, var(--warn) 70%, var(--bad)); opacity: .55; }
+.meter .center { position: absolute; left: 50%; top: 6px; width: 2px; height: 24px; background: var(--ink); transform: translateX(-1px); }
+.meter .dot { position: absolute; top: 9px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--muted); transition: left .08s linear, background .1s; }
+.meter .lbl { position: absolute; top: 20px; font-size: .7rem; color: var(--muted); }
+.meter .lbl.l { left: 0; } .meter .lbl.r { right: 0; }
+.heard { text-align: center; font-size: .9rem; color: var(--muted); min-height: 1.5em; font-variant-numeric: tabular-nums; }
+.status { text-align: center; font-weight: 600; min-height: 1.5em; }
+.mic-gate { background: var(--accent-soft); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+
+/* Resultado */
+.result { text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center; padding-block: 30px; }
+.result .big-stars { font-size: 3rem; letter-spacing: 6px; }
+
+/* Afinador */
+.dial { position: relative; width: 100%; max-width: 320px; margin: 0 auto; aspect-ratio: 2 / 1.15; }
+.dial svg { width: 100%; height: 100%; display: block; }
+.tuner-name { text-align: center; font-family: var(--f-display); font-size: 3rem; line-height: 1; }
+.tuner-cents { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+.string-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.string-pick button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 4px; font-weight: 700; }
+.string-pick button.on { border-color: var(--ok); color: var(--ok); }
+
+/* Feedback */
+dialog { border: 0; border-radius: 18px; padding: 20px; width: min(480px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 14, 20, .5); }
+dialog form { display: flex; flex-direction: column; gap: 12px; }
+textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- INICIO -->
+  <section id="home" class="app" style="padding:0">
+    <div class="top">
+      <div>
+        <p class="eyebrow">Primera posición</p>
+        <h1>Violín Fácil</h1>
+      </div>
+      <span class="beta">Beta</span>
+    </div>
+    <p class="muted">Toca la nota que aparece en el pentagrama. La app te escucha por el micrófono y avanza cuando suena afinada.</p>
+
+    <div class="setting">
+      <label id="nomLabel">Nombre de las notas</label>
+      <div class="seg" role="group" aria-labelledby="nomLabel">
+        <button id="nomEu" type="button" data-nom="eu">Do · Re · Mi</button>
+        <button id="nomUs" type="button" data-nom="us">G3 · A4 · E5</button>
+      </div>
+    </div>
+
+    <button id="openTuner" class="tuner-card" type="button">
+      <div class="strings"><span data-s="G">Sol</span><span data-s="D">Re</span><span data-s="A">La</span><span data-s="E">Mi</span></div>
+      <div><div style="font-weight:600">Afinador</div><div class="muted" style="font-size:.85rem">Afina las cuerdas al aire antes de empezar</div></div>
+    </button>
+
+    <div id="levels" class="app" style="padding:0;gap:18px"></div>
+
+    <p class="tips">Consejos: pon el móvil a medio metro del violín, en una habitación silenciosa. Toca cada nota con un arco largo y sostenido. En la beta todas las lecciones están abiertas.</p>
+    <div class="row"><button id="openFeedback" class="btn ghost small" type="button">Enviar comentarios</button></div>
+  </section>
+
+  <!-- LECCIÓN -->
+  <section id="lesson" class="app" style="padding:0" hidden>
+    <div class="bar">
+      <button id="exitLesson" class="icon-btn" type="button" aria-label="Volver al inicio">✕</button>
+      <div class="progress"><i id="progBar"></i></div>
+      <span id="count" class="count">0/0</span>
+    </div>
+    <div>
+      <p id="lessonLevel" class="eyebrow"></p>
+      <h2 id="lessonTitle"></h2>
+    </div>
+    <div class="staff-wrap">
+      <svg id="staff" class="staff" viewBox="0 0 360 190" role="img" aria-label="Pentagrama con las notas de la lección">
+        <defs><clipPath id="clipNotes"><rect x="62" y="0" width="298" height="190"></rect></clipPath></defs>
+        <g id="staffLines"></g>
+        <text x="6" y="137" font-size="92" fill="var(--staff)" style="font-family:'Noto Music','Bravura','Segoe UI Symbol','Apple Symbols',serif">𝄞</text>
+        <g clip-path="url(#clipNotes)"><g id="notesG"></g></g>
+      </svg>
+    </div>
+
+    <div id="micGate" class="mic-gate" hidden>
+      <p><strong>Necesito el micrófono</strong> para escuchar tu violín. Al pulsar el botón el navegador te pedirá permiso.</p>
+      <p id="micError" class="muted" hidden></p>
+      <button id="startMic" class="btn" type="button">Empezar a tocar</button>
+    </div>
+
+    <div class="target">
+      <div id="tName" class="name">La</div>
+      <div id="tHint" class="hint">Cuerda La · al aire</div>
+    </div>
+    <div class="meter" aria-hidden="true">
+      <div class="track"></div><div class="center"></div><div id="meterDot" class="dot"></div>
+      <span class="lbl l">bajo</span><span class="lbl r">alto</span>
+    </div>
+    <p id="heard" class="heard">&nbsp;</p>
+    <p id="status" class="status">&nbsp;</p>
+    <div class="row" style="justify-content:center">
+      <button id="playRef" class="btn ghost small" type="button">🔊 Escuchar nota</button>
+      <button id="skipNote" class="btn ghost small" type="button">Saltar ›</button>
+    </div>
+  </section>
+
+  <!-- RESULTADO -->
+  <section id="result" hidden>
+    <div class="result">
+      <p class="eyebrow">Lección terminada</p>
+      <h2 id="resTitle"></h2>
+      <div id="resStars" class="big-stars stars"></div>
+      <p id="resText" class="muted"></p>
+      <div class="row" style="justify-content:center">
+        <button id="resRetry" class="btn ghost" type="button">Repetir</button>
+        <button id="resNext" class="btn" type="button">Siguiente lección</button>
+      </div>
+      <button id="resHome" class="btn ghost small" type="button">Volver al inicio</button>
+    </div>
+  </section>
+
+  <!-- AFINADOR -->
+  <section id="tuner" class="app" style="padding:0" hidden>
+    <div class="bar">
+      <button id="exitTuner" class="icon-btn" type="button" aria-label="Volver al inicio">✕</button>
+      <h2>Afinador</h2>
+    </div>
+    <div id="tunerGate" class="mic-gate" hidden>
+      <p><strong>Necesito el micrófono</strong> para escuchar tus cuerdas.</p>
+      <p id="tunerMicError" class="muted" hidden></p>
+      <button id="tunerStart" class="btn" type="button">Activar micrófono</button>
+    </div>
+    <div class="dial">
+      <svg viewBox="0 0 200 115" aria-hidden="true">
+        <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"></path>
+        <path d="M86.1 21.2 A80 80 0 0 1 113.9 21.2" fill="none" stroke="var(--ok)" stroke-width="10" stroke-linecap="round"></path>
+        <g id="needle" style="transform-origin:100px 100px;transition:transform .1s linear">
+          <line x1="100" y1="100" x2="100" y2="28" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"></line>
+        </g>
+        <circle cx="100" cy="100" r="7" fill="var(--ink)"></circle>
+        <text x="16" y="114" font-size="9" fill="var(--muted)" font-family="sans-serif">−50</text>
+        <text x="172" y="114" font-size="9" fill="var(--muted)" font-family="sans-serif">+50</text>
+      </svg>
+    </div>
+    <div id="tunerName" class="tuner-name">–</div>
+    <p id="tunerCents" class="tuner-cents">Toca una cuerda al aire</p>
+    <div id="stringPick" class="string-pick"></div>
+    <p class="muted" style="font-size:.85rem;text-align:center">Pulsa una cuerda para oír su nota de referencia (La = 440 Hz).</p>
+  </section>
+
+</div>
+
+<dialog id="fbDialog">
+  <form id="fbForm" method="dialog">
+    <h2>Tu opinión</h2>
+    <p class="muted" style="font-size:.9rem">¿Qué funciona, qué falla, qué ejercicios añadirías? Al pulsar Compartir podrás mandarlo por WhatsApp, correo o la app que prefieras.</p>
+    <label for="fbText" class="eyebrow">Comentario</label>
+    <textarea id="fbText" placeholder="Ej.: en la lección 4 el Do♯ no me lo reconocía…"></textarea>
+    <div class="row spread">
+      <button id="fbCancel" class="btn ghost small" type="button">Cancelar</button>
+      <div class="row">
+        <button id="fbCopy" class="btn ghost small" type="button">Copiar</button>
+        <button id="fbShare" class="btn small" type="submit">Compartir</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+'use strict';
+
+// ---------- Notas y nomenclatura ----------
+const NAMES_EU = ['Do', 'Do♯', 'Re', 'Re♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
+const NAMES_US = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const LETTER_IDX = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
+const IS_SHARP = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0];
+const STRING_NAME = { G: { eu: 'Sol', us: 'G' }, D: { eu: 'Re', us: 'D' }, A: { eu: 'La', us: 'A' }, E: { eu: 'Mi', us: 'E' } };
+const OPEN_STRINGS = [{ s: 'G', m: 55 }, { s: 'D', m: 62 }, { s: 'A', m: 69 }, { s: 'E', m: 76 }];
+// Digitación en primera posición: [cuerda, dedo, matiz]
+const FINGERING = {
+  55: ['G', 0], 57: ['G', 1], 59: ['G', 2], 60: ['G', 2, 'bajo'],
+  62: ['D', 0], 64: ['D', 1], 66: ['D', 2], 67: ['D', 3],
+  69: ['A', 0], 71: ['A', 1], 73: ['A', 2], 74: ['A', 3],
+  76: ['E', 0], 78: ['E', 1], 80: ['E', 2], 81: ['E', 3], 83: ['E', 4],
+};
+
+function parseNote(str) {
+  const m = /^([A-G])(#?)(\d)$/.exec(str);
+  if (!m) throw new Error('Nota no válida: ' + str);
+  const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]];
+  return (Number(m[3]) + 1) * 12 + base + (m[2] ? 1 : 0);
+}
+function noteName(midi, nom) {
+  const pc = midi % 12;
+  return nom === 'eu' ? NAMES_EU[pc] : NAMES_US[pc] + (Math.floor(midi / 12) - 1);
+}
+function stringName(s, nom) { return STRING_NAME[s][nom]; }
+function fingerHint(midi, nom) {
+  const f = FINGERING[midi];
+  if (!f) return '';
+  const finger = f[1] === 0 ? 'al aire' : 'dedo ' + f[1] + (f[2] ? ' ' + f[2] : '');
+  return 'Cuerda ' + stringName(f[0], nom) + ' · ' + finger;
+}
+function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function freqToMidi(f) { return 69 + 12 * Math.log2(f / 440); }
+
+// ---------- Lecciones ----------
+const LEVELS = [
+  { title: 'Cuerdas al aire', lessons: [
+    { title: 'La y Mi', sub: 'Las dos cuerdas agudas', notes: 'A4 E5 A4 E5 A4 A4 E5 E5' },
+    { title: 'Re y Sol', sub: 'Las dos cuerdas graves', notes: 'D4 G3 D4 G3 D4 D4 G3 G3' },
+    { title: 'Las cuatro cuerdas', sub: 'Sol, Re, La, Mi y vuelta', notes: 'G3 D4 A4 E5 E5 A4 D4 G3' },
+  ] },
+  { title: 'Primeros dedos', lessons: [
+    { title: 'Dedos en la cuerda La', sub: 'Dedos 1, 2 y 3', notes: 'A4 B4 C#5 D5 C#5 B4 A4 B4 C#5 D5' },
+    { title: 'Dedos en la cuerda Re', sub: 'Dedos 1, 2 y 3', notes: 'D4 E4 F#4 G4 F#4 E4 D4 E4 F#4 G4' },
+  ] },
+  { title: 'Escalas', lessons: [
+    { title: 'Escala de Re mayor', sub: 'Una octava, subir y bajar', notes: 'D4 E4 F#4 G4 A4 B4 C#5 D5 C#5 B4 A4 G4 F#4 E4 D4' },
+    { title: 'Escala de La mayor', sub: 'Llegamos a la cuerda Mi', notes: 'A4 B4 C#5 D5 E5 F#5 G#5 A5 G#5 F#5 E5 D5 C#5 B4 A4' },
+    { title: 'Escala de Sol mayor', sub: 'Cuerda Sol con 2.º dedo bajo', notes: 'G3 A3 B3 C4 D4 E4 F#4 G4 F#4 E4 D4 C4 B3 A3 G3' },
+  ] },
+  { title: 'Melodías', lessons: [
+    { title: 'Estrellita', sub: 'En La mayor · notas repetidas', notes: 'A4 A4 E5 E5 F#5 F#5 E5 D5 D5 C#5 C#5 B4 B4 A4 E5 E5 D5 D5 C#5 C#5 B4 E5 E5 D5 D5 C#5 C#5 B4 A4 A4 E5 E5 F#5 F#5 E5 D5 D5 C#5 C#5 B4 B4 A4' },
+    { title: 'Himno de la Alegría', sub: 'En Re mayor · Beethoven', notes: 'F#4 F#4 G4 A4 A4 G4 F#4 E4 D4 D4 E4 F#4 F#4 E4 E4 F#4 F#4 G4 A4 A4 G4 F#4 E4 D4 D4 E4 F#4 E4 D4 D4' },
+  ] },
+];
+const LESSONS = LEVELS.flatMap((lv, li) => lv.lessons.map(l => ({
+  title: l.title, sub: l.sub, level: li, levelTitle: lv.title, notes: l.notes.split(' ').map(parseNote),
+})));
+
+// ---------- Estado guardado (solo en este navegador) ----------
+const STORE_KEY = 'violin-facil-v1';
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
+}
+function save(next) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch (e) { /* almacenamiento no disponible: se sigue sin guardar */ }
+}
+const saved = loadSaved();
+let prefs = { nom: saved.nom === 'us' ? 'us' : 'eu', stars: saved.stars || {} };
+function setPrefs(patch) { prefs = { ...prefs, ...patch }; save(prefs); }
+
+// ---------- Detección de tono (YIN) ----------
+const MIN_FREQ = 180, MAX_FREQ = 1500, YIN_THRESHOLD = 0.15, MIN_RMS = 0.01;
+function rms(buf) {
+  let s = 0;
+  for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+  return Math.sqrt(s / buf.length);
+}
+function detectPitch(buf, sampleRate) {
+  const tauMin = Math.floor(sampleRate / MAX_FREQ);
+  const tauMax = Math.min(Math.floor(sampleRate / MIN_FREQ), Math.floor(buf.length / 2));
+  const w = buf.length - tauMax;
+  const d = new Float32Array(tauMax + 1);
+  for (let tau = 1; tau <= tauMax; tau++) {
+    let sum = 0;
+    for (let i = 0; i < w; i++) { const diff = buf[i] - buf[i + tau]; sum += diff * diff; }
+    d[tau] = sum;
+  }
+  // diferencia normalizada acumulada
+  let running = 0;
+  d[0] = 1;
+  for (let tau = 1; tau <= tauMax; tau++) { running += d[tau]; d[tau] = running ? d[tau] * tau / running : 1; }
+  let tau = tauMin;
+  while (tau <= tauMax && d[tau] >= YIN_THRESHOLD) tau++;
+  if (tau > tauMax) return null;
+  while (tau + 1 <= tauMax && d[tau + 1] < d[tau]) tau++;
+  // interpolación parabólica
+  const a = d[tau - 1], b = d[tau], c = tau + 1 <= tauMax ? d[tau + 1] : b;
+  const denom = a - 2 * b + c;
+  const better = denom ? tau + (a - c) / (2 * denom) : tau;
+  return sampleRate / better;
+}
+
+// ---------- Audio ----------
+const audio = { ctx: null, analyser: null, buf: null, stream: null, muteUntil: 0 };
+function ensureCtx() {
+  if (!audio.ctx) audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audio.ctx.state === 'suspended') audio.ctx.resume();
+  return audio.ctx;
+}
+async function startMic() {
+  if (audio.analyser) return true;
+  const ctx = ensureCtx();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este navegador no permite usar el micrófono. Prueba con Chrome o Safari actualizados.');
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  const src = ctx.createMediaStreamSource(stream);
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+  src.connect(analyser);
+  audio.stream = stream; audio.analyser = analyser; audio.buf = new Float32Array(analyser.fftSize);
+  return true;
+}
+function micErrorText(err) {
+  if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) return 'Permiso denegado. Actívalo en los ajustes del navegador (icono del candado junto a la dirección) y vuelve a intentarlo.';
+  if (err && err.name === 'NotFoundError') return 'No encuentro ningún micrófono en este dispositivo.';
+  return (err && err.message) || 'No se pudo abrir el micrófono.';
+}
+const recent = [];
+function readPitch() {
+  if (!audio.analyser) return null;
+  if (performance.now() < audio.muteUntil) { recent.length = 0; return null; }
+  audio.analyser.getFloatTimeDomainData(audio.buf);
+  const level = rms(audio.buf);
+  if (level < MIN_RMS) { recent.length = 0; return { freq: null, level }; }
+  const f = detectPitch(audio.buf, audio.ctx.sampleRate);
+  if (!f) { recent.length = 0; return { freq: null, level }; }
+  recent.push(f);
+  if (recent.length > 3) recent.shift();
+  const sorted = [...recent].sort((x, y) => x - y);
+  return { freq: sorted[Math.floor(sorted.length / 2)], level };
+}
+function playTone(midi, seconds = 1.0) {
+  const ctx = ensureCtx();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator(), filt = ctx.createBiquadFilter(), gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = midiToFreq(midi);
+  filt.type = 'lowpass'; filt.frequency.value = 2400;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.18, t + 0.06);
+  gain.gain.setValueAtTime(0.18, t + seconds - 0.15);
+  gain.gain.linearRampToValueAtTime(0, t + seconds);
+  osc.connect(filt).connect(gain).connect(ctx.destination);
+  osc.start(t); osc.stop(t + seconds + 0.05);
+  // no escuchar la nota de referencia como si la tocara el alumno
+  audio.muteUntil = performance.now() + seconds * 1000 + 250;
+}
+
+// ---------- Pentagrama ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+const BOTTOM_LINE_Y = 124, HALF_GAP = 7, NOTE_X0 = 96, NOTE_DX = 50, FOCUS_X = 136;
+const E4_STEP = 4 * 7 + 2;
+function staffStep(midi) { return (Math.floor(midi / 12) - 1) * 7 + LETTER_IDX[midi % 12]; }
+function stepY(step) { return BOTTOM_LINE_Y - (step - E4_STEP) * HALF_GAP; }
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  return el;
+}
+function drawStaffLines() {
+  const g = document.getElementById('staffLines');
+  for (let i = 0; i < 5; i++) {
+    const y = BOTTOM_LINE_Y - i * HALF_GAP * 2;
+    g.appendChild(svgEl('line', { x1: 4, x2: 356, y1: y, y2: y, stroke: 'var(--staff)', 'stroke-width': 1.2 }));
+  }
+}
+function ledgerSteps(step) {
+  const out = [];
+  for (let s = E4_STEP - 2; s >= step; s -= 2) out.push(s);
+  for (let s = E4_STEP + 10; s <= step; s += 2) out.push(s);
+  return out;
+}
+function drawNote(midi, i, cls) {
+  const x = NOTE_X0 + i * NOTE_DX, step = staffStep(midi), y = stepY(step);
+  const color = cls === 'done' ? 'var(--ok)' : cls === 'current' ? 'var(--accent)' : 'var(--staff)';
+  const g = svgEl('g', { opacity: cls === 'future' ? 0.75 : 1 });
+  ledgerSteps(step).forEach(s => g.appendChild(svgEl('line', { x1: x - 13, x2: x + 13, y1: stepY(s), y2: stepY(s), stroke: 'var(--staff)', 'stroke-width': 1.2 })));
+  if (cls === 'current') g.appendChild(svgEl('rect', { x: x - 21, y: 8, width: 42, height: 174, rx: 10, fill: 'var(--accent-soft)' }));
+  if (IS_SHARP[midi % 12]) {
+    const t = svgEl('text', { x: x - 22, y: y + 6, 'font-size': 19, fill: color, 'font-family': 'sans-serif' });
+    t.textContent = '♯';
+    g.appendChild(t);
+  }
+  const up = step < E4_STEP + 4;
+  g.appendChild(up
+    ? svgEl('line', { x1: x + 7.2, x2: x + 7.2, y1: y - 1, y2: y - 40, stroke: color, 'stroke-width': 1.6 })
+    : svgEl('line', { x1: x - 7.2, x2: x - 7.2, y1: y + 1, y2: y + 40, stroke: color, 'stroke-width': 1.6 }));
+  g.appendChild(svgEl('ellipse', { cx: x, cy: y, rx: 8.2, ry: 6.2, fill: color, transform: `rotate(-20 ${x} ${y})` }));
+  return g;
+}
+function renderStaff(notes, idx) {
+  const g = document.getElementById('notesG');
+  g.replaceChildren(...notes.map((m, i) => drawNote(m, i, i < idx ? 'done' : i === idx ? 'current' : 'future')));
+  const shift = Math.min(0, FOCUS_X - (NOTE_X0 + Math.min(idx, notes.length - 1) * NOTE_DX));
+  g.style.transform = `translateX(${shift}px)`;
+}
+
+// ---------- Navegación ----------
+const $ = id => document.getElementById(id);
+const SCREENS = ['home', 'lesson', 'result', 'tuner'];
+function show(screen) {
+  SCREENS.forEach(s => { $(s).hidden = s !== screen; });
+  window.scrollTo(0, 0);
+  if (screen === 'home') renderHome();
+}
+function starsHtml(n) {
+  return [1, 2, 3].map(i => i <= n ? '★' : '<span class="off">★</span>').join('');
+}
+function renderHome() {
+  $('nomEu').setAttribute('aria-pressed', prefs.nom === 'eu');
+  $('nomUs').setAttribute('aria-pressed', prefs.nom === 'us');
+  document.querySelectorAll('.tuner-card .strings span').forEach(el => { el.textContent = stringName(el.dataset.s, prefs.nom); });
+  let n = 0;
+  $('levels').innerHTML = LEVELS.map((lv, li) => {
+    const rows = lv.lessons.map(() => {
+      const idx = n++, l = LESSONS[idx], st = prefs.stars[idx] || 0;
+      return `<button class="lesson${st ? ' done' : ''}" type="button" data-lesson="${idx}">
+        <span class="num">${idx + 1}</span>
+        <div><div class="t">${l.title}</div><div class="s">${l.sub} · ${l.notes.length} notas</div></div>
+        <span class="stars" aria-label="${st} de 3 estrellas">${starsHtml(st)}</span></button>`;
+    }).join('');
+    return `<div class="level"><div class="level-head"><span class="eyebrow">Nivel ${li + 1}</span><h3>${lv.title}</h3></div><div class="lessons">${rows}</div></div>`;
+  }).join('');
+}
+
+// ---------- Lección ----------
+const HOLD_MS = 250, TOL_CENTS = 35, WRONG_MS = 450, RELEASE_DIP = 0.55, RELEASE_FALLBACK_MS = 700;
+let run = null;
+function startLesson(idx) {
+  const l = LESSONS[idx];
+  run = { idx, notes: l.notes, pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0 };
+  $('lessonLevel').textContent = 'Nivel ' + (l.level + 1) + ' · ' + l.levelTitle;
+  $('lessonTitle').textContent = l.title;
+  $('micGate').hidden = !!audio.analyser;
+  $('micError').hidden = true;
+  show('lesson');
+  updateLessonUi();
+  setStatus(audio.analyser ? 'Toca la nota' : '');
+}
+function updateLessonUi() {
+  const { notes, pos } = run, m = notes[pos];
+  $('count').textContent = pos + '/' + notes.length;
+  $('progBar').style.width = (pos / notes.length * 100) + '%';
+  $('tName').textContent = noteName(m, prefs.nom);
+  $('tName').className = 'name';
+  $('tHint').textContent = fingerHint(m, prefs.nom);
+  renderStaff(notes, pos);
+}
+function setStatus(text, color) {
+  $('status').textContent = text || ' ';
+  $('status').style.color = color || '';
+}
+function setMeter(cents) {
+  const dot = $('meterDot');
+  if (cents === null) { dot.style.left = '50%'; dot.style.background = 'var(--muted)'; return; }
+  const c = Math.max(-50, Math.min(50, cents));
+  dot.style.left = (50 + c) + '%';
+  dot.style.background = Math.abs(cents) <= TOL_CENTS / 2 ? 'var(--ok)' : Math.abs(cents) <= TOL_CENTS ? 'var(--warn)' : 'var(--bad)';
+}
+function advance(skipped) {
+  if (skipped) run.skips++;
+  const prev = run.notes[run.pos];
+  run.pos++;
+  run.hold = 0; run.wrong = 0; run.wrongCounted = false;
+  if (run.pos >= run.notes.length) { finishLesson(); return; }
+  // una nota repetida necesita un nuevo golpe de arco antes de contar
+  run.needRelease = !skipped && run.notes[run.pos] === prev;
+  run.peak = 0; run.releaseWait = 0;
+  updateLessonUi();
+}
+function lessonTick(p, dt) {
+  const target = run.notes[run.pos];
+  if (!p || p.freq === null) {
+    run.hold = 0; run.wrong = 0; run.needRelease = false;
+    $('heard').innerHTML = '&nbsp;';
+    setMeter(null);
+    return;
+  }
+  const detected = freqToMidi(p.freq);
+  const cents = (detected - target) * 100;
+  const nearest = Math.round(detected);
+  $('heard').textContent = 'Oigo: ' + noteName(nearest, prefs.nom) + ' (' + (cents >= 0 ? '+' : '') + Math.round(cents) + ' cents)';
+  if (Math.abs(cents) <= 100) setMeter(cents); else setMeter(cents > 0 ? 50 : -50);
+  if (run.needRelease) {
+    // nota repetida: vale un bajón de volumen (cambio de arco) o mantenerla un rato más
+    run.peak = Math.max(run.peak, p.level);
+    run.releaseWait += dt;
+    if (p.level < run.peak * RELEASE_DIP || run.releaseWait >= RELEASE_FALLBACK_MS) run.needRelease = false;
+    else { setStatus('Cambia el arco y repite la nota'); return; }
+  }
+  if (Math.abs(cents) <= TOL_CENTS) {
+    run.wrong = 0;
+    run.hold += dt;
+    $('tName').className = 'name ok';
+    if (run.hold >= HOLD_MS) { setStatus('¡Bien!', 'var(--ok)'); advance(false); }
+    return;
+  }
+  run.hold = 0;
+  run.wrong += dt;
+  $('tName').className = 'name';
+  if (run.wrong >= WRONG_MS) {
+    $('tName').className = 'name bad';
+    const msg = Math.abs(cents) > 100 ? 'Esa es otra nota' : cents > 0 ? 'Demasiado alto' : 'Demasiado bajo';
+    setStatus(msg, 'var(--bad)');
+    if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; }
+  }
+}
+function scoreStars(total, errors, skips) {
+  const score = Math.max(0, (total - skips - errors * 0.5) / total);
+  return { stars: score >= 0.9 ? 3 : score >= 0.65 ? 2 : 1, score };
+}
+function finishLesson() {
+  const { idx, notes, errors, skips } = run;
+  const { stars } = scoreStars(notes.length, errors, skips);
+  const best = Math.max(stars, prefs.stars[idx] || 0);
+  setPrefs({ stars: { ...prefs.stars, [idx]: best } });
+  $('resTitle').textContent = LESSONS[idx].title;
+  $('resStars').innerHTML = starsHtml(stars);
+  $('resText').textContent = `${notes.length - skips} de ${notes.length} notas tocadas · ${errors} ${errors === 1 ? 'fallo' : 'fallos'}` + (skips ? ` · ${skips} saltadas` : '');
+  $('resNext').hidden = idx >= LESSONS.length - 1;
+  run = { ...run, finished: true };
+  show('result');
+}
+
+// ---------- Afinador ----------
+let tunerOn = false;
+function renderStringPick() {
+  $('stringPick').innerHTML = OPEN_STRINGS.map(o => `<button type="button" data-midi="${o.m}">${stringName(o.s, prefs.nom)}<br><span class="muted" style="font-weight:500;font-size:.8rem">${NAMES_US[o.m % 12]}${Math.floor(o.m / 12) - 1}</span></button>`).join('');
+}
+function tunerTick(p) {
+  const btns = $('stringPick').querySelectorAll('button');
+  if (!p || p.freq === null) { btns.forEach(b => b.classList.remove('on')); return; }
+  const det = freqToMidi(p.freq);
+  const near = OPEN_STRINGS.reduce((a, b) => Math.abs(b.m - det) < Math.abs(a.m - det) ? b : a);
+  const cents = (det - near.m) * 100;
+  if (Math.abs(cents) > 300) { $('tunerCents').textContent = 'Oigo ' + noteName(Math.round(det), prefs.nom) + ': toca una cuerda al aire'; return; }
+  const c = Math.max(-50, Math.min(50, cents));
+  $('needle').style.transform = `rotate(${c * 1.6}deg)`;
+  $('tunerName').textContent = stringName(near.s, prefs.nom);
+  $('tunerName').style.color = Math.abs(cents) <= 5 ? 'var(--ok)' : '';
+  $('tunerCents').textContent = Math.abs(cents) <= 5 ? 'Afinada' : (cents > 0 ? 'Alta: afloja ' : 'Baja: tensa ') + Math.abs(Math.round(cents)) + ' cents';
+  btns.forEach(b => b.classList.toggle('on', Number(b.dataset.midi) === near.m && Math.abs(cents) <= 5));
+}
+function openTuner() {
+  renderStringPick();
+  $('tunerGate').hidden = !!audio.analyser;
+  $('tunerMicError').hidden = true;
+  tunerOn = true;
+  show('tuner');
+}
+
+// ---------- Bucle principal ----------
+const TICK_MS = 30;
+let lastFrame = performance.now();
+function loop() {
+  const now = performance.now();
+  const dt = Math.min(100, now - lastFrame);
+  lastFrame = now;
+  if (!audio.analyser) return;
+  if (!$('lesson').hidden && run && !run.finished) lessonTick(readPitch(), dt);
+  else if (!$('tuner').hidden && tunerOn) tunerTick(readPitch());
+}
+
+// ---------- Comentarios ----------
+function feedbackText() {
+  const where = run ? 'Última lección: ' + (run.idx + 1) + '. ' + LESSONS[run.idx].title : 'Sin lección';
+  return `Violín Fácil (beta) – comentario\n\n${$('fbText').value.trim()}\n\n${where} · Notación: ${prefs.nom === 'eu' ? 'Do-Re-Mi' : 'G3-A4'}\n${navigator.userAgent}`;
+}
+let toastTimer = 0;
+function toast(msg) {
+  $('toast').textContent = msg;
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').hidden = true; }, 2200);
+}
+async function copyFeedback() {
+  try { await navigator.clipboard.writeText(feedbackText()); toast('Copiado. Pégalo en un mensaje.'); }
+  catch (e) { $('fbText').select(); toast('Selecciona el texto y cópialo'); }
+}
+
+// ---------- Eventos ----------
+document.addEventListener('click', e => {
+  const lessonBtn = e.target.closest('[data-lesson]');
+  if (lessonBtn) { startLesson(Number(lessonBtn.dataset.lesson)); return; }
+  const nomBtn = e.target.closest('[data-nom]');
+  if (nomBtn) { setPrefs({ nom: nomBtn.dataset.nom }); renderHome(); return; }
+  const strBtn = e.target.closest('#stringPick [data-midi]');
+  if (strBtn) playTone(Number(strBtn.dataset.midi), 1.6);
+});
+async function onStartMic(gateId, errId, after) {
+  try {
+    await startMic();
+    $(gateId).hidden = true;
+    after();
+  } catch (err) {
+    $(errId).textContent = micErrorText(err);
+    $(errId).hidden = false;
+  }
+}
+$('startMic').addEventListener('click', () => onStartMic('micGate', 'micError', () => setStatus('Toca la nota')));
+$('tunerStart').addEventListener('click', () => onStartMic('tunerGate', 'tunerMicError', () => {}));
+$('exitLesson').addEventListener('click', () => { run = null; show('home'); });
+$('exitTuner').addEventListener('click', () => { tunerOn = false; show('home'); });
+$('openTuner').addEventListener('click', openTuner);
+$('playRef').addEventListener('click', () => { if (run) playTone(run.notes[run.pos]); });
+$('skipNote').addEventListener('click', () => { if (run && !run.finished) advance(true); });
+$('resRetry').addEventListener('click', () => startLesson(run.idx));
+$('resNext').addEventListener('click', () => startLesson(run.idx + 1));
+$('resHome').addEventListener('click', () => show('home'));
+$('openFeedback').addEventListener('click', () => $('fbDialog').showModal());
+$('fbCancel').addEventListener('click', () => $('fbDialog').close());
+$('fbCopy').addEventListener('click', copyFeedback);
+$('fbForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const text = feedbackText();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Violín Fácil – comentario', text }); $('fbDialog').close(); return; }
+    catch (err) { if (err && err.name === 'AbortError') return; }
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
+});
+
+drawStaffLines();
+show('home');
+setInterval(loop, TICK_MS);
+</script>
+</body>
+</html>
