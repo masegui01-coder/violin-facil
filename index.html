@@ -130,6 +130,23 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px sol
 .string-pick button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 4px; font-weight: 700; }
 .string-pick button.on { border-color: var(--ok); color: var(--ok); }
 
+/* Metrónomo */
+.tool-icon { width: 128px; flex: none; display: grid; place-items: center; font-family: var(--f-display); font-size: 1.5rem; color: var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.tool-icon small { font-family: var(--f-body); font-size: .7rem; font-weight: 700; letter-spacing: .08em; }
+.bpm { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.bpm-value { text-align: center; min-width: 4.5ch; }
+.bpm-value b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 4.2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.bpm-value span { font-size: .8rem; font-weight: 600; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.round { width: 56px; height: 56px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font-size: 1.6rem; font-weight: 600; display: grid; place-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tempo-name { text-align: center; font-weight: 600; color: var(--muted); min-height: 1.5em; }
+.beats { display: flex; justify-content: center; gap: 12px; padding-block: 8px; }
+.beats span { width: 26px; height: 26px; border-radius: 50%; background: var(--line); transition: background .06s, transform .06s; }
+.beats span.accent { outline: 2px solid var(--accent); outline-offset: 3px; }
+.beats span.on { background: var(--accent); transform: scale(1.15); }
+.metro-play { width: 100%; padding: 16px; font-size: 1.1rem; }
+.seg.three { grid-template-columns: repeat(4, 1fr); }
+
 /* Feedback */
 dialog { border: 0; border-radius: 18px; padding: 20px; width: min(480px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); }
 dialog::backdrop { background: rgba(10, 14, 20, .5); }
@@ -159,6 +176,11 @@ textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px so
         <button id="nomUs" type="button" data-nom="us">G3 · A4 · E5</button>
       </div>
     </div>
+
+    <button id="openMetro" class="tuner-card" type="button">
+      <div class="tool-icon"><span id="homeBpm">80</span><small>BPM</small></div>
+      <div><div style="font-weight:600">Metrónomo</div><div class="muted" style="font-size:.85rem">Practica las escalas y melodías a tempo</div></div>
+    </button>
 
     <button id="openTuner" class="tuner-card" type="button">
       <div class="strings"><span data-s="G">Sol</span><span data-s="D">Re</span><span data-s="A">La</span><span data-s="E">Mi</span></div>
@@ -226,6 +248,37 @@ textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px so
       </div>
       <button id="resHome" class="btn ghost small" type="button">Volver al inicio</button>
     </div>
+  </section>
+
+  <!-- METRÓNOMO -->
+  <section id="metro" class="app" style="padding:0" hidden>
+    <div class="bar">
+      <button id="exitMetro" class="icon-btn" type="button" aria-label="Volver al inicio">✕</button>
+      <h2>Metrónomo</h2>
+    </div>
+    <div class="bpm">
+      <button id="bpmDown" class="round" type="button" aria-label="Más lento">−</button>
+      <div class="bpm-value"><b id="bpmValue">80</b><span>pulsos/min</span></div>
+      <button id="bpmUp" class="round" type="button" aria-label="Más rápido">+</button>
+    </div>
+    <label for="bpmRange" class="eyebrow" style="text-align:center">Tempo</label>
+    <input id="bpmRange" type="range" min="30" max="220" step="1" value="80">
+    <p id="tempoName" class="tempo-name">Andante</p>
+    <div id="beats" class="beats" aria-hidden="true"></div>
+    <div class="setting">
+      <label id="meterLabel">Compás</label>
+      <div class="seg three" role="group" aria-labelledby="meterLabel">
+        <button type="button" data-meter="1">Sin</button>
+        <button type="button" data-meter="2">2/4</button>
+        <button type="button" data-meter="3">3/4</button>
+        <button type="button" data-meter="4">4/4</button>
+      </div>
+    </div>
+    <button id="metroToggle" class="btn metro-play" type="button">▶ Empezar</button>
+    <div class="row" style="justify-content:center">
+      <button id="tapTempo" class="btn ghost small" type="button">Marcar tempo (tap)</button>
+    </div>
+    <p class="muted" style="font-size:.85rem;text-align:center">Pulsa «Marcar tempo» varias veces al ritmo que quieras y el metrónomo lo copia.</p>
   </section>
 
   <!-- AFINADOR -->
@@ -348,7 +401,10 @@ function save(next) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch (e) { /* almacenamiento no disponible: se sigue sin guardar */ }
 }
 const saved = loadSaved();
-let prefs = { nom: saved.nom === 'us' ? 'us' : 'eu', stars: saved.stars || {} };
+let prefs = {
+  nom: saved.nom === 'us' ? 'us' : 'eu', stars: saved.stars || {},
+  bpm: Number.isFinite(saved.bpm) ? saved.bpm : 80, meter: [1, 2, 3, 4].includes(saved.meter) ? saved.meter : 4,
+};
 function setPrefs(patch) { prefs = { ...prefs, ...patch }; save(prefs); }
 
 // ---------- Detección de tono (YIN) ----------
@@ -489,9 +545,10 @@ function renderStaff(notes, idx) {
 
 // ---------- Navegación ----------
 const $ = id => document.getElementById(id);
-const SCREENS = ['home', 'lesson', 'result', 'tuner'];
+const SCREENS = ['home', 'lesson', 'result', 'tuner', 'metro'];
 function show(screen) {
   SCREENS.forEach(s => { $(s).hidden = s !== screen; });
+  if (screen !== 'metro') stopMetro();
   window.scrollTo(0, 0);
   if (screen === 'home') renderHome();
 }
@@ -653,6 +710,73 @@ function loop() {
   else if (!$('tuner').hidden && tunerOn) tunerTick(readPitch());
 }
 
+// ---------- Metrónomo ----------
+// Los clics se programan en el reloj de audio con antelación, así el pulso no depende de los temporizadores del navegador.
+const BPM_MIN = 30, BPM_MAX = 220, LOOKAHEAD_S = 0.12, SCHED_MS = 25, TAP_RESET_MS = 2000;
+const TEMPO_NAMES = [[60, 'Largo'], [66, 'Larghetto'], [76, 'Adagio'], [108, 'Andante'], [120, 'Moderato'], [156, 'Allegro'], [176, 'Vivace'], [200, 'Presto'], [Infinity, 'Prestissimo']];
+const metro = { on: false, nextTime: 0, beat: 0, timer: 0, queue: [], taps: [] };
+function clampBpm(v) { return Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(v))); }
+function tempoName(bpm) { return TEMPO_NAMES.find(([max]) => bpm < max)[1]; }
+function renderMetro() {
+  $('bpmValue').textContent = prefs.bpm;
+  $('homeBpm').textContent = prefs.bpm;
+  $('bpmRange').value = prefs.bpm;
+  $('tempoName').textContent = tempoName(prefs.bpm);
+  document.querySelectorAll('[data-meter]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.meter) === prefs.meter));
+  $('beats').innerHTML = Array.from({ length: prefs.meter }, (_, i) => `<span class="${i === 0 && prefs.meter > 1 ? 'accent' : ''}"></span>`).join('');
+  $('metroToggle').textContent = metro.on ? '■ Parar' : '▶ Empezar';
+}
+function setBpm(v) { setPrefs({ bpm: clampBpm(v) }); renderMetro(); }
+function scheduleClick(time, accent) {
+  const ctx = audio.ctx;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.frequency.value = accent ? 1600 : 1000;
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(accent ? 0.6 : 0.4, time + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(time); osc.stop(time + 0.06);
+}
+function metroScheduler() {
+  const ctx = audio.ctx;
+  while (metro.nextTime < ctx.currentTime + LOOKAHEAD_S) {
+    const beat = metro.beat % prefs.meter;
+    scheduleClick(metro.nextTime, beat === 0 && prefs.meter > 1);
+    metro.queue.push({ time: metro.nextTime, beat });
+    metro.nextTime += 60 / prefs.bpm;
+    metro.beat = beat + 1;
+  }
+  // encender el punto del pulso que está sonando ahora
+  let current = null;
+  while (metro.queue.length && metro.queue[0].time <= ctx.currentTime) current = metro.queue.shift();
+  if (current) {
+    $('beats').querySelectorAll('span').forEach((s, i) => s.classList.toggle('on', i === current.beat));
+  }
+}
+function startMetro() {
+  const ctx = ensureCtx();
+  metro.on = true; metro.beat = 0; metro.queue = [];
+  metro.nextTime = ctx.currentTime + 0.08;
+  metro.timer = setInterval(metroScheduler, SCHED_MS);
+  metroScheduler();
+  renderMetro();
+}
+function stopMetro() {
+  if (!metro.on) return;
+  metro.on = false;
+  clearInterval(metro.timer);
+  metro.queue = [];
+  renderMetro();
+}
+function tapTempo() {
+  const now = performance.now();
+  const taps = metro.taps.length && now - metro.taps[metro.taps.length - 1] > TAP_RESET_MS ? [] : metro.taps;
+  metro.taps = [...taps, now].slice(-6);
+  if (metro.taps.length < 2) return;
+  const gaps = metro.taps.slice(1).map((t, i) => t - metro.taps[i]);
+  setBpm(60000 / (gaps.reduce((a, b) => a + b, 0) / gaps.length));
+}
+
 // ---------- Comentarios ----------
 function feedbackText() {
   const where = run ? 'Última lección: ' + (run.idx + 1) + '. ' + LESSONS[run.idx].title : 'Sin lección';
@@ -694,6 +818,18 @@ $('tunerStart').addEventListener('click', () => onStartMic('tunerGate', 'tunerMi
 $('exitLesson').addEventListener('click', () => { run = null; show('home'); });
 $('exitTuner').addEventListener('click', () => { tunerOn = false; show('home'); });
 $('openTuner').addEventListener('click', openTuner);
+$('openMetro').addEventListener('click', () => { show('metro'); renderMetro(); });
+$('exitMetro').addEventListener('click', () => show('home'));
+$('metroToggle').addEventListener('click', () => (metro.on ? stopMetro() : startMetro()));
+$('bpmDown').addEventListener('click', () => setBpm(prefs.bpm - 1));
+$('bpmUp').addEventListener('click', () => setBpm(prefs.bpm + 1));
+$('bpmRange').addEventListener('input', e => setBpm(Number(e.target.value)));
+$('tapTempo').addEventListener('click', tapTempo);
+document.querySelectorAll('[data-meter]').forEach(b => b.addEventListener('click', () => {
+  setPrefs({ meter: Number(b.dataset.meter) });
+  metro.beat = 0;
+  renderMetro();
+}));
 $('playRef').addEventListener('click', () => { if (run) playTone(run.notes[run.pos]); });
 $('skipNote').addEventListener('click', () => { if (run && !run.finished) advance(true); });
 $('resRetry').addEventListener('click', () => startLesson(run.idx));
@@ -713,6 +849,7 @@ $('fbForm').addEventListener('submit', async e => {
 });
 
 drawStaffLines();
+renderMetro();
 show('home');
 setInterval(loop, TICK_MS);
 </script>
