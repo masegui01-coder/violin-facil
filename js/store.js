@@ -10,7 +10,7 @@ const DEFAULTS = Object.freeze({
   onboarded: false, nom: 'eu', level: 'new', styles: [], tolerance: 'facil', showBoard: true,
   unlockAll: false, bpm: 80, meter: 4, lessonMetro: false, progress: {}, xp: 0,
   streak: { count: 0, last: null }, lessonsPlayed: 0,
-  speed: 0.6, metroMode: 'visual', bigText: false, recordings: [],
+  speed: 0.6, metroMode: 'visual', bigText: false, recordings: [], importedSongs: [],
 });
 
 function read(key) {
@@ -87,6 +87,14 @@ export function saveRecording(notes, date = new Date()) {
 
 export function deleteRecording(id) {
   return update({ recordings: state.recordings.filter(r => r.id !== id) });
+}
+
+export function addImportedSong(song) {
+  return update({ importedSongs: [song, ...state.importedSongs.filter(s => s.id !== song.id)] });
+}
+
+export function deleteImportedSong(id) {
+  return update({ importedSongs: state.importedSongs.filter(s => s.id !== id) });
 }
 
 export function resetProgress() {

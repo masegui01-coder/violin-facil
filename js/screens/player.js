@@ -295,7 +295,7 @@ function stopDemo() {
 // ---------- Entrada y salida ----------
 function enter({ lesson, mode, from, eyebrow }) {
   const meta = buildMeta(lesson);
-  const score = parseScore(meta.score);
+  const score = meta.parsed ? structuredClone(meta.parsed) : parseScore(meta.score);
   const notes = score.notes.map(n => ({ ...n }));
   const playable = notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0);
   run = {

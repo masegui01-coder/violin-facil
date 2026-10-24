@@ -6,7 +6,7 @@ import { createStaff } from '../staff.js';
 import { renderFingerboard } from '../fingerboard.js';
 import { createTracker } from '../tracker.js';
 import { compareNotes, starsFor } from '../compare.js';
-import { songById } from '../songs.js';
+import { songById, songScore } from '../songs.js';
 import { getState, saveRecording, deleteRecording } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
@@ -68,7 +68,7 @@ function freeTick() {
 // Compara una secuencia tocada con una canción y muestra el resultado con la partitura coloreada
 export function compareWithSong(songId, played, { lesson = null, from = 'practice' } = {}) {
   const song = songById(songId);
-  const score = parseScore(song.score);
+  const score = songScore(song);
   const expected = score.notes.filter(n => !n.rest).map(n => n.midi);
   const result = compareNotes(expected, played);
   let k = 0;

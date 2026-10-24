@@ -5,7 +5,7 @@
   --accent: #B4461F; --accent-ink: #FFFFFF; --accent-soft: #F6E2D7; --ok: #16804F; --ok-soft: #DBF1E5;
   --bad: #C2372F; --bad-soft: #F8DEDC; --warn: #B47708; --gold: #E09B12; --staff: #2F3947; --wood: #E9D5BE; --wood-edge: #C9A985;
   --u1: #B4461F; --u2: #17798A; --u3: #5D4A9C; --u4: #2B7A4B; --u5: #A3385A; --u6: #2F55A4; --u7: #8C5A12; --u8: #3B4A5E;
-  --st-clasica: #5D4A9C; --st-folk: #2B7A4B; --st-jazz: #2F55A4; --st-rock: #C2372F; --st-navidad: #17798A; --st-populares: #B47708;
+  --st-clasica: #5D4A9C; --st-folk: #2B7A4B; --st-jazz: #2F55A4; --st-rock: #C2372F; --st-navidad: #17798A; --st-populares: #B47708; --st-mias: #B4461F;
   --f-display: "Young Serif", Georgia, "Times New Roman", serif;
   --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-music: "Noto Music", "Bravura", "Segoe UI Symbol", "Apple Symbols", serif;
@@ -18,7 +18,7 @@
     --accent: #E6824F; --accent-ink: #1A0E07; --accent-soft: #3A2419; --ok: #45C98A; --ok-soft: #173326;
     --bad: #F06D64; --bad-soft: #3A1E1D; --warn: #E8B045; --gold: #F2B53A; --staff: #C3CCD8; --wood: #3A2E22; --wood-edge: #5C4836;
     --u1: #E6824F; --u2: #4CB5C6; --u3: #A08DE0; --u4: #5CC489; --u5: #E07597; --u6: #7C9DEB; --u7: #D9A44E; --u8: #9CB0C9;
-    --st-clasica: #A08DE0; --st-folk: #5CC489; --st-jazz: #7C9DEB; --st-rock: #F06D64; --st-navidad: #4CB5C6; --st-populares: #E8B045;
+    --st-clasica: #A08DE0; --st-folk: #5CC489; --st-jazz: #7C9DEB; --st-rock: #F06D64; --st-navidad: #4CB5C6; --st-populares: #E8B045; --st-mias: #E6824F;
     --on-color: #0F141B;
     color-scheme: dark;
   }
@@ -28,7 +28,7 @@
   --accent: #E6824F; --accent-ink: #1A0E07; --accent-soft: #3A2419; --ok: #45C98A; --ok-soft: #173326;
   --bad: #F06D64; --bad-soft: #3A1E1D; --warn: #E8B045; --gold: #F2B53A; --staff: #C3CCD8; --wood: #3A2E22; --wood-edge: #5C4836;
   --u1: #E6824F; --u2: #4CB5C6; --u3: #A08DE0; --u4: #5CC489; --u5: #E07597; --u6: #7C9DEB; --u7: #D9A44E; --u8: #9CB0C9;
-  --st-clasica: #A08DE0; --st-folk: #5CC489; --st-jazz: #7C9DEB; --st-rock: #F06D64; --st-navidad: #4CB5C6; --st-populares: #E8B045;
+  --st-clasica: #A08DE0; --st-folk: #5CC489; --st-jazz: #7C9DEB; --st-rock: #F06D64; --st-navidad: #4CB5C6; --st-populares: #E8B045; --st-mias: #E6824F;
     --on-color: #0F141B;
   color-scheme: dark;
 }
@@ -363,6 +363,16 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .mode-btn.wide { grid-column: 1 / -1; }
 .picker { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
 .st-tail { fill: currentColor; opacity: .18; }
+
+.import-card { display: flex; flex-direction: column; gap: 10px; background: var(--accent-soft); border-radius: var(--r); padding: 14px 16px; }
+.import-card b { display: block; }
+.import-card small { color: var(--muted); }
+.guide { display: flex; flex-direction: column; gap: 12px; }
+.guide ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+.guide li { line-height: 1.45; }
+.guide h3 { font-family: var(--f-body); font-weight: 800; font-size: 1rem; }
+.warn { background: var(--bad-soft); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: .9rem; }
+.title-input { width: 100%; font: inherit; font-weight: 700; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
 
 @media (max-width: 380px) {
   .target-row { grid-template-columns: 1fr 96px; }

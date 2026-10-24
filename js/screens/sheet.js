@@ -1,9 +1,8 @@
 // Hoja de detalle de una lección o canción, con la elección de modo.
 import { $, esc, icon, starsHtml } from '../ui.js';
 import { lessonSong, lessonTitle, lessonKey } from '../course.js';
-import { SONGS, styleById, DIFFICULTY } from '../songs.js';
-import { parseScore } from '../music.js';
-import { getState } from '../store.js';
+import { allSongs, styleById, songScore, DIFFICULTY, MY_STYLE } from '../songs.js';
+import { getState, deleteImportedSong } from '../store.js';
 import { launch, defaultMode } from '../launch.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
@@ -12,12 +11,12 @@ const KEY_NAME = { C: 'Do mayor', G: 'Sol mayor', D: 'Re mayor', A: 'La mayor', 
 function facts(lesson, song) {
   if (lesson.kind === 'theory') return [`${lesson.cards.length} tarjetas`];
   if (lesson.kind === 'notes') return [`${lesson.notes.split(' ').length} notas`, 'Nota a nota'];
-  const count = parseScore(song.score).notes.filter(n => !n.rest).length;
+  const count = songScore(song).notes.filter(n => !n.rest).length;
   const style = song.style ? styleById(song.style).name : null;
   return [style, song.style ? DIFFICULTY[song.difficulty] : null, KEY_NAME[song.key], `${song.time}/4`, `♩ = ${song.bpm}`, `${count} notas`].filter(Boolean);
 }
 
-export function openLessonSheet(lesson, { state = 'open', from = 'course', color } = {}) {
+export function openLessonSheet(lesson, { state = 'open', from = 'course', color, onChange = () => {} } = {}) {
   const song = lessonSong(lesson);
   const best = getState().progress[lessonKey(lesson)] || 0;
   const chip = color || (song && song.style ? styleById(song.style).color : 'var(--accent)');
@@ -36,8 +35,18 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
     ${isSong
       ? `<div class="mode-grid">${modeBtn('learn', 'Nota a nota', 'La partitura espera a que cada nota suene bien.')}${modeBtn('tempo', 'A tempo', 'Cuenta de un compás y la partitura avanza sola.')}${lesson.songId ? modeBtn('memory', 'De memoria', 'Sin partitura: tocas y al final comparo lo que has tocado con la canción.').replace('mode-btn', 'mode-btn wide') : ''}</div>`
       : `<button type="button" class="btn big" data-mode="learn" ${locked ? 'disabled' : ''}>Empezar</button>`}
+    ${song && song.style === MY_STYLE.id ? '<button type="button" class="btn ghost small danger" data-delete>Borrar esta partitura</button>' : ''}
     <button type="button" class="btn ghost small" data-close>Cerrar</button>
   </div>`;
+  const del = $('sheetBody').querySelector('[data-delete]');
+  if (del) {
+    del.addEventListener('click', () => {
+      if (!del.dataset.confirm) { del.dataset.confirm = '1'; del.textContent = 'Pulsa otra vez para borrarla'; return; }
+      deleteImportedSong(song.id);
+      $('sheet').close();
+      onChange();
+    });
+  }
   $('sheetBody').querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
     $('sheet').close();
     launch(lesson, { mode: b.dataset.mode, from });
@@ -49,7 +58,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
 // Lista de canciones para elegir con cuál comparar
 export function openSongPicker(onPick) {
   $('sheetBody').innerHTML = `<div class="sheet-body"><h2>¿Qué canción has tocado?</h2>
-    <div class="picker">${SONGS.map(s => `<button type="button" class="song" data-pick="${s.id}" style="--chip:${styleById(s.style).color}">
+    <div class="picker">${allSongs().map(s => `<button type="button" class="song" data-pick="${s.id}" style="--chip:${styleById(s.style).color}">
       <span class="song-art"><span class="ic">${icon('song')}</span></span><div><b>${esc(s.title)}</b><small>${esc(s.by)}</small></div><span></span></button>`).join('')}</div>
     <button type="button" class="btn ghost small" data-close>Cancelar</button></div>`;
   $('sheetBody').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { $('sheet').close(); onPick(b.dataset.pick); }));

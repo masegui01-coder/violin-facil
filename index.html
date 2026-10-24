@@ -48,6 +48,14 @@
         <h1>Canciones</h1>
         <p class="muted">Elige un estilo. Puedes aprender cada canción nota a nota o tocarla a tempo.</p>
       </div>
+      <div class="import-card">
+        <div><b>Ensaya tu propia partitura</b><small>Importa un archivo MusicXML (.musicxml, .xml o .mxl) desde MuseScore u otro programa.</small></div>
+        <div class="row">
+          <button id="importBtn" class="btn small" type="button">Importar partitura</button>
+          <button id="importHelp" class="btn ghost small" type="button">¿Cómo consigo una?</button>
+        </div>
+        <input id="importFile" type="file" hidden>
+      </div>
       <div id="styleFilter" class="filter" role="group" aria-label="Filtrar por estilo"></div>
       <div id="songList" class="song-list"></div>
     </section>

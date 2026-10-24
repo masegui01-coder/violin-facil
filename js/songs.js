@@ -1,6 +1,9 @@
 // Repertorio por estilos. Solo melodías de dominio público o composiciones originales de la app.
 // Partitura: notas con duración (w redonda, h blanca, q negra, e corchea, s semicorchea, "." puntillo), R = silencio.
 
+import { getState } from './store.js';
+import { parseScore } from './music.js';
+
 export const STYLES = [
   { id: 'clasica', name: 'Clásica', blurb: 'Beethoven, Mozart, Dvořák, Bach…', color: 'var(--st-clasica)' },
   { id: 'folk', name: 'Folk y country', blurb: 'Melodías tradicionales de las islas y de América', color: 'var(--st-folk)' },
@@ -72,10 +75,22 @@ export const SONGS = [
     score: '| A4e. A4s | B4q A4q D5q | C#5h A4e. A4s | B4q A4q E5q | D5h A4e. A4s | A5q F#5q D5q | C#5q B4q G5e. G5s | F#5q D5q E5q | D5h |' },
 ];
 
+// Partituras importadas por el usuario (MusicXML): no forman parte de los estilos del curso
+export const MY_STYLE = { id: 'mias', name: 'Mis partituras', blurb: 'Importadas desde MusicXML', color: 'var(--st-mias)' };
+
+export function allSongs() {
+  return [...SONGS, ...getState().importedSongs];
+}
+
 export function songById(id) {
-  return SONGS.find(s => s.id === id) || null;
+  return allSongs().find(s => s.id === id) || null;
 }
 
 export function styleById(id) {
-  return STYLES.find(s => s.id === id) || null;
+  return id === MY_STYLE.id ? MY_STYLE : STYLES.find(s => s.id === id) || null;
+}
+
+// Partitura ya analizada: las importadas la guardan hecha; las del repertorio se leen del texto
+export function songScore(song) {
+  return song.parsed ? structuredClone(song.parsed) : parseScore(song.score);
 }
