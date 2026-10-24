@@ -33,7 +33,7 @@ document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', 
 // ---------- Comentarios ----------
 function feedbackText() {
   const s = getState();
-  return `Violín Fácil (beta) – comentario\n\n${$('fbText').value.trim()}\n\nPantalla: ${currentScreen()} · Notación: ${s.nom === 'eu' ? 'Do-Re-Mi' : 'G3-A4'} · Estilos: ${s.styles.join(', ')}\n${navigator.userAgent}`;
+  return `Violin Flow (beta) – comentario\n\n${$('fbText').value.trim()}\n\nPantalla: ${currentScreen()} · Notación: ${s.nom === 'eu' ? 'Do-Re-Mi' : 'G3-A4'} · Estilos: ${s.styles.join(', ')}\n${navigator.userAgent}`;
 }
 $('openFeedback').addEventListener('click', () => $('fbDialog').showModal());
 $('fbCancel').addEventListener('click', () => $('fbDialog').close());
@@ -45,7 +45,7 @@ $('fbForm').addEventListener('submit', async e => {
   e.preventDefault();
   const text = feedbackText();
   if (navigator.share) {
-    try { await navigator.share({ title: 'Violín Fácil – comentario', text }); $('fbDialog').close(); return; }
+    try { await navigator.share({ title: 'Violin Flow – comentario', text }); $('fbDialog').close(); return; }
     catch (err) { if (err && err.name === 'AbortError') return; }
   }
   window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');

@@ -1,4 +1,4 @@
-# Violín Fácil 2.0: plan
+# Violin Flow 2.0: plan
 
 ## Objetivo
 Una app para aprender violín al estilo de Simply Piano. La app te escucha, te guía nota a nota y luego te pide tocar a tempo. Las lecciones avanzadas usan canciones del estilo de música que elijas, y puedes cambiar el estilo cuando quieras.

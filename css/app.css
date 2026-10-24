@@ -1,4 +1,4 @@
-/* Violín Fácil: una columna tipo app móvil con barra de pestañas inferior.
+/* Violin Flow: una columna tipo app móvil con barra de pestañas inferior.
    Color: barniz de violín como acento sobre neutros fríos; cada unidad del curso tiene su color. */
 :root {
   --bg: #EDF0F5; --surface: #FFFFFF; --surface-2: #F5F7FA; --ink: #141B26; --muted: #5A6678; --line: #D6DCE6;
