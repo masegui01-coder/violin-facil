@@ -8,7 +8,7 @@ const BOTTOM_Y = 130;          // línea inferior (Mi4)
 const HALF = 7;                // medio espacio entre líneas
 const E4 = 4 * 7 + 2;
 const B4 = E4 + 4;             // a partir del Si4 la plica va hacia abajo
-const FOCUS_X = 170;           // donde queda la nota actual
+const FOCUS_X = 190;           // donde queda la nota actual (deja ver las siguientes y la que suena)
 const NOTE_PAD = 26;
 const SHARP_STEPS = [38, 35, 39, 36, 33, 37, 34];
 const FLAT_STEPS = [34, 37, 33, 36, 32, 35, 31];
@@ -100,15 +100,20 @@ export function createStaff(svg) {
 
   const xOfBeat = beat => startX + NOTE_PAD + beat * beatPx;
 
+  // mode: learn (nota resaltada), tempo (línea de lectura y duración de cada nota) o review (partitura entera, sin desplazamiento)
   function render(score, { key = 'C', time = 4, mode = 'learn' } = {}) {
-    svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
     svg.replaceChildren();
     notes = score.notes;
     const minBeats = Math.min(1, ...notes.map(n => n.beats));
     beatPx = Math.max(48, 28 / minBeats);
     const fixed = el('g', {}, svg);
     startX = drawPrefix(fixed, key, time);
-    el('clipPath', { id: clipId }, svg).appendChild(el('rect', { x: startX, y: 0, width: WIDTH - startX, height: HEIGHT }));
+    const width = mode === 'review' ? xOfBeat(score.totalBeats) + 16 : WIDTH;
+    svg.setAttribute('viewBox', `0 0 ${width} ${HEIGHT}`);
+    if (mode === 'review') svg.setAttribute('width', Math.round(width * 0.75));
+    else svg.removeAttribute('width');
+    fixed.querySelectorAll('.st-line').forEach(l => l.setAttribute('x2', width));
+    el('clipPath', { id: clipId }, svg).appendChild(el('rect', { x: startX, y: 0, width: width - startX, height: HEIGHT }));
     const clip = el('g', { 'clip-path': `url(#${clipId})` }, svg);
     scroller = el('g', { class: 'st-scroll' }, clip);
     highlight = el('rect', { x: 0, y: 14, width: 44, height: HEIGHT - 28, rx: 12, class: 'st-highlight' }, scroller);
@@ -122,13 +127,17 @@ export function createStaff(svg) {
     el('rect', { x: endX + 3, y: BOTTOM_Y - HALF * 8, width: 4, height: HALF * 8, class: 'st-fill' }, scroller);
     noteGroups = notes.map(n => {
       const g = el('g', { class: 'st-note future' }, scroller);
+      if (mode === 'tempo' && !n.rest) {
+        // cola con la duración: la nota sigue visible bajo la línea mientras dura
+        el('rect', { x: xOfBeat(n.start), y: y(diatonicStep(n)) - 4, width: Math.max(4, n.beats * beatPx - 10), height: 8, rx: 4, class: 'st-tail' }, g);
+      }
       if (n.rest) drawRest(g, xOfBeat(n.start), n);
       else drawNote(g, xOfBeat(n.start), n, sig);
       return g;
     });
     playhead = el('line', { x1: FOCUS_X - 10, x2: FOCUS_X - 10, y1: 16, y2: HEIGHT - 16, class: 'st-playhead' }, svg);
     playhead.style.display = mode === 'tempo' ? '' : 'none';
-    highlight.style.display = mode === 'tempo' ? 'none' : '';
+    highlight.style.display = mode === 'learn' ? '' : 'none';
   }
 
   // Desplaza la partitura para que el pulso indicado quede bajo el foco

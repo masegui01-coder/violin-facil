@@ -68,6 +68,10 @@ test('lessons unlock in order and style slots do not block progress', () => {
   assert.equal(basic['u4-intro'], 'open');
   assert.equal(basic['u4-e123'], 'locked');
   assert.equal(basic['u4-tu1'], 'open');
+  const afterIntro = lessonStates(course, done);
+  assert.equal(afterIntro['u1-warm'], 'open');
+  const warmSkipped = { ...done, 'lesson:u1-ae': 2, 'lesson:u1-dg': 2 };
+  assert.equal(lessonStates(course, warmSkipped)['u1-all'], 'open');
   const all = lessonStates(course, {}, { unlockAll: true });
   assert.ok(Object.values(all).every(s => s === 'open'));
 });

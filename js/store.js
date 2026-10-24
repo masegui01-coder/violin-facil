@@ -10,6 +10,7 @@ const DEFAULTS = Object.freeze({
   onboarded: false, nom: 'eu', level: 'new', styles: [], tolerance: 'facil', showBoard: true,
   unlockAll: false, bpm: 80, meter: 4, lessonMetro: false, progress: {}, xp: 0,
   streak: { count: 0, last: null }, lessonsPlayed: 0,
+  speed: 0.6, metroMode: 'visual', bigText: false, recordings: [],
 });
 
 function read(key) {
@@ -75,6 +76,17 @@ export function recordResult(key, stars) {
     streak: nextStreak(state.streak, today()),
     lessonsPlayed: state.lessonsPlayed + 1,
   });
+}
+
+const MAX_RECORDINGS = 20;
+
+export function saveRecording(notes, date = new Date()) {
+  const rec = { id: String(date.getTime()), date: date.toISOString(), notes };
+  return update({ recordings: [rec, ...state.recordings].slice(0, MAX_RECORDINGS) });
+}
+
+export function deleteRecording(id) {
+  return update({ recordings: state.recordings.filter(r => r.id !== id) });
 }
 
 export function resetProgress() {

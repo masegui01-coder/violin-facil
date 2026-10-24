@@ -35,8 +35,10 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
+html { font-size: 16px; }
+html.big { font-size: 19px; }
 body {
-  background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body);
+  background: var(--bg); color: var(--ink); font: 1rem/1.5 var(--f-body);
   padding-top: env(safe-area-inset-top, 0px);
   -webkit-tap-highlight-color: transparent;
 }
@@ -334,6 +336,33 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .mode-btn.primary { border-color: var(--accent); background: var(--accent-soft); }
 textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: .9rem; z-index: 40; max-width: calc(100vw - 32px); }
+
+/* Pulso visual: un péndulo que va de lado a lado y marca cada pulso en los extremos */
+.pulse { position: relative; height: 34px; border-radius: 999px; background: var(--surface); border: 1.5px solid var(--line); overflow: hidden; }
+.pulse-mark { position: absolute; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--line); transition: background .08s; }
+.pulse-mark.l { left: 10px; } .pulse-mark.r { right: 10px; }
+.pulse-mark.hit { background: var(--accent); }
+.pulse-bob { position: absolute; top: 5px; left: 50%; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: var(--accent); }
+.pulse.down .pulse-bob { box-shadow: 0 0 0 6px var(--accent-soft); }
+.staff-card.beat { border-color: var(--accent); }
+.metro-group { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.round.mini { width: 38px; height: 38px; font-size: 1.25rem; }
+.seg.five { grid-template-columns: repeat(5, 1fr); }
+.seg.five button { padding-inline: 2px; font-size: .85rem; }
+.tempo-bpm { font-variant-numeric: tabular-nums; }
+.review { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.review-scroll { overflow-x: auto; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); }
+.review-scroll .staff { width: auto; height: 150px; max-width: none; }
+.dot-ok, .dot-bad { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); vertical-align: 0; }
+.dot-bad { background: var(--bad); }
+.recordings { display: flex; flex-direction: column; gap: 8px; }
+.recording { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.recording > div { min-width: 0; }
+.recording b { display: block; font-size: .95rem; }
+.recording small { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mode-btn.wide { grid-column: 1 / -1; }
+.picker { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.st-tail { fill: currentColor; opacity: .18; }
 
 @media (max-width: 380px) {
   .target-row { grid-template-columns: 1fr 96px; }

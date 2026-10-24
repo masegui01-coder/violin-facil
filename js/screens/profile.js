@@ -26,6 +26,8 @@ function render() {
   $('profileStyles').innerHTML = styleGridHtml(s.styles);
   document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
   document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
+  document.querySelectorAll('[data-set-metro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setMetro === s.metroMode));
+  $('setBig').checked = s.bigText;
   $('setBoard').checked = s.showBoard;
   $('setUnlock').checked = s.unlockAll;
   confirmReset = false;
@@ -46,7 +48,9 @@ $('profileStyles').addEventListener('click', e => {
 });
 document.querySelectorAll('[data-set-nom]').forEach(b => b.addEventListener('click', () => { update({ nom: b.dataset.setNom }); render(); }));
 document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
+document.querySelectorAll('[data-set-metro]').forEach(b => b.addEventListener('click', () => { update({ metroMode: b.dataset.setMetro }); render(); }));
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
+$('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));
 $('setUnlock').addEventListener('change', e => update({ unlockAll: e.target.checked }));
 $('resetProgress').addEventListener('click', () => {
   if (!confirmReset) {

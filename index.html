@@ -80,7 +80,11 @@
           <div class="seg" role="group" aria-labelledby="setNomLabel"><button type="button" data-set-nom="eu">Do · Re · Mi</button><button type="button" data-set-nom="us">G3 · A4 · E5</button></div></div>
         <div class="setting"><span id="setTolLabel">Exigencia de afinación</span>
           <div class="seg three" role="group" aria-labelledby="setTolLabel"><button type="button" data-set-tol="facil">Fácil</button><button type="button" data-set-tol="normal">Normal</button><button type="button" data-set-tol="exigente">Exigente</button></div></div>
+        <div class="setting"><span id="setMetroLabel">Pulso en las lecciones</span>
+          <div class="seg three" role="group" aria-labelledby="setMetroLabel"><button type="button" data-set-metro="visual">Visual</button><button type="button" data-set-metro="both">Visual y sonido</button><button type="button" data-set-metro="sound">Sonido</button></div>
+          <small class="muted">El sonido del metrónomo puede confundir al micrófono. Con «Visual» verás un péndulo encima de la partitura.</small></div>
         <label class="switch-row" for="setBoard"><span>Mostrar el diapasón en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
+        <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
       </div>
       <div class="panel">
@@ -117,6 +121,7 @@
         <div><p id="lessonEyebrow" class="eyebrow"></p><h2 id="lessonTitle"></h2></div>
         <span id="modeChip" class="mode-chip"></span>
       </div>
+      <div id="pulse" class="pulse" hidden aria-hidden="true"><span class="pulse-mark l"></span><span class="pulse-mark r"></span><span id="pulseBob" class="pulse-bob"></span></div>
       <div class="staff-card"><svg id="lessonStaff" class="staff" role="img" aria-label="Partitura de la lección"></svg>
         <div id="countdown" class="countdown" hidden></div>
       </div>
@@ -136,15 +141,23 @@
       </div>
       <p id="status" class="status">&nbsp;</p>
       <div id="tempoBar" class="tempo-bar" hidden>
-        <span class="muted">Velocidad</span>
-        <div class="seg three" role="group" aria-label="Velocidad"><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
+        <div class="row spread"><span class="muted">Velocidad</span><b id="tempoBpm" class="tempo-bpm"></b></div>
+        <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-speed="0.4">40 %</button><button type="button" data-speed="0.5">50 %</button><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
         <button id="tempoStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button>
+      </div>
+      <div id="playControls" class="controls" hidden>
+        <button id="tempoBack" class="btn ghost small" type="button">« Un compás atrás</button>
+        <button id="tempoRestart" class="btn ghost small" type="button">⟲ Reiniciar</button>
       </div>
       <div class="controls">
         <button id="playRef" class="btn ghost small" type="button"><span data-icon="speaker" class="ic"></span>Nota</button>
         <button id="playDemo" class="btn ghost small" type="button"><span data-icon="play" class="ic"></span>Escuchar</button>
-        <button id="lessonMetro" class="btn ghost small" type="button" aria-pressed="false"><span data-icon="metro" class="ic"></span><span id="lmBpm">80</span></button>
         <button id="skipNote" class="btn ghost small" type="button">Saltar ›</button>
+      </div>
+      <div class="metro-group">
+        <button id="lmDown" class="round mini" type="button" aria-label="Más lento">−</button>
+        <button id="lessonMetro" class="btn ghost small" type="button" aria-pressed="false"><span data-icon="metro" class="ic"></span>Pulso · <span id="lmBpm">60</span></button>
+        <button id="lmUp" class="round mini" type="button" aria-label="Más rápido">+</button>
       </div>
     </section>
 
@@ -156,6 +169,10 @@
         <div id="resStars" class="big-stars"></div>
         <p id="resText" class="muted"></p>
         <p id="resXp" class="xp-gain"></p>
+        <div id="resReview" class="review" hidden>
+          <div class="review-scroll"><svg id="resStaff" class="staff" role="img" aria-label="Partitura con tus aciertos"></svg></div>
+          <p class="small muted"><span class="dot-ok"></span> bien · <span class="dot-bad"></span> fallada o cambiada</p>
+        </div>
         <div class="col">
           <button id="resPrimary" class="btn big" type="button">Continuar</button>
           <button id="resRetry" class="btn ghost" type="button">Repetir</button>
@@ -205,7 +222,8 @@
 
     <!-- Toca libre -->
     <section id="free" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Toca libre</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2 id="freeTitle">Toca libre</h2></div>
+      <p id="freeIntro" class="muted small"></p>
       <div id="freeGate" class="mic-gate" hidden>
         <p><strong>Necesito el micrófono</strong> para ver lo que tocas.</p>
         <p id="freeMicError" class="muted" hidden></p>
@@ -221,6 +239,14 @@
         </div>
         <svg id="freeBoard" class="board" role="img" aria-label="Posición de la nota en el diapasón"></svg>
       </div>
+      <p id="freeCount" class="center small muted"></p>
+      <button id="memoryDone" class="btn big" type="button" hidden>Terminar y comparar</button>
+      <div id="freeActions" class="controls">
+        <button id="freeClear" class="btn ghost small" type="button">Borrar</button>
+        <button id="freeSave" class="btn ghost small" type="button">Guardar</button>
+        <button id="freeCompare" class="btn small" type="button">Comparar con una canción</button>
+      </div>
+      <div id="recordings" class="recordings"></div>
     </section>
   </main>
 

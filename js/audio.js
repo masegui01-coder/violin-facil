@@ -98,14 +98,17 @@ export function playScore(notes, bpm, onNote) {
 }
 
 // ---------- Metrónomo ----------
-const metro = { on: false, bpm: 80, meter: 4, nextTime: 0, beat: 0, timer: 0, queue: [], clicks: [], listeners: new Set() };
+const CLICK_GAIN = { accent: 0.32, beat: 0.2 };
+const metro = { on: false, bpm: 80, meter: 4, sound: true, nextTime: 0, beat: 0, timer: 0, queue: [], clicks: [], listeners: new Set(), played: -1, lastBeatTime: 0 };
 
-function scheduleClick(time, accent) {
+// Clic suave; sin sonido no se programa nada (y el micrófono no necesita taparse)
+function scheduleClick(time, accent, sound = true) {
+  if (!sound) return;
   const c = state.ctx;
   const osc = c.createOscillator(), gain = c.createGain();
   osc.frequency.value = accent ? 1600 : 1000;
   gain.gain.setValueAtTime(0.0001, time);
-  gain.gain.exponentialRampToValueAtTime(accent ? 0.6 : 0.4, time + 0.002);
+  gain.gain.exponentialRampToValueAtTime(accent ? CLICK_GAIN.accent : CLICK_GAIN.beat, time + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
   osc.connect(gain).connect(c.destination);
   osc.start(time);
@@ -117,23 +120,34 @@ function scheduler() {
   const c = state.ctx;
   while (metro.nextTime < c.currentTime + LOOKAHEAD_S) {
     const beat = metro.beat % metro.meter;
-    scheduleClick(metro.nextTime, beat === 0 && metro.meter > 1);
+    scheduleClick(metro.nextTime, beat === 0 && metro.meter > 1, metro.sound);
     metro.queue.push({ time: metro.nextTime, beat });
     metro.nextTime += 60 / metro.bpm;
     metro.beat = beat + 1;
   }
   let current = null;
   while (metro.queue.length && metro.queue[0].time <= c.currentTime) current = metro.queue.shift();
-  if (current) metro.listeners.forEach(fn => fn(current.beat));
+  if (current) {
+    metro.played++;
+    metro.lastBeatTime = current.time;
+    metro.listeners.forEach(fn => fn(current.beat));
+  }
 }
 
 export function metronome() {
-  return { on: metro.on, bpm: metro.bpm, meter: metro.meter };
+  return { on: metro.on, bpm: metro.bpm, meter: metro.meter, sound: metro.sound };
 }
 
-export function configureMetronome({ bpm, meter }) {
+export function configureMetronome({ bpm, meter, sound }) {
   if (bpm) metro.bpm = bpm;
   if (meter) { metro.meter = meter; metro.beat = 0; }
+  if (sound !== undefined) metro.sound = sound;
+}
+
+// Pulsos transcurridos (con decimales) desde que arrancó el metrónomo; null antes del primero
+export function metronomeBeat() {
+  if (!metro.on || metro.played < 0) return null;
+  return metro.played + (state.ctx.currentTime - metro.lastBeatTime) * metro.bpm / 60;
 }
 
 export function startMetronome(startTime) {
@@ -142,6 +156,7 @@ export function startMetronome(startTime) {
   metro.on = true;
   metro.beat = 0;
   metro.queue = [];
+  metro.played = -1;
   metro.nextTime = startTime ?? c.currentTime + 0.08;
   metro.timer = setInterval(scheduler, SCHED_MS);
   scheduler();
@@ -160,10 +175,10 @@ export function onBeat(fn) {
 }
 
 // Clics sueltos (cuenta previa). Devuelve el instante de audio en que acaba la cuenta.
-export function countIn(beats, bpm) {
+export function countIn(beats, bpm, sound = true) {
   const c = ctx();
   const start = c.currentTime + 0.15;
-  for (let i = 0; i < beats; i++) scheduleClick(start + i * 60 / bpm, i === 0);
+  for (let i = 0; i < beats; i++) scheduleClick(start + i * 60 / bpm, i === 0, sound);
   return start + beats * 60 / bpm;
 }
 

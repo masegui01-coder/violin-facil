@@ -8,6 +8,7 @@ import './screens/learn.js';
 import './screens/library.js';
 import './screens/profile.js';
 import './screens/practice.js';
+import './screens/free.js';
 import './screens/onboarding.js';
 
 function hydrateIcons(root = document) {
@@ -20,6 +21,7 @@ function renderTopbar(s) {
   $('xpCount').textContent = s.xp;
   document.querySelector('.chip-stat.streak').classList.toggle('cold', streak === 0);
   $('toolBpm').textContent = s.bpm;
+  document.documentElement.classList.toggle('big', s.bigText);
 }
 
 hydrateIcons();
