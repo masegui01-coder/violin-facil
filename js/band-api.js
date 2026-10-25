@@ -121,6 +121,12 @@ export async function updateMember(bandId, uid, patch) {
   await fs.setDoc(fs.doc(db, 'bands', bandId, 'members', uid), patch, { merge: true });
 }
 
+// El director quita a un músico de la banda (puede volver a unirse con el código)
+export async function removeMember(bandId, uid) {
+  const { db, fs } = await refs();
+  await fs.deleteDoc(fs.doc(db, 'bands', bandId, 'members', uid));
+}
+
 // Sello y comentario del director en el progreso de un músico
 export async function stampProgress(bandId, docId, { stamp, comment }) {
   const { db, fs } = await refs();

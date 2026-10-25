@@ -99,3 +99,27 @@ test('a concert-pitch task part is transposed for each band instrument', () => {
   // una partichela ya escrita para trompeta (con <transpose> -2) no se vuelve a transportar
   assert.equal(partFor({ ...part, transpose: -2 }, 'trumpet').key, 'D');
 });
+
+import { dailySeries, weekCompare, taskStatus, practiceDays } from '../js/band-stats.js';
+
+test('director dashboard series and week comparison', () => {
+  const today = '2026-10-25';
+  const a = { id: 'a', days: { '2026-10-25': 10, '2026-10-24': 5, '2026-10-16': 20 } };
+  const b = { id: 'b', days: { '2026-10-23': 15 } };
+  const s = dailySeries([a, b], today, 3);
+  assert.deepEqual(s.map(x => [x.day, x.minutes, x.active]), [['2026-10-23', 15, 1], ['2026-10-24', 5, 1], ['2026-10-25', 10, 1]]);
+  const w = weekCompare([a, b], today);
+  assert.deepEqual([w.now.minutes, w.prev.minutes, w.now.active, w.prev.active], [30, 20, 2, 1]);
+  assert.equal(w.minutesChange, 50);
+  assert.equal(practiceDays(a, today, 7), 2);
+});
+
+test('task status splits musicians into done, started and not started', () => {
+  const task = { id: 't', due: '2026-10-20' };
+  const targets = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+  const progress = [{ taskId: 't', uid: 'a', completed: true, bestAccuracy: 0.9 }, { taskId: 't', uid: 'b', completed: false, bestAccuracy: 0.5 }];
+  const st = taskStatus(task, targets, progress, '2026-10-25');
+  assert.deepEqual([st.done.length, st.started.length, st.notStarted.length], [1, 1, 1]);
+  assert.equal(st.state, 'late');
+  assert.equal(Math.round(st.avgAccuracy * 100), 70);
+});

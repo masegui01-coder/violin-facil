@@ -101,3 +101,47 @@ export function weekStarSuggestion(members, today) {
   const ranked = members.map(m => ({ m, minutes: minutesInLast(m, today, 7) })).filter(x => x.minutes > 0).sort((a, b) => b.minutes - a.minutes);
   return ranked.length ? { member: ranked[0].m, minutes: ranked[0].minutes } : null;
 }
+
+// ---------- Panel del director ----------
+// Minutos y músicos activos de cada uno de los últimos n días (el último es hoy)
+export function dailySeries(members, today, n = 14) {
+  return daysBack(today, n).reverse().map(day => {
+    const mins = members.map(m => (m.days || {})[day] || 0);
+    return { day, minutes: Math.round(mins.reduce((a, b) => a + b, 0)), active: mins.filter(x => x > 0).length };
+  });
+}
+
+// Esta semana (7 días hasta hoy) frente a la anterior: minutos y músicos que practicaron
+export function weekCompare(members, today) {
+  const span = (from, to) => {
+    const days = daysBack(today, to).slice(from);
+    return {
+      minutes: Math.round(members.reduce((s, m) => s + days.reduce((t, d) => t + ((m.days || {})[d] || 0), 0), 0)),
+      active: members.filter(m => days.some(d => ((m.days || {})[d] || 0) > 0)).length,
+    };
+  };
+  const now = span(0, 7), prev = span(7, 14);
+  const change = (a, b) => (b ? Math.round((a - b) / b * 100) : null);
+  return { now, prev, minutesChange: change(now.minutes, prev.minutes), activeChange: now.active - prev.active };
+}
+
+// Estado de una tarea: hechas, en curso, sin empezar, vencida y acierto medio
+export function taskStatus(task, targets, progress, today) {
+  const rows = targets.map(m => ({ member: m, p: progress.find(x => x.taskId === task.id && x.uid === (m.uid || m.id)) || null }));
+  const done = rows.filter(r => r.p && r.p.completed);
+  const started = rows.filter(r => r.p && !r.p.completed);
+  const notStarted = rows.filter(r => !r.p);
+  const accs = rows.filter(r => r.p).map(r => r.p.bestAccuracy || 0);
+  const overdue = !!task.due && task.due < today;
+  return {
+    rows, done, started, notStarted, overdue, total: rows.length,
+    ratio: rows.length ? done.length / rows.length : 0,
+    avgAccuracy: accs.length ? accs.reduce((a, b) => a + b, 0) / accs.length : null,
+    state: rows.length && done.length === rows.length ? 'done' : overdue ? 'late' : 'open',
+  };
+}
+
+// Días con práctica en los últimos n días
+export function practiceDays(member, today, n) {
+  return daysBack(today, n).filter(d => ((member.days || {})[d] || 0) > 0).length;
+}

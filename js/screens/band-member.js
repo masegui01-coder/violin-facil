@@ -56,13 +56,14 @@ export function memberView(ctx) {
   const next = upcoming(ctx.events)[0];
   const points = meDoc.points || 0;
   const duel = sectionDuel(musicians, day, familyOf).slice(0, 4);
-  const notices = [...ctx.notices].sort((x, y) => api.millis(y.at) - api.millis(x.at)).slice(0, NOTICES_SHOWN);
+  // avisos para toda la banda o dirigidos a mí (p. ej. «recuerda practicar la marcha»)
+  const notices = [...ctx.notices].filter(n => !n.to || n.to.includes(b.uid)).sort((x, y) => api.millis(y.at) - api.millis(x.at)).slice(0, NOTICES_SHOWN);
 
   return `<div class="band-hero"><p class="eyebrow">Mi banda${b.role === 'leader' ? ' · ' + ROLE_NAME.leader : ''}</p><h1>${esc(b.name)}</h1>
       <p>${esc(b.nickname)} · ${esc(seatName(me))}</p>
       <label class="voice-pick">Mi voz <select id="myVoice" class="select small">${['', 1, 2, 3, 4].map(v => `<option value="${v}" ${String(v) === String(me.voice || '') ? 'selected' : ''}>${v ? v + 'º' : 'Única'}</option>`).join('')}</select></label></div>
     ${star ? `<div class="week-star"><small>Músico de la semana</small><b>${esc(star.nickname)}</b>${star.note ? `<span>${esc(star.note)}</span>` : ''}</div>` : ''}
-    ${notices.map(n => `<div class="notice"><small>Aviso del director</small><span>${esc(n.text)}</span></div>`).join('')}
+    ${notices.map(n => `<div class="notice"><small>${n.to ? 'Aviso para ti' : 'Aviso del director'}</small><span>${esc(n.text)}</span></div>`).join('')}
     ${next ? eventCard(next, ctx.tasks, me, myProgress) : ''}
     <div class="stats"><div class="stat"><b>${mine.filter(t => pOf(t)?.completed).length}/${mine.length}</b><span>tareas hechas</span></div>
       <div class="stat"><b>${Math.round(myProgress.reduce((s, p) => s + (p.minutes || 0), 0))}</b><span>minutos en tareas</span></div>
