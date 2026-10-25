@@ -82,7 +82,7 @@ service cloud.firestore {
 
       // Un documento por tarea y músico: «<tarea>_<uid>»
       match /progress/{docId} {
-        allow read: if isDirector(bandId) || (signedIn() && resource.data.uid == request.auth.uid);
+        allow read: if isDirector(bandId) || (signedIn() && (resource == null || resource.data.uid == request.auth.uid));
         allow create, update: if isMember(bandId)
           && request.resource.data.uid == request.auth.uid
           && docId == request.resource.data.taskId + '_' + request.auth.uid;
