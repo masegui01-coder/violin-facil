@@ -130,3 +130,34 @@ export function setReferenceA(hz) { referenceA = hz; }
 export function getReferenceA() { return referenceA; }
 export function midiToFreq(m) { return referenceA * Math.pow(2, (m - 69) / 12); }
 export function freqToMidi(f) { return 69 + 12 * Math.log2(f / referenceA); }
+
+// ---------- Trasposición (para que cada instrumento lea su parte escrita de una obra en sonido real) ----------
+const KEY_NAMES = Object.keys(KEY_COUNT);
+const tonicOf = key => key.replace(/m$/, '');
+const pcOf = name => (LETTER_PC[name[0]] + (name[1] === '#' ? 1 : name[1] === 'b' ? -1 : 0) + 12) % 12;
+
+// Tonalidad destino con la armadura más sencilla (p. ej. Re + 2 semitonos = Mi; Fa + 9 = Re)
+export function transposeKey(key, semitones) {
+  const minor = key.endsWith('m');
+  const pc = (pcOf(tonicOf(key)) + semitones % 12 + 24) % 12;
+  const options = KEY_NAMES.filter(k => k.endsWith('m') === minor && pcOf(tonicOf(k)) === pc);
+  return options.sort((a, b) => Math.abs(KEY_COUNT[a]) - Math.abs(KEY_COUNT[b]))[0] || key;
+}
+
+// Desplaza las notas «semitones» y las reescribe en la nueva tonalidad respetando el intervalo (Fa♯ → Sol♯, no La♭)
+export function transposeScore(score, key, semitones) {
+  if (!semitones) return { score, key };
+  const target = transposeKey(key, semitones);
+  const d0 = (LETTERS.indexOf(tonicOf(target)[0]) - LETTERS.indexOf(tonicOf(key)[0]) + 7) % 7;
+  const steps = [d0 - 7, d0, d0 + 7].sort((a, b) => Math.abs(a - semitones * 7 / 12) - Math.abs(b - semitones * 7 / 12))[0];
+  const notes = score.notes.map(n => {
+    if (n.rest || !n.letter) return n.rest ? n : { ...n, midi: n.midi + semitones };
+    const idx = LETTERS.indexOf(n.letter) + steps;
+    const letter = LETTERS[((idx % 7) + 7) % 7];
+    const midi = n.midi + semitones;
+    let oct = n.oct + Math.floor(idx / 7);
+    const acc = midi - ((oct + 1) * 12 + LETTER_PC[letter]);
+    return Math.abs(acc) <= 2 ? { ...n, midi, letter, acc, oct } : { ...n, ...spell(midi, keyCount(target) < 0) };
+  });
+  return { score: { ...score, notes }, key: target };
+}

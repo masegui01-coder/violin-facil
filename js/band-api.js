@@ -1,6 +1,8 @@
 // Datos de «Mi banda» en Firestore: bandas, códigos de invitación, músicos, tareas y progreso.
 import { getCloud, ensureSignedIn, signInDirector, randomCode } from './cloud.js';
-import { songScore } from './songs.js';
+import { songScore, octaveShiftFor } from './songs.js';
+import { transposeScore } from './music.js';
+import { instrumentById } from './instruments.js';
 import { encodeScore, decodeScore } from './passage.js';
 
 const MAX_CODE_TRIES = 5;
@@ -180,3 +182,15 @@ export function assignedTo(task, member) {
 export { partKey };
 
 export const millis = toMillis;
+
+// La partichela escrita para el instrumento del músico. part.transpose dice cómo suena lo escrito en la parte
+// (0 en las obras del repertorio, que están en sonido real); el músico la lee transportada a su instrumento
+// y en la octava que le resulta cómoda, para que toda la banda suene al unísono.
+export function partFor(part, instId) {
+  const inst = instrumentById(instId);
+  const delta = inst.rhythmOnly || part.percussion ? 0 : (part.transpose || 0) - inst.transpose;
+  const { score, key } = transposeScore(payloadScore(part), part.key || 'C', delta);
+  const shift = octaveShiftFor({ parsed: score }, inst) ?? 0;
+  const parsed = shift ? { ...score, notes: score.notes.map(n => (n.rest ? n : { ...n, midi: n.midi + shift, oct: n.oct + shift / 12 })) } : score;
+  return { key, parsed };
+}

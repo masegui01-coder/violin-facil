@@ -44,7 +44,7 @@ export function taskLesson(task, member, progress = null) {
   if (!part) return null;
   const { enc, parsed, ...rest } = part;
   const id = 'task-' + task.id;
-  const song = { ...rest, parsed: api.payloadScore(part), id, style: null, difficulty: 2 };
+  const song = { ...rest, ...api.partFor(part, member.instrument), id, style: null, difficulty: 2 };
   const extra = { taskId: task.id, task, accompaniment: accompanimentFor(task, part, task.passage) };
   if (task.passage) {
     const speed = Math.max(PASSAGE_START, Math.min(1, progress?.passageBest || 0));

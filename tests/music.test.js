@@ -63,3 +63,26 @@ test('frequency conversions are inverse', () => {
   assert.equal(midiToFreq(69), 440);
   assert.ok(Math.abs(freqToMidi(midiToFreq(62)) - 62) < 1e-9);
 });
+
+import { transposeKey, transposeScore } from '../js/music.js';
+
+test('transposes keys to the simplest signature', () => {
+  assert.equal(transposeKey('D', 2), 'E');        // trompeta en Si♭: Re de concierto se escribe en Mi
+  assert.equal(transposeKey('Bb', 2), 'C');
+  assert.equal(transposeKey('F', 9), 'D');        // saxo alto en Mi♭
+  assert.equal(transposeKey('Am', 2), 'Bm');
+  assert.equal(transposeKey('G', 0), 'G');
+});
+
+test('transposes scores keeping the right spelling', () => {
+  const src = parseScore('| D4q F#4q A4q C#5q | Bb4h R h |');
+  const { score, key } = transposeScore(src, 'D', 2);
+  assert.equal(key, 'E');
+  const names = score.notes.filter(n => !n.rest).map(n => n.letter + (n.acc === 1 ? '#' : n.acc === -1 ? 'b' : '') + n.oct);
+  assert.deepEqual(names, ['E4', 'G#4', 'B4', 'D#5', 'C5']);
+  assert.equal(score.notes[4].midi, 72);
+  const sax = transposeScore(parseScore('| F4q A4q C5q |'), 'F', 9);
+  assert.equal(sax.key, 'D');
+  assert.deepEqual(sax.score.notes.map(n => n.letter + n.oct), ['D5', 'F5', 'A5']);
+  assert.deepEqual(sax.score.notes.map(n => n.acc), [0, 1, 0]);
+});

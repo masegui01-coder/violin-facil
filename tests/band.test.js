@@ -81,3 +81,21 @@ test('trumpet reminds you to pull the third slide on sharp low notes', () => {
   assert.match(fingeringText('trumpet', 61, 'eu'), /bomba/);
   assert.doesNotMatch(fingeringText('trumpet', 64, 'eu'), /bomba/);
 });
+
+import { partFor } from '../js/band-api.js';
+
+test('a concert-pitch task part is transposed for each band instrument', () => {
+  const part = songPayload(SONGS.find(s => s.id === 'oda'));      // Himno de la Alegría en Re (sonido real)
+  const first = p => p.parsed.notes.find(n => !n.rest);
+  const flute = partFor(part, 'flute'), trumpet = partFor(part, 'trumpet'), alto = partFor(part, 'sax'), guitar = partFor(part, 'guitar');
+  assert.equal(flute.key, 'D');
+  assert.equal(trumpet.key, 'E');
+  assert.equal(alto.key, 'B');
+  assert.equal(guitar.key, 'D');
+  // toda la banda suena igual (salvo octavas): escrita + transposición del instrumento
+  const pc = (p, t) => ((first(p).midi + t) % 12 + 12) % 12;
+  assert.equal(pc(trumpet, -2), pc(flute, 0));
+  assert.equal(pc(alto, -9), pc(flute, 0));
+  // una partichela ya escrita para trompeta (con <transpose> -2) no se vuelve a transportar
+  assert.equal(partFor({ ...part, transpose: -2 }, 'trumpet').key, 'D');
+});

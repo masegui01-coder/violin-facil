@@ -24,7 +24,7 @@ export function openTaskForm(band, members, onSave) {
     <div class="row"><select id="tSong" class="select"><option value="">Elige del repertorio…</option>${allSongs().map(s => `<option value="${s.id}">${esc(s.title)}</option>`).join('')}</select>
       <button type="button" class="btn ghost small" id="tImport">Importar MusicXML</button></div>
     <div class="row"><label for="tPartInst" class="small">Para</label><select id="tPartInst" class="select"><option value="all">Todos los instrumentos</option>${INSTRUMENTS.map(i => `<option value="${i.id}">Solo ${esc(i.name)}</option>`).join('')}</select></div>
-    <p class="muted small">Si importas un MusicXML con varias partes, repartiré cada partichela a su instrumento y voz (y las demás sonarán de banda virtual). También puedes elegir «Solo…» antes de escoger la obra.</p>
+    <p class="muted small">Si importas un MusicXML con varias partes, repartiré cada partichela a su instrumento y voz (y las demás sonarán de banda virtual). Una obra para «Todos» se transporta sola: cada músico la lee escrita para su instrumento (Si♭, Mi♭…) y toda la banda suena al unísono.</p>
     <div id="tParts" class="row">${partsHtml()}</div>
     <input id="tFile" type="file" hidden>
     <label class="check-chip"><input type="checkbox" id="tPassage"> Solo unos compases, en bucle y subiendo el tempo</label>
@@ -48,8 +48,10 @@ export function openTaskForm(band, members, onSave) {
     $('tTargets').innerHTML = list.map(([v, label]) => `<label class="check-chip"><input type="checkbox" value="${v}">${esc(label)}</label>`).join('')
       || (form.assignType === 'members' ? '<span class="muted small">Aún no hay músicos en la banda.</span>' : '');
   };
+  // Un MusicXML de una parte guarda cómo suena lo escrito (<transpose>); las obras del repertorio están en sonido real
   const addPart = song => {
-    form.parts = { ...form.parts, [$('tPartInst').value]: songPayload(song) };
+    const chosen = (song.parts || []).find(p => p.id === song.partId);
+    form.parts = { ...form.parts, [$('tPartInst').value]: songPayload(song, chosen ? { transpose: chosen.transpose || 0, percussion: !!chosen.percussion } : {}) };
     $('tParts').innerHTML = partsHtml();
     if (!$('tTitle').value) $('tTitle').value = song.title;
   };
