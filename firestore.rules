@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Band Flow · «Mi banda»
+// - El director crea la banda y su código de invitación.
+// - Los músicos entran con el código. Solo ven su propio progreso; el director ve el de todos.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function bandPath(bandId) { return /databases/$(db)/documents/bands/$(bandId); }
+    function isDirector(bandId) { return signedIn() && get(bandPath(bandId)).data.directorUid == request.auth.uid; }
+    function isDirectorAfter(bandId) { return signedIn() && getAfter(bandPath(bandId)).data.directorUid == request.auth.uid; }
+    function isMember(bandId) { return signedIn() && exists(/databases/$(db)/documents/bands/$(bandId)/members/$(request.auth.uid)); }
+
+    // Código de invitación → banda. Se consulta uno a uno, nunca se listan.
+    match /bandCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if isDirectorAfter(request.resource.data.bandId);
+      allow delete: if isDirector(resource.data.bandId);
+    }
+
+    match /bands/{bandId} {
+      allow read: if isMember(bandId) || isDirector(bandId);
+      allow create: if signedIn() && request.resource.data.directorUid == request.auth.uid;
+      allow update: if isDirector(bandId) && request.resource.data.directorUid == resource.data.directorUid;
+      allow delete: if isDirector(bandId);
+
+      match /members/{uid} {
+        allow read: if isMember(bandId) || isDirector(bandId);
+        allow create: if signedIn() && uid == request.auth.uid && (
+          (request.resource.data.role == 'director' && isDirectorAfter(bandId)) ||
+          (request.resource.data.role == 'member'
+            && get(/databases/$(db)/documents/bandCodes/$(request.resource.data.code)).data.bandId == bandId)
+        );
+        allow update: if signedIn() && uid == request.auth.uid && request.resource.data.role == resource.data.role;
+        allow delete: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
+      }
+
+      match /tasks/{taskId} {
+        allow read: if isMember(bandId) || isDirector(bandId);
+        allow create, update, delete: if isDirector(bandId);
+      }
+
+      // Un documento por tarea y músico: «<tarea>_<uid>»
+      match /progress/{docId} {
+        allow read: if isDirector(bandId) || (signedIn() && resource.data.uid == request.auth.uid);
+        allow create, update: if isMember(bandId)
+          && request.resource.data.uid == request.auth.uid
+          && docId == request.resource.data.taskId + '_' + request.auth.uid;
+      }
+    }
+  }
+}
