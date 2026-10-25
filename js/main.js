@@ -43,14 +43,13 @@ $('fbCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(feedbackText()); toast('Copiado. Pégalo en un mensaje.'); }
   catch (e) { $('fbText').select(); toast('Selecciona el texto y cópialo'); }
 });
-$('fbForm').addEventListener('submit', async e => {
+// Correo del estudio: el alias "+violin" hace que Gmail lo etiquete como Violín Fácil.
+const SUPPORT_EMAIL = 'tizaestudiogames+violin@gmail.com';
+$('fbForm').addEventListener('submit', e => {
   e.preventDefault();
-  const text = feedbackText();
-  if (navigator.share) {
-    try { await navigator.share({ title: 'Violin Flow – comentario', text }); $('fbDialog').close(); return; }
-    catch (err) { if (err && err.name === 'AbortError') return; }
-  }
-  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  const subject = '[Violín Fácil] Sugerencia o error';
+  location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(feedbackText())}`;
+  $('fbDialog').close();
 });
 
 go(getState().onboarded ? 'learn' : 'onboarding');
