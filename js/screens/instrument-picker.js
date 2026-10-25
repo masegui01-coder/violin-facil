@@ -24,7 +24,7 @@ export function instrumentCardsHtml(selected) {
 }
 
 // Hoja para cambiar de instrumento. onPicked se llama tras guardar.
-export function openInstrumentPicker({ title = 'Elige tu instrumento', intro = '', onPicked = () => {} } = {}) {
+export function openInstrumentPicker({ title = 'Elige tu instrumento', intro = '', onPicked = () => {}, onClosed = () => {} } = {}) {
   const current = getState().instrument;
   $('sheetBody').innerHTML = `<div class="sheet-body"><h2>${esc(title)}</h2>
     <p class="muted small">${esc(intro || 'El curso, las digitaciones y el afinador se adaptan. Tu progreso se guarda por separado para cada instrumento.')}</p>
@@ -38,6 +38,6 @@ export function openInstrumentPicker({ title = 'Elige tu instrumento', intro = '
     toast(`Ahora practicas con: ${instrumentById(b.dataset.inst).name}`);
     onPicked(b.dataset.inst);
   });
-  $('sheetBody').querySelector('[data-close]').addEventListener('click', () => { update({ instrumentChosen: true }); $('sheet').close(); });
+  $('sheetBody').querySelector('[data-close]').addEventListener('click', () => { update({ instrumentChosen: true }); $('sheet').close(); onClosed(); });
   $('sheet').showModal();
 }

@@ -498,3 +498,15 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
   .chip-stat.xp { display: none; }
   .inst-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Tutorial guiado */
+.tour { position: fixed; inset: 0; z-index: 60; }
+.tour-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(8, 12, 18, .62); outline: 3px solid var(--accent); transition: top .25s, left .25s, width .25s, height .25s; pointer-events: none; }
+.tour.dim { background: rgba(8, 12, 18, .62); }
+.tour-card { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); max-width: 460px; margin: 0 auto; background: var(--surface); color: var(--ink); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+.tour-card.center { top: 50%; transform: translateY(-50%); }
+.tour-card p { line-height: 1.5; }
+.help-btn { align-self: flex-start; margin-top: 4px; }
+.help-list { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.help-list dt { font-weight: 800; margin-top: 8px; }
+.help-list dd { margin: 0; color: var(--muted); line-height: 1.45; }

@@ -7,6 +7,7 @@ import { setReferenceA } from './music.js';
 import { instrumentById } from './instruments.js';
 import { checkCelebrations } from './screens/daily.js';
 import { openInstrumentPicker, instrumentIcon } from './screens/instrument-picker.js';
+import { startTour } from './screens/tour.js';
 import './screens/player.js';
 import './screens/theory.js';
 import './screens/learn.js';
@@ -76,13 +77,21 @@ $('fbForm').addEventListener('submit', e => {
 
 go(getState().onboarded ? 'learn' : 'onboarding');
 
-// Quien ya usaba la app (solo violín) elige ahora su instrumento una vez
+// Tutorial: tras la bienvenida, y una vez para quien ya usaba la app
+const maybeTour = () => { if (!getState().tourDone) startTour(); };
+window.addEventListener('onboarding-done', maybeTour);
+$('replayTour').addEventListener('click', startTour);
+
+// Quien ya usaba la app (solo violín) elige ahora su instrumento una vez y después ve el tutorial
 if (getState().onboarded && !getState().instrumentChosen) {
   openInstrumentPicker({
     title: 'Novedad: elige tu instrumento',
     intro: 'Band Flow ya no es solo para violín. Elige el instrumento que quieres aprender o practicar; podrás cambiarlo cuando quieras desde el botón de arriba.',
-    onPicked: refreshScreen,
+    onPicked: () => { refreshScreen(); maybeTour(); },
+    onClosed: maybeTour,
   });
+} else if (getState().onboarded) {
+  maybeTour();
 }
 
 // App instalable (icono en la pantalla de inicio)

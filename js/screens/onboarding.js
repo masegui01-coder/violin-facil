@@ -84,4 +84,5 @@ $('obNext').addEventListener('click', () => {
   if (step < STEPS.length - 1) { step++; render(); return; }
   update({ ...draft, onboarded: true, instrumentChosen: true, unlockAll: draft.level === 'fluent' });
   go('learn');
+  window.dispatchEvent(new CustomEvent('onboarding-done'));
 });

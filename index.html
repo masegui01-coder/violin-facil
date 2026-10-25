@@ -70,6 +70,7 @@
       <div class="screen-head">
         <h1>Estudio</h1>
         <p class="muted">Herramientas para mejorar cada día, también si ya tienes nivel.</p>
+        <button type="button" class="btn ghost small help-btn" id="studyHelp">¿Para qué sirve cada una?</button>
       </div>
       <h2 class="tools-title">Cada día</h2>
       <div class="tools">
@@ -140,6 +141,7 @@
         <p class="muted">Tu opinión decide qué viene después.</p>
         <div class="row">
           <button id="openFeedback" class="btn" type="button">Enviar comentarios</button>
+          <button id="replayTour" class="btn ghost" type="button">Ver el tutorial</button>
           <button id="resetProgress" class="btn ghost danger" type="button">Borrar progreso</button>
         </div>
       </div>
@@ -382,6 +384,10 @@
     </div>
   </form>
 </dialog>
+<div id="tour" class="tour" hidden>
+  <div id="tourSpot" class="tour-spot" hidden></div>
+  <div id="tourCard" class="tour-card" role="dialog" aria-live="polite"></div>
+</div>
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script type="module" src="js/main.js"></script>

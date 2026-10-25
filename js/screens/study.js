@@ -43,5 +43,26 @@ function openSightSheet() {
   $('sheet').showModal();
 }
 
+const TOOL_HELP = [
+  ['Afinador', 'Afina antes de tocar. En viento es cromático y te dice la nota escrita y la real; en violín, cuerda a cuerda. Puedes elegir La 440, 441 o 442 Hz en Perfil.'],
+  ['Metrónomo', 'Marca el pulso con sonido y luces. Elige el compás o pulsa «Marcar tempo» al ritmo que quieras.'],
+  ['Notas tenidas', 'Sostén una nota y mira la gráfica: la línea es tu afinación y el relleno, tu volumen. Te dice si eres estable, si tienes vibrato y si te desafinas al hacer crescendo.'],
+  ['Toca libre', 'Toca lo que quieras y la app lo escribe en el pentagrama. Guárdalo o compáralo con una canción para comprobar si te la sabes de memoria.'],
+  ['Mapa de afinación', 'Resume todo lo que tocas: qué notas te salen altas o bajas. Pulsa una nota para trabajarla con notas tenidas.'],
+  ['Gimnasio de técnica', 'Escalas, arpegios y terceras en las 12 tonalidades, siempre a tu mejor tempo. Si lo haces con 2 estrellas, sube 4 pulsos por minuto.'],
+  ['Afinar en acorde', 'La app suena un acorde y tú colocas la tercera, la quinta o la sexta en su sitio justo, como en la banda. Sin auriculares, alterna escuchar y tocar.'],
+  ['Lectura a primera vista', 'Una partitura nueva cada vez, en tres niveles, y una sola toma: sin escucharla antes ni repetir.'],
+  ['Modo audición', 'Una obra al azar, una sola toma y sin ayudas en pantalla, como en una prueba real.'],
+];
+
+function openStudyHelp() {
+  $('sheetBody').innerHTML = `<div class="sheet-body"><h2>Para qué sirve cada herramienta</h2>
+    <dl class="help-list">${TOOL_HELP.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join('')}</dl>
+    <button type="button" class="btn small" data-close>Entendido</button></div>`;
+  $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
+  $('sheet').showModal();
+}
+
+$('studyHelp').addEventListener('click', openStudyHelp);
 $('toolSight').addEventListener('click', openSightSheet);
 $('toolAudition').addEventListener('click', () => launch(auditionLesson(), { mode: 'tempo', from: 'practice' }));
