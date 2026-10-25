@@ -5,7 +5,9 @@ import { levelFor, CARDS, THEMES } from '../rewards.js';
 import { weekId } from '../engage.js';
 import { keyLabel } from '../generate.js';
 import { instrumentById } from '../instruments.js';
-import { getState, update } from '../store.js';
+import { getState, update, knownChords } from '../store.js';
+import { SONGBOOK, playableCount } from '../songbook.js';
+import { chordLabel } from '../chords.js';
 import { tuningStats } from './tuningmap.js';
 
 const DAY_MS = 86400000;
@@ -19,7 +21,7 @@ function currentSkills() {
   const gym = Object.entries(s.gym).filter(([k]) => k.startsWith(s.instrument + ':')).map(([, v]) => v);
   const since = new Date(Date.now() - 30 * DAY_MS).toISOString().slice(0, 10);
   const practiceDays30 = Object.entries(s.practiceLog).filter(([d, m]) => d >= since && m > 0).length;
-  return skills({ tuningAbs, tempoAcc: avg(s.recentAcc), gymBest: gym.length ? Math.max(...gym) : 0, readingAcc: avg(s.recentReading), practiceDays30, rhythmOnly: inst.rhythmOnly });
+  return skills({ tuningAbs, tempoAcc: avg(s.recentAcc), gymBest: gym.length ? Math.max(...gym) : 0, readingAcc: avg(s.recentReading), practiceDays30, rhythmOnly: inst.rhythmOnly, chordsKnown: inst.polyphonic ? knownChords().length : null });
 }
 
 function radarSvg(list) {
@@ -47,6 +49,23 @@ function reportLines() {
   return compareWeeks(s.history[weekId()], s.history[prevWeekId()]).map(l => ({ ...l, text: l.text.replace(/^(gym-[^:]+|rud-[^:]+):/, (_, id) => exerciseName(id) + ':') }));
 }
 
+// Guitarra y piano: acordes que sabes, canciones que abren y la evolución de tus cambios de un minuto
+const SPARK_POINTS = 10;
+function chordsHtml() {
+  const s = getState();
+  if (!instrumentById(s.instrument).polyphonic) return '';
+  const known = knownChords();
+  const pairs = Object.entries(s.changes).filter(([k]) => k.startsWith(s.instrument + ':'));
+  const pairName = k => k.split(':')[1].split('-').map(c => chordLabel(c, s.nom)).join(' – ');
+  return `<h3>Tus acordes</h3>
+    <p class="small">${known.length} acordes · ${playableCount(known)} de ${SONGBOOK.length} canciones del cancionero</p>
+    ${pairs.length ? `<div class="changes-list">${pairs.map(([k, hist]) => {
+      const last = hist.slice(-SPARK_POINTS);
+      const best = Math.max(...hist.map(h => h.count));
+      return `<div class="changes-row"><span>${esc(pairName(k))}</span><span class="spark">${last.map(h => `<i style="height:${Math.max(8, h.count / best * 100)}%"></i>`).join('')}</span><b>${best}</b></div>`;
+    }).join('')}<small class="muted">Récord de cambios en un minuto y tus últimos intentos</small></div>` : ''}`;
+}
+
 export function renderProgress() {
   const s = getState();
   const lvl = levelFor(s.xp);
@@ -55,6 +74,7 @@ export function renderProgress() {
     <div class="level"><div><small>Nivel</small><b>${esc(lvl.name)}</b></div><div class="level-bar"><i style="width:${Math.round(lvl.progress * 100)}%"></i></div>
       <small>${lvl.next ? `${lvl.next.xp - s.xp} puntos para ${esc(lvl.next.name)}` : 'Nivel máximo'}</small></div>
     ${radarSvg(currentSkills())}
+    ${chordsHtml()}
     <h3>Esta semana</h3>
     <ul class="report">${lines.map(l => `<li class="${l.good ? 'up' : 'down'}">${esc(l.text)}</li>`).join('') || '<li>Practica unos días y aquí verás cómo mejoras.</li>'}</ul>
     <div class="row"><button type="button" class="btn ghost small" id="openCards">Mis cromos (${s.cards.length}/${CARDS.length})</button><button type="button" class="btn ghost small" id="openDiploma">Mi diploma</button></div>

@@ -47,9 +47,14 @@ export function compareWeeks(cur, prev) {
 }
 
 // Perfil de habilidades de 0 a 100
-export function skills({ tuningAbs = null, tempoAcc = null, gymBest = 0, readingAcc = null, practiceDays30 = 0, rhythmOnly = false }) {
+// En guitarra y piano la afinación la pone el instrumento: el primer eje mide los acordes que sabes (20 = 100)
+const CHORDS_FOR_FULL = 20;
+export function skills({ tuningAbs = null, tempoAcc = null, gymBest = 0, readingAcc = null, practiceDays30 = 0, rhythmOnly = false, chordsKnown = null }) {
+  const first = chordsKnown !== null
+    ? { id: 'chords', name: 'Acordes', value: clamp(chordsKnown / CHORDS_FOR_FULL * 100) }
+    : { id: 'tune', name: rhythmOnly ? 'Precisión' : 'Afinación', value: rhythmOnly ? clamp((tempoAcc ?? 0) * 100) : tuningAbs === null ? 0 : clamp(100 - tuningAbs * 3) };
   return [
-    { id: 'tune', name: rhythmOnly ? 'Precisión' : 'Afinación', value: rhythmOnly ? clamp((tempoAcc ?? 0) * 100) : tuningAbs === null ? 0 : clamp(100 - tuningAbs * 3) },
+    first,
     { id: 'rhythm', name: 'Ritmo', value: tempoAcc === null ? 0 : clamp(tempoAcc * 100) },
     { id: 'tech', name: 'Técnica', value: gymBest ? clamp((gymBest - 40) / 100 * 100) : 0 },
     { id: 'read', name: 'Lectura', value: readingAcc === null ? 0 : clamp(readingAcc * 100) },

@@ -1,6 +1,7 @@
-// Diagrama de digitación según el instrumento: diapasón (violín), pistones (trompeta) o llaves (madera).
+// Diagrama de digitación según el instrumento: diapasón (violín), pistones (trompeta), llaves (madera), mástil (guitarra) o teclado (piano).
 import { renderFingerboard } from './fingerboard.js';
 import { fingeringFor, fingeringsReviewed } from './fingerings.js';
+import { drawFretboard, drawKeyboard } from './boards.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 150;
@@ -45,6 +46,8 @@ function drawKeys(svg, f, instId) {
 // Dibuja la digitación de la nota escrita; devuelve false si no hay dato
 export function renderDiagram(svg, instId, midis, nom) {
   if (instId === 'violin') { renderFingerboard(svg, midis, nom); return true; }
+  if (instId === 'guitar') { drawFretboard(svg, midis.map(m => fingeringFor('guitar', m)).filter(Boolean)); return true; }
+  if (instId === 'piano') { drawKeyboard(svg, midis); return true; }
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.replaceChildren();
   const f = midis.length ? fingeringFor(instId, midis[0]) : null;

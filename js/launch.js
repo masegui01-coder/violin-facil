@@ -45,6 +45,7 @@ function eyebrowFor(lesson, from) {
 export function launch(lesson, { mode, from = 'course' } = {}) {
   const params = { lesson, from, eyebrow: eyebrowFor(lesson, from) };
   if (lesson.kind === 'theory') go('theory', params);
+  else if (lesson.kind === 'chords') go('chords', params);
   else if (instrumentById(getState().instrument).rhythmOnly) go('rhythm', params);
   else if (mode === 'memory') go('free', params);
   else go('lesson', { ...params, mode: mode || defaultMode(lesson) });

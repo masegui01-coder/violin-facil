@@ -1,6 +1,7 @@
 // Hoja de detalle de una lección o canción, con la elección de modo.
 import { $, esc, icon, starsHtml } from '../ui.js';
-import { lessonSong, lessonTitle, lessonKey } from '../course.js';
+import { lessonSong, lessonTitle, lessonKey, chordText } from '../course.js';
+import { chordLabel } from '../chords.js';
 import { SONGS, allSongs, styleById, songScore, DIFFICULTY, MY_STYLE } from '../songs.js';
 
 const SONGS_IDS = new Set(SONGS.map(s => s.id));
@@ -10,12 +11,14 @@ import { launch, defaultMode } from '../launch.js';
 import { hardPassage, passageLesson } from '../passages.js';
 import { createStaff } from '../staff.js';
 
-const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
+const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song', chords: 'chord' };
+const CHORD_MODE = { hold: 'Acorde a acorde', strum: 'A tempo, con el cifrado', changes: 'Un minuto de cambios' };
 const KEY_NAME = { C: 'Do mayor', G: 'Sol mayor', D: 'Re mayor', A: 'La mayor', F: 'Fa mayor', Am: 'La menor', Em: 'Mi menor', Dm: 'Re menor' };
 
 function facts(lesson, song) {
   if (lesson.kind === 'theory') return [`${lesson.cards.length} tarjetas`];
   if (lesson.kind === 'notes') return [`${lesson.notes.split(' ').length} notas`, 'Nota a nota'];
+  if (lesson.kind === 'chords') return [CHORD_MODE[lesson.mode], lesson.chords.map(c => chordLabel(c, getState().nom)).join(' · '), lesson.bpm ? `♩ = ${lesson.bpm}` : null].filter(Boolean);
   const count = songScore(song).notes.filter(n => !n.rest).length;
   const style = song.style ? styleById(song.style).name : null;
   return [style, song.style ? DIFFICULTY[song.difficulty] : null, KEY_NAME[song.key], `${song.time}/4`, `♩ = ${song.bpm}`, `${count} notas`].filter(Boolean);
@@ -25,7 +28,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
   const song = lessonSong(lesson);
   const best = instrumentProgress()[lessonKey(lesson)] || 0;
   const chip = color || (song && song.style ? styleById(song.style).color : 'var(--accent)');
-  const sub = lesson.sub || (song ? song.by : '');
+  const sub = chordText(lesson.sub || (song ? song.by : ''));
   const locked = state === 'locked';
   const isSong = lesson.kind === 'song';
   const rhythmOnly = instrumentById(getState().instrument).rhythmOnly;
@@ -55,7 +58,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
     const errs = errorsFor(lessonKey(lesson));
     const score = songScore(hard.song);
     const heat = createStaff($('heatStaff'));
-    heat.render(score, { key: hard.song.key, time: hard.song.time, mode: 'review', clef: rhythmOnly ? 'perc' : 'treble' });
+    heat.render(score, { key: hard.song.key, time: hard.song.time, mode: 'review', clef: rhythmOnly ? 'perc' : lesson.clef || 'treble' });
     let k = 0;
     score.notes.forEach((n, i) => {
       if (n.rest) return;

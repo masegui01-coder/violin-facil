@@ -53,6 +53,7 @@
         <h1>Canciones</h1>
         <p class="muted">Elige un estilo. Puedes aprender cada canción nota a nota o tocarla a tempo.</p>
       </div>
+      <div id="songbook" class="songbook" hidden></div>
       <div class="import-card">
         <div><b>Ensaya tu propia partitura</b><small>Importa un archivo MusicXML (.musicxml, .xml o .mxl) desde MuseScore u otro programa.</small></div>
         <div class="row">
@@ -377,6 +378,38 @@
       </div>
       <p id="chStatus" class="status">&nbsp;</p>
       <button id="chGo" class="btn big" type="button">Empezar</button>
+    </section>
+
+    <!-- Acordes (guitarra y piano) -->
+    <section id="chords" class="screen lesson-screen" hidden>
+      <div class="bar">
+        <button id="cdExit" class="icon-btn" type="button" aria-label="Salir">✕</button>
+        <h2 class="grow">Acordes</h2>
+        <span class="beat-row"><span id="cdBeat" class="beat-dot"></span><b id="cdCounter" class="beat-count"></b></span>
+      </div>
+      <div class="lesson-title"><div><p id="cdEyebrow" class="eyebrow"></p><h2 id="cdTitle"></h2></div><span id="cdChip" class="mode-chip"></span></div>
+      <div id="cdStrip" class="chord-strip" aria-label="Acordes de la lección"></div>
+      <div class="chord-stage">
+        <svg id="cdDiagram" class="board chord-board" role="img" aria-label="Diagrama del acorde"></svg>
+        <div class="chord-now"><small class="muted">Toca</small><b id="cdName">–</b><div class="chord-meter" aria-hidden="true"><i id="cdMeter"></i></div><small id="cdNext" class="muted"></small></div>
+      </div>
+      <div id="cdChanges" class="changes-box" hidden><b id="cdCount">0</b><span>cambios</span><small id="cdTimer">60 s</small><small id="cdBest" class="muted"></small></div>
+      <div id="cdGate" class="mic-gate" hidden>
+        <p><strong>Necesito el micrófono</strong> para oír tus acordes.</p>
+        <p id="cdMicError" class="muted" hidden></p>
+        <button id="cdStartMic" class="btn" type="button">Activar micrófono</button>
+      </div>
+      <p id="cdStatus" class="status">&nbsp;</p>
+      <div id="cdStrumRow" class="tempo-bar" hidden>
+        <div class="seg three" role="group" aria-label="Velocidad"><button type="button" data-cdspeed="0.6">60 %</button><button type="button" data-cdspeed="0.8">80 %</button><button type="button" data-cdspeed="1">100 %</button></div>
+        <label class="switch-row" for="cdClick"><span>Clic del metrónomo (con auriculares)</span><input id="cdClick" type="checkbox" class="switch"></label>
+      </div>
+      <div class="row" style="justify-content:center">
+        <button id="cdDemo" class="btn ghost" type="button"><span data-icon="speaker" class="ic"></span>Escuchar</button>
+        <button id="cdGo" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button>
+        <button id="cdSkip" class="btn ghost small" type="button" hidden>Saltar</button>
+      </div>
+      <p id="cdTip" class="small muted center"></p>
     </section>
 
     <!-- Gimnasio de técnica -->

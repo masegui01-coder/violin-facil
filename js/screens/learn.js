@@ -1,7 +1,7 @@
 // Pestaña Aprender: tarjeta para continuar y mapa del curso por unidades.
 import { $, esc, icon, starsHtml } from '../ui.js';
 import { register } from '../router.js';
-import { lessonKey, lessonTitle, lessonSong } from '../course.js';
+import { lessonKey, lessonTitle, lessonSong, chordText } from '../course.js';
 import { styleById } from '../songs.js';
 import { getState, instrumentProgress } from '../store.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
@@ -40,7 +40,7 @@ function nodeHtml(lesson, unit) {
   const cls = ['node', st, lesson.id === currentId ? 'current' : '', lesson.slot ? 'slot' : ''].join(' ');
   const glyph = st === 'locked' ? 'lock' : lesson.slot ? 'star' : KIND_ICON[lesson.kind];
   const tag = lesson.slot ? `<span class="tag">${esc(styleById(song.style).name)}</span>` : '';
-  const sub = lesson.slot ? (song.by || '') : (lesson.sub || KIND_NAME[lesson.kind]);
+  const sub = lesson.slot ? (song.by || '') : chordText(lesson.sub || KIND_NAME[lesson.kind]);
   return `<button type="button" class="${cls}" data-lesson="${lesson.id}" style="--unit:${unit.color}${slotColor ? ';--slot:' + slotColor : ''}">
     <span class="bubble"><span class="ic">${icon(glyph)}</span></span>
     <span class="node-text"><b>${tag}${esc(lessonTitle(lesson))}</b><small>${esc(sub)}</small>${st === 'done' ? starsHtml(best) : ''}</span>

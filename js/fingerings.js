@@ -56,9 +56,28 @@ function parseKeys(spec, instId) {
   };
 }
 
+// Guitarra en primera posición (hasta el traste 5): la cuerda donde la nota queda más cerca de la cejuela.
+// midi ESCRITO (suena una octava más grave).
+const GUITAR_STRINGS = [40, 45, 50, 55, 59, 64];
+const GUITAR_MAX_FRET = 5;
+const GUITAR_STRING_EU = ['Mi grave', 'La', 'Re', 'Sol', 'Si', 'Mi aguda'];
+export function guitarPosition(writtenMidi) {
+  const sounding = writtenMidi - 12;
+  const options = GUITAR_STRINGS.map((open, i) => ({ string: 6 - i, fret: sounding - open })).filter(o => o.fret >= 0 && o.fret <= GUITAR_MAX_FRET);
+  if (!options.length) return null;
+  return options.sort((a, b) => a.fret - b.fret || a.string - b.string)[0];
+}
+
+const PIANO_OCTAVE = { 2: 'octava grave', 3: 'a la izquierda del Do central', 4: 'junto al Do central', 5: 'octava aguda', 6: 'muy aguda' };
+
 // Devuelve la digitación de una nota escrita o null si no está en las tablas
 export function fingeringFor(rawId, midi) {
   const instId = SAME_AS[rawId] || rawId;
+  if (instId === 'guitar') {
+    const pos = guitarPosition(midi);
+    return pos ? { type: 'fret', ...pos } : null;
+  }
+  if (instId === 'piano') return midi >= 21 && midi <= 108 ? { type: 'key', midi } : null;
   if (instId === 'violin') {
     const f = violinFingering(midi);
     return f ? { type: 'violin', ...f } : null;
@@ -70,7 +89,7 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => instId === 'violin' || instId === 'trumpet';
+export const fingeringsReviewed = instId => ['violin', 'trumpet', 'guitar', 'piano'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };
@@ -79,6 +98,8 @@ export function fingeringText(instId, midi, nom) {
   if (instId === 'violin') return violinText(midi, nom);
   const f = fingeringFor(instId, midi);
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
+  if (f.type === 'fret') return `Cuerda ${f.string} (${GUITAR_STRING_EU[6 - f.string]}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
+  if (f.type === 'key') return midi === 60 ? 'El Do central' : `Tecla ${PIANO_OCTAVE[Math.floor(midi / 12) - 1] || ''}`.trim();
   if (f.type === 'valves') {
     if (!f.valves.length) return 'Sin pistones (al aire)';
     return (f.valves.length === 1 ? 'Pistón ' : 'Pistones ') + f.valves.join(' y ') + (f.slide ? ' · saca la bomba del 3.er pistón' : '');

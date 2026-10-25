@@ -1,20 +1,23 @@
-// Pentagrama en SVG: clave de sol, armadura, compás, figuras, silencios y barras. Se desplaza con la lección.
+// Pentagrama en SVG: clave de sol o de fa, armadura, compás, figuras, silencios y barras. Se desplaza con la lección.
 import { diatonicStep, keySignature, keyCount, accidentalToShow } from './music.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 440;
 const HEIGHT = 200;
-const BOTTOM_Y = 130;          // línea inferior (Mi4)
+const BOTTOM_Y = 130;          // línea inferior (Mi4 en clave de sol, Sol2 en clave de fa)
 const HALF = 7;                // medio espacio entre líneas
 const E4 = 4 * 7 + 2;
-const B4 = E4 + 4;             // a partir del Si4 la plica va hacia abajo
+const G2 = 2 * 7 + 4;
+const BASE = { treble: E4, perc: E4, bass: G2 };
+const BASS_SIG_SHIFT = 14;     // en clave de fa las alteraciones de la armadura van dos octavas más abajo
 const FOCUS_X = 190;           // donde queda la nota actual (deja ver las siguientes y la que suena)
 const NOTE_PAD = 26;
 const SHARP_STEPS = [38, 35, 39, 36, 33, 37, 34];
 const FLAT_STEPS = [34, 37, 33, 36, 32, 35, 31];
 const ACC_GLYPH = { sharp: '♯', flat: '♭', natural: '♮' };
 
-const y = step => BOTTOM_Y - (step - E4) * HALF;
+let base = E4;                 // nota de la línea inferior según la clave
+const y = step => BOTTOM_Y - (step - base) * HALF;
 
 function el(tag, attrs = {}, parent) {
   const node = document.createElementNS(NS, tag);
@@ -31,8 +34,8 @@ function text(parent, x, yy, str, attrs = {}) {
 
 function ledgerSteps(step) {
   const out = [];
-  for (let s = E4 - 2; s >= step; s -= 2) out.push(s);
-  for (let s = E4 + 10; s <= step; s += 2) out.push(s);
+  for (let s = base - 2; s >= step; s -= 2) out.push(s);
+  for (let s = base + 10; s <= step; s += 2) out.push(s);
   return out;
 }
 
@@ -45,11 +48,14 @@ function drawPrefix(g, key, time, clef) {
     // clave de percusión: dos barras gruesas
     [14, 24].forEach(x => el('rect', { x, y: BOTTOM_Y - HALF * 6, width: 6, height: HALF * 4, class: 'st-clef-perc' }, g));
     key = 'C';
+  } else if (clef === 'bass') {
+    text(g, 6, BOTTOM_Y - HALF * 2 + 2, '𝄢', { class: 'st-clef bass' });
   } else {
     text(g, 4, BOTTOM_Y + 9, '𝄞', { class: 'st-clef' });
   }
   const n = keyCount(key);
-  const steps = n >= 0 ? SHARP_STEPS.slice(0, n) : FLAT_STEPS.slice(0, -n);
+  const shift = clef === 'bass' ? BASS_SIG_SHIFT : 0;
+  const steps = (n >= 0 ? SHARP_STEPS.slice(0, n) : FLAT_STEPS.slice(0, -n)).map(st => st - shift);
   steps.forEach((s, i) => text(g, 46 + i * 10, y(s) + (n >= 0 ? 5 : 3), n >= 0 ? '♯' : '♭', { class: 'st-acc' }));
   const tx = 54 + steps.length * 10;
   if (time) {
@@ -79,9 +85,9 @@ function drawNote(g, x, note, sig) {
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: 8, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
   if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
-  if (note.dotted) el('circle', { cx: x + 13, cy: (step - E4) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
+  if (note.dotted) el('circle', { cx: x + 13, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
   if (note.dur === 'w') return;
-  const up = step < B4;
+  const up = step < base + 4; // a partir de la línea central la plica va hacia abajo
   const sx = up ? x + 7.3 : x - 7.3;
   const tip = up ? ny - 42 : ny + 42;
   el('line', { x1: sx, x2: sx, y1: ny, y2: tip, class: 'st-stroke', 'stroke-width': 1.7 }, g);
@@ -104,14 +110,16 @@ export function createStaff(svg) {
   let scroller = null;
   let playhead = null;
   let highlight = null;
+  let highlightLines = null;
 
   const xOfBeat = beat => startX + NOTE_PAD + beat * beatPx;
 
   // mode: learn (nota resaltada), tempo (línea de lectura y duración de cada nota) o review (partitura entera, sin desplazamiento)
-  // clef: 'treble' o 'perc'; sticking: letras de mano (D/I) para cada nota que suena, en orden
+  // clef: 'treble', 'bass' o 'perc'; sticking: letras de mano (D/I) para cada nota que suena, en orden
   function render(score, { key = 'C', time = 4, mode = 'learn', clef = 'treble', sticking = null } = {}) {
     svg.replaceChildren();
     notes = score.notes;
+    base = BASE[clef] || E4;
     const minBeats = Math.min(1, ...notes.map(n => n.beats));
     beatPx = Math.max(48, 28 / minBeats);
     const fixed = el('g', {}, svg);
@@ -125,6 +133,9 @@ export function createStaff(svg) {
     const clip = el('g', { 'clip-path': `url(#${clipId})` }, svg);
     scroller = el('g', { class: 'st-scroll' }, clip);
     highlight = el('rect', { x: 0, y: 14, width: 44, height: HEIGHT - 28, rx: 12, class: 'st-highlight' }, scroller);
+    // las líneas del pentagrama se siguen viendo dentro del resaltado, en un tono más oscuro
+    highlightLines = el('g', { class: 'st-highlight-lines' }, scroller);
+    for (let i = 0; i < 5; i++) el('line', { x1: 0, x2: 44, y1: BOTTOM_Y - i * HALF * 2, y2: BOTTOM_Y - i * HALF * 2 }, highlightLines);
     const sig = keySignature(key);
     score.bars.slice(0, -1).forEach(b => {
       const bx = xOfBeat(b.start + b.beats) - Math.min(16, beatPx * 0.35);
@@ -151,6 +162,7 @@ export function createStaff(svg) {
     playhead = el('line', { x1: FOCUS_X - 10, x2: FOCUS_X - 10, y1: 16, y2: HEIGHT - 16, class: 'st-playhead' }, svg);
     playhead.style.display = mode === 'tempo' ? '' : 'none';
     highlight.style.display = mode === 'learn' ? '' : 'none';
+    highlightLines.style.display = highlight.style.display;
   }
 
   // Desplaza la partitura para que el pulso indicado quede bajo el foco
@@ -168,6 +180,7 @@ export function createStaff(svg) {
     const n = notes[index];
     if (!n) return;
     highlight.setAttribute('x', xOfBeat(n.start) - 22);
+    highlightLines.setAttribute('transform', `translate(${xOfBeat(n.start) - 22} 0)`);
     noteGroups.forEach((g, i) => {
       const cls = g.getAttribute('class');
       if (i === index) g.setAttribute('class', 'st-note current');

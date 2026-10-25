@@ -20,6 +20,7 @@ import './screens/onboarding.js';
 import './screens/longtone.js';
 import './screens/tuningmap.js';
 import './screens/chord.js';
+import './screens/chords.js';
 import './screens/gym.js';
 import './screens/study.js';
 import './screens/band.js';

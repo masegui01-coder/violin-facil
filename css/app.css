@@ -249,6 +249,7 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .st-head-hollow { fill: none; stroke: currentColor; stroke-width: 2.4; }
 .st-acc-note { font-family: var(--f-music), sans-serif; font-size: 20px; fill: currentColor; }
 .st-highlight { fill: var(--accent-soft); }
+.st-highlight-lines line { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); stroke-width: 1.4; }
 .st-playhead { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; opacity: .85; }
 @media (prefers-reduced-motion: reduce) { .st-scroll { transition: none !important; } .node.current .bubble, .ob-staff .n { animation: none; } }
 .target-row { display: grid; grid-template-columns: 1fr 118px; gap: 12px; align-items: center; }
@@ -623,3 +624,48 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .input.narrow { width: 5.5em; }
 .task.past { opacity: .6; }
 b.link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.st-clef.bass { font-size: 50px; }
+
+/* Guitarra y piano: mástil, caja de acorde y teclado */
+.gb-neck { fill: var(--wood); stroke: var(--wood-edge); stroke-width: 1; }
+.gb-fret { stroke: var(--wood-edge); stroke-width: 2; }
+.gb-nut { stroke: var(--ink); stroke-width: 5; }
+.gb-string { stroke: var(--staff); }
+.gb-inlay { fill: var(--wood-edge); opacity: .6; }
+.gb-open { fill: none; stroke: var(--accent); stroke-width: 2; }
+.gb-mute { font: 800 14px var(--f-body); fill: var(--muted); text-anchor: middle; }
+.gb-title { font: 800 17px var(--f-body); fill: var(--ink); text-anchor: middle; }
+.pk-white { fill: #FFFFFF; stroke: var(--staff); stroke-width: 1.2; }
+.pk-black { fill: #1F2733; }
+.pk-white.on, .pk-black.on { fill: var(--accent); }
+.pk-dot { fill: var(--muted); } .pk-dot.on { fill: var(--accent-ink); }
+
+/* Pantalla de acordes */
+.chord-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; }
+.chord-chip { flex: none; min-width: 52px; text-align: center; font-weight: 800; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
+.chord-chip.current { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.chord-chip.done { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chord-chip.miss { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.chord-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; }
+.chord-stage .board { max-height: 220px; }
+.chord-board { max-width: 170px; justify-self: center; }
+.chord-now { display: flex; flex-direction: column; gap: 6px; }
+.chord-now b { font-family: var(--f-display); font-size: 2.4rem; line-height: 1; }
+.chord-meter { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.chord-meter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .08s linear; }
+.chord-meter i.ok { background: var(--ok); }
+.changes-box { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: end; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 16px; }
+.changes-box b { grid-row: span 2; font-size: 3.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.changes-box b.pop { animation: pop .25s ease; }
+.changes-box small:last-child { grid-column: 2; }
+@keyframes pop { 50% { transform: scale(1.18); color: var(--ok); } }
+@media (max-width: 420px) { .chord-stage { grid-template-columns: 1fr; } .chord-now { align-items: center; text-align: center; } }
+.songbook { display: flex; flex-direction: column; gap: 8px; }
+.songbook-head { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; }
+.songbook-head > div:first-child { display: flex; flex-direction: column; }
+.songbook-head small { color: var(--muted); }
+.known-chords { display: flex; flex-wrap: wrap; gap: 6px; }
+.song.locked { opacity: .6; }
+.changes-list { display: flex; flex-direction: column; gap: 6px; }
+.changes-row { display: grid; grid-template-columns: 1fr 90px 36px; gap: 10px; align-items: center; font-weight: 600; }
+.changes-row b { text-align: right; font-variant-numeric: tabular-nums; }

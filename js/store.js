@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false, tourDone: false,
   percLatency: 0, percClick: false,
   history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
+  chordsKnown: {}, changes: {},
 });
 
 function read(key) {
@@ -156,6 +157,25 @@ export function recordErrors(key, missed) {
 
 export function errorsFor(key) {
   return state.errors[progressKey(key)] || null;
+}
+
+// Guitarra y piano: acordes que ya sabes (desbloquean canciones) y récords de cambios en un minuto
+const MAX_CHANGES = 30;
+export const knownChords = () => state.chordsKnown[state.instrument] || [];
+
+export function learnChords(names) {
+  const known = knownChords();
+  const fresh = [...new Set(names)].filter(n => !known.includes(n));
+  if (fresh.length) update({ chordsKnown: { ...state.chordsKnown, [state.instrument]: [...known, ...fresh] } });
+  return fresh;
+}
+
+const changesKey = pair => `${state.instrument}:${pair.join('-')}`;
+export const changesHistory = pair => state.changes[changesKey(pair)] || [];
+
+export function recordChanges(pair, count, day = today()) {
+  const key = changesKey(pair);
+  return update({ changes: { ...state.changes, [key]: [...(state.changes[key] || []), { day, count }].slice(-MAX_CHANGES) } });
 }
 
 const MAX_RECORDINGS = 20;

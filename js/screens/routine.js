@@ -1,12 +1,13 @@
 // «Mi rutina de hoy»: unos 10 minutos encadenados con un solo botón y un cofre sorpresa al terminar.
-// 1) sonido (notas tenidas o pulso), 2) técnica del día, 3) repertorio (tarea de la banda, pasaje difícil o siguiente lección).
+// 1) sonido (notas tenidas, pulso o cambios de acordes), 2) técnica del día, 3) repertorio (tarea de la banda, pasaje difícil o siguiente lección).
 import { $, toast, icon } from '../ui.js';
 import { go } from '../router.js';
 import { technique, MAJOR_KEYS, keyLabel } from '../generate.js';
 import { instrumentById } from '../instruments.js';
 import { noteLabel, parseNote } from '../music.js';
 import { openChest, CARDS, THEMES } from '../rewards.js';
-import { getState, update, today } from '../store.js';
+import { getState, update, today, knownChords } from '../store.js';
+import { chordLabel } from '../chords.js';
 import { launch, nextLesson } from '../launch.js';
 import { RUDIMENTS, rudimentLesson } from './perc-tools.js';
 import { tuningStats } from './tuningmap.js';
@@ -16,6 +17,7 @@ const KINDS = ['scale', 'arpeggio', 'thirds'];
 const KIND_NAME = { scale: 'Escala', arpeggio: 'Arpegio', thirds: 'Terceras' };
 const START_BPM = 60;
 const LONGTONE_SECS = 16;
+const CHANGES_TARGET = 30;
 
 let routine = null;
 
@@ -40,6 +42,14 @@ function techniqueLesson(inst) {
   return { lesson: { id, kind: 'song', song: technique(kind, key, inst, bpm), fixedSpeed: true, gym: { id, bpm } }, title: `${KIND_NAME[kind]} de ${keyLabel(key)} a ${bpm} BPM` };
 }
 
+// Guitarra y piano: un minuto de cambios entre los dos últimos acordes que has aprendido
+function chordWarmup() {
+  const known = knownChords();
+  if (known.length < 2) return null;
+  const [a, b] = known.slice(-2);
+  return { title: `Cambios de un minuto: ${chordLabel(a, getState().nom)} y ${chordLabel(b, getState().nom)}`, lesson: { id: `rt-changes-${a}-${b}`, kind: 'chords', mode: 'changes', title: `Cambios {${a}}–{${b}}`, pair: [a, b], chords: [a, b], target: CHANGES_TARGET } };
+}
+
 async function buildSteps() {
   const inst = instrumentById(getState().instrument);
   const steps = [];
@@ -48,6 +58,11 @@ async function buildSteps() {
     steps.push({ title: pulse.name, lesson: rudimentLesson(pulse, best('rud-pulse') || START_BPM), mode: 'tempo' });
     const r = RUDIMENTS[1 + (dayNumber() % (RUDIMENTS.length - 1))];
     steps.push({ title: r.name, lesson: rudimentLesson(r, best('rud-' + r.id) || START_BPM), mode: 'tempo' });
+  } else if (inst.polyphonic) {
+    const warm = chordWarmup();
+    if (warm) steps.push(warm);
+    const t = techniqueLesson(inst);
+    steps.push({ title: t.title, lesson: t.lesson, mode: 'tempo' });
   } else {
     const midi = weakNote(inst);
     steps.push({ title: `Notas tenidas: ${noteLabel({ midi }, getState().nom, inst.id !== 'violin')}`, longtone: midi });

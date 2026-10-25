@@ -1,5 +1,6 @@
 // Perfiles de instrumento. Las partituras están siempre en notas ESCRITAS (lo que lee el músico);
 // el micrófono oye notas REALES. transpose = semitonos que hay que sumar a la escrita para obtener la real.
+// La guitarra se escribe una octava por encima de como suena. polyphonic: toca acordes (se reconocen por el cromagrama).
 
 export const INSTRUMENTS = [
   {
@@ -41,6 +42,16 @@ export const INSTRUMENTS = [
     id: 'oboe', name: 'Oboe', family: 'madera', transpose: 0, written: [58, 93], minHz: 220, maxHz: 1900,
     board: 'keys', firstNotes: ['B4', 'A4', 'G4', 'E4', 'D4'], bandKey: 'Bb',
     blurb: 'Doble caña, en Do',
+  },
+  {
+    id: 'guitar', name: 'Guitarra', family: 'pulsada', polyphonic: true, transpose: -12, written: [52, 81], minHz: 70, maxHz: 1100,
+    board: 'fretboard', firstNotes: ['E5', 'B4', 'G4'], bandKey: 'G',
+    blurb: 'Acordes, rasgueo y punteo',
+  },
+  {
+    id: 'piano', name: 'Piano', family: 'tecla', polyphonic: true, transpose: 0, written: [36, 96], minHz: 60, maxHz: 2100,
+    board: 'keyboard', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C',
+    blurb: 'Piano o teclado, las dos manos',
   },
   {
     id: 'percussion', name: 'Percusión', family: 'percusion', rhythmOnly: true, transpose: 0, written: [72, 72], minHz: 180, maxHz: 1600,

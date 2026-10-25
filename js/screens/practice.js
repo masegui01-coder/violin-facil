@@ -24,8 +24,15 @@ export async function withMic(gateId, errId) {
 }
 
 // ---------- Afinador ----------
-// Violín: las cuatro cuerdas. Viento: cromático, con la nota escrita y, si transporta, la real.
-const isViolin = () => getState().instrument === 'violin';
+// Violín y guitarra: sus cuerdas al aire. Viento y piano: cromático, con la nota escrita y, si transporta, la real.
+// Guitarra: notas escritas (una octava por encima de como suenan).
+const GUITAR_STRINGS = [
+  { midi: 52, eu: '6.ª Mi', us: 'E2' }, { midi: 57, eu: '5.ª La', us: 'A2' }, { midi: 62, eu: '4.ª Re', us: 'D3' },
+  { midi: 67, eu: '3.ª Sol', us: 'G3' }, { midi: 71, eu: '2.ª Si', us: 'B3' }, { midi: 76, eu: '1.ª Mi', us: 'E4' },
+];
+const STRINGS_OF = { violin: STRINGS, guitar: GUITAR_STRINGS };
+const openStrings = () => STRINGS_OF[getState().instrument] || null;
+const isViolin = () => !!openStrings();
 
 function showTuning(name, cents, sub) {
   const ok = Math.abs(cents) <= IN_TUNE_CENTS;
@@ -49,7 +56,7 @@ function tunerTick() {
     return;
   }
   const det = p.midi;
-  const near = STRINGS.reduce((a, b) => (Math.abs(b.midi - det) < Math.abs(a.midi - det) ? b : a));
+  const near = openStrings().reduce((a, b) => (Math.abs(b.midi - det) < Math.abs(a.midi - det) ? b : a));
   const cents = (det - near.midi) * 100;
   if (Math.abs(cents) > 300) { $('tunerCents').textContent = 'Oigo ' + noteLabel({ midi: Math.round(det) }, nom) + ': toca una cuerda al aire'; return; }
   const ok = showTuning(nom === 'us' ? near.us : near.eu, cents, '');
@@ -59,15 +66,15 @@ function tunerTick() {
 
 // Notas de afinación habituales: cuerdas al aire (violín) o el Si♭ y La de concierto (viento)
 function referenceNotes() {
-  if (isViolin()) return STRINGS.map(s => ({ midi: s.midi, label: getState().nom === 'us' ? s.us : s.eu }));
+  if (isViolin()) return openStrings().map(s => ({ midi: s.midi, label: getState().nom === 'us' ? s.us : s.eu }));
   const inst = instrumentById(getState().instrument);
   return [70, 69, 65].map(real => real - inst.transpose).map(midi => ({ midi, label: noteLabel({ midi }, getState().nom, true) }));
 }
 
 register('tuner', {
   enter() {
-    $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi, !isViolin()), 'us')}</small></button>`).join('');
-    $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
+    $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi + instrumentById(getState().instrument).transpose, !isViolin()), 'us')}</small></button>`).join('');
+    $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : instrumentById(getState().instrument).polyphonic ? `Afinador cromático (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
     $('tunerGate').hidden = audio.micReady();
     $('tunerMicError').hidden = true;
     timer = setInterval(tunerTick, TICK_MS);

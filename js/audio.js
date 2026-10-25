@@ -2,6 +2,7 @@
 import { detectPitch, rms } from './pitch.js';
 import { midiToFreq, freqToMidi } from './music.js';
 import { createOnsetDetector } from './onsets.js';
+import { chromaFromSpectrum } from './chroma.js';
 
 const MIN_RMS = 0.01;
 const MEDIAN_FRAMES = 3;
@@ -9,6 +10,8 @@ const CLICK_MASK_BEFORE_S = 0.02;
 const CLICK_MASK_AFTER_S = 0.13;
 const LOOKAHEAD_S = 0.12;
 const SCHED_MS = 25;
+const CHORD_FFT = 16384;       // resolución fina para separar notas graves de guitarra y piano
+const CHORD_SMOOTHING = 0.5;
 
 const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600 };
 
@@ -36,7 +39,14 @@ export async function startMic() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   const analyser = c.createAnalyser();
   analyser.fftSize = 2048;
-  c.createMediaStreamSource(stream).connect(analyser);
+  const source = c.createMediaStreamSource(stream);
+  source.connect(analyser);
+  const chordAnalyser = c.createAnalyser();
+  chordAnalyser.fftSize = CHORD_FFT;
+  chordAnalyser.smoothingTimeConstant = CHORD_SMOOTHING;
+  source.connect(chordAnalyser);
+  state.chordAnalyser = chordAnalyser;
+  state.spectrum = new Float32Array(chordAnalyser.frequencyBinCount);
   state.stream = stream;
   state.analyser = analyser;
   state.buf = new Float32Array(analyser.fftSize);
@@ -62,6 +72,16 @@ export function readPitch() {
   const sorted = [...state.recent].sort((x, y) => x - y);
   const freq = sorted[Math.floor(sorted.length / 2)];
   return { freq, midi: freqToMidi(freq) - state.transpose, level };
+}
+
+// Cromagrama actual (12 valores) para reconocer acordes; null si la app está sonando
+export function readChroma() {
+  if (!state.chordAnalyser || performance.now() < state.muteUntil) return null;
+  state.analyser.getFloatTimeDomainData(state.buf);
+  const level = rms(state.buf);
+  if (level < MIN_RMS) return { chroma: null, level };
+  state.chordAnalyser.getFloatFrequencyData(state.spectrum);
+  return { chroma: chromaFromSpectrum(state.spectrum, state.ctx.sampleRate, CHORD_FFT, Math.max(60, state.minHz * 0.9), 2000), level };
 }
 
 function voice(c, midi, start, seconds, peak = 0.16) {
@@ -105,6 +125,30 @@ export function playScore(notes, bpm, onNote) {
     oscs.forEach(o => { try { o.stop(); } catch (e) { /* ya parado */ } });
     state.muteUntil = 0;
   };
+}
+
+// Rasgueo de un acorde (notas REALES, de grave a aguda) con sonido de cuerda pulsada. Tapa el micrófono mientras suena.
+const STRUM_GAP_S = 0.018;
+const STRUM_PEAK = 0.12;
+export function strum(soundingMidis, at = null, seconds = 1.6) {
+  const c = ctx();
+  const t0 = at ?? c.currentTime + 0.05;
+  [...soundingMidis].sort((a, b) => a - b).forEach((m, i) => {
+    const t = t0 + i * STRUM_GAP_S;
+    const osc = c.createOscillator(), filt = c.createBiquadFilter(), gain = c.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = midiToFreq(m);
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(3200, t);
+    filt.frequency.exponentialRampToValueAtTime(700, t + seconds);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(STRUM_PEAK / Math.sqrt(soundingMidis.length), t + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0005, t + seconds);
+    osc.connect(filt).connect(gain).connect(c.destination);
+    osc.start(t);
+    osc.stop(t + seconds + 0.05);
+  });
+  state.muteUntil = Math.max(state.muteUntil, performance.now() + (t0 - c.currentTime + seconds * 0.6) * 1000);
 }
 
 // Acorde de fondo con notas REALES (sin transponer). Con «seconds» suena ese tiempo y tapa el micrófono.

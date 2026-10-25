@@ -3,11 +3,17 @@ import { SONGS, songById, octaveShiftFor } from './songs.js';
 import { instrumentById } from './instruments.js';
 import { windUnits } from './course-winds.js';
 import { percUnits } from './course-perc.js';
+import { guitarUnits } from './course-guitar.js';
+import { pianoUnits } from './course-piano.js';
+import { songbookById, songbookLesson } from './songbook.js';
+import { chordLabel } from './chords.js';
+import { getState } from './store.js';
 
 const theory = (id, title, cards) => ({ id, kind: 'theory', title, cards });
-const notes = (id, title, sub, list) => ({ id, kind: 'notes', title, sub, notes: list });
+// extra: clave ('bass') o dedos bajo las notas (piano)
+const notes = (id, title, sub, list, extra = {}) => ({ id, kind: 'notes', title, sub, notes: list, ...extra });
 const song = (id, songId, sub) => ({ id, kind: 'song', songId, sub });
-const exercise = (id, title, sub, meta) => ({ id, kind: 'song', title, sub, song: { id, title, by: 'Ejercicio', style: null, difficulty: 1, ...meta } });
+const exercise = (id, title, sub, meta, extra = {}) => ({ id, kind: 'song', title, sub, song: { id, title, by: 'Ejercicio', style: null, difficulty: 1, ...meta }, ...extra });
 const slots = (count, difficulty) => ({ kind: 'slots', count, difficulty });
 const warmup = (id, title, list) => ({ ...notes(id, title, 'Calentamiento opcional', list), optional: true });
 
@@ -113,11 +119,18 @@ function pickSongs(count, difficulty, styles, used, inst) {
   return [...picked, ...fallback.slice(0, count - picked.length).map(s => ({ song: s, fromStyles: styles.includes(s.style) }))];
 }
 
-const HELPERS = { theory, notes, song, exercise, slots, warmup };
+// Guitarra y piano: acordes uno a uno, cambios de un minuto y canciones del cancionero a tempo
+const chordsHold = (id, title, sub, chords) => ({ id, kind: 'chords', mode: 'hold', title, sub, chords });
+const changes = (id, a, b, target) => ({ id, kind: 'chords', mode: 'changes', title: `Cambios {${a}}–{${b}}`, sub: `Un minuto: ¿cuántos cambios? Meta: ${target}`, pair: [a, b], chords: [a, b], target });
+const sbSong = (id, songbookId, sub) => ({ ...songbookLesson(songbookById(songbookId)), id, sub });
+
+const HELPERS = { theory, notes, song, exercise, slots, warmup, chordsHold, changes, sbSong };
+
+const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, piano: pianoUnits };
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);
-  const units = inst.id === 'violin' ? UNITS : inst.rhythmOnly ? percUnits(HELPERS) : windUnits(inst, HELPERS);
+  const units = inst.id === 'violin' ? UNITS : inst.rhythmOnly ? percUnits(HELPERS) : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : windUnits(inst, HELPERS);
   const used = new Set();
   return units.map(unit => ({
     ...unit,
@@ -138,8 +151,13 @@ export function lessonSong(lesson) {
   return lesson.song || (lesson.songId ? songById(lesson.songId) : null);
 }
 
+// Los títulos llevan los acordes entre llaves («{Am}») para escribirlos en la nomenclatura elegida
+export function chordText(text, nom = getState().nom) {
+  return String(text || '').replace(/\{([^}]+)\}/g, (_, name) => chordLabel(name, nom));
+}
+
 export function lessonTitle(lesson) {
-  return lesson.title || lessonSong(lesson)?.title || '';
+  return chordText(lesson.title || lessonSong(lesson)?.title || '');
 }
 
 const START_UNIT = { new: 0, basic: 3, fluent: UNITS.length };
