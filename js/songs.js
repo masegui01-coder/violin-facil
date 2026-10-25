@@ -28,6 +28,10 @@ export const SONGS = [
   { id: 'minueto', title: 'Minueto en Sol', by: 'C. Petzold (cuaderno de A. M. Bach)', style: 'clasica', difficulty: 2, key: 'G', time: 3, bpm: 100,
     score: '| D5q G4e A4e B4e C5e | D5q G4q G4q | E5q C5e D5e E5e F#5e | G5q G4q G4q | C5q D5e C5e B4e A4e | B4q C5e B4e A4e G4e | F#4q G4e A4e B4e G4e | A4h. | D5q G4e A4e B4e C5e | D5q G4q G4q | E5q C5e D5e E5e F#5e | G5q G4q G4q | C5q D5e C5e B4e A4e | B4q C5e B4e A4e G4e | A4q B4e A4e G4e F#4e | G4h. |' },
 
+  { id: 'elisa', title: 'Para Elisa (tema)', by: 'L. van Beethoven', style: 'clasica', difficulty: 2, key: 'Am', time: 3, bpm: 66,
+    score: '| Rq Rq E5e D#5e | E5e D#5e E5e B4e D5e C5e | A4q Re C4e E4e A4e | B4q Re E4e G#4e B4e | C5q Re E4e E5e D#5e | E5e D#5e E5e B4e D5e C5e | A4q Re C4e E4e A4e | B4q Re E4e C5e B4e | A4h. |' },
+  { id: 'quinta', title: 'Quinta sinfonía (comienzo)', by: 'L. van Beethoven', style: 'clasica', difficulty: 1, key: 'Cm', time: 2, bpm: 100,
+    score: '| Re G4e G4e G4e | Eb4h | Re F4e F4e F4e | D4h | Re G4e G4e G4e | Eb4e Ab4e Ab4e Ab4e | G4e Eb5e Eb5e Eb5e | C5h |' },
   // ---------- Folk y country ----------
   { id: 'susanna', title: 'Oh! Susanna', by: 'S. Foster', style: 'folk', difficulty: 1, key: 'D', time: 4, bpm: 100, pickup: 1,
     score: '| D4e E4e | F#4q A4q A4q. B4e | A4q F#4q D4q. E4e | F#4q F#4q E4q D4q | E4h. D4e E4e | F#4q A4q A4q. B4e | A4q F#4q D4q. E4e | F#4q F#4q E4q E4q | D4h. Rq | G4h G4h | B4q B4h B4q | A4q A4q F#4q D4q | E4h. D4e E4e | F#4q A4q A4q. B4e | A4q F#4q D4q. E4e | F#4q F#4q E4q E4q | D4h. |' },
@@ -38,6 +42,10 @@ export const SONGS = [
   { id: 'greensleeves', title: 'Greensleeves', by: 'Tradicional inglesa', style: 'folk', difficulty: 3, key: 'Am', time: 3, bpm: 92, pickup: 1,
     score: '| A4q | C5h D5q | E5q. F5e E5q | D5h B4q | G4q. A4e B4q | C5h A4q | A4q. G#4e A4q | B4h G#4q | E4h A4q | C5h D5q | E5q. F5e E5q | D5h B4q | G4q. A4e B4q | C5q. B4e A4q | G#4q. F#4e G#4q | A4h |' },
 
+  { id: 'scarborough', title: 'Scarborough Fair (primera frase)', by: 'Tradicional inglesa', style: 'folk', difficulty: 2, key: 'C', time: 3, bpm: 92,
+    score: '| D4h D4q | A4h A4q | E4q. F4e E4q | D4h. | Rq A4q C5q | D5h C5q | A4q B4q G4q | A4h. |' },
+  { id: 'yankee', title: 'Yankee Doodle', by: 'Canción tradicional estadounidense', style: 'folk', difficulty: 1, key: 'G', time: 4, bpm: 104,
+    score: '| G4q G4q A4q B4q | G4q B4q A4q D4q | G4q G4q A4q B4q | G4h F#4h | G4q G4q A4q B4q | C5q B4q A4q G4q | F#4q D4q E4q F#4q | G4h G4h |' },
   // ---------- Jazz y blues ----------
   { id: 'saints', title: 'When the Saints Go Marching In', by: 'Tradicional de Nueva Orleans', style: 'jazz', difficulty: 1, key: 'D', time: 4, bpm: 108,
     score: '| Rq D4q F#4q G4q | A4w | Rq D4q F#4q G4q | A4w | Rq D4q F#4q G4q | A4h F#4h | D4h F#4h | E4w | Rq F#4q F#4q E4q | D4h. D4q | F#4q A4h A4q | G4h. Rq | F#4q G4q A4q F#4q | D4h E4h | D4w |' },
@@ -64,6 +72,10 @@ export const SONGS = [
   { id: 'noche-paz', title: 'Noche de paz', by: 'F. X. Gruber', style: 'navidad', difficulty: 2, key: 'D', time: 3, bpm: 76,
     score: '| A4q. B4e A4q | F#4h. | A4q. B4e A4q | F#4h. | E5h E5q | C#5h. | D5h D5q | A4h. | B4h B4q | D5q. C#5e B4q | A4q. B4e A4q | F#4h. | B4h B4q | D5q. C#5e B4q | A4q. B4e A4q | F#4h. | E5h E5q | G5q. E5e C#5q | D5h. | F#5h. | D5q A4q F#4q | A4q. G4e E4q | D4h. |' },
 
+  { id: 'deck', title: 'Deck the Halls', by: 'Villancico tradicional galés', style: 'navidad', difficulty: 2, key: 'F', time: 4, bpm: 100,
+    score: '| C5q. Bb4e A4q G4q | F4q G4q A4q F4q | G4e A4e Bb4e G4e A4q. G4e | F4q E4q F4h | C5q. Bb4e A4q G4q | F4q G4q A4q F4q | G4e A4e Bb4e G4e A4q. G4e | F4q E4q F4h |' },
+  { id: 'adeste', title: 'Adeste fideles', by: 'Himno tradicional (J. F. Wade)', style: 'navidad', difficulty: 2, key: 'G', time: 4, bpm: 84,
+    score: '| G4h D4q G4q | A4h D4h | B4q A4q B4q C5q | B4h A4q G4q | G4h F#4q E4q | F#4q G4q A4q B4q | F#4h E4q. D4e | D4w |' },
   // ---------- Populares ----------
   { id: 'mary', title: 'María tenía un corderito', by: 'Canción infantil tradicional', style: 'populares', difficulty: 1, key: 'D', time: 4, bpm: 92,
     score: '| F#4q E4q D4q E4q | F#4q F#4q F#4h | E4q E4q E4h | F#4q A4q A4h | F#4q E4q D4q E4q | F#4q F#4q F#4q F#4q | E4q E4q F#4q E4q | D4w |' },
@@ -73,6 +85,16 @@ export const SONGS = [
     score: '| D4q E4q F#4q D4q | D4q E4q F#4q D4q | F#4q G4q A4h | F#4q G4q A4h | A4e B4e A4e G4e F#4q D4q | A4e B4e A4e G4e F#4q D4q | D4q A3q D4h | D4q A3q D4h |' },
   { id: 'cumple', title: 'Cumpleaños feliz', by: 'M. y P. Hill', style: 'populares', difficulty: 2, key: 'D', time: 3, bpm: 100, pickup: 1,
     score: '| A4e. A4s | B4q A4q D5q | C#5h A4e. A4s | B4q A4q E5q | D5h A4e. A4s | A5q F#5q D5q | C#5q B4q G5e. G5s | F#5q D5q E5q | D5h |' },
+  { id: 'mcdonald', title: 'En la granja de Pepito (Old MacDonald)', by: 'Canción infantil tradicional', style: 'populares', difficulty: 1, key: 'G', time: 4, bpm: 100,
+    score: '| G4q G4q G4q D4q | E4q E4q D4h | B4q B4q A4q A4q | G4h. D4q | G4q G4q G4q D4q | E4q E4q D4h | B4q B4q A4q A4q | G4w |' },
+  { id: 'london', title: 'El puente de Londres', by: 'Canción infantil tradicional', style: 'populares', difficulty: 1, key: 'C', time: 4, bpm: 96,
+    score: '| G4q. A4e G4q F4q | E4q F4q G4h | D4q E4q F4h | E4q F4q G4h | G4q. A4e G4q F4q | E4q F4q G4h | D4h G4h | E4q C4h. |' },
+  { id: 'claro-luna', title: 'Al claro de la luna', by: 'Canción popular francesa', style: 'populares', difficulty: 1, key: 'G', time: 4, bpm: 88,
+    score: '| G4q G4q G4q A4q | B4h A4h | G4q B4q A4q A4q | G4w | G4q G4q G4q A4q | B4h A4h | G4q B4q A4q A4q | G4w | A4q A4q A4q A4q | E4h E4h | A4q G4q F#4q E4q | D4w | G4q G4q G4q A4q | B4h A4h | G4q B4q A4q A4q | G4w |' },
+  { id: 'juanito', title: 'Juanito (Hänschen klein)', by: 'Canción infantil alemana', style: 'populares', difficulty: 1, key: 'G', time: 4, bpm: 96,
+    score: '| D5q B4q B4h | C5q A4q A4h | G4q A4q B4q C5q | D5q D5q D5h | D5q B4q B4h | C5q A4q A4h | G4q B4q D5q D5q | G4w |' },
+  { id: 'bollitos', title: 'Bollitos calientes', by: 'Canción infantil inglesa', style: 'populares', difficulty: 1, key: 'G', time: 4, bpm: 80,
+    score: '| B4q A4q G4h | B4q A4q G4h | G4e G4e G4e G4e A4e A4e A4e A4e | B4q A4q G4h |' },
 ];
 
 // Partituras importadas por el usuario (MusicXML): no forman parte de los estilos del curso

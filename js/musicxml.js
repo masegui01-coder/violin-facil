@@ -5,8 +5,8 @@ import { unzipMusicXml } from './unzip.js';
 import { fingering, spell } from './music.js';
 
 const STEP_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-const MAJOR = { 0: 'C', 1: 'G', 2: 'D', 3: 'A', 4: 'E', '-1': 'F', '-2': 'Bb', '-3': 'Eb' };
-const MINOR = { 0: 'Am', 1: 'Em', 2: 'Bm', 3: 'F#m', '-1': 'Dm', '-2': 'Gm' };
+const MAJOR = { 0: 'C', 1: 'G', 2: 'D', 3: 'A', 4: 'E', 5: 'B', 6: 'F#', '-1': 'F', '-2': 'Bb', '-3': 'Eb', '-4': 'Ab', '-5': 'Db', '-6': 'Gb' };
+const MINOR = { 0: 'Am', 1: 'Em', 2: 'Bm', 3: 'F#m', 4: 'C#m', 5: 'G#m', 6: 'D#m', '-1': 'Dm', '-2': 'Gm', '-3': 'Cm', '-4': 'Fm', '-5': 'Bbm', '-6': 'Ebm' };
 const GLYPHS = [['w', false, 4], ['h', true, 3], ['h', false, 2], ['q', true, 1.5], ['q', false, 1], ['e', true, 0.75], ['e', false, 0.5], ['s', true, 0.375], ['s', false, 0.25]];
 const BEAT_UNIT = { whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25 };
 const DEFAULT_BPM = 80;

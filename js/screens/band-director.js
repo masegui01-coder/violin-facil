@@ -15,6 +15,7 @@ import { homeView } from './director-home.js';
 import { tasksView, taskDetail, setTaskFilter } from './director-tasks.js';
 import { membersView, memberDetail, setMemberSort, setMemberFamily } from './director-members.js';
 import { agendaView, moreView, printReport, setTuneInst } from './director-more.js';
+import { openLibraryUpload } from './band-library.js';
 
 const NAV = [['home', 'Inicio'], ['tasks', 'Tareas'], ['members', 'Músicos'], ['agenda', 'Agenda'], ['more', 'Más']];
 const VIEWS = { home: homeView, tasks: tasksView, members: membersView, agenda: agendaView, more: moreView };
@@ -118,7 +119,13 @@ async function act(key, el, ctx, reload, rerender) {
     case 'nav': tab = ALIAS[arg] || arg; closeSheet(); rerender(); window.scrollTo(0, 0); return;
     case 'tfilter': setTaskFilter(arg); rerender(); return;
     case 'mfamily': setMemberFamily(arg); rerender(); return;
-    case 'new-task': openTaskForm(b, ctx.members, async task => { await api.createTask(b.bandId, task); toast('Tarea creada'); reload(); }); return;
+    case 'new-task': openTaskForm(b, ctx.members, async task => { await api.createTask(b.bandId, task); toast('Tarea creada'); reload(); }, { library: ctx.library || [] }); return;
+    case 'lib-add': openLibraryUpload(ctx, reload); return;
+    case 'lib-task': {
+      const item = ctx.library.find(l => l.id === arg);
+      openTaskForm(b, ctx.members, async task => { await api.createTask(b.bandId, task); toast('Tarea creada'); reload(); }, { library: ctx.library, preset: { title: item.title, parts: item.parts } });
+      return;
+    }
     case 'task': openSheet(ctx, taskDetail(ctx, ctx.tasks.find(t => t.id === arg)), reload, rerender); return;
     case 'member': openSheet(ctx, memberDetail(ctx, ctx.members.find(m => m.id === arg)), reload, rerender); return;
     case 'stamp': stampSheet(ctx, arg, reload, rerender); return;

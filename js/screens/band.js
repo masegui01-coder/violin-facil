@@ -11,7 +11,7 @@ import { memberView, bindMember } from './band-member.js';
 
 export { pendingBandLesson } from './band-sync.js';
 
-let data = { tasks: [], members: [], progress: [], bandDoc: null, events: [], notices: [], rewards: [] };
+let data = { tasks: [], members: [], progress: [], bandDoc: null, events: [], notices: [], rewards: [], library: [] };
 let joinCode = new URLSearchParams(location.search).get('banda') || '';
 
 const body = html => { $('bandBody').innerHTML = html; };
@@ -107,13 +107,13 @@ async function load() {
   body('<p class="empty">Cargando tu banda…</p>');
   try {
     syncActivity(true).catch(() => {});
-    const [tasks, members, bandDoc, events, notices, rewards] = await Promise.all([
+    const [tasks, members, bandDoc, events, notices, rewards, library] = await Promise.all([
       api.listTasks(b.bandId), api.listMembers(b.bandId), api.getBand(b.bandId),
-      api.listSub(b.bandId, 'events'), api.listSub(b.bandId, 'notices'), api.listSub(b.bandId, 'rewards'),
+      api.listSub(b.bandId, 'events'), api.listSub(b.bandId, 'notices'), api.listSub(b.bandId, 'rewards'), api.listSub(b.bandId, 'library').catch(() => []),
     ]);
     adoptMemberDoc(members);
     const progress = await api.listProgress(myBand());
-    data = { tasks, members, progress, bandDoc, events, notices, rewards };
+    data = { tasks, members, progress, bandDoc, events, notices, rewards, library: library.sort((a, b) => a.title.localeCompare(b.title)) };
     show();
   } catch (err) {
     body(`<div class="panel"><h2>No he podido cargar la banda</h2><p class="warn">${esc(cloudErrorText(err))}</p><button type="button" class="btn small" id="retryBand">Reintentar</button></div>`);

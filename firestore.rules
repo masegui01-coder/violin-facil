@@ -142,10 +142,10 @@ service cloud.firestore {
         allow create, update, delete: if isDirector(bandId);
       }
 
-      // Agenda, avisos y premios: los pone el director y los ve toda la banda
+      // Agenda, avisos, premios y archivo de partituras: los pone el director y los ve toda la banda
       match /{sub}/{docId} {
-        allow read: if sub in ['events', 'notices', 'rewards'] && (isMember(bandId) || isDirector(bandId));
-        allow create, update, delete: if sub in ['events', 'notices', 'rewards'] && isDirector(bandId);
+        allow read: if sub in ['events', 'notices', 'rewards', 'library'] && (isMember(bandId) || isDirector(bandId));
+        allow create, update, delete: if sub in ['events', 'notices', 'rewards', 'library'] && isDirector(bandId);
       }
 
       // Un documento por tarea y músico: «<tarea>_<uid>»

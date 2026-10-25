@@ -7,20 +7,39 @@ import { songPayload, partKey, payloadScore } from '../band-api.js';
 import { voiceKeyName } from './band-ui.js';
 import { cloudErrorText } from '../cloud.js';
 
-const MAX_BYTES = 5 * 1024 * 1024;
+export const MAX_BYTES = 5 * 1024 * 1024;
 
-export function openTaskForm(band, members, onSave) {
+// MusicXML con varias partes: cada una a su instrumento y voz; las que no reconozco quedan como acompañamiento
+export function partsFromSong(song) {
+  const mapped = {};
+  song.parts.forEach((p, i) => {
+    const key = p.instrument ? partKey(p.instrument, p.voice) : `acc${i}`;
+    if (mapped[key]) return;
+    mapped[key] = songPayload({ ...song, parsed: p.parsed, key: p.key, time: p.time }, { xml: true, partName: p.name, transpose: p.transpose, percussion: p.percussion });
+  });
+  return mapped;
+}
+
+// Una sola parte (o una obra del repertorio, que está en sonido real) para un instrumento o para todos
+export function singlePart(song) {
+  const chosen = (song.parts || []).find(p => p.id === song.partId);
+  return songPayload(song, chosen ? { transpose: chosen.transpose || 0, percussion: !!chosen.percussion } : {});
+}
+
+// library: obras del archivo de la banda; preset: { title, parts } para crear la tarea a partir de una de ellas
+export function openTaskForm(band, members, onSave, { library = [], preset = null } = {}) {
   const musicians = members.filter(m => m.role !== 'director');
-  const form = { mode: 'tempo', minStars: 2, assignType: 'all', parts: {} };
+  const form = { mode: 'tempo', minStars: 2, assignType: 'all', parts: preset ? { ...preset.parts } : {} };
 
   const seg = (name, options, current) => options.map(([v, label]) => `<button type="button" data-${name}="${v}" aria-pressed="${String(v) === String(current)}">${label}</button>`).join('');
   const partsHtml = () => Object.entries(form.parts).map(([inst, p]) => `<span class="pill ok">${esc(voiceKeyName(inst))}: ${esc(p.partName || p.title)} <button type="button" class="link" data-remove-part="${inst}" aria-label="Quitar">✕</button></span>`).join(' ') || '<span class="muted small">Todavía no hay partitura</span>';
 
   $('sheetBody').innerHTML = `<form class="sheet-body form" id="taskForm">
     <h2>Nueva tarea</h2>
-    <label for="tTitle">Título</label><input id="tTitle" class="input" maxlength="80" placeholder="Ej.: Pasaje del compás 24 al 40">
+    <label for="tTitle">Título</label><input id="tTitle" class="input" maxlength="80" placeholder="Ej.: Pasaje del compás 24 al 40" value="${esc(preset ? preset.title : '')}">
     <label for="tNotes">Indicaciones</label><textarea id="tNotes" maxlength="500" placeholder="Ej.: Cuidad las respiraciones y el picado"></textarea>
     <label for="tSong">Obra</label>
+    ${library.length ? `<select id="tLibrary" class="select"><option value="">Del archivo de la banda…</option>${library.map(l => `<option value="${l.id}">${esc(l.title)}</option>`).join('')}</select>` : ''}
     <div class="row"><select id="tSong" class="select"><option value="">Elige del repertorio…</option>${allSongs().map(s => `<option value="${s.id}">${esc(s.title)}</option>`).join('')}</select>
       <button type="button" class="btn ghost small" id="tImport">Importar MusicXML</button></div>
     <div class="row"><label for="tPartInst" class="small">Para</label><select id="tPartInst" class="select"><option value="all">Todos los instrumentos</option>${INSTRUMENTS.map(i => `<option value="${i.id}">Solo ${esc(i.name)}</option>`).join('')}</select></div>
@@ -48,21 +67,13 @@ export function openTaskForm(band, members, onSave) {
     $('tTargets').innerHTML = list.map(([v, label]) => `<label class="check-chip"><input type="checkbox" value="${v}">${esc(label)}</label>`).join('')
       || (form.assignType === 'members' ? '<span class="muted small">Aún no hay músicos en la banda.</span>' : '');
   };
-  // Un MusicXML de una parte guarda cómo suena lo escrito (<transpose>); las obras del repertorio están en sonido real
   const addPart = song => {
-    const chosen = (song.parts || []).find(p => p.id === song.partId);
-    form.parts = { ...form.parts, [$('tPartInst').value]: songPayload(song, chosen ? { transpose: chosen.transpose || 0, percussion: !!chosen.percussion } : {}) };
+    form.parts = { ...form.parts, [$('tPartInst').value]: singlePart(song) };
     $('tParts').innerHTML = partsHtml();
     if (!$('tTitle').value) $('tTitle').value = song.title;
   };
-  // MusicXML con varias partes: cada una a su instrumento y voz; las que no reconozco quedan como acompañamiento
   const addAllParts = song => {
-    const mapped = {};
-    song.parts.forEach((p, i) => {
-      const key = p.instrument ? partKey(p.instrument, p.voice) : `acc${i}`;
-      if (mapped[key]) return;
-      mapped[key] = songPayload({ ...song, parsed: p.parsed, key: p.key, time: p.time }, { xml: true, partName: p.name, transpose: p.transpose, percussion: p.percussion });
-    });
+    const mapped = partsFromSong(song);
     form.parts = { ...form.parts, ...mapped };
     $('tParts').innerHTML = partsHtml();
     if (!$('tTitle').value) $('tTitle').value = song.title;
@@ -70,6 +81,14 @@ export function openTaskForm(band, members, onSave) {
   };
   const error = msg => { $('tError').textContent = msg; $('tError').hidden = false; };
 
+  $('tLibrary')?.addEventListener('change', e => {
+    const item = library.find(l => l.id === e.target.value);
+    if (!item) return;
+    form.parts = { ...item.parts };
+    $('tParts').innerHTML = partsHtml();
+    if (!$('tTitle').value) $('tTitle').value = item.title;
+    e.target.value = '';
+  });
   $('tSong').addEventListener('change', e => { if (e.target.value) addPart(songById(e.target.value)); e.target.value = ''; });
   $('tImport').addEventListener('click', () => $('tFile').click());
   $('tFile').addEventListener('change', async e => {

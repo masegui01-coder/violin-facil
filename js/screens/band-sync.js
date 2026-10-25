@@ -53,6 +53,15 @@ export function taskLesson(task, member, progress = null) {
   return { id, kind: 'song', song, ...extra };
 }
 
+// Obra del archivo de la banda: se ensaya libremente (sin entregar progreso), en la partichela de cada uno
+export function libraryLesson(item, member) {
+  const part = api.taskPartFor(item, member);
+  if (!part) return null;
+  const { enc, parsed, ...rest } = part;
+  const id = 'lib-' + item.id;
+  return { id, kind: 'song', song: { ...rest, ...api.partFor(part, member.instrument), title: item.title, id, style: null, difficulty: 2 }, accompaniment: accompanimentFor(item, part, null) };
+}
+
 export function practiceTask(task, member, progress) {
   const lesson = taskLesson(task, member, progress);
   if (!lesson) { toast('Esta tarea no tiene partitura para tu instrumento'); return; }

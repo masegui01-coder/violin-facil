@@ -7,6 +7,7 @@ import { weekId } from '../engage.js';
 import { getState, update, today } from '../store.js';
 import { cloudErrorText } from '../cloud.js';
 import { practiceTask } from './band-sync.js';
+import { memberLibraryHtml, practiceLibrary } from './band-library.js';
 import { dueBadge, fmtDay, pct, seatName, taskSubtitle, stampHtml, lightDot, bar, ROLE_NAME } from './band-ui.js';
 
 const NOTICES_SHOWN = 3;
@@ -75,6 +76,7 @@ export function memberView(ctx) {
         ${t.notes ? `<p class="small">${esc(t.notes)}</p>` : ''}${stampHtml(p)}
         <div class="row spread">${dueBadge(t)}<button type="button" class="btn small" data-practice="${t.id}">Ensayar</button></div></div>`;
     }).join('') : '<p class="empty">Tu director todavía no ha puesto tareas.</p>'}
+    ${memberLibraryHtml(ctx, me)}
     ${ctx.rewards.length ? `<h2>Premios de la banda</h2><p class="muted small">Tienes ${points} puntos desde que entraste en la banda.</p>
       ${[...ctx.rewards].sort((x, y) => x.points - y.points).map(r => `<div class="reward ${points >= r.points ? 'won' : ''}"><div><b>${esc(r.title)}</b><small>${points >= r.points ? '¡Conseguido! Díselo a tu director' : `${r.points - points} puntos más`}</small></div>${bar(points / r.points)}</div>`).join('')}` : ''}
     ${duel.length > 1 ? `<h2>Duelo de secciones</h2><p class="muted small">Minutos por músico en los últimos 7 días.</p>
@@ -90,6 +92,7 @@ export function bindMember(ctx, reload) {
     const task = ctx.tasks.find(t => t.id === btn.dataset.practice);
     practiceTask(task, me, ctx.progress.find(p => p.taskId === task.id && p.uid === b.uid));
   }));
+  $('bandBody').querySelectorAll('[data-lib]').forEach(btn => btn.addEventListener('click', () => practiceLibrary(ctx.library.find(l => l.id === btn.dataset.lib), me)));
   $('myVoice').addEventListener('change', async e => {
     const voice = e.target.value ? Number(e.target.value) : null;
     try {

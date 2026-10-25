@@ -97,7 +97,7 @@ export async function updateBand(bandId, patch) {
   await fs.setDoc(fs.doc(db, 'bands', bandId), patch, { merge: true });
 }
 
-const SUBCOLLECTIONS = ['events', 'notices', 'rewards'];
+const SUBCOLLECTIONS = ['events', 'notices', 'rewards', 'library'];
 
 export async function listSub(bandId, name) {
   if (!SUBCOLLECTIONS.includes(name)) throw new Error('Colección desconocida');

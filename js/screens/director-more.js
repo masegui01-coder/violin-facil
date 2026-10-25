@@ -8,6 +8,7 @@ import { getState } from '../store.js';
 import { columns } from '../charts.js';
 import { fmtDate, fmtDay, pct, seatName } from './band-ui.js';
 import { derive, meter, section } from './director-common.js';
+import { libraryCard } from './band-library.js';
 
 const TUNE_OK = 5, TUNE_WARN = 12;
 let tuneInst = null;
@@ -95,7 +96,7 @@ function reports(ctx, d) {
 
 export function moreView(ctx) {
   const d = derive(ctx);
-  return `${invite(ctx)}${rewards(ctx, d)}${tuning(ctx, d)}${reports(ctx, d)}`;
+  return `${libraryCard(ctx)}${invite(ctx)}${rewards(ctx, d)}${tuning(ctx, d)}${reports(ctx, d)}`;
 }
 
 // ---------- Informe para imprimir ----------

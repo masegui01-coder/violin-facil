@@ -26,11 +26,22 @@ const GUIDE = `<div class="guide">
     <li>También puedes abrir el PDF en MuseScore con su función de importar PDF, revisarla y exportarla como en el paso anterior.</li>
     <li>Revisa siempre el resultado: los escáneres a veces confunden alguna nota o figura.</li>
   </ol>
+  <h3>Si la tienes en MIDI</h3>
+  <ol>
+    <li>Ábrela en MuseScore (<i>Archivo → Abrir</i>), revisa que las figuras estén bien y expórtala como MusicXML.</li>
+  </ol>
+  <h3>Partituras gratis y legales</h3>
+  <ol>
+    <li><b>IMSLP</b> (imslp.org): miles de partituras de dominio público en PDF; pásalas a MusicXML como se explica arriba.</li>
+    <li><b>MuseScore.com</b>: muchas obras tradicionales y clásicas que puedes descargar en MusicXML. Usa solo las de dominio público o las que su autor comparte libremente.</li>
+    <li>Las de tu banda o tu profesor: pídeles el MusicXML; casi todos los programas lo exportan.</li>
+  </ol>
   <h3>Consejos</h3>
   <ol>
-    <li>Mejor si solo tiene la parte de violín. Si tiene varias, la app usa la que se llame «Violín» o, si no, la primera.</li>
+    <li>Si la partitura tiene varias partes (una obra para banda, por ejemplo), elige la tuya al importarla: las demás sonarán de fondo como banda virtual.</li>
     <li>De los acordes y dobles cuerdas se toca la nota más aguda.</li>
     <li>Pásate el archivo al móvil por WhatsApp, correo o Drive y elígelo con «Importar partitura».</li>
+    <li>Lo que importas se queda en tu móvil, para tu uso. Respeta los derechos de autor: no compartas partituras que no puedas compartir.</li>
   </ol>
   <a class="btn ghost small" href="${EXAMPLE_URL}" download>Descargar un ejemplo para probar</a>
   <button type="button" class="btn small" data-close>Entendido</button>
