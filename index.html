@@ -99,6 +99,7 @@
     <section id="profile" class="screen" hidden>
       <div class="screen-head"><h1>Tu perfil</h1></div>
       <div id="stats" class="stats"></div>
+      <div id="progressPanel" class="panel"></div>
       <div class="panel account">
         <h2>Tu cuenta</h2>
         <p>No hace falta registrarse. Tu instrumento, tu progreso y tus partituras se guardan <b>en este dispositivo</b>, en este navegador.</p>
@@ -194,6 +195,7 @@
       <div id="tempoBar" class="tempo-bar" hidden>
         <div class="row spread"><span class="muted">Velocidad</span><b id="tempoBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-speed="0.4">40 %</button><button type="button" data-speed="0.5">50 %</button><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
+        <label class="switch-row" id="vbRow" for="vbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="vbToggle" type="checkbox" class="switch"></label>
         <button id="tempoStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button>
       </div>
       <div id="playControls" class="controls" hidden>
@@ -220,7 +222,8 @@
         <div id="resStars" class="big-stars"></div>
         <p id="resText" class="muted"></p>
         <p id="resXp" class="xp-gain"></p>
-        <div id="resTake" class="take" hidden><p class="small muted">Escucha tu toma</p><audio id="resAudio" controls></audio></div>
+        <div id="resTake" class="take" hidden><p class="small muted">Escucha tu toma de hoy</p><audio id="resAudio" controls></audio></div>
+        <div id="resFirst" class="take first" hidden><p id="resFirstLabel" class="small muted"></p><audio id="resFirstAudio" controls></audio></div>
         <div id="resReview" class="review" hidden>
           <div class="review-scroll"><svg id="resStaff" class="staff" role="img" aria-label="Partitura con tus aciertos"></svg></div>
           <p class="small muted"><span class="dot-ok"></span> bien · <span class="dot-bad"></span> fallada o cambiada</p>
@@ -320,6 +323,7 @@
         <div class="row spread"><span class="muted">Velocidad</span><b id="rhBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-rspeed="0.4">40 %</button><button type="button" data-rspeed="0.5">50 %</button><button type="button" data-rspeed="0.6">60 %</button><button type="button" data-rspeed="0.8">80 %</button><button type="button" data-rspeed="1">100 %</button></div>
         <label class="switch-row" for="rhClick"><span>Clic del metrónomo (con auriculares)</span><input id="rhClick" type="checkbox" class="switch"></label>
+        <label class="switch-row" id="rhVbRow" for="rhVbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="rhVbToggle" type="checkbox" class="switch"></label>
         <div class="row" style="justify-content:center"><button id="rhDemo" class="btn ghost" type="button"><span data-icon="speaker" class="ic"></span>Escuchar</button><button id="rhStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button></div>
       </div>
       <div id="rhPlaying" class="controls" hidden><button id="rhRestart" class="btn ghost small" type="button">⟲ Reiniciar</button></div>
@@ -345,6 +349,7 @@
         <button id="ltRef" class="btn ghost small" type="button"><span data-icon="speaker" class="ic"></span>Nota</button>
         <button id="ltGo" class="btn" type="button">Empezar</button>
       </div>
+      <button id="ltNextStep" class="btn big" type="button" hidden>Siguiente paso</button>
       <p class="small muted center">Prueba un crescendo y un diminuendo sin que la línea se mueva: así se trabaja la afinación con dinámicas.</p>
     </section>
 

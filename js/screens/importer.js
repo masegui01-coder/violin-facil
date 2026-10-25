@@ -1,6 +1,8 @@
 // Importar partituras propias en MusicXML: vista previa, nombre y guía para conseguir el archivo.
 import { $, esc, toast } from '../ui.js';
-import { readMusicFile } from '../musicxml.js';
+import { readMusicFile, parseMusicXml } from '../musicxml.js';
+import { encodeScore } from '../passage.js';
+import { getState } from '../store.js';
 import { createStaff } from '../staff.js';
 import { MY_STYLE } from '../songs.js';
 import { addImportedSong } from '../store.js';
@@ -42,23 +44,31 @@ function openSheet(html) {
 
 export function openGuide() { openSheet(GUIDE); }
 
-function showPreview(song, fileName) {
+// Las otras voces se guardan comprimidas para la banda virtual
+export function othersOf(song) {
+  return (song.parts || []).filter(p => p.id !== song.partId).map(p => ({ name: p.name, transpose: p.transpose, percussion: p.percussion, enc: encodeScore(p.parsed) }));
+}
+
+function showPreview(song, fileName, title = null) {
   const count = song.parsed.notes.filter(n => !n.rest).length;
   openSheet(`<div class="sheet-body">
     <p class="eyebrow">Vista previa · ${esc(fileName)}</p>
     <label for="importTitle" class="small muted">Nombre</label>
-    <input id="importTitle" class="title-input" value="${esc(song.title)}" maxlength="80">
+    <input id="importTitle" class="title-input" value="${esc(title || song.title)}" maxlength="80">
+    ${song.parts.length > 1 ? `<label for="importPart" class="small muted">Tu parte (las demás sonarán en la banda virtual)</label>
+      <select id="importPart" class="select">${song.parts.map(p => `<option value="${esc(p.id)}" ${p.id === song.partId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>` : ''}
     <div class="sheet-facts"><span>${count} notas</span><span>${song.parsed.bars.length} compases</span><span>♩ = ${song.bpm}</span></div>
     ${song.warnings.map(w => `<p class="warn">${esc(w)}</p>`).join('')}
     <div class="review-scroll"><svg id="importStaff" class="staff" role="img" aria-label="Vista previa de la partitura"></svg></div>
     <button type="button" class="btn big" id="importSave">Guardar y ensayar</button>
     <button type="button" class="btn ghost small" data-close>Cancelar</button>
   </div>`);
-  createStaff($('importStaff')).render(song.parsed, { key: song.key, time: song.time, mode: 'review' });
+  createStaff($('importStaff')).render(song.parsed, { key: song.key, time: song.time, mode: 'review', clef: song.parts.find(p => p.id === song.partId)?.percussion ? 'perc' : 'treble' });
+  if ($('importPart')) $('importPart').addEventListener('change', e => showPreview({ ...parseMusicXml(song.source, e.target.value), source: song.source }, fileName, $('importTitle').value));
   $('importSave').addEventListener('click', () => {
     const title = $('importTitle').value.trim() || song.title;
-    const saved = { ...song, title, id: 'imp-' + Date.now(), style: MY_STYLE.id, importedAt: new Date().toISOString() };
-    delete saved.warnings;
+    const { by, key, time, bpm, difficulty, parsed, partName } = song;
+    const saved = { title, by, key, time, bpm, difficulty, parsed, partName, others: othersOf(song), id: 'imp-' + Date.now(), style: MY_STYLE.id, importedAt: new Date().toISOString() };
     addImportedSong(saved);
     $('sheet').close();
     toast('Partitura guardada en «Mis partituras»');
@@ -69,7 +79,10 @@ function showPreview(song, fileName) {
 async function importFile(file) {
   if (file.size > MAX_BYTES) { toast('El archivo es demasiado grande para una partitura'); return; }
   try {
-    const song = await readMusicFile(file.name, await file.arrayBuffer());
+    const first = await readMusicFile(file.name, await file.arrayBuffer());
+    // si hay varias partes, se propone la de tu instrumento
+    const mine = first.parts.find(p => p.instrument === getState().instrument);
+    const song = mine && mine.id !== first.partId ? { ...parseMusicXml(first.source, mine.id), source: first.source } : first;
     showPreview(song, file.name);
   } catch (err) {
     openSheet(`<div class="sheet-body"><h2>No he podido leer «${esc(file.name)}»</h2>

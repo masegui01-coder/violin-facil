@@ -24,6 +24,7 @@ function drawValves(svg, f) {
     el('text', { x, y: on ? 96 : 78, class: on ? 'kd-num on' : 'kd-num' }, svg, String(v));
   });
   el('text', { x: W / 2, y: 30, class: 'kd-caption' }, svg, f.valves.length ? 'Pistones' : 'Al aire');
+  if (f.slide) el('text', { x: W / 2, y: 188, class: 'kd-caption' }, svg, '+ bomba del 3.º');
 }
 
 function drawKeys(svg, f, instId) {

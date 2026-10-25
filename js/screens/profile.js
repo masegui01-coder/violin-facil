@@ -3,6 +3,7 @@ import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { STYLES } from '../songs.js';
 import { BADGES } from '../engage.js';
+import { renderProgress } from './progress-ui.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 
@@ -29,6 +30,7 @@ function render() {
   $('stats').innerHTML = [
     [currentStreak(s.streak), 'días seguidos'], [s.xp, 'puntos'], [done, 'lecciones hechas'],
   ].map(([n, label]) => `<div class="stat"><b>${n}</b><span>${label}</span></div>`).join('');
+  renderProgress();
   $('profileStyles').innerHTML = styleGridHtml(s.styles);
   document.querySelectorAll('[data-set-goal]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setGoal) === s.dailyGoal));
   $('profileBadges').innerHTML = BADGES.map(b => `<div class="badge${s.badges.includes(b.id) ? ' on' : ''}" title="${esc(b.desc)}"><span>${s.badges.includes(b.id) ? '★' : '·'}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('');

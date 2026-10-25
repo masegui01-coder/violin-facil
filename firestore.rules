@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Band Flow · «Mi banda»
 // - El director crea la banda y su código de invitación.
-// - Los músicos entran con el código. Solo ven su propio progreso; el director ve el de todos.
+// - Los músicos entran con el código. Solo ven su propio progreso; el director ve el de todos y el jefe de cuerda el de su sección.
 service cloud.firestore {
   match /databases/{db}/documents {
 
@@ -71,7 +71,11 @@ service cloud.firestore {
           (request.resource.data.role == 'member'
             && get(/databases/$(db)/documents/bandCodes/$(request.resource.data.code)).data.bandId == bandId)
         );
-        allow update: if signedIn() && uid == request.auth.uid && request.resource.data.role == resource.data.role;
+        // Cada uno su ficha (sin cambiarse el papel); el director solo la voz y el papel (músico o jefe de cuerda)
+        allow update: if (signedIn() && uid == request.auth.uid && request.resource.data.role == resource.data.role)
+          || (isDirector(bandId) && resource.data.role != 'director'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'voice'])
+              && request.resource.data.role in ['member', 'leader']);
         allow delete: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
       }
 
@@ -80,12 +84,25 @@ service cloud.firestore {
         allow create, update, delete: if isDirector(bandId);
       }
 
+      // Agenda, avisos y premios: los pone el director y los ve toda la banda
+      match /{sub}/{docId} {
+        allow read: if sub in ['events', 'notices', 'rewards'] && (isMember(bandId) || isDirector(bandId));
+        allow create, update, delete: if sub in ['events', 'notices', 'rewards'] && isDirector(bandId);
+      }
+
       // Un documento por tarea y músico: «<tarea>_<uid>»
+      // Lo ve su músico, el director y el jefe de cuerda de ese instrumento
       match /progress/{docId} {
-        allow read: if isDirector(bandId) || (signedIn() && (resource == null || resource.data.uid == request.auth.uid));
+        function me() { return get(/databases/$(db)/documents/bands/$(bandId)/members/$(request.auth.uid)).data; }
+        allow read: if isDirector(bandId) || (signedIn() && (resource == null || resource.data.uid == request.auth.uid
+          || (me().role == 'leader' && resource.data.instrument == me().instrument)));
         allow create, update: if isMember(bandId)
           && request.resource.data.uid == request.auth.uid
-          && docId == request.resource.data.taskId + '_' + request.auth.uid;
+          && docId == request.resource.data.taskId + '_' + request.auth.uid
+          && (resource == null || (request.resource.data.get('stamp', null) == resource.data.get('stamp', null)
+              && request.resource.data.get('comment', null) == resource.data.get('comment', null)));
+        // El director solo pone su sello y su comentario
+        allow update: if isDirector(bandId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stamp', 'comment', 'stampAt']);
       }
     }
   }

@@ -177,7 +177,7 @@ export function stopOnsetCapture() {
 
 let noise = null;
 // Golpe de caja sintético (ruido filtrado) en un instante del reloj de audio
-export function drumHit(time, accent = false) {
+export function drumHit(time, accent = false, level = 1) {
   const c = ctx();
   if (!noise) {
     noise = c.createBuffer(1, c.sampleRate * 0.2, c.sampleRate);
@@ -189,7 +189,7 @@ export function drumHit(time, accent = false) {
   filt.type = 'bandpass';
   filt.frequency.value = 1800;
   filt.Q.value = 0.8;
-  gain.gain.setValueAtTime(accent ? 0.9 : 0.5, time);
+  gain.gain.setValueAtTime((accent ? 0.9 : 0.5) * level, time);
   gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
   src.connect(filt).connect(gain).connect(c.destination);
   src.start(time);
@@ -199,6 +199,45 @@ export function drumHit(time, accent = false) {
 // ¿Este instante coincide con un clic del metrónomo? (para no confundirlo con un golpe)
 export function nearClick(time, latency = 0, windowS = 0.04) {
   return metro.clicks.some(k => Math.abs(time - latency - k) < windowS);
+}
+
+// ---------- Banda virtual: las otras voces de la obra ----------
+const ACCOMP_LOOKAHEAD_S = 1.5;
+const ACCOMP_TICK_MS = 200;
+const ACCOMP_GAIN = 0.05;
+
+// parts: [{notes, transpose (escrita→real), percussion}]. Las notas se programan poco a poco para no saturar el móvil.
+export function playAccompaniment(parts, t0, spb) {
+  const c = ctx();
+  const queue = parts.flatMap(p => p.notes.filter(n => !n.rest).map(n => ({ time: t0 + n.start * spb, dur: n.beats * spb, midi: n.midi + (p.transpose || 0), perc: p.percussion })))
+    .sort((a, b) => a.time - b.time);
+  let i = 0;
+  const live = [];
+  const pump = () => {
+    const until = c.currentTime + ACCOMP_LOOKAHEAD_S;
+    for (; i < queue.length && queue[i].time < until; i++) {
+      const n = queue[i];
+      if (n.time < c.currentTime - 0.05) continue;
+      if (n.perc) { drumHit(n.time, false, 0.35); continue; }
+      const osc = c.createOscillator(), gain = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = midiToFreq(n.midi);
+      gain.gain.setValueAtTime(0, n.time);
+      gain.gain.linearRampToValueAtTime(ACCOMP_GAIN, n.time + 0.03);
+      gain.gain.setValueAtTime(ACCOMP_GAIN, Math.max(n.time + 0.04, n.time + n.dur * 0.9 - 0.05));
+      gain.gain.linearRampToValueAtTime(0, n.time + n.dur * 0.95);
+      osc.connect(gain).connect(c.destination);
+      osc.start(n.time);
+      osc.stop(n.time + n.dur);
+      live.push(osc);
+    }
+  };
+  pump();
+  const timer = setInterval(pump, ACCOMP_TICK_MS);
+  return () => {
+    clearInterval(timer);
+    live.forEach(o => { try { o.stop(); } catch (e) { /* ya parado */ } });
+  };
 }
 
 // ---------- Grabación de la toma ----------
@@ -216,13 +255,17 @@ export function startRecording() {
   } catch (e) { recorder = null; }
 }
 
-// Para la grabación y devuelve una promesa con la URL del audio (o null si no había)
+// Para la grabación y devuelve una promesa con {url, blob} del audio (o null si no había)
 export function stopRecording() {
   if (!recorder || recorder.state === 'inactive') { recorder = null; return Promise.resolve(null); }
   const rec = recorder;
   recorder = null;
   return new Promise(resolve => {
-    rec.onstop = () => resolve(chunks.length ? URL.createObjectURL(new Blob(chunks, { type: rec.mimeType })) : null);
+    rec.onstop = () => {
+      if (!chunks.length) { resolve(null); return; }
+      const blob = new Blob(chunks, { type: rec.mimeType });
+      resolve({ url: URL.createObjectURL(blob), blob });
+    };
     rec.stop();
   });
 }

@@ -8,6 +8,8 @@ const TRUMPET = {
   67: '', 68: '23', 69: '12', 70: '1', 71: '2', 72: '', 73: '12', 74: '1', 75: '2', 76: '', 77: '1', 78: '2', 79: '', 80: '23',
   81: '12', 82: '1', 83: '2', 84: '',
 };
+// Con 1-3 y 1-2-3 la trompeta sale alta: en Fa#3, Sol3, Do#4 y Re4 (escritos) se saca la bomba del 3.er pistón
+const TRUMPET_SLIDE = new Set([54, 55, 61, 62]);
 
 const FLUTE = {
   60: 'T L1 L2 L3 R1 R2 R3 +Do', 61: 'T L1 L2 L3 R1 R2 R3 +Do♯', 62: 'T L1 L2 L3 R1 R2 R3', 63: 'T L1 L2 L3 R1 R2 R3 +Mi♭',
@@ -62,7 +64,7 @@ export function fingeringFor(rawId, midi) {
     return f ? { type: 'violin', ...f } : null;
   }
   if (instId === 'trumpet') {
-    return midi in TRUMPET ? { type: 'valves', valves: TRUMPET[midi].split('').map(Number) } : null;
+    return midi in TRUMPET ? { type: 'valves', valves: TRUMPET[midi].split('').map(Number), slide: TRUMPET_SLIDE.has(midi) } : null;
   }
   const table = WOODWIND[instId];
   return table && midi in table ? parseKeys(table[midi], instId) : null;
@@ -79,7 +81,7 @@ export function fingeringText(instId, midi, nom) {
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
   if (f.type === 'valves') {
     if (!f.valves.length) return 'Sin pistones (al aire)';
-    return (f.valves.length === 1 ? 'Pistón ' : 'Pistones ') + f.valves.join(' y ');
+    return (f.valves.length === 1 ? 'Pistón ' : 'Pistones ') + f.valves.join(' y ') + (f.slide ? ' · saca la bomba del 3.er pistón' : '');
   }
   const parts = [];
   if (f.octave) parts.push('llave de ' + f.octaveName);

@@ -1,5 +1,6 @@
 // Preferencias y progreso guardados solo en este navegador.
-import { advanceStreak } from './engage.js';
+import { advanceStreak, weekId } from './engage.js';
+import { addToWeek } from './report.js';
 
 const KEY = 'violin-facil-v2';
 const LEGACY_KEY = 'violin-facil-v1';
@@ -15,6 +16,7 @@ const DEFAULTS = Object.freeze({
   instrument: 'violin', a4: 440, tuning: {}, gym: {}, practiceLog: {}, band: null,
   freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false, tourDone: false,
   percLatency: 0, percClick: false,
+  history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
 });
 
 function read(key) {
@@ -100,13 +102,13 @@ export function addTuningSamples(samples) {
     const prev = mine[midi] || { n: 0, sum: 0, sumSq: 0 };
     mine[midi] = { n: prev.n + 1, sum: prev.sum + cents, sumSq: prev.sumSq + cents * cents };
   });
-  return update({ tuning: { ...state.tuning, [state.instrument]: mine } });
+  return update({ tuning: { ...state.tuning, [state.instrument]: mine }, history: weekPatch({ tuneAbs: samples.map(x => x.cents) }) });
 }
 
 export function recordGym(exerciseId, bpm) {
   const key = `${state.instrument}:${exerciseId}`;
   if ((state.gym[key] || 0) >= bpm) return state;
-  return update({ gym: { ...state.gym, [key]: bpm } });
+  return update({ gym: { ...state.gym, [key]: bpm }, history: weekPatch({ gym: { id: exerciseId, bpm } }) });
 }
 
 // Práctica fuera de las lecciones (herramientas de Estudio): suma minutos, mantiene la racha y da unos puntos
@@ -121,7 +123,39 @@ function dayPatch(minutes) {
   return {
     practiceLog: { ...state.practiceLog, [day]: Math.round(((state.practiceLog[day] || 0) + minutes) * 10) / 10 },
     streak, freezes,
+    history: weekPatch({ minutes, day }),
   };
+}
+
+// Historial semanal para el informe de mejora (se guardan las últimas 12 semanas)
+const MAX_WEEKS = 12;
+function weekPatch(fact) {
+  const w = weekId();
+  const history = { ...state.history, [w]: addToWeek(state.history[w], fact) };
+  const keys = Object.keys(history).sort();
+  return Object.fromEntries(keys.slice(-MAX_WEEKS).map(k => [k, history[k]]));
+}
+
+export function recordWeek(fact) {
+  return update({ history: weekPatch(fact) });
+}
+
+// Últimas precisiones a tempo y de lectura, para el perfil de habilidades
+export function recordAccuracy(accuracy, reading) {
+  const key = reading ? 'recentReading' : 'recentAcc';
+  return update({ [key]: [...state[key], accuracy].slice(reading ? -10 : -20), history: weekPatch({ accuracy, reading }) });
+}
+
+// Mapa de errores: fallos por nota de cada obra (para pintarlos en la partitura y proponer los compases difíciles)
+export function recordErrors(key, missed) {
+  const full = progressKey(key);
+  const prev = state.errors[full] || { attempts: 0, misses: [] };
+  const misses = missed.map((m, i) => (prev.misses[i] || 0) + (m ? 1 : 0));
+  return update({ errors: { ...state.errors, [full]: { attempts: prev.attempts + 1, misses } } });
+}
+
+export function errorsFor(key) {
+  return state.errors[progressKey(key)] || null;
 }
 
 const MAX_RECORDINGS = 20;

@@ -44,6 +44,7 @@ export function weekId(date = new Date()) {
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
+const practiceDays = s => Object.values(s.practiceLog || {}).filter(m => m > 0).length;
 const countDone = progress => Object.values(progress).filter(v => v > 0).length;
 const countPerfect = progress => Object.values(progress).filter(v => v >= 3).length;
 const songsDone = progress => Object.entries(progress).filter(([k, v]) => k.includes('song:') && v > 0).length;
@@ -61,6 +62,13 @@ export const BADGES = [
   { id: 'map12', name: 'Oído fino', desc: 'Mapa de afinación con 12 notas', test: s => tuningNotes(s.tuning) >= 12 },
   { id: 'daily7', name: 'Retador', desc: '7 retos del día', test: s => Object.keys(s.dailyDone || {}).length >= 7 },
   { id: 'xp1000', name: 'Mil puntos', desc: 'Consigue 1000 puntos', test: s => s.xp >= 1000 },
+  { id: 'atril10', name: 'Atril de bronce', desc: '10 días de práctica', test: s => practiceDays(s) >= 10 },
+  { id: 'atril30', name: 'Atril de plata', desc: '30 días de práctica', test: s => practiceDays(s) >= 30 },
+  { id: 'atril100', name: 'Atril de oro', desc: '100 días de práctica', test: s => practiceDays(s) >= 100 },
+  { id: 'routine7', name: 'Rutina de hierro', desc: '7 rutinas diarias completas', test: s => Object.keys(s.routineDone || {}).length >= 7 },
+  { id: 'week5', name: 'Semana completa', desc: '5 días de práctica en una semana', test: s => Object.values(s.history || {}).some(w => (w.days || []).length >= 5) },
+  { id: 'longtone50', name: 'Sonido redondo', desc: '50 notas tenidas', test: s => (s.longtones || 0) >= 50 },
+  { id: 'passage', name: 'Pasaje dominado', desc: 'Un pasaje al 100 % del tempo', test: s => (s.passagesMastered || 0) >= 1 },
   { id: 'multi', name: 'Multiinstrumentista', desc: 'Lecciones con dos instrumentos', test: s => new Set(Object.keys(s.progress).map(k => (/^[a-z-]+:(lesson|song):/.test(k) ? k.split(':')[0] : 'violin'))).size >= 2 },
 ];
 

@@ -8,6 +8,7 @@ import { instrumentById } from './instruments.js';
 import { checkCelebrations } from './screens/daily.js';
 import { openInstrumentPicker, instrumentIcon } from './screens/instrument-picker.js';
 import { startTour } from './screens/tour.js';
+import { maybeWeeklyReport } from './screens/progress-ui.js';
 import './screens/player.js';
 import './screens/theory.js';
 import './screens/learn.js';
@@ -25,6 +26,7 @@ import './screens/band.js';
 import './screens/social.js';
 import './screens/rhythm.js';
 import './screens/perc-tools.js';
+import './growth.js';
 
 function hydrateIcons(root = document) {
   root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
@@ -41,6 +43,7 @@ function renderTopbar(s) {
   $('instChipName').textContent = instrumentById(s.instrument).name;
   $('instChipIcon').innerHTML = instrumentIcon(s.instrument);
   setReferenceA(s.a4);
+  document.documentElement.dataset.accent = s.theme || 'barniz';
 }
 
 hydrateIcons();
@@ -94,6 +97,7 @@ if (getState().onboarded && !getState().instrumentChosen) {
   });
 } else if (getState().onboarded) {
   maybeTour();
+  if (getState().tourDone) maybeWeeklyReport();
 }
 
 // App instalable (icono en la pantalla de inicio)

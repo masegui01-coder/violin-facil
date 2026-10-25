@@ -8,6 +8,7 @@ import { scoreRhythm, accentContrast, rhythmTip, PERFECT_MS, GOOD_MS, WINDOW_MS 
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
+import { decodeScore } from '../passage.js';
 
 const TICK_MS = 30;
 const SNARE = { letter: 'C', acc: 0, oct: 5, midi: 72 };
@@ -92,6 +93,8 @@ function start() {
   run.expected = run.playable.map(i => run.t0 + run.notes[i].start * run.spb);
   run.notes.forEach((n, i) => { if (!n.rest) staff.setState(i, 'future'); });
   audio.startOnsetCapture(onHits);
+  if (run.stopAccomp) run.stopAccomp();
+  run.stopAccomp = $('rhVbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
   if (getState().percClick) {
     audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: true });
     audio.startMetronome(run.t0 + run.pickup * run.spb);
@@ -104,6 +107,7 @@ function start() {
 
 function stop() {
   audio.stopOnsetCapture();
+  if (run && run.stopAccomp) { run.stopAccomp(); run.stopAccomp = null; }
   audio.stopMetronome();
   if (run) run.playing = false;
   $('rhCountdown').hidden = true;
@@ -123,6 +127,7 @@ function finish() {
   finishLesson({
     lesson: run.lesson, mode: 'tempo', from: run.from, stars, text, title: run.title, accuracy: r.accuracy, speed: run.speed,
     minutes: (performance.now() - run.startedAt) / 60000,
+    missed: r.results.map(x => !['perfect', 'good'].includes(x.status)),
     review: { score: run.score, key: 'C', time: run.time, states, clef: 'perc', sticking: run.sticking },
   });
 }
@@ -144,9 +149,11 @@ function enter({ lesson, from, eyebrow }) {
     lesson, from, title: lessonTitle(lesson) || song.title, score, notes, totalBeats: score.totalBeats,
     playable: notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0),
     sticking: lesson.sticking || song.sticking || null,
-    bpm: song.bpm, time: song.time, pickup: song.pickup || 0, speed: lesson.fixedSpeed ? 1 : getState().speed,
+    bpm: song.bpm, time: song.time, pickup: song.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed),
     playing: false, onsets: [], expected: [],
+    accompaniment: lesson.accompaniment || (song.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
   };
+  $('rhVbRow').hidden = !run.accompaniment.length;
   $('rhEyebrow').textContent = eyebrow || '';
   $('rhTitle').textContent = run.title;
   $('rhGate').hidden = audio.micReady();
@@ -187,3 +194,4 @@ document.querySelectorAll('[data-rspeed]').forEach(b => b.addEventListener('clic
   update({ speed: run.speed });
   renderControls();
 }));
+$('rhVbToggle').addEventListener('change', e => { if (e.target.checked) toast('Ponte auriculares: si el micrófono oye la banda virtual, la confunde con tus golpes'); });

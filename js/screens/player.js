@@ -12,6 +12,7 @@ import { getState, update, addTuningSamples, TOLERANCE_CENTS } from '../store.js
 import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { showPulse, drawPulse } from './pulse.js';
+import { decodeScore } from '../passage.js';
 
 const TICK_MS = 30;
 const HOLD_MS = 250;
@@ -112,7 +113,7 @@ function learnFocus() {
 function learnAdvance(skipped) {
   const prev = run.notes[run.pos];
   staff.setState(run.pos, skipped ? 'miss' : 'done');
-  if (skipped) run.skips++;
+  if (skipped) { run.skips++; run.missed.add(run.pos); }
   else setStatus(PRAISE[run.praise++ % PRAISE.length], 'var(--ok)');
   run.pos++;
   run.hold = 0; run.wrong = 0; run.wrongCounted = false; run.peak = 0; run.releaseWait = 0;
@@ -154,7 +155,7 @@ function learnTick(p, dt) {
   if (run.wrong >= WRONG_MS) {
     $('tName').className = 'name bad';
     setStatus(Math.abs(cents) > 100 ? 'Esa es otra nota' : cents > 0 ? 'Un poco alto: retrocede el dedo' : 'Un poco bajo: adelanta el dedo', 'var(--bad)');
-    if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; }
+    if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; run.missed.add(run.pos); }
   }
 }
 
@@ -189,6 +190,8 @@ function playFrom(beatStart) {
     audio.startMetronome(firstBar + Math.max(0, Math.ceil((countEnd - firstBar) / barLen - 1e-6)) * barLen);
   }
   showPulse(metroVisual());
+  if (run.stopAccomp) run.stopAccomp();
+  run.stopAccomp = $('vbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
   audio.startRecording();
   setStatus('Sigue la línea y toca cada nota cuando llegue');
   renderTempoControls();
@@ -284,10 +287,12 @@ function finish() {
   if (run.finished) return;
   run.finished = true;
   audio.stopMetronome();
+  if (run.stopAccomp) run.stopAccomp();
   const { stars, text } = scoreStars();
   addTuningSamples(run.tuning);
   const minutes = (performance.now() - run.startedAt) / 60000;
-  finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title, minutes, accuracy: scoreAccuracy(), take: audio.stopRecording(), speed: run.speed });
+  finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title, minutes, accuracy: scoreAccuracy(), take: audio.stopRecording(), speed: run.speed,
+    missed: run.playable.map(i => (run.mode === 'tempo' ? !run.notes[i].hit : run.missed.has(i))) });
 }
 
 // ---------- Demo ----------
@@ -316,20 +321,22 @@ function stopDemo() {
 function enter({ lesson, mode, from, eyebrow }) {
   const meta = buildMeta(lesson);
   const score = meta.parsed ? structuredClone(meta.parsed) : parseScore(meta.score);
-  const shift = lesson.songId ? (octaveShiftFor(meta, instrumentById(getState().instrument)) ?? 0) : 0;
+  const shift = lesson.songId || lesson.passage ? (octaveShiftFor(meta, instrumentById(getState().instrument)) ?? 0) : 0;
   if (shift) score.notes.forEach(n => { if (!n.rest) { n.midi += shift; n.oct += shift / 12; } });
   const notes = score.notes.map(n => ({ ...n }));
   const playable = notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0);
   run = {
     lesson, mode, from, title: lessonTitle(lesson), notes, playable, score, bars: score.bars, totalBeats: score.totalBeats,
-    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.fixedSpeed ? 1 : getState().speed,
+    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed), missed: new Set(),
     renderOpts: { key: meta.key, time: meta.time, mode },
     firstBeat: () => notes[playable[0]].start,
     pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0,
     playing: false, finished: false, shown: -1, last: performance.now(), demoStop: null, demoIdx: -1, praise: 0,
     wantMetro: getState().lessonMetro, tuning: [], centsSum: 0, centsN: 0, startedAt: performance.now(),
     oneTake: !!lesson.oneTake,
+    accompaniment: lesson.accompaniment || (meta.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
   };
+  $('vbRow').hidden = !run.accompaniment.length;
   $('lessonEyebrow').textContent = eyebrow || '';
   $('lessonTitle').textContent = run.title;
   $('modeChip').textContent = lesson.oneTake ? 'Una toma' : mode === 'tempo' ? 'A tempo' : 'Nota a nota';
@@ -370,6 +377,7 @@ function leave() {
   if (offBeat) offBeat();
   if (run && run.demoStop) run.demoStop();
   if (run && !run.finished) audio.stopRecording();
+  if (run && run.stopAccomp) run.stopAccomp();
   audio.stopMetronome();
   showPulse(false);
 }
@@ -435,3 +443,4 @@ $('lessonMetro').addEventListener('click', () => {
   update({ lessonMetro: run.wantMetro });
   renderTempoControls();
 });
+$('vbToggle').addEventListener('change', e => { if (e.target.checked) toast('Ponte auriculares: si el micrófono oye la banda virtual, se confunde con tu instrumento'); });

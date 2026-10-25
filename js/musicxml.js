@@ -19,13 +19,6 @@ function glyphFor(beats) {
   return { dur: best[0], dotted: best[1] };
 }
 
-function pickPart(score) {
-  const parts = childrenOf(score, 'part');
-  if (!parts.length) throw new Error('El archivo no tiene ninguna parte con notas');
-  const names = Object.fromEntries(childrenOf(child(score, 'part-list'), 'score-part').map(p => [p.attrs.id, textOf(p, 'part-name')]));
-  return parts.find(p => /viol[ií]n/i.test(names[p.attrs.id] || '')) || parts[0];
-}
-
 function readTempo(part) {
   const sound = (function search(node) {
     for (const c of node.children) {
@@ -61,15 +54,27 @@ function readPitch(noteEl) {
   return Math.abs(alter) <= 1 ? { letter: step, acc: alter, oct, midi } : spell(midi);
 }
 
-export function parseMusicXml(text) {
-  const score = parseXml(text);
-  if (score.name === 'score-timewise') throw new Error('Este MusicXML está en formato «timewise». Expórtalo de nuevo como MusicXML normal.');
-  if (score.name !== 'score-partwise') throw new Error('Esto no parece un archivo MusicXML');
-  const part = pickPart(score);
-  const state = { divisions: 1, key: null, time: null, voice: null, beat: 0 };
+// Instrumento probable según el nombre de la parte (para repartir partichelas y para la banda virtual)
+const NAME_TO_INSTRUMENT = [
+  [/viol[ií]n/i, 'violin'], [/sax\S*\s*(bar[ií]t|bari)|bar[ií]tono/i, 'sax-bari'], [/sax\S*\s*ten|tenor sax/i, 'sax-tenor'],
+  [/sax/i, 'sax'], [/clarinet/i, 'clarinet'], [/trompeta|trumpet|corneta|cornet|fliscorno|flugel/i, 'trumpet'],
+  [/flaut|flute|piccolo/i, 'flute'], [/oboe/i, 'oboe'], [/percus|caja|snare|bombo|drum|plato|cymbal|timbal|bater[ií]a/i, 'percussion'],
+];
+export function guessInstrument(name) {
+  const hit = NAME_TO_INSTRUMENT.find(([re]) => re.test(name || ''));
+  return hit ? hit[1] : null;
+}
+// Voz de la parte: «Clarinete 2», «Trompeta II», «1º Clarinete»…
+export function guessVoice(name) {
+  const m = /(?:^|\s)([1-4])\s*[ºª.]?(?=\s|$)|\b(I{1,3}|IV)\b/.exec(name || '');
+  if (!m) return null;
+  return m[1] ? Number(m[1]) : { I: 1, II: 2, III: 3, IV: 4 }[m[2]];
+}
+
+function readPart(part) {
+  const state = { divisions: 1, key: null, time: null, voice: null, beat: 0, transpose: 0 };
   const notes = [];
   const bars = [];
-  const warnings = [];
   childrenOf(part, 'measure').forEach(measure => {
     const barStart = state.beat;
     measure.children.forEach(el => {
@@ -79,6 +84,8 @@ export function parseMusicXml(text) {
         if (key && state.key === null) state.key = { fifths: Number(textOf(key, 'fifths')), minor: textOf(key, 'mode') === 'minor' };
         const time = child(el, 'time');
         if (time && state.time === null) state.time = { beats: Number(textOf(time, 'beats')), type: Number(textOf(time, 'beat-type')) };
+        const tr = child(el, 'transpose');
+        if (tr) state.transpose = Number(textOf(tr, 'chromatic') || 0) + 12 * Number(textOf(tr, 'octave-change') || 0);
       }
       if (el.name !== 'note' || child(el, 'grace') || child(el, 'cue')) return;
       const staffNo = textOf(el, 'staff');
@@ -108,35 +115,59 @@ export function parseMusicXml(text) {
           Object.assign(prev, glyphFor(prev.beats));
         } else {
           notes.push({ ...pitch, rest: false, beats, start: state.beat, bar: bars.length, ...glyphFor(beats) });
+          if (child(el, 'unpitched')) state.percussion = true;
         }
       }
       state.beat += beats;
     });
     if (state.beat > barStart) bars.push({ start: barStart, beats: state.beat - barStart });
   });
-  const playable = notes.filter(n => !n.rest);
-  if (!playable.length) throw new Error('No he encontrado notas en la partitura');
-  const outOfRange = playable.filter(n => n.midi < LOWEST || n.midi > HIGHEST).length;
-  if (outOfRange) warnings.push(`${outOfRange} ${outOfRange === 1 ? 'nota está' : 'notas están'} fuera del registro del violín que reconoce la app.`);
-  const highPositions = playable.filter(n => n.midi >= LOWEST && n.midi <= HIGHEST && !fingering(n.midi)).length;
-  if (highPositions) warnings.push(`${highPositions} ${highPositions === 1 ? 'nota requiere' : 'notas requieren'} posiciones altas: no mostraré digitación para ellas.`);
   const fifths = state.key ? state.key.fifths : 0;
-  const key = (state.key && state.key.minor ? MINOR : MAJOR)[fifths] || 'C';
-  if (state.key && key === 'C' && fifths !== 0) warnings.push('La armadura no está soportada: las alteraciones se mostrarán junto a cada nota.');
-  const time = state.time ? state.time.beats * 4 / state.time.type : 4;
+  return {
+    parsed: { notes, bars, totalBeats: state.beat },
+    key: (state.key && state.key.minor ? MINOR : MAJOR)[fifths] || 'C', fifths, hasKey: !!state.key,
+    time: state.time ? state.time.beats * 4 / state.time.type : 4,
+    transpose: state.transpose, percussion: !!state.percussion,
+  };
+}
+
+const MAX_PARTS = 24;
+
+// partId: la parte que se quiere ensayar (si no, la de violín o la primera)
+export function parseMusicXml(text, partId = null) {
+  const score = parseXml(text);
+  if (score.name === 'score-timewise') throw new Error('Este MusicXML está en formato «timewise». Expórtalo de nuevo como MusicXML normal.');
+  if (score.name !== 'score-partwise') throw new Error('Esto no parece un archivo MusicXML');
+  const partEls = childrenOf(score, 'part');
+  if (!partEls.length) throw new Error('El archivo no tiene ninguna parte con notas');
+  const names = Object.fromEntries(childrenOf(child(score, 'part-list'), 'score-part').map(p => [p.attrs.id, textOf(p, 'part-name')]));
+  const parts = partEls.slice(0, MAX_PARTS).map(el => {
+    const name = names[el.attrs.id] || el.attrs.id;
+    return { id: el.attrs.id, name, instrument: guessInstrument(name), voice: guessVoice(name), ...readPart(el) };
+  }).filter(p => p.parsed.notes.some(n => !n.rest));
+  if (!parts.length) throw new Error('No he encontrado notas en la partitura');
+  const chosen = parts.find(p => p.id === partId) || parts.find(p => /viol[ií]n/i.test(p.name)) || parts[0];
+  const playable = chosen.parsed.notes.filter(n => !n.rest);
+  const warnings = [];
+  const outOfRange = playable.filter(n => n.midi < LOWEST || n.midi > HIGHEST).length;
+  if (outOfRange && !chosen.percussion) warnings.push(`${outOfRange} ${outOfRange === 1 ? 'nota está' : 'notas están'} fuera del registro que reconoce la app.`);
+  const highPositions = playable.filter(n => n.midi >= LOWEST && n.midi <= HIGHEST && !fingering(n.midi)).length;
+  if (highPositions && !chosen.percussion) warnings.push(`${highPositions} ${highPositions === 1 ? 'nota requiere' : 'notas requieren'} posiciones altas: no mostraré digitación para ellas.`);
+  if (chosen.hasKey && chosen.key === 'C' && chosen.fifths !== 0) warnings.push('La armadura no está soportada: las alteraciones se mostrarán junto a cada nota.');
   const work = child(score, 'work');
   const title = textOf(work, 'work-title') || textOf(score, 'movement-title') || 'Partitura importada';
   const composer = childrenOf(child(score, 'identification'), 'creator').find(c => c.attrs.type === 'composer');
   const hasShort = playable.some(n => n.beats < 1);
   return {
-    title, by: composer ? composer.text.trim() : 'Partitura importada', key, time, bpm: readTempo(part),
+    title, by: composer ? composer.text.trim() : 'Partitura importada', key: chosen.key, time: chosen.time, bpm: readTempo(score),
     difficulty: highPositions || outOfRange ? 3 : hasShort ? 2 : 1, warnings,
-    parsed: { notes, bars, totalBeats: state.beat },
+    parsed: chosen.parsed, partId: chosen.id, partName: chosen.name,
+    parts: parts.map(({ id, name, instrument, voice, parsed, key, time, transpose, percussion }) => ({ id, name, instrument, voice, parsed, key, time, transpose, percussion })),
   };
 }
 
-// Acepta el archivo tal cual lo elige el usuario (.musicxml, .xml o .mxl)
-export async function readMusicFile(name, buffer) {
-  if (/\.mxl$/i.test(name)) return parseMusicXml(await unzipMusicXml(buffer));
-  return parseMusicXml(new TextDecoder().decode(buffer));
+// Acepta el archivo tal cual lo elige el usuario (.musicxml, .xml o .mxl). Devuelve también el texto para cambiar de parte.
+export async function readMusicFile(name, buffer, partId = null) {
+  const text = /\.mxl$/i.test(name) ? await unzipMusicXml(buffer) : new TextDecoder().decode(buffer);
+  return { ...parseMusicXml(text, partId), source: text };
 }

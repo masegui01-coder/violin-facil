@@ -3,19 +3,22 @@ import { $, icon } from '../ui.js';
 import { register, go } from '../router.js';
 import { lessonKey } from '../course.js';
 import { createStaff } from '../staff.js';
-import { getState, recordResult } from '../store.js';
+import { getState, recordResult, update } from '../store.js';
 import { launch, nextLesson } from '../launch.js';
+import { saveTake } from '../takes.js';
+
+const FIRST_TAKE_MIN_DAYS = 7;
 
 const ORIGIN_TAB = { course: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
 const reviewStaff = createStaff($('resStaff'));
 let ctx = null;
 
 // Cierra una lección: guarda estrellas, minutos y avisa (evento «lesson-finished») a quien escuche, por ejemplo «Mi banda»
-export function finishLesson({ lesson, mode, from, stars, text, title, record = true, review = null, minutes = 0, accuracy = null, take = null, speed = 1 }) {
+export function finishLesson({ lesson, mode, from, stars, text, title, record = true, review = null, minutes = 0, accuracy = null, take = null, speed = 1, missed = null }) {
   const before = getState().xp;
   if (record && stars > 0) recordResult(lessonKey(lesson), stars, minutes);
-  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed } }));
-  go('result', { lesson, mode, from, stars, text, title, review, take, xp: getState().xp - before });
+  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed, missed } }));
+  go('result', { lesson, mode, from, stars, text, title, review, take, speed, xp: getState().xp - before });
 }
 
 const backToOrigin = () => go(ORIGIN_TAB[ctx.from] || 'learn');
@@ -31,6 +34,12 @@ function primaryAction() {
   if (from === 'course' && mode !== 'memory') {
     const next = nextLesson(lesson.id) || nextLesson();
     if (next) return { label: 'Siguiente lección', run: () => launch(next, { from: 'course' }) };
+  }
+  // Tempo adaptativo en canciones a tempo: más despacio si cuesta, más rápido si sale perfecta
+  if (mode === 'tempo' && lesson.kind === 'song' && !lesson.oneTake) {
+    const speed = ctx.speed || 1;
+    if (stars <= 1 && speed > 0.4) return { label: `Repetir al ${Math.round((speed - 0.1) * 100)} %`, run: () => { update({ speed: Math.round((speed - 0.1) * 10) / 10 }); launch(lesson, { mode, from }); } };
+    if (stars === 3 && speed < 1) return { label: `Probar al ${Math.round((speed + 0.1) * 100)} %`, run: () => { update({ speed: Math.round((speed + 0.1) * 10) / 10 }); launch(lesson, { mode, from }); } };
   }
   return { label: 'Continuar', run: backToOrigin };
 }
@@ -53,7 +62,20 @@ function enter(params) {
   $('resXp').textContent = xp > 0 ? `+${xp} puntos` : '';
   renderReview(params.review);
   $('resTake').hidden = true;
-  if (params.take) params.take.then(url => { if (url && ctx === params) { $('resAudio').src = url; $('resTake').hidden = false; } });
+  $('resFirst').hidden = true;
+  if (params.take) params.take.then(async take => {
+    if (!take || ctx !== params) return;
+    $('resAudio').src = take.url;
+    $('resTake').hidden = false;
+    // la primera toma de esta obra, si es de hace una semana o más: para oír cuánto has mejorado
+    const prev = await saveTake(`${getState().instrument}:${lessonKey(params.lesson)}`, take.blob);
+    const days = prev ? Math.floor((Date.now() - prev.first.at) / 86400000) : 0;
+    if (prev && days >= FIRST_TAKE_MIN_DAYS && ctx === params) {
+      $('resFirstAudio').src = URL.createObjectURL(prev.first.blob);
+      $('resFirstLabel').textContent = `Tu primera toma, hace ${days} días`;
+      $('resFirst').hidden = false;
+    }
+  });
   const action = primaryAction();
   $('resPrimary').textContent = action.label;
   $('resPrimary').onclick = action.run;

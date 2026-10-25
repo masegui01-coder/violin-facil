@@ -4,7 +4,7 @@ import { register } from '../router.js';
 import { noteLabel, parseNote } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { analyzeLongTone, longToneTip } from '../analysis.js';
-import { getState, addTuningSamples, logPractice } from '../store.js';
+import { getState, update, addTuningSamples, logPractice } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
 
@@ -13,6 +13,7 @@ const RANGE_CENTS = 50;
 const OFF_NOTE_CENTS = 100;
 
 let secs = 10;
+let routineNext = null;
 let target = null;
 let frames = [];
 let timer = 0;
@@ -61,6 +62,8 @@ function stat(value, label) { return `<div class="stat"><b>${value}</b><span>${l
 function showResult() {
   const r = analyzeLongTone(frames, TICK_MS);
   $('ltTip').textContent = longToneTip(r);
+  $('ltNextStep').hidden = !routineNext;
+  if (routineNext) $('ltNextStep').textContent = routineNext.label;
   if (!r) { $('ltStats').innerHTML = ''; return; }
   const sign = v => (v >= 0 ? '+' : '') + Math.round(v);
   $('ltStats').innerHTML = stat(sign(r.mean) + ' ¢', 'afinación media')
@@ -68,6 +71,7 @@ function showResult() {
     + stat(r.vibrato ? `${r.vibrato.rate.toFixed(1)} Hz` : '—', r.vibrato ? `vibrato · ${Math.round(r.vibrato.width)} ¢` : 'sin vibrato');
   addTuningSamples([{ midi: target, cents: r.mean }]);
   logPractice(r.seconds / 60);
+  update({ longtones: getState().longtones + 1 });
 }
 
 function tick() {
@@ -95,7 +99,10 @@ function start() {
   timer = setInterval(tick, TICK_MS);
 }
 
-function enter({ midi } = {}) {
+function enter({ midi, secs: forcedSecs, routine } = {}) {
+  routineNext = routine || null;
+  if (forcedSecs) secs = forcedSecs;
+  $('ltNextStep').hidden = true;
   const inst = instrumentById(getState().instrument);
   const nom = getState().nom;
   const options = [];
@@ -120,4 +127,5 @@ document.querySelectorAll('[data-lt-secs]').forEach(b => b.addEventListener('cli
   document.querySelectorAll('[data-lt-secs]').forEach(x => x.setAttribute('aria-pressed', x === b));
 }));
 $('ltGo').addEventListener('click', () => (running ? stop(true) : start()));
+$('ltNextStep').addEventListener('click', () => { if (routineNext) routineNext.run(); });
 $('ltRef').addEventListener('click', () => { if (!running) audio.playTone(target, 1.5); });
