@@ -29,6 +29,7 @@ import './screens/rhythm.js';
 import './screens/perc-tools.js';
 import './growth.js';
 import { accountGate } from './screens/account.js';
+import './screens/friends.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
 

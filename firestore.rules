@@ -28,6 +28,48 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // ---------- Amigos ----------
+    function isFriendOf(owner) { return signedIn() && exists(/databases/$(db)/documents/friends/$(owner)/list/$(request.auth.uid)); }
+    // Código de amigo → uid. Se consulta uno a uno (no hay buscador público: la app la usan niños)
+    match /friendCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+    // Perfil: lo ven tú y tus amigos
+    match /profiles/{uid} {
+      allow read: if (signedIn() && uid == request.auth.uid) || isFriendOf(uid);
+      allow write: if signedIn() && uid == request.auth.uid;
+    }
+    // Solicitudes: las escribe quien la envía; las lee y borra quien la recibe (o quien la envió)
+    match /requests/{to}/in/{from} {
+      allow create: if signedIn() && from == request.auth.uid && to != from;
+      allow read: if signedIn() && (to == request.auth.uid || from == request.auth.uid);
+      allow delete: if signedIn() && (to == request.auth.uid || from == request.auth.uid);
+    }
+    // Amistad en los dos sentidos: solo al aceptar una solicitud; cualquiera de los dos puede deshacerla
+    match /friends/{owner}/list/{fid} {
+      allow read: if signedIn() && owner == request.auth.uid;
+      allow create: if signedIn() && (
+        (owner == request.auth.uid && exists(/databases/$(db)/documents/requests/$(owner)/in/$(fid))) ||
+        (fid == request.auth.uid && exists(/databases/$(db)/documents/requests/$(fid)/in/$(owner))));
+      allow delete: if signedIn() && (owner == request.auth.uid || fid == request.auth.uid);
+    }
+    // Muro: lo escribe su dueño; lo leen sus amigos, que solo pueden poner o quitar su propia reacción
+    match /activity/{owner}/events/{id} {
+      allow read: if (signedIn() && owner == request.auth.uid) || isFriendOf(owner);
+      allow create, delete: if signedIn() && owner == request.auth.uid;
+      allow update: if isFriendOf(owner)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+        && request.resource.data.reactions.diff(resource.data.reactions).affectedKeys().hasOnly([request.auth.uid]);
+    }
+    // Avisos dentro de la app: los dejan tus amigos; solo tú los lees y los borras
+    match /inbox/{owner}/items/{id} {
+      allow create: if isFriendOf(owner) && request.resource.data.kind in ['reaction', 'cheer', 'play'];
+      allow read, delete: if signedIn() && owner == request.auth.uid;
+    }
+
     // Código de invitación → banda. Se consulta uno a uno, nunca se listan.
     match /bandCodes/{code} {
       allow get: if signedIn();

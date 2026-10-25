@@ -693,3 +693,26 @@ b.link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px
 .consent .row { justify-content: flex-end; }
 .testers-table td small { color: var(--muted); }
 .inst-group { grid-column: 1 / -1; font-weight: 800; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 6px; }
+
+/* Amigos */
+.today-friends { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; width: 100%; text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; margin-top: 10px; color: var(--ink); }
+.today-friends .ic { font-size: 1.6rem; }
+.today-friends small { display: block; color: var(--muted); }
+.friend-code { flex-direction: row; justify-content: space-between; align-items: center; }
+.friend-code small { display: block; color: var(--muted); font-weight: 700; }
+.friend-code b { font-family: var(--f-display); font-size: 1.8rem; letter-spacing: .12em; }
+.add-friend .input { flex: 1; min-width: 0; }
+.avatar { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 800; flex: none; }
+.post, .friend { display: grid; grid-template-columns: 38px 1fr; gap: 10px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px; }
+.friend { grid-template-columns: 38px 1fr auto; align-items: center; }
+.post small, .friend small { display: block; color: var(--muted); }
+.reacts { display: flex; gap: 6px; margin-top: 8px; }
+.react { border: 1.5px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 4px 10px; font-size: .95rem; }
+.react.on { border-color: var(--accent); background: var(--accent-soft); }
+.react-sum { display: block; margin-top: 6px; font-size: .9rem; }
+.board { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.board li { display: grid; grid-template-columns: 26px 38px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.board li.me { border-color: var(--accent); }
+.board .pos { font-weight: 800; color: var(--muted); text-align: center; }
+.inbox { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.inbox li small { display: block; color: var(--muted); }
