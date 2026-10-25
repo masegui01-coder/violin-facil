@@ -4,7 +4,7 @@ import { $, esc, toast } from '../ui.js';
 import { register, go, currentScreen } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, accountErrorText } from '../account.js';
-import { startSync, stopSync, schedulePush, flushPush } from '../sync.js';
+import { startSync, stopSync, schedulePush, flushPush, armSync } from '../sync.js';
 import { getState, update, replaceState, subscribe } from '../store.js';
 
 const GRACE_DAYS = 7;
@@ -63,9 +63,12 @@ function bindForm(prefix, rerender, done) {
 async function afterSignIn() {
   const account = currentAccount();
   if (!account) return;
-  const decision = await beginSync(account);
+  // Ya has entrado: aunque falle el guardado en la nube, se sigue (se reintenta en cada cambio y al volver a abrir)
+  const decision = await beginSync(account).catch(() => 'error');
   if ($('sheet').open) $('sheet').close();
-  toast(decision === 'download' ? `¡Hola de nuevo, ${account.displayName || ''}! He recuperado tu progreso` : 'Cuenta lista: tu progreso queda guardado');
+  toast(decision === 'download' ? `¡Hola de nuevo, ${account.displayName || ''}! He recuperado tu progreso`
+    : decision === 'error' ? 'Has entrado. Tu progreso se guardará en la nube en cuanto haya conexión'
+      : 'Cuenta lista: tu progreso queda guardado');
   go(currentScreen() === 'account' ? (getState().onboarded ? 'learn' : 'onboarding') : currentScreen());
   window.dispatchEvent(new CustomEvent('account-ready'));
 }
@@ -74,7 +77,7 @@ async function beginSync(account) {
   syncing = true;
   const name = account.displayName;
   if (name && !getState().nickname) update({ nickname: name });
-  return startSync(account, { getState, replaceState });
+  return startSync(account, { getState, replaceState }).catch(e => { armSync(account, getState); throw e; });
 }
 
 // ---------- Pantalla obligatoria ----------

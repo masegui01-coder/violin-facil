@@ -85,6 +85,11 @@ export async function startSync(account, { getState, replaceState }) {
   return decision;
 }
 
+// Si la primera sincronización falla, se deja preparada igualmente para reintentar en el siguiente cambio
+export function armSync(account, getState) {
+  if (!active) active = { uid: account.uid, account, getState };
+}
+
 export function stopSync() {
   clearTimeout(timer);
   active = null;
