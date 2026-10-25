@@ -21,10 +21,10 @@ const FLUTE = {
 };
 
 const CLARINET = {
-  52: 'T L1 L2 L3 R1 R2 R3 +Mi', 53: 'T L1 L2 L3 R1 R2 R3 +Fa', 55: 'T L1 L2 L3 R1 R2 R3', 57: 'T L1 L2 L3 R1 R2',
+  52: 'T L1 L2 L3 R1 R2 R3 +Mi', 53: 'T L1 L2 L3 R1 R2 R3 +Fa', 54: 'T L1 L2 L3 R1 R2 R3 +Fa♯', 55: 'T L1 L2 L3 R1 R2 R3', 57: 'T L1 L2 L3 R1 R2',
   59: 'T L1 L2 L3 R1', 60: 'T L1 L2 L3', 62: 'T L1 L2', 64: 'T L1', 65: 'T', 66: 'L1', 67: '', 68: '+Sol♯', 69: '+La',
   70: '+La 8va', 71: '8va T L1 L2 L3 R1 R2 R3 +Mi', 72: '8va T L1 L2 L3 R1 R2 R3 +Fa', 74: '8va T L1 L2 L3 R1 R2 R3',
-  76: '8va T L1 L2 L3 R1 R2', 78: '8va T L1 L2 L3 R1', 79: '8va T L1 L2 L3', 81: '8va T L1 L2', 83: '8va T L1', 84: '8va T',
+  73: '8va T L1 L2 L3 R1 R2 R3 +Fa♯', 76: '8va T L1 L2 L3 R1 R2', 78: '8va T L1 L2 L3 R1', 79: '8va T L1 L2 L3', 81: '8va T L1 L2', 83: '8va T L1', 84: '8va T',
 };
 
 const SAX = {
@@ -41,8 +41,21 @@ const OBOE = {
   67: 'L1 L2 L3', 69: 'L1 L2', 71: 'L1', 76: '8va L1 L2 L3 R1 R2', 79: '8va L1 L2 L3', 81: '8va L1 L2', 83: '8va L1',
 };
 
-// Los saxos tenor y barítono comparten digitación escrita con el alto
-const SAME_AS = { 'sax-tenor': 'sax', 'sax-bari': 'sax' };
+// Familias con la misma digitación escrita: saxos, clarinetes, flauta y flautín, y los metales en clave de sol en Si♭
+const SAME_AS = { 'sax-tenor': 'sax', 'sax-bari': 'sax', 'sax-soprano': 'sax', 'bass-clarinet': 'clarinet', 'eb-clarinet': 'clarinet', piccolo: 'flute', flugelhorn: 'trumpet', euphonium: 'trumpet' };
+
+// Metales: cada combinación de pistones baja la nota abierta (un armónico) unos semitonos; la vara del trombón, igual.
+// Armónicos en notas escritas. Se elige el armónico más cercano por encima (lo habitual en las tablas).
+const VALVES_BY_DROP = ['', '2', '1', '12', '23', '13', '123'];
+const PARTIALS = {
+  horn: [55, 60, 64, 67, 72, 74, 76, 79, 84],      // trompa en Fa: Sol3, Do4, Mi4, Sol4, Do5, Re5, Mi5, Sol5, Do6
+  tuba: [34, 41, 46, 50, 53, 58, 60],              // tuba en Si♭ (clave de fa): Si♭1, Fa2, Si♭2, Re3, Fa3, Si♭3, Do4
+  trombone: [34, 46, 53, 58, 62, 65, 70, 72],      // trombón: Si♭1, Si♭2, Fa3, Si♭3, Re4, Fa4, Si♭4, Do5
+};
+export function brassDrop(instId, midi) {
+  const partial = PARTIALS[instId].find(p => p >= midi && p - midi <= 6);
+  return partial === undefined ? null : partial - midi;
+}
 const WOODWIND = { flute: FLUTE, clarinet: CLARINET, sax: SAX, oboe: OBOE };
 const HAS_THUMB = { flute: true, clarinet: true, sax: false, oboe: false };
 const OCTAVE_NAME = { clarinet: 'registro', sax: 'octava', oboe: 'octava', flute: 'octava' };
@@ -78,6 +91,14 @@ export function fingeringFor(rawId, midi) {
     return pos ? { type: 'fret', ...pos } : null;
   }
   if (instId === 'piano') return midi >= 21 && midi <= 108 ? { type: 'key', midi } : null;
+  if (instId === 'trombone') {
+    const drop = brassDrop('trombone', midi);
+    return drop === null ? null : { type: 'slide', position: drop + 1 };
+  }
+  if (instId === 'horn' || instId === 'tuba') {
+    const drop = brassDrop(instId, midi);
+    return drop === null ? null : { type: 'valves', valves: VALVES_BY_DROP[drop].split('').filter(Boolean).map(Number), slide: false };
+  }
   if (instId === 'violin') {
     const f = violinFingering(midi);
     return f ? { type: 'violin', ...f } : null;
@@ -89,7 +110,7 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => ['violin', 'trumpet', 'guitar', 'piano'].includes(instId);
+export const fingeringsReviewed = instId => ['violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'piano'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };
@@ -100,6 +121,7 @@ export function fingeringText(instId, midi, nom) {
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
   if (f.type === 'fret') return `Cuerda ${f.string} (${GUITAR_STRING_EU[6 - f.string]}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
   if (f.type === 'key') return midi === 60 ? 'El Do central' : `Tecla ${PIANO_OCTAVE[Math.floor(midi / 12) - 1] || ''}`.trim();
+  if (f.type === 'slide') return `Vara en la ${f.position}.ª posición`;
   if (f.type === 'valves') {
     if (!f.valves.length) return 'Sin pistones (al aire)';
     return (f.valves.length === 1 ? 'Pistón ' : 'Pistones ') + f.valves.join(' y ') + (f.slide ? ' · saca la bomba del 3.er pistón' : '');

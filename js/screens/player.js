@@ -330,7 +330,7 @@ function enter({ lesson, mode, from, eyebrow }) {
   run = {
     lesson, mode, from, title: lessonTitle(lesson), notes, playable, score, bars: score.bars, totalBeats: score.totalBeats,
     bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed), missed: new Set(),
-    renderOpts: { key: meta.key, time: meta.time, mode, clef: lesson.clef || 'treble', sticking: lesson.fingers ? lesson.fingers.split(' ') : null },
+    renderOpts: { key: meta.key, time: meta.time, mode, clef: lesson.clef || instrumentById(getState().instrument).clef || 'treble', sticking: lesson.fingers ? lesson.fingers.split(' ') : null },
     firstBeat: () => notes[playable[0]].start,
     pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0,
     playing: false, finished: false, shown: -1, last: performance.now(), demoStop: null, demoIdx: -1, praise: 0,

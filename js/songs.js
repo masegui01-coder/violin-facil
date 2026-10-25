@@ -95,7 +95,7 @@ export function octaveShiftFor(song, inst) {
   if (inst.rhythmOnly) return 0; // en percusión solo cuenta el ritmo
   const midis = songScore(song).notes.filter(n => !n.rest).map(n => n.midi);
   const lo = Math.min(...midis), hi = Math.max(...midis);
-  return [0, 12, -12, 24].find(k => lo + k >= inst.written[0] && hi + k <= inst.written[1]) ?? null;
+  return [0, 12, -12, 24, -24].find(k => lo + k >= inst.written[0] && hi + k <= inst.written[1]) ?? null;
 }
 
 // Partitura ya analizada: las importadas la guardan hecha; las del repertorio se leen del texto

@@ -60,6 +60,53 @@ const INSTRUMENT_PILL = {
     BAND_FAMILIES, WHY_TRANSPOSE,
     { title: 'Cómo se afina', text: 'Sobre todo con la caña: metida más a fondo sube la afinación. La caña y cómo la sujetas con los labios cambian mucho la nota. ' + WARM_UP.text },
   ], quiz: [bandQuestion('Si♭', 'está en Do (suena lo que lees)'), { id: 'oboe-a', q: '¿Qué instrumento da el La para afinar a la orquesta?', options: ['Violín', 'Trompeta', 'Oboe', 'Piano'], answer: 2, why: 'El oboe: su sonido es estable y penetrante, y casi siempre estaba en las orquestas.', play: [69] }] },
+  'eb-clarinet': { cards: [
+    { title: 'Requinto en Mi♭', text: 'Es el clarinete pequeño: cuando lees Do, suena Mi♭, una tercera menor más aguda. Lleva los mismos dedos que el clarinete en Si♭.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Con el barrilete: sacarlo un poco baja la afinación. En el agudo tiende a subir: no muerdas la caña. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Sol', 'está en Mi♭ (suena una tercera menor más aguda de lo escrito)')] },
+  'bass-clarinet': { cards: [
+    { title: 'Clarinete bajo en Si♭', text: 'Se escribe en clave de sol como el clarinete y suena una novena más grave: cuando lees Do, suena Si♭ una octava y un tono por debajo. Mismos dedos que el clarinete.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Moviendo la boquilla o el tudel: sacarlo baja la afinación. Necesita mucho aire y una embocadura más relajada que el clarinete. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Do', 'está en Si♭ (suena una novena más grave de lo escrito)')] },
+  piccolo: { cards: [
+    { title: 'Flautín en Do', text: 'Se escribe como la flauta pero suena una octava más aguda, para no llenar la partitura de líneas adicionales. Mismos dedos que la flauta.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Sacando un poco la cabeza baja la afinación. Se oye muchísimo: escucha a la banda y toca más suave de lo que crees. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Si♭', 'está en Do (suena una octava más aguda, pero la nota es la misma)')] },
+  'sax-soprano': { cards: [
+    { title: 'Saxo soprano en Si♭', text: 'Cuando lees Do, suena Si♭: un tono más grave. Usa los mismos dedos que el resto de saxos.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Moviendo la boquilla: metida sube, sacada baja. Es el saxo más difícil de afinar: escucha mucho y usa el mapa de afinación. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Do', 'está en Si♭ (suena un tono más grave de lo escrito)')] },
+  flugelhorn: { cards: [
+    { title: 'Fliscorno en Si♭', text: 'Se toca y se lee igual que la trompeta (mismos pistones), pero su tubo es más ancho y suena más redondo y dulce. Cuando lees Do, suena Si♭.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Con la bomba de afinación: sacarla baja la afinación. En Re y Do♯ graves, saca un poco la del 3.er pistón. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Do', 'está en Si♭ (suena un tono más grave de lo escrito)')] },
+  horn: { cards: [
+    { title: 'Trompa en Fa', text: 'Cuando lees Do, suena Fa: una quinta más grave. Por eso, cuando la banda afina al Si♭ de concierto, tú tocas tu Fa.' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Con la bomba general, y también con la mano derecha dentro del pabellón: cuanto más la cierras, más baja la nota. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Fa', 'está en Fa (suena una quinta más grave de lo escrito)')] },
+  trombone: { cards: [
+    { title: 'Trombón en Do', text: 'El trombón lee en clave de fa y suena lo que lees: cuando la banda afina al Si♭, tú tocas Si♭ en 1.ª posición, con la vara cerrada.' },
+    BAND_FAMILIES,
+    { title: 'Siete posiciones', text: 'Cada posición de la vara baja medio tono. Las posiciones no son marcas fijas: afinas con el oído, moviendo la vara un poco hacia dentro o hacia fuera.' },
+    { title: 'Cómo se afina', text: 'Con la bomba de afinación de la campana, con la vara en 1.ª. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Si♭', 'está en Do (suena lo que lees)'), { id: 'tbn-pos', q: '¿Qué pasa al alargar la vara una posición?', options: ['La nota sube medio tono', 'La nota baja medio tono', 'Suena más fuerte', 'No cambia'], answer: 1, why: 'Baja medio tono: el tubo es más largo.' }] },
+  euphonium: { cards: [
+    { title: 'Bombardino en Si♭', text: 'En las bandas españolas suele leerse en clave de sol en Si♭: los mismos pistones que la trompeta y suena una novena más grave. (Si lees en clave de fa, suena lo que lees.)' },
+    BAND_FAMILIES, WHY_TRANSPOSE,
+    { title: 'Cómo se afina', text: 'Con la bomba general: sacarla baja la afinación. Necesita aire abundante y lento. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Do', 'está en Si♭ en clave de sol (suena una novena más grave de lo escrito)')] },
+  tuba: { cards: [
+    { title: 'Tuba en Do (clave de fa)', text: 'En las bandas la tuba lee en clave de fa y suena lo que lees, aunque el instrumento sea en Si♭ o Fa. Cuando la banda afina al Si♭, tú tocas Si♭.' },
+    BAND_FAMILIES,
+    { title: 'El cimiento de la banda', text: 'La tuba sostiene la afinación de todos: si el bajo está afinado, el acorde entero suena mejor.' },
+    { title: 'Cómo se afina', text: 'Con la bomba general. En el grave el aire debe ser lento y muy abundante. ' + WARM_UP.text },
+  ], quiz: [bandQuestion('Si♭', 'está en Do en clave de fa (suena lo que lees)')] },
   percussion: { cards: [
     { title: 'Percusión que afina', text: 'Caja, bombo y platos no dan una nota concreta: solo se tensan los parches para que suenen bien. Los timbales, el xilófono y el glockenspiel sí dan notas.' },
     { title: 'Los timbales', text: 'Se afinan con el pedal, que tensa el parche, y el timbalero comprueba la nota con un diapasón o de oído antes de cada obra.' },

@@ -28,7 +28,7 @@ test('guitar and piano courses: valid chords, notes in range and a real song in 
 import { pillsFor, reviewQuestion, resolveQuestion } from '../js/theory-pills.js';
 
 test('every instrument gets its own tuning pill plus level pills with valid questions', () => {
-  for (const inst of ['violin', 'trumpet', 'clarinet', 'sax', 'sax-tenor', 'sax-bari', 'flute', 'oboe', 'percussion', 'guitar', 'piano']) {
+  for (const inst of ['violin', 'trumpet', 'clarinet', 'sax', 'sax-tenor', 'sax-bari', 'flute', 'oboe', 'percussion', 'guitar', 'piano', 'eb-clarinet', 'bass-clarinet', 'piccolo', 'sax-soprano', 'flugelhorn', 'horn', 'trombone', 'euphonium', 'tuba']) {
     const pills = pillsFor(inst);
     assert.equal(pills[0].title, 'Tu instrumento y la afinación', inst);
     assert.ok(pills.length >= 6, inst);
@@ -51,6 +51,9 @@ test('band tuning question matches each instrument transposition', () => {
   assert.equal(answerFor('sax'), 'Sol');
   assert.equal(answerFor('sax-bari'), 'Sol');
   assert.equal(answerFor('flute'), 'Si♭');
+  assert.equal(answerFor('horn'), 'Fa');
+  assert.equal(answerFor('eb-clarinet'), 'Sol');
+  assert.equal(answerFor('tuba'), 'Si♭');
 });
 
 test('review prefers questions you got wrong', () => {

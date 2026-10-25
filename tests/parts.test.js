@@ -11,7 +11,15 @@ test('guesses instruments and voices from part names', () => {
   assert.equal(guessInstrument('Sax. Barítono'), 'sax-bari');
   assert.equal(guessInstrument('Alto Sax'), 'sax');
   assert.equal(guessInstrument('Caja'), 'percussion');
-  assert.equal(guessInstrument('Tuba'), null);
+  assert.equal(guessInstrument('Tuba'), 'tuba');
+  assert.equal(guessInstrument('Clarinete bajo'), 'bass-clarinet');
+  assert.equal(guessInstrument('Requinto'), 'eb-clarinet');
+  assert.equal(guessInstrument('Bombardino 1'), 'euphonium');
+  assert.equal(guessInstrument('Fliscorno 2'), 'flugelhorn');
+  assert.equal(guessInstrument('Trompa en Fa'), 'horn');
+  assert.equal(guessInstrument('Trombón 1'), 'trombone');
+  assert.equal(guessInstrument('Flautín'), 'piccolo');
+  assert.equal(guessInstrument('Arpa'), null);
   assert.equal(guessVoice('Trompeta 2'), 2);
   assert.equal(guessVoice('Clarinete II'), 2);
   assert.equal(guessVoice('1º Clarinete'), 1);

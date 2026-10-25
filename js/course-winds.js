@@ -4,15 +4,24 @@ import { parseNote } from './music.js';
 
 const SCALES = {
   C: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], G: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'], D: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-  F: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'], Bb: ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+  F: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'], Bb: ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'], Eb: ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
 };
 // Octava de la tónica para que la escala quede en el registro cómodo de cada instrumento
-const SCALE_START = { trumpet: ['C', 4], clarinet: ['C', 4], sax: ['G', 4], 'sax-tenor': ['C', 5], 'sax-bari': ['G', 4], flute: ['Bb', 4], oboe: ['Bb', 4] };
+const SCALE_START = {
+  trumpet: ['C', 4], clarinet: ['C', 4], sax: ['G', 4], 'sax-tenor': ['C', 5], 'sax-bari': ['G', 4], flute: ['Bb', 4], oboe: ['Bb', 4],
+  'eb-clarinet': ['G', 4], 'bass-clarinet': ['C', 4], piccolo: ['Bb', 4], 'sax-soprano': ['C', 5], flugelhorn: ['C', 4],
+  horn: ['F', 4], trombone: ['Bb', 2], euphonium: ['C', 4], tuba: ['Bb', 1],
+};
 const HIGH_NOTES = {
   trumpet: 'C5 D5 E5 F5 G5', clarinet: 'B4 C5 D5 E5 F#5 G5', sax: 'D5 E5 F#5 G5 A5', 'sax-tenor': 'D5 E5 F5 G5 A5', 'sax-bari': 'D5 E5 F#5 G5 A5',
   flute: 'D5 E5 F5 G5 A5 Bb5', oboe: 'E5 G5 A5 B5',
+  'eb-clarinet': 'B4 C5 D5 E5 F#5 G5', 'bass-clarinet': 'B4 C5 D5 E5 F#5 G5', piccolo: 'D5 E5 F5 G5 A5 Bb5', 'sax-soprano': 'D5 E5 F5 G5 A5',
+  flugelhorn: 'C5 D5 E5 F5 G5', horn: 'G5 A5 Bb5 C6', trombone: 'D4 Eb4 F4 G4', euphonium: 'C5 D5 E5 F5 G5', tuba: 'D3 Eb3 F3 G3',
 };
-const SECOND_KEY = { trumpet: 'F', clarinet: 'F', sax: 'D', 'sax-tenor': 'F', 'sax-bari': 'D', flute: 'F', oboe: 'F' };
+const SECOND_KEY = {
+  trumpet: 'F', clarinet: 'F', sax: 'D', 'sax-tenor': 'F', 'sax-bari': 'D', flute: 'F', oboe: 'F',
+  'eb-clarinet': 'D', 'bass-clarinet': 'F', piccolo: 'F', 'sax-soprano': 'F', flugelhorn: 'F', horn: 'C', trombone: 'Eb', euphonium: 'F', tuba: 'Eb',
+};
 
 const FAMILY_CARDS = {
   metal: [
@@ -56,7 +65,9 @@ export function windUnits(inst, helpers) {
   const [tonic, oct] = SCALE_START[inst.id];
   const scale = scaleFrom(inst.bandKey, tonic, oct);
   const second = SECOND_KEY[inst.id];
-  const scale2 = scaleFrom(second, second, 4);
+  // la segunda escala en la octava que cabe en el registro (los graves, como trombón y tuba, más abajo)
+  const fits = list => midis(list).every(m => m >= inst.written[0] && m <= inst.written[1]);
+  const scale2 = [4, 3, 5, 2, 1].map(o => scaleFrom(second, second, o)).find(fits) || scaleFrom(second, second, 4);
   const high = HIGH_NOTES[inst.id].split(' ');
   const cards = FAMILY_CARDS[inst.family];
   const p = `${inst.id}-`;

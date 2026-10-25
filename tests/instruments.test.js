@@ -43,3 +43,20 @@ test('a 442 Hz reference shifts the whole scale', () => {
 test('unknown instrument ids fall back to violin', () => {
   assert.equal(instrumentById('banjo').id, 'violin');
 });
+
+import { fingeringFor as fingerOf, fingeringText as fingerText2 } from '../js/fingerings.js';
+
+test('brass fingerings come from the harmonic series', () => {
+  const v = (id, m) => fingerOf(id, m).valves.join('');
+  assert.equal(v('horn', 62), '1');      // trompa: Re4 con el 1
+  assert.equal(v('horn', 69), '12');     // La4 con 1-2
+  assert.equal(v('horn', 71), '2');      // Si4 con el 2
+  assert.equal(v('tuba', 48), '1');      // tuba: Do3 con el 1
+  assert.equal(v('tuba', 45), '2');      // La2 con el 2
+  assert.equal(v('flugelhorn', 64), '12');
+  assert.equal(fingerOf('trombone', 48).position, 6);  // trombón: Do3 en 6.ª
+  assert.equal(fingerOf('trombone', 50).position, 4);  // Re3 en 4.ª
+  assert.equal(fingerOf('trombone', 58).position, 1);  // Si♭3 en 1.ª
+  assert.match(fingerText2('trombone', 51, 'eu'), /3\.ª posición/);
+  assert.match(fingerText2('bass-clarinet', 60, 'eu'), /pulgar/);
+});

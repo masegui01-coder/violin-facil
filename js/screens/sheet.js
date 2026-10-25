@@ -58,7 +58,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
     const errs = errorsFor(lessonKey(lesson));
     const score = songScore(hard.song);
     const heat = createStaff($('heatStaff'));
-    heat.render(score, { key: hard.song.key, time: hard.song.time, mode: 'review', clef: rhythmOnly ? 'perc' : lesson.clef || 'treble' });
+    heat.render(score, { key: hard.song.key, time: hard.song.time, mode: 'review', clef: rhythmOnly ? 'perc' : lesson.clef || instrumentById(getState().instrument).clef || 'treble' });
     let k = 0;
     score.notes.forEach((n, i) => {
       if (n.rest) return;

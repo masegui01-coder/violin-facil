@@ -1,4 +1,4 @@
-// Diagrama de digitación según el instrumento: diapasón (violín), pistones (trompeta), llaves (madera), mástil (guitarra) o teclado (piano).
+// Diagrama de digitación según el instrumento: diapasón (violín), pistones (metales), vara (trombón), llaves (madera), mástil (guitarra) o teclado (piano).
 import { renderFingerboard } from './fingerboard.js';
 import { fingeringFor, fingeringsReviewed } from './fingerings.js';
 import { drawFretboard, drawKeyboard } from './boards.js';
@@ -26,6 +26,19 @@ function drawValves(svg, f) {
   });
   el('text', { x: W / 2, y: 30, class: 'kd-caption' }, svg, f.valves.length ? 'Pistones' : 'Al aire');
   if (f.slide) el('text', { x: W / 2, y: 188, class: 'kd-caption' }, svg, '+ bomba del 3.º');
+}
+
+// Trombón: la vara con sus siete posiciones; la marcada es la que toca
+function drawSlide(svg, f) {
+  el('text', { x: W / 2, y: 22, class: 'kd-caption' }, svg, 'Vara');
+  el('rect', { x: 18, y: 34, width: 10, height: 150, rx: 5, class: 'kd-tube' }, svg);
+  el('rect', { x: W - 28, y: 34, width: 10, height: 150, rx: 5, class: 'kd-tube' }, svg);
+  for (let p = 1; p <= 7; p++) {
+    const y = 34 + (p - 1) * 23;
+    const on = p === f.position;
+    el('rect', { x: 34, y: y + 2, width: W - 68, height: 18, rx: 9, class: on ? 'kd-on' : 'kd-off' }, svg);
+    el('text', { x: W / 2, y: y + 15, class: on ? 'kd-num on' : 'kd-num' }, svg, `${p}.ª`);
+  }
 }
 
 function drawKeys(svg, f, instId) {
@@ -56,6 +69,7 @@ export function renderDiagram(svg, instId, midis, nom) {
     return false;
   }
   if (f.type === 'valves') drawValves(svg, f);
+  else if (f.type === 'slide') drawSlide(svg, f);
   else drawKeys(svg, f, instId);
   return true;
 }

@@ -692,3 +692,4 @@ b.link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px
 .consent p { font-size: .9rem; }
 .consent .row { justify-content: flex-end; }
 .testers-table td small { color: var(--muted); }
+.inst-group { grid-column: 1 / -1; font-weight: 800; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 6px; }

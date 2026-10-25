@@ -55,10 +55,18 @@ function readPitch(noteEl) {
 }
 
 // Instrumento probable según el nombre de la parte (para repartir partichelas y para la banda virtual)
+// El orden importa: primero los nombres más concretos (clarinete bajo antes que clarinete, saxo barítono antes que bombardino…)
 const NAME_TO_INSTRUMENT = [
-  [/viol[ií]n/i, 'violin'], [/sax\S*\s*(bar[ií]t|bari)|bar[ií]tono/i, 'sax-bari'], [/sax\S*\s*ten|tenor sax/i, 'sax-tenor'],
-  [/sax/i, 'sax'], [/clarinet/i, 'clarinet'], [/trompeta|trumpet|corneta|cornet|fliscorno|flugel/i, 'trumpet'],
-  [/flaut|flute|piccolo/i, 'flute'], [/oboe/i, 'oboe'], [/percus|caja|snare|bombo|drum|plato|cymbal|timbal|bater[ií]a/i, 'percussion'],
+  [/viol[ií]n/i, 'violin'],
+  [/clarinete?\s*baj|bass\s*clar|clarinetto\s*basso/i, 'bass-clarinet'],
+  [/requinto|clarinet\S*\s*(en\s*)?(mi\s*b|mi♭|e\s*b|e♭)/i, 'eb-clarinet'],
+  [/sax\S*\s*(bar[ií]t|bari)/i, 'sax-bari'], [/sax\S*\s*ten|tenor sax/i, 'sax-tenor'], [/sax\S*\s*sop|soprano sax/i, 'sax-soprano'],
+  [/sax/i, 'sax'], [/clarinet/i, 'clarinet'],
+  [/fliscorno|flugel/i, 'flugelhorn'], [/trompeta|trumpet|corneta|cornet/i, 'trumpet'],
+  [/tromb[oó]n|trombone|posaune/i, 'trombone'], [/bombardino|euphon|bar[ií]tono/i, 'euphonium'], [/tuba|helic[oó]n|sousaf/i, 'tuba'],
+  [/trompa|\bhorn\b|corno|\bcor\b/i, 'horn'],
+  [/flaut[ií]n|piccolo|ottavino/i, 'piccolo'], [/flauta?\s*dulce|recorder|blockfl/i, 'recorder'], [/flaut|flute/i, 'flute'], [/oboe/i, 'oboe'],
+  [/caj[oó]n/i, 'cajon'], [/percus|caja|snare|bombo|drum|plato|cymbal|timbal|bater[ií]a/i, 'percussion'],
 ];
 export function guessInstrument(name) {
   const hit = NAME_TO_INSTRUMENT.find(([re]) => re.test(name || ''));

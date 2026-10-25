@@ -44,6 +44,51 @@ export const INSTRUMENTS = [
     blurb: 'Doble caña, en Do',
   },
   {
+    id: 'eb-clarinet', name: 'Requinto', family: 'madera', transpose: 3, written: [52, 91], minHz: 170, maxHz: 2300,
+    board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'G', inKey: 'Mi♭',
+    blurb: 'Clarinete pequeño en Mi♭',
+  },
+  {
+    id: 'bass-clarinet', name: 'Clarinete bajo', family: 'madera', transpose: -14, written: [52, 84], minHz: 60, maxHz: 900,
+    board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'C', inKey: 'Si♭',
+    blurb: 'En Si♭, una octava más grave',
+  },
+  {
+    id: 'piccolo', name: 'Flautín', family: 'madera', transpose: 12, written: [60, 86], minHz: 500, maxHz: 2450,
+    board: 'keys', fingers: 'flute', firstNotes: ['B4', 'A4', 'G4', 'C5', 'D5'], bandKey: 'Bb',
+    blurb: 'Suena una octava más aguda',
+  },
+  {
+    id: 'sax-soprano', name: 'Saxofón soprano', family: 'madera', transpose: -2, written: [58, 89], minHz: 200, maxHz: 1500,
+    board: 'keys', fingers: 'sax', firstNotes: ['B4', 'A4', 'G4', 'C5', 'D5'], bandKey: 'C', inKey: 'Si♭',
+    blurb: 'En Si♭, recto y agudo',
+  },
+  {
+    id: 'flugelhorn', name: 'Fliscorno', family: 'metal', transpose: -2, written: [54, 84], minHz: 150, maxHz: 1250,
+    board: 'valves', fingers: 'trumpet', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C', inKey: 'Si♭',
+    blurb: 'En Si♭, sonido más dulce que la trompeta',
+  },
+  {
+    id: 'horn', name: 'Trompa', family: 'metal', transpose: -7, written: [55, 84], minHz: 80, maxHz: 950,
+    board: 'valves', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'F', inKey: 'Fa',
+    blurb: 'En Fa, la mano dentro del pabellón',
+  },
+  {
+    id: 'trombone', name: 'Trombón', family: 'metal', transpose: 0, clef: 'bass', written: [40, 72], minHz: 70, maxHz: 650,
+    board: 'slide', firstNotes: ['F3', 'Eb3', 'D3', 'C3', 'Bb2'], bandKey: 'Bb',
+    blurb: 'Vara de siete posiciones, clave de fa',
+  },
+  {
+    id: 'euphonium', name: 'Bombardino', family: 'metal', transpose: -14, written: [54, 84], minHz: 60, maxHz: 650,
+    board: 'valves', fingers: 'trumpet', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C', inKey: 'Si♭',
+    blurb: 'En clave de sol en Si♭ (como en las bandas)',
+  },
+  {
+    id: 'tuba', name: 'Tuba', family: 'metal', transpose: 0, clef: 'bass', written: [34, 60], minHz: 50, maxHz: 360,
+    board: 'valves', firstNotes: ['Bb2', 'C3', 'D3', 'Eb3', 'F3'], bandKey: 'Bb',
+    blurb: 'Si♭ grave, clave de fa',
+  },
+  {
     id: 'guitar', name: 'Guitarra', family: 'pulsada', polyphonic: true, transpose: -12, written: [52, 81], minHz: 70, maxHz: 1100,
     board: 'fretboard', firstNotes: ['E5', 'B4', 'G4'], bandKey: 'G',
     blurb: 'Acordes, rasgueo y punteo',
