@@ -10,6 +10,8 @@ import { instrumentById } from '../instruments.js';
 import { launch, defaultMode } from '../launch.js';
 import { hardPassage, passageLesson } from '../passages.js';
 import { createStaff } from '../staff.js';
+import { getTakes } from '../takes.js';
+import { drawReview } from './result.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song', chords: 'chord' };
 const CHORD_MODE = { hold: 'Acorde a acorde', strum: 'A tempo, con el cifrado', changes: 'Un minuto de cambios' };
@@ -22,6 +24,20 @@ function facts(lesson, song) {
   const count = songScore(song).notes.filter(n => !n.rest).length;
   const style = song.style ? styleById(song.style).name : null;
   return [style, song.style ? DIFFICULTY[song.difficulty] : null, KEY_NAME[song.key], `${song.time}/4`, `♩ = ${song.bpm}`, `${count} notas`].filter(Boolean);
+}
+
+// Tu última toma de esta lección (guardada en el móvil), con su audio y sus colores
+async function showLastTake(lesson) {
+  const takes = await getTakes(`${getState().instrument}:${lessonKey(lesson)}`);
+  const body = $('sheetBody').querySelector('.sheet-body');
+  if (!takes || !takes.last || !body || !$('sheet').open) return;
+  const when = new Date(takes.last.at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const box = document.createElement('div');
+  box.className = 'take';
+  box.innerHTML = `<p class="small muted">Tu última toma · ${when}</p><audio controls></audio>${takes.last.review ? '<div class="review-scroll"><svg class="staff" role="img" aria-label="Partitura de tu última toma"></svg></div><p class="small muted"><span class="dot-ok"></span> bien · <span class="dot-warn"></span> te costó · <span class="dot-bad"></span> fallada</p>' : ''}`;
+  box.querySelector('audio').src = URL.createObjectURL(takes.last.blob);
+  body.insertBefore(box, body.querySelector('[data-close]'));
+  if (takes.last.review) drawReview(createStaff(box.querySelector('svg')), takes.last.review);
 }
 
 export function openLessonSheet(lesson, { state = 'open', from = 'course', color, onChange = () => {} } = {}) {
@@ -70,6 +86,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
       launch(passageLesson(hard.song, hard.fromBar, hard.toBar), { mode: 'tempo', from });
     });
   }
+  showLastTake(lesson);
   const del = $('sheetBody').querySelector('[data-delete]');
   if (del) {
     del.addEventListener('click', () => {

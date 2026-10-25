@@ -44,11 +44,17 @@ function primaryAction() {
   return { label: 'Continuar', run: backToOrigin };
 }
 
+// Partitura coloreada (verde bien, naranja te costó, rojo fallada) en el pentagrama que se indique
+export function drawReview(staff, review) {
+  staff.render(review.score, { key: review.key, time: review.time, mode: 'review', clef: review.clef, sticking: review.sticking });
+  review.states.forEach((st, i) => staff.setState(i, st));
+}
+
+const firstStaff = createStaff($('resFirstStaff'));
+
 function renderReview(review) {
   $('resReview').hidden = !review;
-  if (!review) return;
-  reviewStaff.render(review.score, { key: review.key, time: review.time, mode: 'review', clef: review.clef, sticking: review.sticking });
-  review.states.forEach((st, i) => reviewStaff.setState(i, st));
+  if (review) drawReview(reviewStaff, review);
 }
 
 function enter(params) {
@@ -68,12 +74,14 @@ function enter(params) {
     $('resAudio').src = take.url;
     $('resTake').hidden = false;
     // la primera toma de esta obra, si es de hace una semana o más: para oír cuánto has mejorado
-    const prev = await saveTake(`${getState().instrument}:${lessonKey(params.lesson)}`, take.blob);
+    const prev = await saveTake(`${getState().instrument}:${lessonKey(params.lesson)}`, take.blob, params.review || null);
     const days = prev ? Math.floor((Date.now() - prev.first.at) / 86400000) : 0;
     if (prev && days >= FIRST_TAKE_MIN_DAYS && ctx === params) {
       $('resFirstAudio').src = URL.createObjectURL(prev.first.blob);
       $('resFirstLabel').textContent = `Tu primera toma, hace ${days} días`;
       $('resFirst').hidden = false;
+      $('resFirstReview').hidden = !prev.first.review;
+      if (prev.first.review) drawReview(firstStaff, prev.first.review);
     }
   });
   const action = primaryAction();

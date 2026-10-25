@@ -1,4 +1,5 @@
 // Tomas guardadas en el móvil (IndexedDB): la primera y la última de cada obra, para oír la mejora.
+// Cada toma guarda también su partitura coloreada (dónde fue bien y dónde se falló). Nada de esto sube a la nube.
 const DB = 'band-flow-takes';
 const STORE = 'takes';
 
@@ -25,10 +26,10 @@ export async function getTakes(key) {
 }
 
 // Guarda la toma como «última»; si no había ninguna, también como «primera»
-export async function saveTake(key, blob) {
+export async function saveTake(key, blob, review = null) {
   try {
     const prev = await getTakes(key);
-    const entry = { at: Date.now(), blob };
+    const entry = { at: Date.now(), blob, review };
     await tx('readwrite', s => s.put({ first: prev ? prev.first : entry, last: entry }, key));
     return prev;
   } catch (e) { return null; }
