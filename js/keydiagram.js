@@ -41,6 +41,20 @@ function drawSlide(svg, f) {
   }
 }
 
+// Flauta dulce: el pulgar por detrás (a la izquierda) y los siete agujeros de arriba abajo
+function drawRecorder(svg, f) {
+  el('rect', { x: 58, y: 8, width: 34, height: 184, rx: 17, class: 'kd-tube' }, svg);
+  el('text', { x: 24, y: 30, class: 'kd-label' }, svg, 'pulgar');
+  el('circle', { cx: 24, cy: 46, r: 9, class: f.thumb === 'closed' ? 'kd-on' : 'kd-off' }, svg);
+  if (f.thumb === 'half') el('path', { d: 'M24 37 a9 9 0 0 0 0 18 z', class: 'kd-on' }, svg);
+  [1, 2, 3, 4, 5, 6, 7].forEach((h, i) => {
+    const cy = 40 + i * 21 + (i >= 3 ? 10 : 0);
+    el('circle', { cx: 75, cy, r: 8, class: f.holes.includes(h) ? 'kd-on' : 'kd-off' }, svg);
+    el('text', { x: 108, y: cy + 4, class: 'kd-label' }, svg, String(h));
+  });
+  el('line', { x1: 62, x2: 88, y1: 99, y2: 99, class: 'kd-split' }, svg);
+}
+
 function drawKeys(svg, f, instId) {
   el('rect', { x: 52, y: 30, width: 46, height: 162, rx: 23, class: 'kd-tube' }, svg);
   if (f.thumb) el('circle', { cx: 28, cy: 46, r: 9, class: f.thumbOn ? 'kd-on' : 'kd-off' }, svg);
@@ -70,6 +84,7 @@ export function renderDiagram(svg, instId, midis, nom) {
   }
   if (f.type === 'valves') drawValves(svg, f);
   else if (f.type === 'slide') drawSlide(svg, f);
+  else if (f.type === 'recorder') drawRecorder(svg, f);
   else drawKeys(svg, f, instId);
   return true;
 }

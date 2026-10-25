@@ -107,6 +107,16 @@ const INSTRUMENT_PILL = {
     { title: 'El cimiento de la banda', text: 'La tuba sostiene la afinación de todos: si el bajo está afinado, el acorde entero suena mejor.' },
     { title: 'Cómo se afina', text: 'Con la bomba general. En el grave el aire debe ser lento y muy abundante. ' + WARM_UP.text },
   ], quiz: [bandQuestion('Si♭', 'está en Do en clave de fa (suena lo que lees)')] },
+  recorder: { cards: [
+    { title: 'Tu flauta dulce', text: 'La flauta del cole se llama flauta dulce soprano. Suena una octava más aguda de lo que se escribe, para que la partitura sea fácil de leer.' },
+    { title: 'Tapar bien', text: 'El secreto de la flauta es tapar los agujeros con la yema del dedo, sin dejar rendijas. Si una nota chilla o no sale, mira qué dedo deja pasar el aire.' },
+    { title: 'Afinar la flauta', text: 'Sacando un poquito la cabeza de la flauta (la parte de arriba) suena más grave; metiéndola, más aguda. Así todos los de clase suenan juntos.' },
+  ], quiz: [{ id: 'rec-squeak', q: 'Si tu flauta pita muy fuerte, ¿qué haces?', options: ['Soplar más fuerte', 'Soplar más suave', 'Morder la boquilla', 'Tapar menos agujeros'], answer: 1, why: 'Soplar más suave: la flauta dulce necesita muy poco aire.' }] },
+  cajon: { cards: [
+    { title: 'Un instrumento peruano', text: 'El cajón nació en Perú. Paco de Lucía lo trajo al flamenco en los años 70 y desde entonces no falta en ningún tablao.' },
+    { title: 'Las bordonas', text: 'Dentro lleva cuerdas o bordonas pegadas a la tapa: son las que dan el chasquido del agudo. Algunos cajones tienen un tornillo para tensarlas o aflojarlas.' },
+    { title: 'Afinar el cajón', text: 'No da notas: se ajusta el sonido. Si los tornillos de las esquinas de arriba están más flojos, el agudo restalla más.' },
+  ], quiz: [{ id: 'cajon-snares', q: '¿Qué produce el chasquido del agudo?', options: ['La madera de detrás', 'Las bordonas de dentro', 'El agujero', 'Las patas'], answer: 1, why: 'Las bordonas (cuerdas) pegadas a la tapa vibran con el golpe en el borde.' }] },
   percussion: { cards: [
     { title: 'Percusión que afina', text: 'Caja, bombo y platos no dan una nota concreta: solo se tensan los parches para que suenen bien. Los timbales, el xilófono y el glockenspiel sí dan notas.' },
     { title: 'Los timbales', text: 'Se afinan con el pedal, que tensa el parche, y el timbalero comprueba la nota con un diapasón o de oído antes de cada obra.' },
@@ -126,7 +136,7 @@ const INSTRUMENT_PILL = {
 
 // Píldoras por nivel: unit = unidad del curso (0 = la primera) donde aparecen
 const LEVEL_PILLS = [
-  { id: 'names', unit: 0, title: 'Las notas tienen dos nombres', skip: ['percussion'], cards: [
+  { id: 'names', unit: 0, title: 'Las notas tienen dos nombres', skip: ['percussion', 'cajon'], cards: [
     { title: 'Do, Re, Mi… o C, D, E…', text: 'En España decimos Do, Re, Mi, Fa, Sol, La, Si. En inglés usan letras: C, D, E, F, G, A, B. El número (C4, A4) dice la octava: el Do central es C4.' },
     { title: 'Siete nombres, doce sonidos', text: 'Entre casi todas las notas hay una tecla negra (un semitono). Entre Mi y Fa y entre Si y Do no: ahí ya están a un semitono.' },
   ], quiz: [{ id: 'names-a', q: '¿Cómo se llama el La en notación americana?', options: ['L', 'A', 'G', 'H'], answer: 1, why: 'A. C es Do, D Re, E Mi, F Fa, G Sol, A La y B Si.' }] },
@@ -138,15 +148,15 @@ const LEVEL_PILLS = [
     { title: 'Grupos de pulsos', text: 'El compás agrupa los pulsos. El número de arriba dice cuántos hay en cada compás: 4/4 (cuatro), 3/4 (tres, como un vals), 2/4 (dos, como un pasodoble).' },
     { title: 'El primer tiempo manda', text: 'El primer pulso de cada compás es el más fuerte. Contar «UNO-dos-tres» te ayuda a no perderte.' },
   ], quiz: [{ id: 'meter-34', q: 'Un vals va en…', options: ['2/4', '3/4', '4/4', '6/8'], answer: 1, why: 'En 3/4: tres pulsos por compás, el primero fuerte.' }] },
-  { id: 'accidentals', unit: 3, title: 'Sostenidos y bemoles', skip: ['percussion'], cards: [
+  { id: 'accidentals', unit: 3, title: 'Sostenidos y bemoles', skip: ['percussion', 'cajon'], cards: [
     { title: 'Medio tono arriba o abajo', text: 'El sostenido (♯) sube la nota medio tono; el bemol (♭) la baja medio tono; el becuadro (♮) la devuelve a natural.' },
     { title: 'Dos nombres para un sonido', text: 'Do♯ y Re♭ suenan igual en el piano: se escribe uno u otro según la tonalidad.' },
   ], quiz: [{ id: 'acc-sharp', q: 'Escucha: ¿la segunda nota está más alta o más baja?', options: ['Más alta: es un sostenido', 'Más baja: es un bemol', 'Es la misma nota'], answer: 0, why: 'Sube medio tono: Fa y luego Fa♯.', play: [[65], [66]] }] },
-  { id: 'key', unit: 4, title: 'La armadura', skip: ['percussion'], cards: [
+  { id: 'key', unit: 4, title: 'La armadura', skip: ['percussion', 'cajon'], cards: [
     { title: 'Alteraciones fijas', text: 'Los sostenidos o bemoles del principio de cada línea valen para toda la obra: si hay un Fa♯, todos los Fa son sostenidos.' },
     { title: 'Te dice la tonalidad', text: 'Sin alteraciones: Do mayor. Un sostenido (Fa♯): Sol mayor. Dos (Fa♯ y Do♯): Re mayor. Un bemol (Si♭): Fa mayor. Dos (Si♭ y Mi♭): Si♭ mayor, la favorita de la banda.' },
   ], quiz: [{ id: 'key-g', q: 'La armadura tiene un solo sostenido, Fa♯. ¿Qué tonalidad mayor es?', options: ['Do mayor', 'Sol mayor', 'Re mayor', 'Fa mayor'], answer: 1, why: 'Sol mayor: su escala tiene un Fa♯.' }] },
-  { id: 'scale', unit: 5, title: 'La escala mayor', skip: ['percussion'], cards: [
+  { id: 'scale', unit: 5, title: 'La escala mayor', skip: ['percussion', 'cajon'], cards: [
     { title: 'Tono, tono, semitono…', text: 'Toda escala mayor sigue el mismo patrón: tono, tono, semitono, tono, tono, tono, semitono. Empieces donde empieces, suena «a escala mayor».' },
     { title: 'Mayor y menor', text: 'La escala menor cambia algunos pasos y suena más triste. Escucha la diferencia en los acordes: el mayor suena luminoso; el menor, melancólico.' },
   ], quiz: [{ id: 'ear-major', q: 'Escucha el acorde. ¿Es mayor o menor?', options: ['Mayor', 'Menor'], variants: [{ play: [60, 64, 67], answer: 0 }, { play: [60, 63, 67], answer: 1 }], why: 'El mayor tiene la tercera mayor (4 semitonos); el menor, la tercera menor (3).' }] },
@@ -158,7 +168,15 @@ const LEVEL_PILLS = [
     { title: 'El acento', text: 'El signo > sobre una nota pide tocarla más fuerte que las demás. Sube la baqueta un poco más, no aprietes.' },
     { title: 'El redoble', text: 'Las rayitas cruzadas en la plica piden un redoble: muchos golpes seguidos que suenan como un sonido continuo. Se aprende despacio, golpe a golpe.' },
   ], quiz: [{ id: 'perc-accent', q: '¿Qué significa el signo > sobre una nota?', options: ['Más fuerte (acento)', 'Más rápido', 'Más largo', 'Mano derecha'], answer: 0, why: 'Es un acento: esa nota se toca más fuerte que las demás.' }] },
-  { id: 'chords', unit: 6, title: 'Intervalos y acordes', skip: ['percussion'], cards: [
+  { id: 'cajon-palos', unit: 3, title: 'Los palos del flamenco', only: ['cajon'], cards: [
+    { title: 'Palos de cuatro', text: 'Tangos, tientos y rumba van en cuatro tiempos. Son los más fáciles para empezar a acompañar.' },
+    { title: 'Palos de doce', text: 'Soleá, alegrías y bulerías cuentan doce tiempos con acentos en 3, 6, 8, 10 y 12. La seguiriya también es de doce, pero con otros acentos: la verás más adelante.' },
+  ], quiz: [{ id: 'palos-12', q: '¿Cuál de estos palos va en compás de 12?', options: ['Rumba', 'Tangos', 'Bulerías', 'Ninguno'], answer: 2, why: 'Las bulerías, como la soleá y las alegrías, cuentan doce tiempos.' }] },
+  { id: 'cajon-palmas', unit: 6, title: 'Palmas y jaleo', only: ['cajon'], cards: [
+    { title: 'Palmas claras y sordas', text: 'Las claras (dedos de una mano contra la palma de la otra) suenan fuerte y agudo; las sordas (palmas huecas) suenan suave. El cajón dialoga con ellas.' },
+    { title: 'Escuchar al cante y al baile', text: 'El cajón acompaña: cuando canta el cantaor, toca más suave; cuando el bailaor zapatea, deja hueco o refuérzalo en los acentos.' },
+  ], quiz: [{ id: 'palmas-sordas', q: '¿Cómo suenan las palmas sordas?', options: ['Fuertes y agudas', 'Suaves y graves', 'Como un aplauso normal', 'No suenan'], answer: 1, why: 'Suaves: se dan con las palmas huecas, sin chasquido.' }] },
+  { id: 'chords', unit: 6, title: 'Intervalos y acordes', skip: ['percussion', 'cajon'], cards: [
     { title: 'La distancia entre dos notas', text: 'Se cuenta en notas: de Do a Mi hay una tercera (Do-Re-Mi); de Do a Sol, una quinta. La octava es la misma nota más aguda.' },
     { title: 'Un acorde son terceras apiladas', text: 'Do-Mi-Sol: una tercera y otra tercera. En la banda cada sección toca una nota del acorde: por eso es tan importante afinar en conjunto.' },
   ], quiz: [{ id: 'int-fifth', q: '¿Qué intervalo hay de Do a Sol?', options: ['Tercera', 'Cuarta', 'Quinta', 'Octava'], answer: 2, why: 'Una quinta: Do-Re-Mi-Fa-Sol son cinco notas.', play: [[60], [67]] }] },

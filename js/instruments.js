@@ -89,6 +89,11 @@ export const INSTRUMENTS = [
     blurb: 'Si♭ grave, clave de fa',
   },
   {
+    id: 'recorder', name: 'Flauta dulce', family: 'escuela', transpose: 12, written: [60, 86], minHz: 480, maxHz: 2450,
+    board: 'recorder', firstNotes: ['B4', 'A4', 'G4', 'C5', 'D5'], bandKey: 'G',
+    blurb: 'La del cole: para niños y principiantes',
+  },
+  {
     id: 'guitar', name: 'Guitarra', family: 'pulsada', polyphonic: true, transpose: -12, written: [52, 81], minHz: 70, maxHz: 1100,
     board: 'fretboard', firstNotes: ['E5', 'B4', 'G4'], bandKey: 'G',
     blurb: 'Acordes, rasgueo y punteo',
@@ -97,6 +102,11 @@ export const INSTRUMENTS = [
     id: 'piano', name: 'Piano', family: 'tecla', polyphonic: true, transpose: 0, written: [36, 96], minHz: 60, maxHz: 2100,
     board: 'keyboard', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C',
     blurb: 'Piano o teclado, las dos manos',
+  },
+  {
+    id: 'cajon', name: 'Cajón flamenco', family: 'percusion', rhythmOnly: true, tones: true, transpose: 0, written: [65, 72], minHz: 180, maxHz: 1600,
+    board: 'none', firstNotes: ['C5'], bandKey: 'C',
+    blurb: 'Grave y agudo: rumba, tangos y bulerías',
   },
   {
     id: 'percussion', name: 'Percusión', family: 'percusion', rhythmOnly: true, transpose: 0, written: [72, 72], minHz: 180, maxHz: 1600,

@@ -16,19 +16,24 @@ const pulse = createPulse('rhPulse', '#rhythm .staff-card');
 const TICK_MS = 30;
 const SNARE = { letter: 'C', acc: 0, oct: 5, midi: 72 };
 const ACCENT_GOAL = 1.3;
+const TONE_GOAL = 0.6;
 const LABEL = { perfect: '¡Perfecto!', good: 'Bien', early: 'Pronto', late: 'Tarde' };
 
 const staff = createStaff($('rhythmStaff'));
 let run = null;
 let timer = 0;
 
-// Cualquier canción se toca como ritmo: un golpe por nota, en la línea de la caja
+// Cualquier canción se toca como ritmo: un golpe por nota, en la línea de la caja.
+// En el cajón las lecciones distinguen grave (Fa4, abajo) y agudo (Do5, arriba).
+export const CAJON_BASS_MIDI = 65;
+const TONE_NAME = { bass: 'Grave', slap: 'Agudo' };
 function buildScore(lesson) {
   const song = lesson.song || lessonSong(lesson);
   const score = song.parsed ? structuredClone(song.parsed) : parseScore(song.score);
-  score.notes = score.notes.map(n => (n.rest ? n : { ...n, ...SNARE }));
+  if (!lesson.tones) score.notes = score.notes.map(n => (n.rest ? n : { ...n, ...SNARE }));
   return { song, score };
 }
+const expectedTone = n => (n.midi === CAJON_BASS_MIDI ? 'bass' : 'slap');
 
 const tempoBpm = () => Math.round(run.bpm * run.speed);
 const latency = () => getState().percLatency || 0;
@@ -65,6 +70,12 @@ function onHits(hits) {
     if (Math.abs(ms) > WINDOW_MS) { setStatus('Golpe de más', 'var(--bad)'); showOffset(null); return; }
     const kind = Math.abs(ms) <= PERFECT_MS ? 'perfect' : Math.abs(ms) <= GOOD_MS ? 'good' : ms < 0 ? 'early' : 'late';
     showOffset(ms);
+    if (run.lesson.tones && h.tone) {
+      const want = expectedTone(run.notes[run.playable[near]]);
+      const toneText = h.tone === want ? TONE_NAME[h.tone] : `${TONE_NAME[h.tone]}: tocaba ${TONE_NAME[want].toLowerCase()}`;
+      setStatus(`${LABEL[kind]} · ${toneText}`, h.tone !== want ? 'var(--bad)' : kind === 'perfect' ? 'var(--ok)' : kind === 'good' ? 'var(--warn)' : 'var(--bad)');
+      return;
+    }
     setStatus(`${LABEL[kind]} · ${ms > 0 ? '+' : ''}${Math.round(ms)} ms`, kind === 'perfect' ? 'var(--ok)' : kind === 'good' ? 'var(--warn)' : 'var(--bad)');
     staff.setState(run.playable[near], kind === 'perfect' || kind === 'good' ? 'done' : 'miss');
   });
@@ -125,9 +136,14 @@ function finish() {
   const count = s => r.results.filter(x => x.status === s).length;
   const accents = run.playable.map(i => run.notes[i].accent);
   const contrast = accents.some(Boolean) ? accentContrast(r.results, accents) : null;
-  const stars = r.accuracy >= 0.9 ? 3 : r.accuracy >= 0.75 ? 2 : r.accuracy >= 0.5 ? 1 : 0;
+  // Cajón: además del tiempo cuenta el sonido (grave o agudo). Con menos del 60 % bien, como mucho 2 estrellas.
+  const tones = run.lesson.tones ? r.results.map((x, i) => (x.tone ? x.tone === expectedTone(run.notes[run.playable[i]]) : null)).filter(x => x !== null) : [];
+  const toneAcc = tones.length ? tones.filter(Boolean).length / tones.length : null;
+  let stars = r.accuracy >= 0.9 ? 3 : r.accuracy >= 0.75 ? 2 : r.accuracy >= 0.5 ? 1 : 0;
+  if (toneAcc !== null && toneAcc < TONE_GOAL) stars = Math.min(stars, 2);
   const accentText = contrast === null ? '' : contrast >= ACCENT_GOAL ? ' · Acentos claros' : ' · Marca más los acentos';
-  const text = `${count('perfect')} perfectos · ${count('good')} bien · ${count('early') + count('late')} fuera de tiempo · ${count('miss')} sin tocar${accentText}. ${rhythmTip(r)}`;
+  const toneText = toneAcc === null ? '' : ` · Graves y agudos: ${Math.round(toneAcc * 100)} % bien${toneAcc < TONE_GOAL ? ' (grave con la palma en el centro, agudo con los dedos en el borde)' : ''}`;
+  const text = `${count('perfect')} perfectos · ${count('good')} bien · ${count('early') + count('late')} fuera de tiempo · ${count('miss')} sin tocar${accentText}${toneText}. ${rhythmTip(r)}`;
   let k = 0;
   const states = run.notes.map(n => (n.rest ? 'future' : ['perfect', 'good'].includes(r.results[k++].status) ? 'done' : 'miss'));
   finishLesson({
@@ -143,7 +159,11 @@ function demo() {
   if (run.playing) return;
   const spb = 60 / tempoBpm();
   const t0 = audio.audioTime() + 0.2;
-  run.playable.forEach(i => audio.drumHit(t0 + run.notes[i].start * spb, run.notes[i].accent));
+  run.playable.forEach(i => {
+    const n = run.notes[i];
+    if (run.lesson.tones) audio.cajonHit(t0 + n.start * spb, expectedTone(n), n.accent);
+    else audio.drumHit(t0 + n.start * spb, n.accent);
+  });
   setStatus('Escucha el ritmo…');
 }
 

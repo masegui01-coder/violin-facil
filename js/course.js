@@ -5,6 +5,8 @@ import { windUnits } from './course-winds.js';
 import { percUnits } from './course-perc.js';
 import { guitarUnits } from './course-guitar.js';
 import { pianoUnits } from './course-piano.js';
+import { recorderUnits } from './course-recorder.js';
+import { cajonUnits } from './course-cajon.js';
 import { songbookById, songbookLesson } from './songbook.js';
 import { chordLabel } from './chords.js';
 import { pillsFor } from './theory-pills.js';
@@ -127,11 +129,11 @@ const sbSong = (id, songbookId, sub) => ({ ...songbookLesson(songbookById(songbo
 
 const HELPERS = { theory, notes, song, exercise, slots, warmup, chordsHold, changes, sbSong };
 
-const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, piano: pianoUnits };
+const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, piano: pianoUnits, recorder: recorderUnits, cajon: cajonUnits };
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);
-  const units = inst.id === 'violin' ? UNITS : inst.rhythmOnly ? percUnits(HELPERS) : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : windUnits(inst, HELPERS);
+  const units = inst.id === 'violin' ? UNITS : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : inst.rhythmOnly ? percUnits(HELPERS) : windUnits(inst, HELPERS);
   const used = new Set();
   const pills = pillsFor(inst.id);
   return units.map((unit, ui) => ({

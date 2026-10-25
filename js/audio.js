@@ -221,6 +221,21 @@ export function stopOnsetCapture() {
 
 let noise = null;
 // Golpe de caja sintético (ruido filtrado) en un instante del reloj de audio
+// Cajón: el grave es un golpe sordo (seno de ~85 Hz que cae); el agudo, el chasquido de las bordonas
+export function cajonHit(time, tone, accent = false) {
+  if (tone !== 'bass') { drumHit(time, accent, 0.8); return; }
+  const c = ctx();
+  const osc = c.createOscillator(), gain = c.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(110, time);
+  osc.frequency.exponentialRampToValueAtTime(70, time + 0.15);
+  gain.gain.setValueAtTime(accent ? 0.9 : 0.7, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+  osc.connect(gain).connect(c.destination);
+  osc.start(time);
+  osc.stop(time + 0.3);
+}
+
 export function drumHit(time, accent = false, level = 1) {
   const c = ctx();
   if (!noise) {

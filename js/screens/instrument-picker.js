@@ -11,6 +11,8 @@ const ICONS = {
   oboe: `<path d="M12 1.5v17" ${S}/><path d="M10.5 18.5h3l1 3.5h-5z" ${S}/><circle cx="12" cy="7" r=".9" fill="currentColor"/><circle cx="12" cy="10" r=".9" fill="currentColor"/><circle cx="12" cy="13" r=".9" fill="currentColor"/>`,
   flute: `<path d="M2 12h20" ${S} stroke-width="2.4"/><circle cx="6" cy="12" r=".9" fill="var(--surface)"/><circle cx="11" cy="12" r=".9" fill="var(--surface)"/><circle cx="14" cy="12" r=".9" fill="var(--surface)"/><circle cx="17" cy="12" r=".9" fill="var(--surface)"/>`,
   percussion: `<ellipse cx="12" cy="9" rx="8" ry="3" ${S}/><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9" ${S}/><path d="M7 3l4 5M17 3l-4 5" ${S}/>`,
+  recorder: `<path d="M10.5 2h3l-.5 4h-2z" ${S}/><path d="M11 6h2l.6 13c0 1.6-.8 3-1.6 3s-1.6-1.4-1.6-3z" ${S}/><circle cx="12" cy="9.5" r=".8" fill="currentColor"/><circle cx="12" cy="12" r=".8" fill="currentColor"/><circle cx="12" cy="14.5" r=".8" fill="currentColor"/><circle cx="12" cy="17" r=".8" fill="currentColor"/>`,
+  cajon: `<rect x="5" y="3" width="14" height="18" rx="1.5" ${S}/><circle cx="12" cy="15" r="2.6" ${S}/><path d="M7.5 6h9" ${S}/>`,
   horn: `<circle cx="12" cy="11" r="5.5" ${S}/><circle cx="12" cy="11" r="2.5" ${S}/><path d="M6.6 12.5C5 17 2.5 19.5 2 21h6c0-2 .8-4 2.2-5.4" ${S}/><path d="M17.5 11H22" ${S}/>`,
   trombone: `<path d="M3 8h14a2.5 2.5 0 0 1 0 5H8" ${S}/><path d="M3 15h15" ${S}/><path d="M18 15l3.5-3v6z" ${S}/><path d="M8 13v2" ${S}/>`,
   euphonium: `<path d="M9 2v4" ${S}/><path d="M7.5 6h7v8a4.5 4.5 0 0 1-9 0v-3" ${S}/><path d="M14.5 8l5-4v5" ${S}/><path d="M9.5 9v4M12 9v4" ${S}/>`,
@@ -28,7 +30,7 @@ export function instrumentIcon(id) {
 }
 
 // Agrupados por familia para que con tantos instrumentos sea fácil encontrar el tuyo
-const GROUPS = [['cuerda', 'Cuerda'], ['madera', 'Viento madera'], ['metal', 'Viento metal'], ['percusion', 'Percusión'], ['pulsada', 'Guitarra'], ['tecla', 'Teclado']];
+const GROUPS = [['escuela', 'Para empezar (niños)'], ['cuerda', 'Cuerda'], ['madera', 'Viento madera'], ['metal', 'Viento metal'], ['percusion', 'Percusión'], ['pulsada', 'Guitarra'], ['tecla', 'Teclado']];
 
 export function instrumentCardsHtml(selected) {
   const card = i => `<button type="button" class="inst-opt" data-inst="${i.id}" aria-pressed="${i.id === selected}">

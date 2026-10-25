@@ -56,3 +56,17 @@ test('tips name the main problem', () => {
   assert.match(rhythmTip({ meanOffset: -40, spread: 10, results: [{ status: 'good' }] }), /adelantarte/);
   assert.match(rhythmTip({ meanOffset: 2, spread: 10, results: [{ status: 'perfect' }] }), /firme/);
 });
+
+test('cajón: tells the bass tone (centre) from the slap (edge)', () => {
+  const buf = new Float32Array(SR * 2);
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 - 0.5; };
+  for (let i = 0; i < buf.length; i++) buf[i] = rnd() * 0.003;
+  const bass = t => { const s = Math.round(t * SR); for (let i = 0; i < SR * 0.15; i++) buf[s + i] += 0.8 * Math.sin(2 * Math.PI * 90 * i / SR) * Math.exp(-i / (SR * 0.05)) + rnd() * 0.1 * Math.exp(-i / (SR * 0.005)); };
+  const slap = t => { const s = Math.round(t * SR); for (let i = 0; i < SR * 0.12; i++) buf[s + i] += rnd() * 0.9 * Math.exp(-i / (SR * 0.025)); };
+  bass(0.3); slap(0.7); bass(1.1); slap(1.5);
+  const hits = detectAll(buf);
+  assert.deepEqual(hits.map(h => h.tone), ['bass', 'slap', 'bass', 'slap']);
+  const r = scoreRhythm([0.3, 0.7], hits);
+  assert.deepEqual(r.results.map(x => x.tone), ['bass', 'slap']);
+});

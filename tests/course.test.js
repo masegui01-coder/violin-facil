@@ -28,7 +28,7 @@ test('guitar and piano courses: valid chords, notes in range and a real song in 
 import { pillsFor, reviewQuestion, resolveQuestion } from '../js/theory-pills.js';
 
 test('every instrument gets its own tuning pill plus level pills with valid questions', () => {
-  for (const inst of ['violin', 'trumpet', 'clarinet', 'sax', 'sax-tenor', 'sax-bari', 'flute', 'oboe', 'percussion', 'guitar', 'piano', 'eb-clarinet', 'bass-clarinet', 'piccolo', 'sax-soprano', 'flugelhorn', 'horn', 'trombone', 'euphonium', 'tuba']) {
+  for (const inst of ['violin', 'trumpet', 'clarinet', 'sax', 'sax-tenor', 'sax-bari', 'flute', 'oboe', 'percussion', 'guitar', 'piano', 'eb-clarinet', 'bass-clarinet', 'piccolo', 'sax-soprano', 'flugelhorn', 'horn', 'trombone', 'euphonium', 'tuba', 'recorder', 'cajon']) {
     const pills = pillsFor(inst);
     assert.equal(pills[0].title, 'Tu instrumento y la afinación', inst);
     assert.ok(pills.length >= 6, inst);

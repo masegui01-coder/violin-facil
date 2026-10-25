@@ -5,13 +5,22 @@ const AVG_BLOCKS = 40;        // ventana para el nivel de fondo (~100 ms)
 const RATIO = 3.2;            // un golpe es una subida brusca de energía sobre el fondo
 const MIN_ENERGY = 0.0008;    // por debajo es silencio
 const REFRACTORY_S = 0.07;    // dos golpes no pueden estar más cerca de 70 ms
+// Cajón: tras cada golpe se mira ~30 ms de sonido. El grave (palma en el centro) tiene casi toda la energía
+// por debajo de 250 Hz; el agudo (dedos en el borde) suena con las bordonas, muy por encima.
+const TONE_CUTOFF_HZ = 250;
+const TONE_BLOCKS = 12;
+export const BASS_RATIO = 0.45;
 
-// Recibe trozos de audio con su instante de inicio y devuelve los golpes [{time, strength}]
+// Recibe trozos de audio con su instante de inicio y devuelve los golpes [{time, strength, low, tone}]
+// (los golpes salen ~30 ms después, cuando ya se sabe si fueron graves o agudos)
 export function createOnsetDetector(sampleRate) {
   const history = [];
   let lastOnset = -Infinity;
   let rest = new Float32Array(0);
   let restTime = 0;
+  const alpha = 1 - Math.exp(-2 * Math.PI * TONE_CUTOFF_HZ / sampleRate);
+  let lp = 0;
+  let pending = null;
 
   function feed(samples, startTime) {
     const buf = new Float32Array(rest.length + samples.length);
@@ -21,13 +30,27 @@ export function createOnsetDetector(sampleRate) {
     const hits = [];
     let i = 0;
     for (; i + HOP <= buf.length; i += HOP) {
-      let e = 0;
-      for (let j = i; j < i + HOP; j++) e += buf[j] * buf[j];
+      let e = 0, eLow = 0;
+      for (let j = i; j < i + HOP; j++) {
+        e += buf[j] * buf[j];
+        lp += alpha * (buf[j] - lp);
+        eLow += lp * lp;
+      }
       e /= HOP;
+      eLow /= HOP;
+      if (pending) {
+        pending.total += e; pending.low += eLow;
+        if (++pending.blocks >= TONE_BLOCKS) {
+          const low = pending.total ? pending.low / pending.total : 0;
+          hits.push({ ...pending.hit, low, tone: low >= BASS_RATIO ? 'bass' : 'slap' });
+          pending = null;
+        }
+      }
       const background = history.length ? history.reduce((s, x) => s + x, 0) / history.length : 0;
       const time = t0 + i / sampleRate;
       if (e > MIN_ENERGY && e > background * RATIO && time - lastOnset > REFRACTORY_S) {
-        hits.push({ time, strength: Math.sqrt(e) });
+        if (pending) hits.push({ ...pending.hit, low: pending.total ? pending.low / pending.total : 0, tone: null });
+        pending = { hit: { time, strength: Math.sqrt(e) }, total: e, low: eLow, blocks: 1 };
         lastOnset = time;
       }
       history.push(e);
@@ -55,10 +78,10 @@ export function scoreRhythm(expected, onsets, latency = 0) {
       const d = (p.time - t) * 1000;
       if (Math.abs(d) <= WINDOW_MS && (!best || Math.abs(d) < Math.abs(best.d))) best = { p, d };
     });
-    if (!best) return { status: 'miss', offset: null, strength: 0 };
+    if (!best) return { status: 'miss', offset: null, strength: 0, tone: null };
     best.p.used = true;
     const a = Math.abs(best.d);
-    return { status: a <= PERFECT_MS ? 'perfect' : a <= GOOD_MS ? 'good' : best.d < 0 ? 'early' : 'late', offset: best.d, strength: best.p.strength };
+    return { status: a <= PERFECT_MS ? 'perfect' : a <= GOOD_MS ? 'good' : best.d < 0 ? 'early' : 'late', offset: best.d, strength: best.p.strength, tone: best.p.tone || null };
   });
   const hit = results.filter(r => r.offset !== null);
   const meanOffset = hit.length ? hit.reduce((s, r) => s + r.offset, 0) / hit.length : 0;

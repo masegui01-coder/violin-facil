@@ -69,6 +69,16 @@ function parseKeys(spec, instId) {
   };
 }
 
+// Flauta dulce soprano, digitación alemana (la de casi todas las flautas escolares). T = pulgar, ½ = medio pulgar.
+// Agujeros 1-3 mano izquierda y 4-7 derecha. Notas escritas (suena una octava más aguda).
+const RECORDER = {
+  60: 'T 1 2 3 4 5 6 7', 62: 'T 1 2 3 4 5 6', 64: 'T 1 2 3 4 5', 65: 'T 1 2 3 4', 66: 'T 1 2 3 5 6', 67: 'T 1 2 3',
+  68: 'T 1 2 4 5 6', 69: 'T 1 2', 70: 'T 1 3 4', 71: 'T 1', 72: 'T 2', 73: '1 2', 74: '2', 75: '2 3 4 5 6',
+  76: '½ 1 2 3 4 5', 77: '½ 1 2 3 4 6', 79: '½ 1 2 3', 81: '½ 1 2', 83: '½ 1 2 4 5', 84: '½ 1 4 5',
+};
+// Con digitación barroca (pone «B» en la flauta) el Fa grave es distinto
+export const RECORDER_BAROQUE_F = 'T 1 2 3 4 6 7';
+
 // Guitarra en primera posición (hasta el traste 5): la cuerda donde la nota queda más cerca de la cejuela.
 // midi ESCRITO (suena una octava más grave).
 const GUITAR_STRINGS = [40, 45, 50, 55, 59, 64];
@@ -91,6 +101,11 @@ export function fingeringFor(rawId, midi) {
     return pos ? { type: 'fret', ...pos } : null;
   }
   if (instId === 'piano') return midi >= 21 && midi <= 108 ? { type: 'key', midi } : null;
+  if (instId === 'recorder') {
+    if (!(midi in RECORDER)) return null;
+    const t = RECORDER[midi].split(' ');
+    return { type: 'recorder', thumb: t.includes('T') ? 'closed' : t.includes('½') ? 'half' : 'open', holes: t.filter(x => /^\d$/.test(x)).map(Number) };
+  }
   if (instId === 'trombone') {
     const drop = brassDrop('trombone', midi);
     return drop === null ? null : { type: 'slide', position: drop + 1 };
@@ -110,7 +125,7 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => ['violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'piano'].includes(instId);
+export const fingeringsReviewed = instId => ['recorder', 'violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'piano'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };
@@ -121,6 +136,11 @@ export function fingeringText(instId, midi, nom) {
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
   if (f.type === 'fret') return `Cuerda ${f.string} (${GUITAR_STRING_EU[6 - f.string]}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
   if (f.type === 'key') return midi === 60 ? 'El Do central' : `Tecla ${PIANO_OCTAVE[Math.floor(midi / 12) - 1] || ''}`.trim();
+  if (f.type === 'recorder') {
+    const thumb = f.thumb === 'closed' ? 'pulgar' : f.thumb === 'half' ? 'medio pulgar' : 'sin pulgar';
+    const holes = f.holes.length ? ` · ${f.holes.length === 1 ? 'agujero' : 'agujeros'} ${f.holes.join('-')}` : ' · todo abierto';
+    return `${thumb}${holes}${midi === 65 ? ' (alemana)' : ''}`;
+  }
   if (f.type === 'slide') return `Vara en la ${f.position}.ª posición`;
   if (f.type === 'valves') {
     if (!f.valves.length) return 'Sin pistones (al aire)';

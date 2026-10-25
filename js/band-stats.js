@@ -1,7 +1,7 @@
 // Estadísticas de la banda a partir de los datos que cada músico sincroniza (minutos por día, último ensayo, afinación…).
 
 const DAY_MS = 86400000;
-export const FAMILY_NAME = { cuerda: 'Cuerda', madera: 'Maderas', metal: 'Metales', percusion: 'Percusión', pulsada: 'Guitarras', tecla: 'Teclados' };
+export const FAMILY_NAME = { cuerda: 'Cuerda', madera: 'Maderas', metal: 'Metales', percusion: 'Percusión', pulsada: 'Guitarras', tecla: 'Teclados', escuela: 'Flautas dulces' };
 
 const dayKey = d => d.toISOString().slice(0, 10);
 const daysBack = (today, n) => Array.from({ length: n }, (_, i) => dayKey(new Date(new Date(today + 'T12:00Z') - i * DAY_MS)));
