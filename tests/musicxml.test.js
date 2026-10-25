@@ -67,3 +67,14 @@ test('musicxml: warns about notes the app cannot hear', () => {
   assert.equal(song.warnings.length, 2);
   assert.equal(song.difficulty, 3);
 });
+
+test('musicxml: reads unpitched percussion notes as rhythm', () => {
+  const xml = '<score-partwise><part-list><score-part id="P1"><part-name>Caja</part-name></score-part></part-list><part id="P1"><measure>'
+    + '<attributes><divisions>2</divisions><time><beats>2</beats><beat-type>4</beat-type></time></attributes>'
+    + '<note><unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched><duration>1</duration></note>'
+    + '<note><unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched><duration>1</duration></note>'
+    + '<note><rest/><duration>2</duration></note></measure></part></score-partwise>';
+  const song = parseMusicXml(xml);
+  assert.deepEqual(song.parsed.notes.map(n => (n.rest ? 'R' : n.midi) + ':' + n.beats), ['72:0.5', '72:0.5', 'R:1']);
+  assert.equal(song.time, 2);
+});

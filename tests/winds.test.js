@@ -6,7 +6,7 @@ import { parseNote, parseScore } from '../js/music.js';
 import { octaveShiftFor, songScore } from '../js/songs.js';
 import { fingeringFor, fingeringText } from '../js/fingerings.js';
 
-const winds = INSTRUMENTS.filter(i => i.id !== 'violin');
+const winds = INSTRUMENTS.filter(i => i.id !== 'violin' && !i.rhythmOnly);
 
 for (const inst of winds) {
   test(`${inst.name}: course notes stay in range and every lesson has a unique id`, () => {

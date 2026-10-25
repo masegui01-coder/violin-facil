@@ -2,7 +2,7 @@
 import { $ } from './ui.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'gym'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'gym', 'rhythm'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';

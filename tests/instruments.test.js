@@ -22,7 +22,7 @@ test('Bb instruments sound a major second lower than written, alto sax a major s
   assert.equal(writtenToSounding(72, instrumentById('flute')), 72);
 });
 
-for (const inst of INSTRUMENTS) {
+for (const inst of INSTRUMENTS.filter(i => !i.rhythmOnly)) {
   test(`${inst.name}: the detector hears its whole written range`, () => {
     for (let w = inst.written[0]; w <= inst.written[1]; w++) {
       const f = midiToFreq(writtenToSounding(w, inst));

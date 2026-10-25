@@ -46,6 +46,13 @@ function readTempo(part) {
 }
 
 function readPitch(noteEl) {
+  // percusión sin altura: se usa la posición en el pentagrama
+  const unpitched = child(noteEl, 'unpitched');
+  if (unpitched) {
+    const step = textOf(unpitched, 'display-step') || 'C';
+    const oct = Number(textOf(unpitched, 'display-octave') || 5);
+    return { letter: step, acc: 0, oct, midi: (oct + 1) * 12 + STEP_PC[step] };
+  }
   const pitch = child(noteEl, 'pitch');
   const step = textOf(pitch, 'step');
   const alter = Math.round(Number(textOf(pitch, 'alter') || 0));
@@ -82,7 +89,7 @@ export function parseMusicXml(text) {
       if (child(el, 'chord')) {
         // doble cuerda o acorde: se toca la nota más aguda
         const last = notes[notes.length - 1];
-        if (last && !last.rest && child(el, 'pitch')) {
+        if (last && !last.rest && (child(el, 'pitch') || child(el, 'unpitched'))) {
           const pitch = readPitch(el);
           if (pitch.midi > last.midi) Object.assign(last, pitch);
         }

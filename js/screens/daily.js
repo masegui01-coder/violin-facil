@@ -1,7 +1,7 @@
 // Tarjeta «Hoy»: objetivo diario, racha con protectores y reto del día (la misma partitura para todos los de tu instrumento).
 import { $, icon, toast } from '../ui.js';
 import { dailyProgress, dailySeed, BADGES, earnedBadges } from '../engage.js';
-import { sightReading } from '../generate.js';
+import { sightReading, rhythmReading } from '../generate.js';
 import { instrumentById } from '../instruments.js';
 import { getState, update, today, currentStreak } from '../store.js';
 import { launch } from '../launch.js';
@@ -12,9 +12,11 @@ const LEVEL_FOR = { new: 1, basic: 2, fluent: 3 };
 export function dailyLesson() {
   const s = getState();
   const day = today();
-  const song = sightReading(LEVEL_FOR[s.level] || 1, instrumentById(s.instrument), dailySeed(day, s.instrument));
+  const inst = instrumentById(s.instrument);
+  const level = LEVEL_FOR[s.level] || 1;
+  const song = inst.rhythmOnly ? rhythmReading(level, dailySeed(day, s.instrument)) : sightReading(level, inst, dailySeed(day, s.instrument));
   return {
-    id: `daily-${day}`, kind: 'song', song: { ...song, title: 'Reto del día', by: song.by }, oneTake: true, daily: day,
+    id: `daily-${day}`, kind: 'song', song: { ...song, title: 'Reto del día', by: song.by }, oneTake: true, daily: day, sticking: song.sticking,
     nextAction: () => ({ label: 'Ver clasificación', run: () => window.dispatchEvent(new CustomEvent('open-daily-board')) }),
   };
 }

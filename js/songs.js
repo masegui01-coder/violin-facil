@@ -92,6 +92,7 @@ export function styleById(id) {
 
 // Desplazamiento de octava (0, ±12, +24) para que toda la canción quepa en el registro escrito del instrumento; null si no cabe
 export function octaveShiftFor(song, inst) {
+  if (inst.rhythmOnly) return 0; // en percusión solo cuenta el ritmo
   const midis = songScore(song).notes.filter(n => !n.rest).map(n => n.midi);
   const lo = Math.min(...midis), hi = Math.max(...midis);
   return [0, 12, -12, 24].find(k => lo + k >= inst.written[0] && hi + k <= inst.written[1]) ?? null;

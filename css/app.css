@@ -510,3 +510,19 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .help-list { margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .help-list dt { font-weight: 800; margin-top: 8px; }
 .help-list dd { margin: 0; color: var(--muted); line-height: 1.45; }
+.st-clef-perc { fill: var(--staff); }
+.st-accent { font: 800 20px var(--f-body); fill: currentColor; }
+.st-stick { font: 800 15px var(--f-body); fill: var(--accent); }
+
+/* Percusión */
+.grow { flex: 1; }
+.beat-row { display: inline-flex; align-items: center; gap: 8px; }
+.beat-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--line); transition: background .05s, transform .05s; }
+.beat-dot.on { background: var(--accent); transform: scale(1.2); }
+.beat-dot.down { background: var(--bad); }
+.beat-count { font-family: var(--f-display); font-size: 1.6rem; min-width: 1ch; font-variant-numeric: tabular-nums; }
+.timing { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: .8rem; color: var(--muted); font-weight: 700; }
+.timing-track { position: relative; height: 26px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; }
+.timing-track .ok-zone { position: absolute; left: 39%; right: 39%; top: 3px; bottom: 3px; border-radius: 999px; background: var(--ok-soft); }
+.timing-track .center { position: absolute; left: 50%; top: 2px; bottom: 2px; width: 2px; background: var(--ink); }
+.timing-track .dot { position: absolute; top: 3px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--muted); transition: left .1s; }

@@ -4,7 +4,8 @@ import { lessonSong, lessonTitle, lessonKey } from '../course.js';
 import { SONGS, allSongs, styleById, songScore, DIFFICULTY, MY_STYLE } from '../songs.js';
 
 const SONGS_IDS = new Set(SONGS.map(s => s.id));
-import { deleteImportedSong, instrumentProgress } from '../store.js';
+import { getState, deleteImportedSong, instrumentProgress } from '../store.js';
+import { instrumentById } from '../instruments.js';
 import { launch, defaultMode } from '../launch.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
@@ -25,6 +26,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
   const sub = lesson.sub || (song ? song.by : '');
   const locked = state === 'locked';
   const isSong = lesson.kind === 'song';
+  const rhythmOnly = instrumentById(getState().instrument).rhythmOnly;
   const rec = defaultMode(lesson);
   const modeBtn = (mode, title, text) => `<button type="button" class="mode-btn${rec === mode ? ' primary' : ''}" data-mode="${mode}" ${locked ? 'disabled' : ''}><b>${title}</b><small>${text}</small></button>`;
   $('sheetBody').innerHTML = `<div class="sheet-body">
@@ -34,7 +36,9 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
     </div>
     <div class="sheet-facts">${facts(lesson, song).map(f => `<span>${esc(f)}</span>`).join('')}</div>
     ${locked ? '<p class="muted">Completa la lección anterior para desbloquear esta, o actívalas todas en Perfil.</p>' : ''}
-    ${isSong
+    ${isSong && rhythmOnly
+      ? `<button type="button" class="btn big" data-mode="tempo" ${locked ? 'disabled' : ''}>Tocar el ritmo</button>`
+      : isSong
       ? `<div class="mode-grid">${modeBtn('learn', 'Nota a nota', 'La partitura espera a que cada nota suene bien.')}${modeBtn('tempo', 'A tempo', 'Cuenta de un compás y la partitura avanza sola.')}${lesson.songId ? modeBtn('memory', 'De memoria', 'Sin partitura: tocas y al final comparo lo que has tocado con la canción.').replace('mode-btn', 'mode-btn wide') : ''}</div>`
       : `<button type="button" class="btn big" data-mode="learn" ${locked ? 'disabled' : ''}>Empezar</button>`}
     ${isSong && lesson.songId ? `<div class="row">${SONGS_IDS.has(lesson.songId) ? '<button type="button" class="btn ghost small" data-social="board">Clasificación</button>' : '<button type="button" class="btn ghost small" data-social="share">Compartir partitura</button>'}<button type="button" class="btn ghost small" data-social="challenge">Retar a un amigo</button></div>` : ''}

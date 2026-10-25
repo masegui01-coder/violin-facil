@@ -39,7 +39,7 @@ export function diatonicStep(note) {
   return note.oct * 7 + LETTERS.indexOf(note.letter);
 }
 
-// Partitura en texto: "| D4q E4e F#4e G4h | R h |". Duraciones w h q e s, puntillo con ".".
+// Partitura en texto: "| D4q E4e F#4e G4h | R h |". Duraciones w h q e s, puntillo con "." y acento con ">" (C5q>).
 export function parseScore(text) {
   const notes = [];
   const bars = [];
@@ -51,11 +51,11 @@ export function parseScore(text) {
   };
   normalizeScore(text).trim().split(/\s+/).forEach(raw => {
     if (raw === '|') { closeBar(); return; }
-    const tok = /^(R|[A-G](?:#|b)?\d)([whqes])(\.?)$/.exec(raw);
+    const tok = /^(R|[A-G](?:#|b)?\d)([whqes])(\.?)(>?)$/.exec(raw);
     if (!tok) throw new Error('Figura no válida: ' + raw);
     const beats = DURATIONS[tok[2]] * (tok[3] ? 1.5 : 1);
     const base = tok[1] === 'R' ? { rest: true } : { ...parseNote(tok[1]), rest: false };
-    notes.push({ ...base, beats, start: beat, dotted: !!tok[3], dur: tok[2], bar: bars.length });
+    notes.push({ ...base, beats, start: beat, dotted: !!tok[3], dur: tok[2], accent: !!tok[4], bar: bars.length });
     beat += beats;
   });
   closeBar();

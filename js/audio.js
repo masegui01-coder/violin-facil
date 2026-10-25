@@ -1,6 +1,7 @@
 // Audio del navegador: micrófono, notas de referencia y metrónomo.
 import { detectPitch, rms } from './pitch.js';
 import { midiToFreq, freqToMidi } from './music.js';
+import { createOnsetDetector } from './onsets.js';
 
 const MIN_RMS = 0.01;
 const MEDIAN_FRAMES = 3;
@@ -138,6 +139,66 @@ export function playChord(soundingMidis, seconds = null) {
     setTimeout(stop, seconds * 1000);
   }
   return stop;
+}
+
+// ---------- Percusión: golpes y sonido de caja ----------
+const CAPTURE_BUFFER = 1024;
+let capture = null;
+
+// Escucha golpes en el micrófono y llama a onHits([{time, strength}]) con tiempos del reloj de audio
+export function startOnsetCapture(onHits) {
+  if (!state.stream) return false;
+  stopOnsetCapture();
+  const c = ctx();
+  const src = c.createMediaStreamSource(state.stream);
+  const proc = c.createScriptProcessor(CAPTURE_BUFFER, 1, 1);
+  const sink = c.createGain();
+  sink.gain.value = 0;
+  const detector = createOnsetDetector(c.sampleRate);
+  proc.onaudioprocess = e => {
+    const data = e.inputBuffer.getChannelData(0);
+    const hits = detector.feed(new Float32Array(data), c.currentTime - data.length / c.sampleRate);
+    if (hits.length) onHits(hits);
+  };
+  src.connect(proc);
+  proc.connect(sink).connect(c.destination);
+  capture = { src, proc, sink };
+  return true;
+}
+
+export function stopOnsetCapture() {
+  if (!capture) return;
+  capture.proc.onaudioprocess = null;
+  capture.src.disconnect();
+  capture.proc.disconnect();
+  capture.sink.disconnect();
+  capture = null;
+}
+
+let noise = null;
+// Golpe de caja sintético (ruido filtrado) en un instante del reloj de audio
+export function drumHit(time, accent = false) {
+  const c = ctx();
+  if (!noise) {
+    noise = c.createBuffer(1, c.sampleRate * 0.2, c.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const src = c.createBufferSource(), filt = c.createBiquadFilter(), gain = c.createGain();
+  src.buffer = noise;
+  filt.type = 'bandpass';
+  filt.frequency.value = 1800;
+  filt.Q.value = 0.8;
+  gain.gain.setValueAtTime(accent ? 0.9 : 0.5, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+  src.connect(filt).connect(gain).connect(c.destination);
+  src.start(time);
+  src.stop(time + 0.15);
+}
+
+// ¿Este instante coincide con un clic del metrónomo? (para no confundirlo con un golpe)
+export function nearClick(time, latency = 0, windowS = 0.04) {
+  return metro.clicks.some(k => Math.abs(time - latency - k) < windowS);
 }
 
 // ---------- Grabación de la toma ----------

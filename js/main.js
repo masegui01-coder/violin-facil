@@ -23,6 +23,8 @@ import './screens/gym.js';
 import './screens/study.js';
 import './screens/band.js';
 import './screens/social.js';
+import './screens/rhythm.js';
+import './screens/perc-tools.js';
 
 function hydrateIcons(root = document) {
   root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });

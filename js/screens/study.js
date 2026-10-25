@@ -1,6 +1,6 @@
 // Lectura a primera vista y modo audición: una sola toma, como en una prueba real.
 import { $ } from '../ui.js';
-import { sightReading } from '../generate.js';
+import { sightReading, rhythmReading } from '../generate.js';
 import { instrumentById } from '../instruments.js';
 import { allSongs, octaveShiftFor } from '../songs.js';
 import { getState } from '../store.js';
@@ -10,9 +10,10 @@ const AUDITION_MIN_DIFFICULTY = 2;
 
 function sightLesson(level) {
   const seed = Math.floor(Math.random() * 1e6);
-  const song = sightReading(level, instrumentById(getState().instrument), seed);
+  const inst = instrumentById(getState().instrument);
+  const song = inst.rhythmOnly ? rhythmReading(level, seed) : sightReading(level, inst, seed);
   return {
-    id: song.id, kind: 'song', song, oneTake: true,
+    id: song.id, kind: 'song', song, oneTake: true, sticking: song.sticking,
     nextAction: () => ({ label: 'Otra partitura', run: () => launch(sightLesson(level), { mode: 'tempo', from: 'practice' }) }),
   };
 }
@@ -53,6 +54,8 @@ const TOOL_HELP = [
   ['Afinar en acorde', 'La app suena un acorde y tú colocas la tercera, la quinta o la sexta en su sitio justo, como en la banda. Sin auriculares, alterna escuchar y tocar.'],
   ['Lectura a primera vista', 'Una partitura nueva cada vez, en tres niveles, y una sola toma: sin escucharla antes ni repetir.'],
   ['Modo audición', 'Una obra al azar, una sola toma y sin ayudas en pantalla, como en una prueba real.'],
+  ['Percusión: calibrar el micrófono', 'Mide el retraso de tu móvil con unos golpes de prueba, para que la app sepa al milisegundo si te adelantas o te retrasas. Hazlo una vez por móvil.'],
+  ['Percusión: gimnasio de rudimentos', 'Pulso estable, golpes simples y dobles, paradiddle, semicorcheas y acentos, con el tempo que sube cuando lo haces bien.'],
 ];
 
 function openStudyHelp() {

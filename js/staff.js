@@ -36,12 +36,18 @@ function ledgerSteps(step) {
   return out;
 }
 
-function drawPrefix(g, key, time) {
+function drawPrefix(g, key, time, clef) {
   for (let i = 0; i < 5; i++) {
     const ly = BOTTOM_Y - i * HALF * 2;
     el('line', { x1: 0, x2: WIDTH, y1: ly, y2: ly, class: 'st-line' }, g);
   }
-  text(g, 4, BOTTOM_Y + 9, '𝄞', { class: 'st-clef' });
+  if (clef === 'perc') {
+    // clave de percusión: dos barras gruesas
+    [14, 24].forEach(x => el('rect', { x, y: BOTTOM_Y - HALF * 6, width: 6, height: HALF * 4, class: 'st-clef-perc' }, g));
+    key = 'C';
+  } else {
+    text(g, 4, BOTTOM_Y + 9, '𝄞', { class: 'st-clef' });
+  }
   const n = keyCount(key);
   const steps = n >= 0 ? SHARP_STEPS.slice(0, n) : FLAT_STEPS.slice(0, -n);
   steps.forEach((s, i) => text(g, 46 + i * 10, y(s) + (n >= 0 ? 5 : 3), n >= 0 ? '♯' : '♭', { class: 'st-acc' }));
@@ -72,6 +78,7 @@ function drawNote(g, x, note, sig) {
   if (acc) text(g, x - 23, ny + 5, ACC_GLYPH[acc], { class: 'st-acc-note' });
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: 8, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
+  if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
   if (note.dotted) el('circle', { cx: x + 13, cy: (step - E4) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
   if (note.dur === 'w') return;
   const up = step < B4;
@@ -101,13 +108,14 @@ export function createStaff(svg) {
   const xOfBeat = beat => startX + NOTE_PAD + beat * beatPx;
 
   // mode: learn (nota resaltada), tempo (línea de lectura y duración de cada nota) o review (partitura entera, sin desplazamiento)
-  function render(score, { key = 'C', time = 4, mode = 'learn' } = {}) {
+  // clef: 'treble' o 'perc'; sticking: letras de mano (D/I) para cada nota que suena, en orden
+  function render(score, { key = 'C', time = 4, mode = 'learn', clef = 'treble', sticking = null } = {}) {
     svg.replaceChildren();
     notes = score.notes;
     const minBeats = Math.min(1, ...notes.map(n => n.beats));
     beatPx = Math.max(48, 28 / minBeats);
     const fixed = el('g', {}, svg);
-    startX = drawPrefix(fixed, key, time);
+    startX = drawPrefix(fixed, key, time, clef);
     const width = mode === 'review' ? xOfBeat(score.totalBeats) + 16 : WIDTH;
     svg.setAttribute('viewBox', `0 0 ${width} ${HEIGHT}`);
     if (mode === 'review') svg.setAttribute('width', Math.round(width * 0.75));
@@ -125,6 +133,7 @@ export function createStaff(svg) {
     const endX = xOfBeat(score.totalBeats) - 8;
     el('line', { x1: endX, x2: endX, y1: BOTTOM_Y - HALF * 8, y2: BOTTOM_Y, class: 'st-line' }, scroller);
     el('rect', { x: endX + 3, y: BOTTOM_Y - HALF * 8, width: 4, height: HALF * 8, class: 'st-fill' }, scroller);
+    let playIndex = 0;
     noteGroups = notes.map(n => {
       const g = el('g', { class: 'st-note future' }, scroller);
       if (mode === 'tempo' && !n.rest) {
@@ -133,6 +142,10 @@ export function createStaff(svg) {
       }
       if (n.rest) drawRest(g, xOfBeat(n.start), n);
       else drawNote(g, xOfBeat(n.start), n, sig);
+      if (!n.rest && sticking) {
+        const hand = sticking[playIndex++];
+        if (hand) text(g, xOfBeat(n.start) - 5, BOTTOM_Y + 34, hand, { class: 'st-stick' });
+      }
       return g;
     });
     playhead = el('line', { x1: FOCUS_X - 10, x2: FOCUS_X - 10, y1: 16, y2: HEIGHT - 16, class: 'st-playhead' }, svg);

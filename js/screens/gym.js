@@ -5,6 +5,7 @@ import { technique, MAJOR_KEYS, EXERCISE_IDS, keyLabel } from '../generate.js';
 import { instrumentById } from '../instruments.js';
 import { getState, recordGym } from '../store.js';
 import { launch } from '../launch.js';
+import { renderRudiments } from './perc-tools.js';
 
 const START_BPM = 60;
 const STEP_BPM = 4;
@@ -27,6 +28,8 @@ function gymLesson(exKind, key, bpm) {
 
 function render() {
   const inst = instrumentById(getState().instrument);
+  if (inst.rhythmOnly) { renderRudiments(); return; }
+  $('gymKinds').closest('.setting').hidden = false;
   $('gymKinds').innerHTML = EXERCISE_IDS.map(k => `<button type="button" data-kind="${k}" aria-pressed="${k === kind}">${KIND_NAME[k]}</button>`).join('');
   $('gymList').innerHTML = MAJOR_KEYS.map(key => {
     const song = technique(kind, key, inst, START_BPM);

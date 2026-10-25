@@ -2,6 +2,7 @@
 import { buildCourse, lessonStates, lessonSong } from './course.js';
 import { styleById } from './songs.js';
 import { getState, instrumentProgress } from './store.js';
+import { instrumentById } from './instruments.js';
 import { go } from './router.js';
 
 export function currentCourse() {
@@ -44,6 +45,7 @@ function eyebrowFor(lesson, from) {
 export function launch(lesson, { mode, from = 'course' } = {}) {
   const params = { lesson, from, eyebrow: eyebrowFor(lesson, from) };
   if (lesson.kind === 'theory') go('theory', params);
+  else if (instrumentById(getState().instrument).rhythmOnly) go('rhythm', params);
   else if (mode === 'memory') go('free', params);
   else go('lesson', { ...params, mode: mode || defaultMode(lesson) });
 }

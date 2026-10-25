@@ -8,7 +8,7 @@ const inRange = (song, inst) => parseScore(song.score).notes.filter(n => !n.rest
 const barsOk = song => parseScore(song.score).bars.every(b => b.beats === song.time);
 
 test('every instrument can play the scale exercise in all 12 major keys, in range and spelled in key', () => {
-  for (const inst of INSTRUMENTS) {
+  for (const inst of INSTRUMENTS.filter(i => !i.rhythmOnly)) {
     for (const key of MAJOR_KEYS) {
       for (const kind of EXERCISE_IDS) {
         const song = technique(kind, key, inst, 80);
@@ -24,7 +24,7 @@ test('every instrument can play the scale exercise in all 12 major keys, in rang
 });
 
 test('sight reading is deterministic, fits the bars and the range at every level', () => {
-  for (const inst of INSTRUMENTS) {
+  for (const inst of INSTRUMENTS.filter(i => !i.rhythmOnly)) {
     for (const level of [1, 2, 3]) {
       for (let seed = 1; seed <= 25; seed++) {
         const a = sightReading(level, inst, seed);

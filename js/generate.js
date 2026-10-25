@@ -162,3 +162,42 @@ export function sightReading(level, inst, seed) {
     key: minor ? (tonicName + 'm') : key, time, bpm: [0, 72, 80, 88][level], score: bars(tokens, time),
   };
 }
+
+// ---------- Lectura rítmica (percusión) ----------
+const RHYTHM_CELLS = {
+  1: [['q'], ['h'], ['q', 'q'], ['w']],
+  2: [['e', 'e'], ['q.', 'e'], ['Rq'], ['q'], ['e', 'e', 'q'], ['h']],
+  3: [['s', 's', 's', 's'], ['e', 's', 's'], ['s', 's', 'e'], ['e.', 's'], ['Re', 'e'], ['e', 'q', 'e'], ['q']],
+};
+const CELL_BEATS = { w: 4, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25, Rq: 1, Re: 0.5 };
+
+export function rhythmReading(level, seed) {
+  const r = rng(seed);
+  const time = level === 3 ? [4, 3, 2][Math.floor(r() * 3)] : 4;
+  const BARS = 8;
+  const bars = [];
+  const sticking = [];
+  for (let b = 0; b < BARS; b++) {
+    const tokens = [];
+    let left = time;
+    if (b === BARS - 1) {
+      tokens.push(time === 4 ? 'C5w' : time === 3 ? 'C5h.' : 'C5h');
+      sticking.push('D');
+    } else {
+      for (let guard = 0; left > 0 && guard < 30; guard++) {
+        const cells = RHYTHM_CELLS[level].filter(c => c.reduce((s, d) => s + CELL_BEATS[d], 0) <= left);
+        const cell = cells.length ? cells[Math.floor(r() * cells.length)] : ['q'];
+        cell.forEach(d => {
+          if (d.startsWith('R')) tokens.push('R' + d.slice(1));
+          else { tokens.push('C5' + d); sticking.push(sticking.length % 2 ? 'I' : 'D'); }
+        });
+        left -= cell.reduce((s, d) => s + CELL_BEATS[d], 0);
+      }
+    }
+    bars.push(tokens.join(' '));
+  }
+  return {
+    id: `rhythm-${level}-${seed}`, title: `Lectura rítmica n.º ${seed % 1000}`, by: `Nivel ${level}`, style: null, difficulty: level,
+    key: 'C', time, bpm: [0, 70, 76, 80][level], score: '| ' + bars.join(' | ') + ' |', sticking,
+  };
+}

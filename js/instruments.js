@@ -42,6 +42,11 @@ export const INSTRUMENTS = [
     board: 'keys', firstNotes: ['B4', 'A4', 'G4', 'E4', 'D4'], bandKey: 'Bb',
     blurb: 'Doble caña, en Do',
   },
+  {
+    id: 'percussion', name: 'Percusión', family: 'percusion', rhythmOnly: true, transpose: 0, written: [72, 72], minHz: 180, maxHz: 1600,
+    board: 'none', firstNotes: ['C5'], bandKey: 'C',
+    blurb: 'Caja, bombo y platos: ritmo y rudimentos',
+  },
 ];
 
 export function instrumentById(id) {

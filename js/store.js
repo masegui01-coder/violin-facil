@@ -14,6 +14,7 @@ const DEFAULTS = Object.freeze({
   speed: 0.6, metroMode: 'visual', bigText: false, recordings: [], importedSongs: [],
   instrument: 'violin', a4: 440, tuning: {}, gym: {}, practiceLog: {}, band: null,
   freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false, tourDone: false,
+  percLatency: 0, percClick: false,
 });
 
 function read(key) {

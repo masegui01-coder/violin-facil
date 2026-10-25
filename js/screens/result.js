@@ -38,7 +38,7 @@ function primaryAction() {
 function renderReview(review) {
   $('resReview').hidden = !review;
   if (!review) return;
-  reviewStaff.render(review.score, { key: review.key, time: review.time, mode: 'review' });
+  reviewStaff.render(review.score, { key: review.key, time: review.time, mode: 'review', clef: review.clef, sticking: review.sticking });
   review.states.forEach((st, i) => reviewStaff.setState(i, st));
 }
 

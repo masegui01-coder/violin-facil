@@ -2,6 +2,7 @@
 import { SONGS, songById, octaveShiftFor } from './songs.js';
 import { instrumentById } from './instruments.js';
 import { windUnits } from './course-winds.js';
+import { percUnits } from './course-perc.js';
 
 const theory = (id, title, cards) => ({ id, kind: 'theory', title, cards });
 const notes = (id, title, sub, list) => ({ id, kind: 'notes', title, sub, notes: list });
@@ -116,7 +117,7 @@ const HELPERS = { theory, notes, song, exercise, slots, warmup };
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);
-  const units = inst.id === 'violin' ? UNITS : windUnits(inst, HELPERS);
+  const units = inst.id === 'violin' ? UNITS : inst.rhythmOnly ? percUnits(HELPERS) : windUnits(inst, HELPERS);
   const used = new Set();
   return units.map(unit => ({
     ...unit,
