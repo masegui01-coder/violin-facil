@@ -1,5 +1,5 @@
 // Tareas del director: lista con filtros y ficha de cada tarea (quién la tiene, quién no ha empezado, sellos, recordatorio).
-import { esc, starsHtml } from '../ui.js';
+import { esc, starsHtml, num } from '../ui.js';
 import { hbars, statTile } from '../charts.js';
 import { seatName, pct, taskSubtitle } from './band-ui.js';
 import { derive, meter, dueText, STATE_PILL } from './director-common.js';
@@ -41,7 +41,7 @@ export function taskDetail(ctx, task) {
     <div class="table-wrap"><table class="prog-table"><thead><tr><th>Músico</th><th>Estado</th><th class="num">Mejor</th><th class="num">Intentos</th><th></th></tr></thead><tbody>
     ${st.rows.map(({ member: m, p }) => `<tr><td><b>${esc(m.nickname)}</b><br><small>${esc(seatName(m))}</small></td>
       <td>${!p ? '<span class="pill">Sin empezar</span>' : p.completed ? '<span class="pill ok">Hecha</span>' : '<span class="pill warn">En curso</span>'}${p?.stamp ? ' <span class="pill ok">Sellada</span>' : ''}</td>
-      <td class="num">${p ? starsHtml(p.bestStars) : '—'}</td><td class="num">${p ? p.attempts : 0}</td>
+      <td class="num">${p ? starsHtml(p.bestStars) : '—'}</td><td class="num">${p ? num(p.attempts) : 0}</td>
       <td>${p ? `<button type="button" class="btn ghost small" data-act="stamp:${p.id}">${p.stamp || p.comment ? 'Editar sello' : 'Sellar'}</button>` : ''}</td></tr>`).join('')}</tbody></table></div>
     <div class="row"><button type="button" class="btn ghost small" data-act="dup-task:${task.id}">Duplicar</button><button type="button" class="btn ghost small danger" data-act="del-task:${task.id}">Borrar tarea</button>
       <button type="button" class="btn ghost small" data-close>Cerrar</button></div>`;

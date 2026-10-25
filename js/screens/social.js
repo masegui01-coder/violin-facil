@@ -2,7 +2,7 @@
 import { $, esc, toast } from '../ui.js';
 import { cloudConfigured, cloudErrorText } from '../cloud.js';
 import * as social from '../social-api.js';
-import { songPayload } from '../band-api.js';
+import { songPayload, payloadScore } from '../band-api.js';
 import { SONGS, songById, MY_STYLE } from '../songs.js';
 import { instrumentById } from '../instruments.js';
 import { weekId } from '../engage.js';
@@ -78,10 +78,14 @@ async function shareScore(song) {
   } catch (err) { toast(cloudErrorText(err)); }
 }
 
-async function openChallenge(code) {
+const VALID_CODE = /^[A-Z2-9]{6}$/;
+
+async function openChallenge(rawCode) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  if (!VALID_CODE.test(code)) { toast('Ese enlace de reto no es válido'); return; }
   try {
     const ch = await social.getChallenge(code);
-    const lesson = { id: 'reto-' + code, kind: 'song', song: { ...ch.song, id: 'reto-' + code, style: null, difficulty: 2 }, oneTake: true, fixedSpeed: true, challenge: code,
+    const lesson = { id: 'reto-' + code, kind: 'song', song: { ...ch.song, parsed: payloadScore(ch.song), id: 'reto-' + code, style: null, difficulty: 2 }, oneTake: true, fixedSpeed: true, challenge: code,
       nextAction: () => ({ label: 'Ver el reto', run: () => openChallenge(code) }) };
     sheet(`<p class="eyebrow">Reto de ${esc(ch.ownerName)}</p><h2>${esc(ch.song.title)}</h2>
       <p class="muted small">${esc(instrumentById(ch.instrument).name)} · a tempo, al 100 % y en una sola toma. Cuenta tu mejor intento.</p>
@@ -93,13 +97,16 @@ async function openChallenge(code) {
   } catch (err) { sheet(`<h2>Reto</h2><p class="warn">${esc(cloudErrorText(err))}</p>`); }
 }
 
-async function openSharedScore(code) {
+async function openSharedScore(rawCode) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  if (!VALID_CODE.test(code)) { toast('Ese enlace de partitura no es válido'); return; }
   try {
     const shared = await social.getSharedScore(code);
     sheet(`<p class="eyebrow">Partitura de ${esc(shared.ownerName)}</p><h2>${esc(shared.song.title)}</h2><p class="muted small">${esc(shared.song.by || '')}</p>
       <button type="button" class="btn big" id="saveShared">Guardar en «Mis partituras»</button>`);
     $('saveShared').addEventListener('click', () => {
-      addImportedSong({ ...shared.song, id: 'imp-' + code, style: MY_STYLE.id, difficulty: 2, importedAt: new Date().toISOString() });
+      const { enc, ...meta } = shared.song;
+      addImportedSong({ ...meta, parsed: payloadScore(shared.song), id: 'imp-' + code, style: MY_STYLE.id, difficulty: 2, importedAt: new Date().toISOString() });
       $('sheet').close();
       toast('Guardada en «Mis partituras»');
     });

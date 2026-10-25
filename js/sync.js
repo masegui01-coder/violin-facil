@@ -35,7 +35,7 @@ export function testerSummary(state, account, now = Date.now()) {
   const minutes = Object.values(state.practiceLog || {}).reduce((a, b) => a + b, 0);
   const used = new Set(Object.keys(state.progress || {}).map(k => (/^[a-z-]+:(lesson|song):/.test(k) ? k.split(':')[0] : 'violin')));
   return {
-    name: account.displayName || state.nickname || (account.email || '').split('@')[0] || 'Sin nombre',
+    name: String(account.displayName || state.nickname || (account.email || '').split('@')[0] || 'Sin nombre').slice(0, 60),
     email: account.email || '', instrument: state.instrument, instruments: [...used].map(id => instrumentById(id).name),
     xp: state.xp || 0, level: levelFor(state.xp || 0).name, lessons: state.lessonsPlayed || 0,
     minutes: Math.round(minutes), daysPracticed: days.length, firstDay: days[0] || null, lastPractice: days[days.length - 1] || null,

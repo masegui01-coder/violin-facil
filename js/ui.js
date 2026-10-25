@@ -7,8 +7,12 @@ export function esc(text) {
   return String(text).replace(/[&<>"']/g, c => ESCAPES[c]);
 }
 
-export function starsHtml(n, max = 3) {
-  return `<span class="stars" aria-label="${n} de ${max} estrellas">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>`;
+// Número seguro para pintar en HTML: los datos de otros usuarios pueden venir manipulados
+export const num = x => (Number.isFinite(Number(x)) ? Math.round(Number(x)) : 0);
+
+export function starsHtml(raw, max = 3) {
+  const n = Math.max(0, Math.min(max, num(raw)));
+  return `<span class="stars" role="img" aria-label="${n} de ${max} estrellas">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>`;
 }
 
 let toastTimer = 0;

@@ -1,5 +1,5 @@
 // Músicos: lista por secciones con su actividad (minigráfica de 14 días) y la ficha de cada músico.
-import { esc } from '../ui.js';
+import { esc, num } from '../ui.js';
 import * as api from '../band-api.js';
 import { trafficLight, minutesInLast, practiceDays, dailySeries, FAMILY_NAME } from '../band-stats.js';
 import { instrumentById } from '../instruments.js';
@@ -66,7 +66,7 @@ export function memberDetail(ctx, m) {
     <h3>Tareas</h3>
     ${mine.length ? `<div class="list">${mine.map(t => {
       const p = prog(t);
-      return `<div class="list-row static"><span><b>${esc(t.title)}</b><small>${!p ? 'Sin empezar' : p.completed ? 'Hecha' : 'En curso'}${p ? ` · mejor ${pct(t.passage ? p.passageBest || 0 : p.bestAccuracy || 0)} · ${p.attempts} intentos · ${p.minutes} min` : ''}</small></span>
+      return `<div class="list-row static"><span><b>${esc(t.title)}</b><small>${!p ? 'Sin empezar' : p.completed ? 'Hecha' : 'En curso'}${p ? ` · mejor ${pct(t.passage ? p.passageBest || 0 : p.bestAccuracy || 0)} · ${num(p.attempts)} intentos · ${num(p.minutes)} min` : ''}</small></span>
         ${p ? `<button type="button" class="btn ghost small" data-act="stamp:${p.id}">${p.stamp || p.comment ? 'Sello ✓' : 'Sellar'}</button>` : ''}</div>`;
     }).join('')}</div>` : '<p class="muted">No tiene tareas asignadas.</p>'}
     ${worst.length ? `<h3>Notas que más le cuestan afinar</h3><p class="small">${worst.map(w => `<b>${esc(noteLabel({ midi: w.midi }, nom, m.instrument !== 'violin'))}</b> ${w.c > 0 ? '+' : ''}${Math.round(w.c)} ¢`).join(' · ')}</p>` : ''}

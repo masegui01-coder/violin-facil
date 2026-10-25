@@ -30,7 +30,7 @@ function songHtml(song) {
   const style = styleById(song.style);
   const best = instrumentProgress()['song:' + song.id] || 0;
   const dots = [1, 2, 3].map(i => `<i class="${i <= song.difficulty ? 'on' : ''}"></i>`).join('');
-  return `<button type="button" class="song" data-song="${song.id}" style="--chip:${style.color}">
+  return `<button type="button" class="song" data-song="${esc(song.id)}" style="--chip:${style.color}">
     <span class="song-art"><span class="ic">${icon('song')}</span></span>
     <div><b>${esc(song.title)}</b><small>${esc(song.by)} · ${esc(style.name)}</small></div>
     <span class="song-side">${starsHtml(best)}<span class="level-dots" title="Dificultad ${song.difficulty} de 3">${dots}</span></span>

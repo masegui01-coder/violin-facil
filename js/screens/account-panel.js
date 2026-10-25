@@ -1,5 +1,5 @@
 // Perfil → Tu cuenta: sesión, estadísticas, borrar la cuenta y, para el administrador, el panel de testers.
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, num } from '../ui.js';
 import { go } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { currentAccount, signOutAccount, deleteAccount, accountErrorText } from '../account.js';
@@ -78,7 +78,7 @@ async function openTesters() {
     <div class="stats"><div class="stat"><b>${list.length}</b><span>con cuenta</span></div><div class="stat"><b>${active(1)}</b><span>hoy</span></div><div class="stat"><b>${active(7)}</b><span>esta semana</span></div></div>
     <div class="table-wrap"><table class="prog-table testers-table"><thead><tr><th>Tester</th><th>Instrumento</th><th>Último uso</th><th class="num">Días</th><th class="num">Min.</th><th class="num">Lecc.</th></tr></thead><tbody>
     ${list.map(t => `<tr><td><b>${esc(t.name)}</b><br><small>${esc(t.email)}</small></td><td>${esc(t.instrument || '')}<br><small>${esc(t.level || '')}</small></td>
-      <td>${fmtDay(t.lastSeen)}<br><small>${esc(t.platform || '')}</small></td><td class="num">${t.daysPracticed}</td><td class="num">${t.minutes}</td><td class="num">${t.lessons}</td></tr>`).join('')}
+      <td>${fmtDay(t.lastSeen)}<br><small>${esc(t.platform || '')}</small></td><td class="num">${num(t.daysPracticed)}</td><td class="num">${num(t.minutes)}</td><td class="num">${num(t.lessons)}</td></tr>`).join('')}
     </tbody></table></div>
     <div class="row"><button type="button" class="btn small" id="testersCsv">Descargar (CSV)</button><button type="button" class="btn ghost small" data-close>Cerrar</button></div></div>`;
   $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());

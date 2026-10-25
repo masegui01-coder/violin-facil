@@ -64,7 +64,7 @@ export function openTaskForm(band, members, onSave, { library = [], preset = nul
     const list = form.assignType === 'instruments'
       ? [...INSTRUMENTS.map(i => [i.id, i.name]), ...voices.map(k => [k, voiceKeyName(k)])]
       : form.assignType === 'members' ? musicians.map(m => [m.id, `${m.nickname} (${instrumentById(m.instrument).name})`]) : [];
-    $('tTargets').innerHTML = list.map(([v, label]) => `<label class="check-chip"><input type="checkbox" value="${v}">${esc(label)}</label>`).join('')
+    $('tTargets').innerHTML = list.map(([v, label]) => `<label class="check-chip"><input type="checkbox" value="${esc(v)}">${esc(label)}</label>`).join('')
       || (form.assignType === 'members' ? '<span class="muted small">Aún no hay músicos en la banda.</span>' : '');
   };
   const addPart = song => {

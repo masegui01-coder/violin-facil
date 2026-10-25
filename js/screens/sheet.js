@@ -107,7 +107,7 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
 // Lista de canciones para elegir con cuál comparar
 export function openSongPicker(onPick) {
   $('sheetBody').innerHTML = `<div class="sheet-body"><h2>¿Qué canción has tocado?</h2>
-    <div class="picker">${allSongs().map(s => `<button type="button" class="song" data-pick="${s.id}" style="--chip:${styleById(s.style).color}">
+    <div class="picker">${allSongs().map(s => `<button type="button" class="song" data-pick="${esc(s.id)}" style="--chip:${styleById(s.style).color}">
       <span class="song-art"><span class="ic">${icon('song')}</span></span><div><b>${esc(s.title)}</b><small>${esc(s.by)}</small></div><span></span></button>`).join('')}</div>
     <button type="button" class="btn ghost small" data-close>Cancelar</button></div>`;
   $('sheetBody').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { $('sheet').close(); onPick(b.dataset.pick); }));

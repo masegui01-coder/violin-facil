@@ -1,6 +1,6 @@
 // Amigos: tu código, solicitudes, el muro con los logros de tus amigos (y reacciones), la lista de amigos con lo que
 // están tocando, la clasificación de la semana y los avisos que te dejan. También mantiene tu perfil al día.
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, num } from '../ui.js';
 import { register, go, currentScreen } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { currentAccount } from '../account.js';
@@ -21,9 +21,9 @@ let data = { friends: [], requests: [], feed: [], mine: [], me: null };
 let pendingCode = new URLSearchParams(location.search).get(INVITE_PARAM) || '';
 let ready = false;
 
-const myName = () => (currentAccount() && currentAccount().displayName) || getState().nickname || 'Músico';
+const myName = () => String((currentAccount() && currentAccount().displayName) || getState().nickname || 'Músico').slice(0, 60);
 const instName = id => (id ? instrumentById(id).name : '');
-const initial = name => esc((name || '?').trim()[0].toUpperCase());
+const initial = name => esc((String(name || '').trim() || '?')[0].toUpperCase());
 
 // ---------- Perfil y muro (en segundo plano) ----------
 function profilePatch() {
@@ -120,9 +120,9 @@ const body = html => { $('friendsBody').innerHTML = html; };
 
 function reactionsHtml(ev, mine) {
   const me = currentAccount() && currentAccount().uid;
-  const counts = Object.values(ev.reactions || {}).reduce((m, r) => ({ ...m, [r]: (m[r] || 0) + 1 }), {});
+  const counts = Object.values(ev.reactions || {}).filter(r => fr.REACTIONS.includes(r)).reduce((m, r) => ({ ...m, [r]: (m[r] || 0) + 1 }), {});
   if (mine) return Object.keys(counts).length ? `<span class="react-sum">${Object.entries(counts).map(([r, n]) => `${r} ${n}`).join(' · ')}</span>` : '';
-  return `<span class="reacts">${fr.REACTIONS.map(r => `<button type="button" class="react${ev.reactions && ev.reactions[me] === r ? ' on' : ''}" data-react="${r}" data-ev="${ev.owner}/${ev.id}">${r}${counts[r] ? ` ${counts[r]}` : ''}</button>`).join('')}</span>`;
+  return `<span class="reacts">${fr.REACTIONS.map(r => `<button type="button" class="react${ev.reactions && ev.reactions[me] === r ? ' on' : ''}" data-react="${r}" data-ev="${esc(ev.owner)}/${esc(ev.id)}">${r}${counts[r] ? ` ${counts[r]}` : ''}</button>`).join('')}</span>`;
 }
 
 function wallHtml() {
@@ -135,7 +135,7 @@ function wallHtml() {
 function friendsHtml() {
   if (!data.friends.length) return '<p class="empty">Todavía no tienes amigos en Band Flow. Comparte tu código o tu enlace de invitación.</p>';
   return data.friends.map(f => `<div class="friend"><span class="avatar">${initial(f.name)}</span><div>
-      <b>${esc(f.name)}</b><small>${esc(instName(f.instrument))}${f.level ? ' · ' + esc(f.level) : ''}${f.streak ? ` · 🔥 ${f.streak}` : ''}</small>
+      <b>${esc(f.name)}</b><small>${esc(instName(f.instrument))}${f.level ? ' · ' + esc(f.level) : ''}${num(f.streak) ? ` · 🔥 ${num(f.streak)}` : ''}</small>
       ${f.playing ? `<small>Tocando «${esc(f.playing.title)}» · ${fr.timeAgo(f.playing.at)}</small>` : f.lastActive ? `<small>Activo ${fr.timeAgo(f.lastActive)}</small>` : ''}</div>
     <span class="row"><button type="button" class="btn ghost small" data-cheer="${f.id}">💪 Animar</button><button type="button" class="btn ghost small danger" data-unfriend="${f.id}">Quitar</button></span></div>`).join('');
 }
@@ -144,7 +144,7 @@ function weekHtml() {
   const me = { ...profilePatch(), id: 'me', name: 'Tú' };
   const board = fr.friendsWeekBoard([me, ...data.friends]);
   return `<p class="muted small">Minutos de práctica esta semana (de lunes a domingo).</p>
-    <ol class="board">${board.map((p, i) => `<li class="${p.id === 'me' ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="avatar">${initial(p.name)}</span><b>${esc(p.name)}</b><span>${p.minutes} min</span></li>`).join('')}</ol>`;
+    <ol class="board">${board.map((p, i) => `<li class="${p.id === 'me' ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="avatar">${initial(p.name)}</span><b>${esc(p.name)}</b><span>${num(p.minutes)} min</span></li>`).join('')}</ol>`;
 }
 
 function render() {
