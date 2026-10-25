@@ -125,7 +125,7 @@ const INSTRUMENT_PILL = {
   guitar: { cards: [
     { title: 'Mi, La, Re, Sol, Si, Mi', text: 'Casi todas las cuerdas están a una cuarta de la siguiente, salvo Sol-Si, que están a una tercera. Así las formas de los acordes caben bajo la mano.', board: [52, 57, 62, 67, 71, 76] },
     { title: 'Suena una octava más grave', text: 'La guitarra se escribe una octava por encima de como suena, para no llenar la partitura de líneas adicionales. Por lo demás está en Do.' },
-    { title: 'Afina cada vez', text: 'Las cuerdas se destensan con el calor, la humedad y el uso. Afina siempre antes de tocar, empezando por la 5.ª cuerda (La = 440 Hz).' },
+    { title: 'Afina cada vez', text: 'Las cuerdas se destensan con el calor, la humedad y el uso. Afina siempre antes de tocar, empezando por la 5.ª cuerda: un La de 110 Hz, dos octavas por debajo del La 440 del diapasón.' },
   ], quiz: [{ id: 'gtr-third', q: '¿Entre qué dos cuerdas el intervalo no es una cuarta?', options: ['Mi y La', 'Re y Sol', 'Sol y Si', 'La y Re'], answer: 2, why: 'Entre Sol y Si hay una tercera mayor; entre las demás, cuartas.', play: [55, 59] }] },
   piano: { cards: [
     { title: 'Tú no lo afinas', text: 'Un piano acústico lo afina un afinador profesional, una o dos veces al año. Un piano digital nunca se desafina.' },

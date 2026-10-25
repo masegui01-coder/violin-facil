@@ -76,7 +76,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       theory('gu6-intro', 'Arpegiar', [
         { title: 'p i m a', text: 'Pulgar (p) para las cuerdas graves; índice (i), medio (m) y anular (a) para las cuerdas 3, 2 y 1. Deja que todo suene junto.' },
         { title: '{Fmaj7}, un Fa sin cejilla', text: 'Dedos 3, 2 y 1 en escalera sobre las cuerdas 4, 3 y 2; la 1.ª al aire. Suena precioso y prepara la cejilla.', chord: 'Fmaj7' },
-        { title: '{Dm}', text: 'Como {D}, pero el dedo 1 baja al traste 1 de la 1.ª cuerda. Más triste, más bonito.', chord: 'Dm' },
+        { title: '{Dm}', text: 'Como {D}, pero la 1.ª cuerda baja al traste 1 (dedo 1) y el dedo 2 pasa al traste 2 de la 3.ª cuerda. Más triste, más bonito.', chord: 'Dm' },
       ]),
       chordsHold('gu6-am-c', 'Arpegia {Am}, {C} y {Fmaj7}', 'p-i-m-a en cada acorde', ['Am', 'C', 'Fmaj7', 'Am', 'C', 'Fmaj7']),
       changes('gu6-ch', 'C', 'Fmaj7', 20),

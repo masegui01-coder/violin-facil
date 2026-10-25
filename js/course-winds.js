@@ -1,6 +1,10 @@
 // Curso para instrumentos de viento (trompeta, clarinete, saxo, flauta y oboe), generado a partir del perfil.
 // Notas escritas. La «escala de la banda» es Si♭ mayor de concierto en la tonalidad escrita de cada instrumento.
-import { parseNote } from './music.js';
+import { parseNote, noteLabel } from './music.js';
+import { getState } from './store.js';
+
+// «C4 D4 E4» → «Do, Re, Mi» (o «C4, D4, E4» con la nomenclatura americana)
+const names = list => list.map(n => noteLabel(parseNote(n), getState().nom)).join(', ');
 
 const SCALES = {
   C: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], G: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'], D: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
@@ -73,21 +77,21 @@ export function windUnits(inst, helpers) {
   const p = `${inst.id}-`;
   return [
     { id: p + 'u1', title: 'Primeros sonidos', sub: 'Aire, embocadura y tres notas', color: 'var(--u1)', lessons: [
-      theory(p + 'u1-intro', `Conoce tu ${inst.name.toLowerCase()}`, [...cards, { title: 'Tus primeras notas', text: `Empezamos por ${first.slice(0, 3).join(', ')} (notas escritas). El diagrama te muestra qué pulsar en cada una.`, board: midis(first.slice(0, 1)) }, MIC_CARD]),
+      theory(p + 'u1-intro', `Conoce tu ${inst.name.toLowerCase()}`, [...cards, { title: 'Tus primeras notas', text: `Empezamos por ${names(first.slice(0, 3))} (notas escritas). El diagrama te muestra qué pulsar en cada una.`, board: midis(first.slice(0, 1)) }, MIC_CARD]),
       warmup(p + 'u1-warm', 'Notas tenidas', repeatPattern(first, [0, 0, 1, 1, 2, 2, 1, 1, 0, 0])),
-      notes(p + 'u1-three', 'Tres notas', `${first.slice(0, 3).join(', ')}`, repeatPattern(first, [0, 1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 0])),
+      notes(p + 'u1-three', 'Tres notas', names(first.slice(0, 3)), repeatPattern(first, [0, 1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 0])),
       exercise(p + 'u1-long', 'Sonidos largos', 'Redondas: mantén el aire 4 pulsos', { key: 'C', time: 4, bpm: 60, score: toScore([first[0], first[1], first[2], first[1], first[0]], 'w') }),
       exercise(p + 'u1-rhythm', 'Primer ritmo', 'Negras y blancas', { key: 'C', time: 4, bpm: 60, score: `| ${first[0]}q ${first[0]}q ${first[0]}h | ${first[1]}q ${first[1]}q ${first[1]}h | ${first[2]}q ${first[1]}q ${first[0]}h | ${first[0]}w |` }),
     ] },
     { id: p + 'u2', title: 'Cinco notas', sub: 'Tu primera melodía', color: 'var(--u2)', lessons: [
-      theory(p + 'u2-intro', 'Dos notas nuevas', [{ title: 'Ampliamos', text: `Añadimos ${first[3]} y ${first[4]}. Mira el diagrama de cada una antes de tocarla.`, board: midis([first[3]]) }]),
-      notes(p + 'u2-five', 'Cinco notas', first.join(', '), repeatPattern(first, [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 2, 0, 1, 3, 4, 3, 1, 0])),
+      theory(p + 'u2-intro', 'Dos notas nuevas', [{ title: 'Ampliamos', text: `Añadimos ${names([first[3]])} y ${names([first[4]])}. Mira el diagrama de cada una antes de tocarla.`, board: midis([first[3]]) }]),
+      notes(p + 'u2-five', 'Cinco notas', names(first), repeatPattern(first, [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 2, 0, 1, 3, 4, 3, 1, 0])),
       exercise(p + 'u2-melody', 'Primera melodía', 'Con las cinco notas, a tempo', { key: 'C', time: 4, bpm: 66, score: `| ${first[0]}q ${first[1]}q ${first[2]}q ${first[3]}q | ${first[4]}h ${first[4]}h | ${first[3]}q ${first[2]}q ${first[1]}q ${first[0]}q | ${first[0]}w |` }),
       slots(1, 1),
     ] },
     { id: p + 'u3', title: 'La escala de la banda', sub: 'Si♭ mayor de concierto', color: 'var(--u3)', lessons: [
       theory(p + 'u3-intro', 'La escala de la banda', [
-        { title: 'Si♭ de concierto', text: inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${scale[0].replace(/\d/, '')}.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu instrumento está en Do, así que para ti es Si♭ mayor tal cual.' },
+        { title: 'Si♭ de concierto', text: inst.inKey ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${names([scale[0]]).replace(/\d/, '')}.` : inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} suena una octava más aguda de lo escrito, pero la escala se escribe igual: Si♭ mayor.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu instrumento está en Do, así que para ti es Si♭ mayor tal cual.' },
       ]),
       notes(p + 'u3-scale', 'Escala de la banda', 'Subir y bajar', upDown(scale)),
       song(p + 'u3-oda', 'oda', 'Beethoven'),
@@ -100,9 +104,9 @@ export function windUnits(inst, helpers) {
       slots(2, 1),
     ] },
     { id: p + 'u5', title: 'Registro agudo', sub: 'Más arriba sin apretar', color: 'var(--u5)', lessons: [
-      theory(p + 'u5-intro', 'Subir de registro', [{ title: 'Aire, no fuerza', text: inst.family === 'metal' ? 'Para subir, acelera el aire y estrecha un poco la apertura de los labios. No aprietes la boquilla contra la boca.' : 'Para subir, usa la llave de octava o registro, acelera el aire y no muerdas. El agudo sale con aire rápido, no con presión.', board: midis([high[0]]) }]),
+      theory(p + 'u5-intro', 'Subir de registro', [{ title: 'Aire, no fuerza', text: inst.family === 'metal' ? 'Para subir, acelera el aire y estrecha un poco la apertura de los labios. No aprietes la boquilla contra la boca.' : inst.fingers === 'flute' || inst.id === 'flute' ? 'Para subir a la segunda octava casi no cambian los dedos: sopla más rápido, acerca un poco los labios al bisel y dirige el aire algo más arriba. Sin forzar.' : 'Para subir, usa la llave de octava o registro, acelera el aire y no muerdas. El agudo sale con aire rápido, no con presión.', board: midis([high[0]]) }]),
       warmup(p + 'u5-warm', 'Escala en terceras', [scale[0], scale[2], scale[1], scale[3], scale[2], scale[4], scale[3], scale[5], scale[4], scale[6], scale[5], scale[7]].join(' ')),
-      notes(p + 'u5-high', 'Notas agudas', high.join(', '), upDown(high)),
+      notes(p + 'u5-high', 'Notas agudas', names(high), upDown(high)),
       slots(2, 2),
     ] },
     { id: p + 'u6', title: 'Escalas y arpegios', sub: 'Técnica de banda', color: 'var(--u6)', lessons: [

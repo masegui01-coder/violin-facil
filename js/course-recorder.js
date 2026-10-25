@@ -36,7 +36,7 @@ export function recorderUnits({ theory, notes, exercise, slots }) {
     ] },
     { id: R + 'u4', title: 'La mano derecha', sub: 'Mi y Re graves', color: 'var(--u4)', lessons: [
       theory(R + 'u4-intro', 'Bajamos', [
-        { title: 'Mi grave', text: 'Tapa los tres agujeros de la mano izquierda y los dedos 4 y 5 de la derecha. Sopla muy suave: las notas graves piden poco aire.', board: [64] },
+        { title: 'Mi grave', text: 'Tapa el pulgar y los tres agujeros de la mano izquierda, y con la derecha los agujeros 4 y 5 (índice y medio). Sopla muy suave: las notas graves piden poco aire.', board: [64] },
         { title: 'Re grave', text: 'Igual que Mi, pero tapando también el agujero 6. Si chilla, revisa que todos los dedos tapen bien.', board: [62] },
       ]),
       notes(R + 'u4-ed', 'Mi y Re', 'Mano derecha', 'G4 E4 G4 E4 D4 E4 G4 A4 G4 E4 D4 D4'),
