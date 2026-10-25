@@ -65,6 +65,8 @@ register('practice', {
     const perc = isPerc();
     document.querySelectorAll('#practice [data-family="pitch"]').forEach(el => { el.hidden = perc; });
     document.querySelectorAll('#practice [data-family="perc"]').forEach(el => { el.hidden = !perc; });
+    // Guitarra y piano: la afinación la da el instrumento; notas tenidas y afinar en acorde no les sirven
+    if (instrumentById(getState().instrument).polyphonic) document.querySelectorAll('#practice [data-melodic]').forEach(el => { el.hidden = true; });
     $('gymToolText').textContent = perc ? 'Pulso, golpes simples y dobles, paradiddle y acentos' : 'Escalas, arpegios y terceras en las 12 tonalidades';
   },
 });

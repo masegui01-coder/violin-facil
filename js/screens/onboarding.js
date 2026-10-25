@@ -32,6 +32,12 @@ const STEPS = [
     valid: () => !!draft.instrument,
   },
   {
+    render: () => `<h1>¿Quién va a tocar?</h1><div class="choice">
+      <button type="button" data-kid="0" aria-pressed="${draft.kidMode === false}"><b>Yo</b><small>Tengo 14 años o más</small></button>
+      <button type="button" data-kid="1" aria-pressed="${draft.kidMode === true}"><b>Un niño o una niña</b><small>Menor de 14: sin clasificaciones públicas ni amigos (se puede cambiar en Perfil)</small></button></div>`,
+    valid: () => draft.kidMode !== null,
+  },
+  {
     render: () => `<h1>¿Has tocado antes?</h1><div class="choice">${LEVELS.map(l => `<button type="button" data-level="${l.id}" aria-pressed="${draft.level === l.id}"><b>${l.title}</b><small>${l.text}</small></button>`).join('')}</div>`,
     valid: () => true,
   },
@@ -52,7 +58,7 @@ function render() {
 
 function enter() {
   const s = getState();
-  draft = { nom: s.nom, level: s.level, styles: s.styles, instrument: s.onboarded ? s.instrument : null };
+  draft = { nom: s.nom, level: s.level, styles: s.styles, instrument: s.onboarded ? s.instrument : null, kidMode: s.onboarded ? s.kidMode : null };
   step = 0;
   render();
 }
@@ -64,6 +70,8 @@ $('obStep').addEventListener('click', e => {
   const level = e.target.closest('[data-level]');
   const style = e.target.closest('[data-style]');
   const inst = e.target.closest('[data-inst]');
+  const kid = e.target.closest('[data-kid]');
+  if (kid) draft = { ...draft, kidMode: kid.dataset.kid === '1' };
   if (inst) draft = { ...draft, instrument: inst.dataset.inst };
   if (nom) draft = { ...draft, nom: nom.dataset.nom };
   if (level) draft = { ...draft, level: level.dataset.level };
@@ -71,7 +79,7 @@ $('obStep').addEventListener('click', e => {
     const id = style.dataset.style;
     draft = { ...draft, styles: draft.styles.includes(id) ? draft.styles.filter(s => s !== id) : [...draft.styles, id] };
   }
-  if (nom || level || style || inst) render();
+  if (nom || level || style || inst || kid) render();
 });
 $('obBack').addEventListener('click', () => { step = Math.max(0, step - 1); render(); });
 $('obNext').addEventListener('click', () => {

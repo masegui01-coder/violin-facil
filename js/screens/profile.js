@@ -43,6 +43,10 @@ function render() {
   $('setBig').checked = s.bigText;
   $('setBoard').checked = s.showBoard;
   $('setUnlock').checked = s.unlockAll;
+  $('setKid').checked = !!s.kidMode;
+  $('setPublic').checked = !!(s.publicBoards && s.publicName) && !s.kidMode;
+  $('setPublic').disabled = !!s.kidMode;
+  $('setPublicText').textContent = s.publicName ? `Tu apodo público: ${s.publicName}. Nunca se usa tu nombre.` : 'Se te pedirá un apodo la primera vez que entres en una clasificación.';
   confirmReset = false;
   $('resetProgress').textContent = 'Borrar progreso';
   renderAccountPanel();
@@ -75,6 +79,12 @@ $('setClick').addEventListener('change', e => update({ metroClick: e.target.chec
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
 $('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));
 $('setUnlock').addEventListener('change', e => update({ unlockAll: e.target.checked }));
+$('setKid').addEventListener('change', e => { update({ kidMode: e.target.checked, ...(e.target.checked ? { publicBoards: false } : {}) }); render(); });
+$('setPublic').addEventListener('change', e => {
+  if (e.target.checked && !getState().publicName) { e.target.checked = false; toast('Entra en una clasificación y elige tu apodo'); return; }
+  update({ publicBoards: e.target.checked });
+  render();
+});
 $('resetProgress').addEventListener('click', () => {
   if (!confirmReset) {
     confirmReset = true;

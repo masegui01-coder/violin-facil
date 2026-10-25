@@ -58,11 +58,12 @@ export function renderToday() {
     <button type="button" class="today-routine${routineDoneToday() ? ' done' : ''}" id="routineBtn"><span class="ic">${icon('routine')}</span><div><b>${routineDoneToday() ? 'Rutina de hoy hecha ✓' : 'Mi rutina de hoy · 10 min'}</b><small>${routineDoneToday() ? 'Puedes repetirla si quieres' : 'Sonido, técnica y repertorio, con cofre sorpresa'}</small></div></button>
     ${weekDots()}
     <button type="button" class="today-daily" id="dailyBtn"><span class="ic">${icon('sight')}</span><div><b>Reto del día</b><small>${doneToday ? `Hecho · ${s.dailyDone[day]}★` : 'Una toma · igual para todos'}</small></div></button>
-    <button type="button" class="today-link" id="dailyBoardBtn">Clasificación del reto</button>
-    <button type="button" class="today-link" id="leagueBtn">Liga semanal</button>
+    ${s.kidMode ? '' : `<button type="button" class="today-link" id="dailyBoardBtn">Clasificación del reto</button>
+    <button type="button" class="today-link" id="leagueBtn">Liga semanal</button>`}
   </div>`;
   $('routineBtn').addEventListener('click', startRoutine);
   $('dailyBtn').addEventListener('click', () => launch(dailyLesson(), { mode: 'tempo', from: 'course' }));
+  if (s.kidMode) return;
   $('dailyBoardBtn').addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-daily-board')));
   $('leagueBtn').addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-league')));
 }

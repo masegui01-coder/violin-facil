@@ -82,15 +82,15 @@
       <div class="tools">
         <button class="tool" type="button" data-go="tuner" data-family="pitch"><span class="tool-ic" data-icon="tuner"></span><span><b>Afinador</b><small>Cromático, con La 440 o 442</small></span></button>
         <button class="tool" type="button" data-go="metro"><span class="tool-ic" data-icon="metro"></span><span><b>Metrónomo</b><small><span id="toolBpm">80</span> BPM · compás y tap</small></span></button>
-        <button class="tool" type="button" data-go="longtone" data-family="pitch"><span class="tool-ic" data-icon="longtone"></span><span><b>Notas tenidas</b><small>Gráfica en vivo de afinación, volumen y vibrato</small></span></button>
+        <button class="tool" type="button" data-go="longtone" data-family="pitch" data-melodic><span class="tool-ic" data-icon="longtone"></span><span><b>Notas tenidas</b><small>Gráfica en vivo de afinación, volumen y vibrato</small></span></button>
         <button class="tool" type="button" data-go="free" data-family="pitch"><span class="tool-ic" data-icon="free"></span><span><b>Toca libre</b><small>Escribe lo que tocas y compáralo con una canción</small></span></button>
       </div>
       <h2 class="tools-title">Para subir de nivel</h2>
       <div class="tools">
-        <button class="tool" type="button" data-go="tuningmap" data-family="pitch"><span class="tool-ic" data-icon="map"></span><span><b>Mapa de afinación</b><small>Qué notas te salen altas o bajas</small></span></button>
+        <button class="tool" type="button" data-go="tuningmap" data-family="pitch" data-melodic><span class="tool-ic" data-icon="map"></span><span><b>Mapa de afinación</b><small>Qué notas te salen altas o bajas</small></span></button>
         <button class="tool" type="button" data-go="gym"><span class="tool-ic" data-icon="gym"></span><span><b>Gimnasio de técnica</b><small id="gymToolText">Escalas, arpegios y terceras en las 12 tonalidades</small></span></button>
         <button class="tool" type="button" id="toolCalibrate" data-family="perc"><span class="tool-ic" data-icon="audition"></span><span><b>Calibrar el micrófono</b><small>Mide el retraso de tu móvil para que los golpes cuadren al milisegundo</small></span></button>
-        <button class="tool" type="button" data-go="chord" data-family="pitch"><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
+        <button class="tool" type="button" data-go="chord" data-family="pitch" data-melodic><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
         <button class="tool" type="button" id="toolSight"><span class="tool-ic" data-icon="sight"></span><span><b>Lectura a primera vista</b><small>Partituras nuevas cada vez, en tres niveles</small></span></button>
         <button class="tool" type="button" id="toolAudition"><span class="tool-ic" data-icon="audition"></span><span><b>Modo audición</b><small>Una obra al azar, una sola toma, sin ayudas</small></span></button>
       </div>
@@ -106,7 +106,6 @@
       <div class="screen-head"><h1>Tu perfil</h1></div>
       <div id="stats" class="stats"></div>
       <div id="progressPanel" class="panel"></div>
-      <div class="panel account" id="accountPanel"></div>
       <div class="panel">
         <h2>Tu instrumento</h2>
         <p class="muted">El curso, las digitaciones y el detector se adaptan. Tu progreso se guarda por instrumento.</p>
@@ -139,6 +138,14 @@
         <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
       </div>
+      <div class="panel settings">
+        <h2>Privacidad</h2>
+        <label class="switch-row" for="setKid"><span>Modo niño</span><input id="setKid" type="checkbox" class="switch"></label>
+        <small class="muted">Para menores de 14: oculta las clasificaciones públicas, la liga y la red de amigos. La banda sigue funcionando.</small>
+        <label class="switch-row" for="setPublic"><span>Aparecer en las clasificaciones públicas</span><input id="setPublic" type="checkbox" class="switch"></label>
+        <small class="muted" id="setPublicText">Con tu apodo público, nunca con tu nombre.</small>
+      </div>
+      <div class="panel account" id="accountPanel"></div>
       <div class="panel">
         <h2>Beta</h2>
         <p class="muted">Tu opinión decide qué viene después.</p>

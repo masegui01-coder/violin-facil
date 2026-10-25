@@ -106,7 +106,7 @@ async function showInbox() {
 export async function renderCard() {
   const box = $('friendsCard');
   if (!box) return;
-  if (!ready) { box.innerHTML = ''; return; }
+  if (!ready || getState().kidMode) { box.innerHTML = ''; return; }
   box.innerHTML = `<button type="button" class="today-friends" id="openFriends"><span class="ic">👥</span><div><b>Amigos</b><small>Mira qué tocan tus amigos y anímales</small></div></button>`;
   $('openFriends').addEventListener('click', () => go('friends'));
   try {
