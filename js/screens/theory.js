@@ -1,7 +1,7 @@
 // Lecciones de teoría: tarjetas con texto (y el diapasón con las notas marcadas o el diagrama de un acorde)
 // y, en las píldoras, 1-2 preguntas al final, algunas con sonido.
 import { $, esc, icon } from '../ui.js';
-import { register, go } from '../router.js';
+import { register, go, originTab } from '../router.js';
 import { renderDiagram } from '../keydiagram.js';
 import { drawChord } from '../boards.js';
 import { chordText, lessonTitle } from '../course.js';
@@ -94,4 +94,4 @@ $('theoryNext').addEventListener('click', () => {
   if (page < total() - 1) { page++; render(); return; }
   finish();
 });
-$('theoryExit').addEventListener('click', () => go(ctx && ctx.from === 'practice' ? 'practice' : 'learn'));
+$('theoryExit').addEventListener('click', () => go(originTab(ctx && ctx.from)));

@@ -49,6 +49,10 @@ function renderTopbar(s) {
   $('instChipIcon').innerHTML = instrumentIcon(s.instrument);
   setReferenceA(s.a4);
   document.documentElement.dataset.accent = s.theme || 'barniz';
+  const pending = s.band && s.band.role !== 'director' ? (s.bandPending || []).length : 0;
+  $('bandBadge').hidden = !pending;
+  $('bandBadge').textContent = pending;
+  $('bandBadge').setAttribute('aria-label', `${pending} tareas pendientes`);
 }
 
 hydrateIcons();

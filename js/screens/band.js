@@ -3,7 +3,10 @@ import { $, esc, toast } from '../ui.js';
 import { register, go, currentScreen } from '../router.js';
 import { cloudConfigured, cloudErrorText } from '../cloud.js';
 import * as api from '../band-api.js';
-import { INSTRUMENTS } from '../instruments.js';
+import { INSTRUMENTS, instrumentById } from '../instruments.js';
+import { currentAccount } from '../account.js';
+
+const accountName = () => String((currentAccount() && currentAccount().displayName) || '').slice(0, 30);
 import { getState, update } from '../store.js';
 import { myBand, syncActivity } from './band-sync.js';
 import { directorView, bindDirector } from './band-director.js';
@@ -33,7 +36,7 @@ function welcome() {
       <label for="joinCodeInput">Código de la banda</label>
       <input id="joinCodeInput" class="input" maxlength="6" autocomplete="off" placeholder="Ej.: K7P2QX" value="${esc(joinCode)}" style="text-transform:uppercase">
       <label for="joinNick">Tu nombre o apodo</label>
-      <input id="joinNick" class="input" maxlength="30" placeholder="Como te conoce tu banda">
+      <input id="joinNick" class="input" maxlength="30" placeholder="Como te conoce tu banda" value="${esc(accountName())}">
       <label for="joinInst">Instrumento</label>
       <select id="joinInst" class="select">${INSTRUMENTS.map(i => `<option value="${i.id}" ${i.id === inst ? 'selected' : ''}>${i.name}</option>`).join('')}</select>
       <p class="muted small">Tu director verá tu progreso en las tareas; tus compañeros, solo los minutos de práctica y tu nivel.</p>
@@ -45,7 +48,7 @@ function welcome() {
       <label for="createName">Nombre de la banda</label>
       <input id="createName" class="input" maxlength="60" placeholder="Ej.: Banda Municipal de…">
       <label for="createNick">Tu nombre</label>
-      <input id="createNick" class="input" maxlength="30">
+      <input id="createNick" class="input" maxlength="30" value="${esc(accountName())}">
       <p class="muted small">La banda queda en tu cuenta: no la pierdes si cambias de móvil.</p>
       <button class="btn ghost" type="submit">Crear banda</button>
       <p id="createError" class="warn" hidden></p>
@@ -62,9 +65,10 @@ async function onJoin(e) {
   if (code.length !== 6 || !nickname) { showError('joinError', 'Escribe el código de 6 caracteres y tu nombre.'); return; }
   try {
     const joined = await api.joinBand(code, nickname, instrument);
+    const changed = instrument !== getState().instrument;
     update({ band: { ...joined, instrument, joinXp: getState().xp }, instrument });
     joinCode = '';
-    toast(`Te has unido a ${joined.name}`);
+    toast(changed ? `Te has unido a ${joined.name}. Ahora practicas con ${instrumentById(instrument).name}` : `Te has unido a ${joined.name}`);
     render();
   } catch (err) { showError('joinError', cloudErrorText(err)); }
 }
@@ -86,8 +90,19 @@ function showError(id, msg) { $(id).textContent = msg; $(id).hidden = false; }
 // ---------- Carga ----------
 const ctx = () => ({ ...data, band: myBand() });
 
+// Tareas mías sin terminar: las usan el aviso de la pestaña Banda y «Tu siguiente paso»
+function rememberPending(c) {
+  const b = c.band;
+  const me = { uid: b.uid, id: b.uid, instrument: b.instrument, voice: b.voice || null };
+  const done = new Set(c.progress.filter(p => p.uid === b.uid && p.completed).map(p => p.taskId));
+  const pending = b.role === 'director' ? [] : c.tasks.filter(t => api.assignedTo(t, me) && !done.has(t.id))
+    .map(t => ({ id: t.id, title: String(t.title || '').slice(0, 80), due: t.due || null }));
+  if (JSON.stringify(pending) !== JSON.stringify(getState().bandPending || [])) update({ bandPending: pending });
+}
+
 function show() {
   const c = ctx();
+  rememberPending(c);
   if (c.band.role === 'director') { body(directorView(c)); bindDirector(c, load, show); }
   else { body(memberView(c)); bindMember(c, render); }
 }
@@ -118,7 +133,7 @@ async function load() {
   } catch (err) {
     body(`<div class="panel"><h2>No he podido cargar la banda</h2><p class="warn">${esc(cloudErrorText(err))}</p><div class="row"><button type="button" class="btn small" id="retryBand">Reintentar</button><button type="button" class="btn ghost small" id="forgetBand">Salir de esta banda</button></div></div>`);
     $('retryBand').addEventListener('click', load);
-    $('forgetBand').addEventListener('click', () => { update({ band: null }); render(); });
+    $('forgetBand').addEventListener('click', () => { update({ band: null, bandPending: [] }); render(); });
   }
 }
 

@@ -32,12 +32,6 @@ const STEPS = [
     valid: () => !!draft.instrument,
   },
   {
-    render: () => `<h1>¿Cómo nombras las notas?</h1><div class="choice">
-      <button type="button" data-nom="eu" aria-pressed="${draft.nom === 'eu'}"><b>Do · Re · Mi</b><small>Nomenclatura latina, la de España y Latinoamérica</small></button>
-      <button type="button" data-nom="us" aria-pressed="${draft.nom === 'us'}"><b>G3 · A4 · E5</b><small>Nomenclatura americana, con número de octava</small></button></div>`,
-    valid: () => true,
-  },
-  {
     render: () => `<h1>¿Has tocado antes?</h1><div class="choice">${LEVELS.map(l => `<button type="button" data-level="${l.id}" aria-pressed="${draft.level === l.id}"><b>${l.title}</b><small>${l.text}</small></button>`).join('')}</div>`,
     valid: () => true,
   },

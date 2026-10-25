@@ -61,28 +61,27 @@ export function memberView(ctx) {
   const notices = [...ctx.notices].filter(n => !n.to || n.to.includes(b.uid)).sort((x, y) => api.millis(y.at) - api.millis(x.at)).slice(0, NOTICES_SHOWN);
 
   return `<div class="band-hero"><p class="eyebrow">Mi banda${b.role === 'leader' ? ' · ' + ROLE_NAME.leader : ''}</p><h1>${esc(b.name)}</h1>
-      <p>${esc(b.nickname)} · ${esc(seatName(me))}</p>
-      <label class="voice-pick">Mi voz <select id="myVoice" class="select small">${['', 1, 2, 3, 4].map(v => `<option value="${v}" ${String(v) === String(me.voice || '') ? 'selected' : ''}>${v ? v + 'º' : 'Única'}</option>`).join('')}</select></label></div>
-    ${star ? `<div class="week-star"><small>Músico de la semana</small><b>${esc(star.nickname)}</b>${star.note ? `<span>${esc(star.note)}</span>` : ''}</div>` : ''}
+      <p>${esc(b.nickname)} · ${esc(seatName(me))}</p></div>
     ${notices.map(n => `<div class="notice"><small>${n.to ? 'Aviso para ti' : 'Aviso del director'}</small><span>${esc(n.text)}</span></div>`).join('')}
-    ${next ? eventCard(next, ctx.tasks, me, myProgress) : ''}
-    <div class="stats"><div class="stat"><b>${mine.filter(t => pOf(t)?.completed).length}/${mine.length}</b><span>tareas hechas</span></div>
-      <div class="stat"><b>${Math.round(myProgress.reduce((s, p) => s + (p.minutes || 0), 0))}</b><span>minutos en tareas</span></div>
-      <div class="stat"><b>${bandStreak(musicians, day)}</b><span>días de racha de banda</span></div></div>
-    <h2>Tareas</h2>
+    <h2>Mis tareas · ${mine.filter(t => pOf(t)?.completed).length} de ${mine.length} hechas</h2>
     ${mine.length ? mine.map(t => {
       const p = pOf(t);
       return `<div class="task"><div class="task-head"><div><b>${esc(t.title)}</b><br><small>${esc(taskSubtitle(t, api.taskPartFor(t, me)))}</small></div>${myStatus(p)}</div>
         ${t.notes ? `<p class="small">${esc(t.notes)}</p>` : ''}${stampHtml(p)}
         <div class="row spread">${dueBadge(t)}<button type="button" class="btn small" data-practice="${t.id}">Ensayar</button></div></div>`;
     }).join('') : '<p class="empty">Tu director todavía no ha puesto tareas.</p>'}
+    ${next ? eventCard(next, ctx.tasks, me, myProgress) : ''}
+    ${star ? `<div class="week-star"><small>Músico de la semana</small><b>${esc(star.nickname)}</b>${star.note ? `<span>${esc(star.note)}</span>` : ''}</div>` : ''}
+    <div class="stats"><div class="stat"><b>${Math.round(myProgress.reduce((s, p) => s + (p.minutes || 0), 0))}</b><span>minutos en tareas</span></div>
+      <div class="stat"><b>${bandStreak(musicians, day)}</b><span>días de racha de banda</span></div></div>
     ${memberLibraryHtml(ctx, me)}
     ${ctx.rewards.length ? `<h2>Premios de la banda</h2><p class="muted small">Tienes ${points} puntos desde que entraste en la banda.</p>
       ${[...ctx.rewards].sort((x, y) => x.points - y.points).map(r => `<div class="reward ${points >= r.points ? 'won' : ''}"><div><b>${esc(r.title)}</b><small>${points >= r.points ? '¡Conseguido! Díselo a tu director' : `${r.points - points} puntos más`}</small></div>${bar(points / r.points)}</div>`).join('')}` : ''}
     ${duel.length > 1 ? `<h2>Duelo de secciones</h2><p class="muted small">Minutos por músico en los últimos 7 días.</p>
       ${duel.map((g, i) => `<div class="duel-row"><span>${i + 1}. ${FAMILY_NAME[g.family] || g.family}</span>${bar(g.perMusician / Math.max(1, duel[0].perMusician))}<b>${Math.round(g.perMusician)}</b></div>`).join('')}` : ''}
     ${b.role === 'leader' ? sectionPanel(ctx, me) : ''}
-    <button type="button" class="btn ghost small" id="leaveBand">Salir de la banda</button>`;
+    <div class="row spread"><label class="voice-pick">Mi voz en la banda <select id="myVoice" class="select small">${['', 1, 2, 3, 4].map(v => `<option value="${v}" ${String(v) === String(me.voice || '') ? 'selected' : ''}>${v ? v + 'º' : 'Única'}</option>`).join('')}</select></label>
+    <button type="button" class="btn ghost small" id="leaveBand">Salir de la banda</button></div>`;
 }
 
 export function bindMember(ctx, reload) {
@@ -105,7 +104,7 @@ export function bindMember(ctx, reload) {
   $('leaveBand').addEventListener('click', async e => {
     if (!e.target.dataset.confirm) { e.target.dataset.confirm = '1'; e.target.textContent = '¿Seguro? Toca otra vez'; return; }
     await api.leaveBand(b).catch(() => {});
-    update({ band: null });
+    update({ band: null, bandPending: [] });
     reload();
   });
 }

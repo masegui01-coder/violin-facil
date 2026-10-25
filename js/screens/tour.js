@@ -11,10 +11,10 @@ const STEPS = [
     text: inst => `Te enseño la app en un minuto. Practicarás con ${inst}: la app te escucha por el micrófono y te dice si cada nota suena bien.` },
   { tab: 'learn', target: '#instChip', title: 'Tu instrumento',
     text: () => 'Aquí ves con qué instrumento practicas. Púlsalo para cambiarlo cuando quieras: cada instrumento guarda su propio progreso.' },
+  { tab: 'learn', target: '#continueCard', title: 'Tu siguiente paso',
+    text: () => 'Lo primero que ves al abrir la app: la próxima lección (o la tarea de tu banda si vence pronto). Cada lección te da hasta 3 estrellas y desbloquea la siguiente.' },
   { tab: 'learn', target: '#todayCard', title: 'Tu día',
     text: () => 'Tu objetivo de minutos, tu racha de días seguidos y el reto del día: la misma partitura para todos los que tocan tu instrumento.' },
-  { tab: 'learn', target: '#continueCard', title: 'Tu curso',
-    text: () => 'Pulsa «Continuar» y sigue las lecciones en orden. Cada lección te da hasta 3 estrellas y desbloquea la siguiente.' },
   { tab: 'learn', target: null, title: 'Cómo tocar con la app',
     text: () => 'Deja el móvil a un metro, en un sitio silencioso. Toca la nota marcada: se pone verde cuando suena afinada. Si la oyes en rojo, el indicador te dice si vas alto o bajo.' },
   { tab: 'songs', target: '[data-tab="songs"]', title: 'Canciones',
@@ -24,9 +24,9 @@ const STEPS = [
   { tab: 'band', target: '[data-tab="band"]', title: 'Tu banda',
     text: () => 'Únete a tu banda con el código que te dé tu director y ensaya las tareas que te ponga. Si eres director, crea tu banda aquí.' },
   { tab: 'profile', target: '[data-tab="profile"]', title: 'Perfil',
-    text: () => 'Tus estadísticas, insignias, estilos de música y ajustes: nombres de las notas, exigencia de afinación, pulso visual y texto grande.' },
+    text: () => 'Tus estadísticas, insignias, estilos de música y ajustes: nombres de las notas (Do-Re-Mi o C-D-E), exigencia de afinación y texto grande.' },
   { tab: 'learn', target: null, title: '¡Listo!',
-    text: () => 'No hace falta registrarse: todo se guarda en este móvil. Puedes repetir este recorrido desde Perfil. ¡A tocar!' },
+    text: () => 'Tu progreso se guarda en tu cuenta, así no lo pierdes si cambias de móvil. Puedes repetir este recorrido desde Perfil. ¡A tocar!' },
 ];
 
 let index = 0;

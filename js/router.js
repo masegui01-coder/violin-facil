@@ -7,6 +7,42 @@ const hooks = {};
 let current = null;
 let lastTab = 'learn';
 
+// De dónde se lanzó una lección: al salir se vuelve a esa pestaña
+export const ORIGIN_TAB = { course: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
+export const originTab = from => ORIGIN_TAB[from] || 'learn';
+
+// Botón atrás del móvil: cierra la ventana abierta, sale de la lección o vuelve a Aprender.
+// Se deja una entrada en el historial para que el atrás llegue aquí en vez de cerrar la app.
+const EXIT_BUTTONS = '[data-back], #theoryExit, #lessonExit, #rhExit, #cdExit, #resBack';
+let armed = false;
+function arm() {
+  if (armed || typeof history === 'undefined') return;
+  history.pushState({ bandFlow: true }, '');
+  armed = true;
+}
+function handleBack() {
+  const open = document.querySelector('dialog[open]');
+  if (open) { open.close(); return true; }
+  if (!current || current === 'learn' || current === 'account') return false;
+  if (current === 'onboarding') {
+    const prev = $('obBack');
+    if (prev.hidden) return false;
+    prev.click();
+    return true;
+  }
+  if (TABS.includes(current)) { go('learn'); return true; }
+  const exit = $(current).querySelector(EXIT_BUTTONS);
+  if (exit) exit.click(); else go(lastTab);
+  return true;
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    armed = false;
+    if (handleBack()) arm();
+    else history.back();
+  });
+}
+
 export function register(id, { enter, leave } = {}) {
   hooks[id] = { enter, leave };
 }
@@ -23,6 +59,7 @@ export function go(id, params = {}) {
     else b.removeAttribute('aria-current');
   });
   current = id;
+  arm();
   window.scrollTo(0, 0);
   if (hooks[id] && hooks[id].enter) hooks[id].enter(params);
   window.dispatchEvent(new CustomEvent('screen-change', { detail: { id } }));

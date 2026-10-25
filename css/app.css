@@ -116,6 +116,8 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .tabbar button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; font-size: .7rem; font-weight: 700; color: var(--muted); border-radius: 12px; }
 .tabbar button .ic { width: 26px; height: 26px; }
 .tabbar button[aria-current="page"] { color: var(--accent); }
+.tabbar button { position: relative; }
+.tab-badge { position: absolute; top: 2px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad, #c0392b); color: #fff; font-size: .68rem; line-height: 18px; text-align: center; }
 
 /* Tarjeta de continuar */
 .continue {
@@ -485,10 +487,6 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .chip-stat.inst { cursor: pointer; color: var(--ink); gap: 4px; max-width: 46vw; }
 .chip-stat.inst b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip-stat.inst .ic { width: 18px; height: 18px; color: var(--accent); }
-.course-head { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
-.course-head > div { display: flex; flex-direction: column; min-width: 0; }
-.course-head small { color: var(--muted); font-size: .78rem; }
-.course-head b { font-size: 1.1rem; }
 .inst-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; padding: 8px; flex: none; }
 .inst-ic svg { width: 100%; height: 100%; }
 .inst-opt { position: relative; align-items: flex-start; }

@@ -1,6 +1,6 @@
 // Ensayo rítmico (percusión): la partitura avanza a tempo y la app compara cada golpe con su momento exacto.
 import { $, toast } from '../ui.js';
-import { register, go } from '../router.js';
+import { register, go, originTab } from '../router.js';
 import { parseScore } from '../music.js';
 import { lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
@@ -204,7 +204,7 @@ function leave() {
 
 register('rhythm', { enter, leave });
 
-$('rhExit').addEventListener('click', () => go(run.from === 'songs' ? 'songs' : run.from === 'practice' ? 'practice' : run.from === 'band' ? 'band' : 'learn'));
+$('rhExit').addEventListener('click', () => go(originTab(run.from)));
 $('rhStartMic').addEventListener('click', async () => {
   try { await audio.startMic(); $('rhGate').hidden = true; setStatus('Elige la velocidad y pulsa Empezar'); }
   catch (err) { $('rhMicError').textContent = audio.micErrorText(err); $('rhMicError').hidden = false; }

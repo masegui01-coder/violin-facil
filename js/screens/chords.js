@@ -1,7 +1,7 @@
 // Guitarra y piano: practicar acordes. Tres modos: acorde a acorde (espera a que suene limpio), cambios de un minuto
 // (cuántas veces cambias entre dos acordes) y a tempo con el cifrado de una canción.
 import { $, esc, toast } from '../ui.js';
-import { register, go } from '../router.js';
+import { register, go, originTab } from '../router.js';
 import * as audio from '../audio.js';
 import { matchChord, chordCoverage } from '../chroma.js';
 import { parseChord, chordLabel, guitarMidis, pianoMidis } from '../chords.js';
@@ -297,7 +297,7 @@ $('cdGo').addEventListener('click', start);
 $('cdSkip').addEventListener('click', () => { if (run && run.playing && run.lesson.mode === 'hold') nextHold(performance.now(), true); });
 $('cdDemo').addEventListener('click', () => run && demo());
 $('cdStartMic').addEventListener('click', async () => { await withMic('cdGate', 'cdMicError'); });
-$('cdExit').addEventListener('click', () => { stop(); go(run && run.from === 'songs' ? 'songs' : 'learn'); });
+$('cdExit').addEventListener('click', () => { stop(); go(originTab(run && run.from)); });
 $('cdClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('cdStrumRow').addEventListener('click', e => {
   const b = e.target.closest('[data-cdspeed]');

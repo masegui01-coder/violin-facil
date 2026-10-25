@@ -1,6 +1,6 @@
 // Motor de lección: modo «nota a nota» (espera a que suene bien) y modo «a tempo» (la partitura avanza sola).
 import { $, toast } from '../ui.js';
-import { register, go } from '../router.js';
+import { register, go, originTab } from '../router.js';
 import { parseScore, noteLabel } from '../music.js';
 import { lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
@@ -408,7 +408,7 @@ function setLearnBpm(bpm) {
 
 register('lesson', { enter, leave });
 
-$('lessonExit').addEventListener('click', () => go(run.from === 'songs' ? 'songs' : 'learn'));
+$('lessonExit').addEventListener('click', () => go(originTab(run.from)));
 $('startMic').addEventListener('click', async () => {
   try {
     await audio.startMic();

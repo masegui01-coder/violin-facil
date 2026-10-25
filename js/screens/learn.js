@@ -1,14 +1,13 @@
-// Pestaña Aprender: tarjeta para continuar y mapa del curso por unidades.
+// Pestaña Aprender: «Tu siguiente paso» (tarea de la banda que vence pronto o la próxima lección) y mapa del curso.
 import { $, esc, icon, starsHtml } from '../ui.js';
-import { register } from '../router.js';
+import { register, go } from '../router.js';
 import { lessonKey, lessonTitle, lessonSong, chordText } from '../course.js';
 import { styleById } from '../songs.js';
-import { getState, instrumentProgress } from '../store.js';
+import { getState, instrumentProgress, today } from '../store.js';
+import { soonBandTask } from '../next-step.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
-import { instrumentIcon } from './instrument-picker.js';
-import { instrumentById } from '../instruments.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -16,6 +15,14 @@ const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
 let course = [];
 let states = {};
 let currentId = null;
+function bandStepCard(task) {
+  const days = Math.round((new Date(`${task.due}T12:00:00`) - new Date(`${today()}T12:00:00`)) / 864e5);
+  const when = days === 0 ? 'Vence hoy' : days === 1 ? 'Vence mañana' : `Vence en ${days} días`;
+  return `<div class="continue" style="--unit:var(--u2)">
+    <div class="continue-meta"><div><p class="eyebrow">Tu siguiente paso · Tarea de tu banda</p><h2>${esc(task.title)}</h2><p>${when}</p></div>
+    <span class="continue-note" aria-hidden="true">♫</span></div>
+    <button type="button" class="btn" id="bandStepBtn"><span class="ic">${icon('play')}</span>Ir a ensayarla</button></div>`;
+}
 
 function continueCard() {
   const next = nextLesson(null, course);
@@ -27,7 +34,7 @@ function continueCard() {
   const song = lessonSong(next);
   const color = next.slot && song ? styleById(song.style).color : unit.color;
   return `<div class="continue" style="--unit:${color}">
-    <div class="continue-meta"><div><p class="eyebrow">${esc(unit.title)} · ${KIND_NAME[next.kind]}</p><h2>${esc(lessonTitle(next))}</h2></div>
+    <div class="continue-meta"><div><p class="eyebrow">Tu siguiente paso · ${esc(unit.title)} · ${KIND_NAME[next.kind]}</p><h2>${esc(lessonTitle(next))}</h2></div>
     <span class="continue-note" aria-hidden="true">${next.kind === 'song' ? '♫' : '♪'}</span></div>
     <button type="button" class="btn" id="continueBtn"><span class="ic">${icon('play')}</span>Continuar</button></div>`;
 }
@@ -63,12 +70,10 @@ function render() {
   states = currentStates(course);
   const next = nextLesson(null, course);
   currentId = next ? next.id : null;
-  const inst = instrumentById(getState().instrument);
-  $('courseHead').innerHTML = `<span class="inst-ic">${instrumentIcon(inst.id)}</span><div><small>Estás aprendiendo</small><b>${esc(inst.name)}</b></div>
-    <button type="button" class="btn ghost small" id="changeInst">Cambiar</button>`;
-  $('changeInst').addEventListener('click', () => window.dispatchEvent(new CustomEvent('pick-instrument')));
   renderToday();
-  $('continueCard').innerHTML = continueCard();
+  const task = soonBandTask(getState(), today());
+  $('continueCard').innerHTML = (task ? bandStepCard(task) : '') + continueCard();
+  if (task) $('bandStepBtn').addEventListener('click', () => go('band'));
   $('courseMap').innerHTML = course.map(unitHtml).join('');
   const btn = $('continueBtn');
   if (btn && next) btn.addEventListener('click', () => launch(next, { from: 'course' }));

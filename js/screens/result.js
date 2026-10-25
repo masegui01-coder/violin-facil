@@ -1,6 +1,6 @@
 // Pantalla de resultado: estrellas, puntos ganados, partitura revisada y qué hacer después.
 import { $, icon } from '../ui.js';
-import { register, go } from '../router.js';
+import { register, go, ORIGIN_TAB } from '../router.js';
 import { lessonKey } from '../course.js';
 import { createStaff } from '../staff.js';
 import { getState, recordResult, update } from '../store.js';
@@ -9,7 +9,6 @@ import { saveTake } from '../takes.js';
 
 const FIRST_TAKE_MIN_DAYS = 7;
 
-const ORIGIN_TAB = { course: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
 const reviewStaff = createStaff($('resStaff'));
 let ctx = null;
 
