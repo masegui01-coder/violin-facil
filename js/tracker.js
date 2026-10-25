@@ -23,7 +23,7 @@ export function createTracker() {
       return null;
     }
     silent = 0;
-    const midi = Math.round(freqToMidi(reading.freq));
+    const midi = Math.round(reading.midi ?? freqToMidi(reading.freq));
     // bajón de volumen sobre la misma nota: cambio de arco o final de la nota. Hace falta volver a sonar estable.
     if (last !== null && midi === last && reading.level < peak * DIP) {
       articulated = true;

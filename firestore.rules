@@ -20,6 +20,44 @@ service cloud.firestore {
       allow delete: if isDirector(resource.data.bandId);
     }
 
+    function validName() { return request.resource.data.name is string && request.resource.data.name.size() <= 30; }
+    function validAccuracy() { return request.resource.data.score is number && request.resource.data.score >= 0 && request.resource.data.score <= 1; }
+
+    // Partituras compartidas y retos: se leen por código (nunca se listan) y solo su autor los crea o borra
+    match /sharedScores/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+    match /challenges/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      match /results/{uid} {
+        allow read: if signedIn();
+        allow write: if signedIn() && uid == request.auth.uid && validName() && validAccuracy();
+      }
+    }
+
+    // Clasificaciones abiertas por canción e instrumento, y del reto del día: cada uno escribe solo su resultado
+    match /boards/{board}/results/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && uid == request.auth.uid && validName() && validAccuracy();
+    }
+    match /daily/{board}/results/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && uid == request.auth.uid && validName() && validAccuracy();
+    }
+    // Liga semanal: puntos acumulados (como mucho 40 por lección)
+    match /leagues/{board}/results/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && uid == request.auth.uid && validName() && request.resource.data.score is number && request.resource.data.score <= 40;
+      allow update: if signedIn() && uid == request.auth.uid && validName() && request.resource.data.score is number
+        && request.resource.data.score <= resource.data.score + 40;
+    }
+
     match /bands/{bandId} {
       allow read: if isMember(bandId) || isDirector(bandId);
       allow create: if signedIn() && request.resource.data.directorUid == request.auth.uid;

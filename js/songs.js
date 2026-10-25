@@ -90,6 +90,13 @@ export function styleById(id) {
   return id === MY_STYLE.id ? MY_STYLE : STYLES.find(s => s.id === id) || null;
 }
 
+// Desplazamiento de octava (0, ±12, +24) para que toda la canción quepa en el registro escrito del instrumento; null si no cabe
+export function octaveShiftFor(song, inst) {
+  const midis = songScore(song).notes.filter(n => !n.rest).map(n => n.midi);
+  const lo = Math.min(...midis), hi = Math.max(...midis);
+  return [0, 12, -12, 24].find(k => lo + k >= inst.written[0] && hi + k <= inst.written[1]) ?? null;
+}
+
 // Partitura ya analizada: las importadas la guardan hecha; las del repertorio se leen del texto
 export function songScore(song) {
   return song.parsed ? structuredClone(song.parsed) : parseScore(song.score);

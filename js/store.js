@@ -1,4 +1,5 @@
 // Preferencias y progreso guardados solo en este navegador.
+import { advanceStreak } from './engage.js';
 
 const KEY = 'violin-facil-v2';
 const LEGACY_KEY = 'violin-facil-v1';
@@ -11,6 +12,8 @@ const DEFAULTS = Object.freeze({
   unlockAll: false, bpm: 80, meter: 4, lessonMetro: false, progress: {}, xp: 0,
   streak: { count: 0, last: null }, lessonsPlayed: 0,
   speed: 0.6, metroMode: 'visual', bigText: false, recordings: [], importedSongs: [],
+  instrument: 'violin', a4: 440, tuning: {}, gym: {}, practiceLog: {}, band: null,
+  freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null,
 });
 
 function read(key) {
@@ -67,15 +70,57 @@ export function currentStreak(streak, day = today()) {
   return dayDiff(streak.last, day) <= 1 ? streak.count : 0;
 }
 
-export function recordResult(key, stars) {
-  const prev = state.progress[key] || 0;
+// El progreso del curso es por instrumento: el violín conserva las claves originales
+const progressKey = key => (state.instrument === 'violin' ? key : `${state.instrument}:${key}`);
+
+export function instrumentProgress() {
+  if (state.instrument === 'violin') return Object.fromEntries(Object.entries(state.progress).filter(([k]) => !/^[a-z]+:(lesson|song):/.test(k)));
+  const prefix = state.instrument + ':';
+  return Object.fromEntries(Object.entries(state.progress).filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k.slice(prefix.length), v]));
+}
+
+export function recordResult(key, stars, minutes = 0) {
+  const full = progressKey(key);
+  const prev = state.progress[full] || 0;
   const gained = XP_PER_LESSON + Math.max(0, stars - prev) * XP_PER_STAR;
   return update({
-    progress: { ...state.progress, [key]: Math.max(prev, stars) },
+    ...dayPatch(minutes),
+    progress: { ...state.progress, [full]: Math.max(prev, stars) },
     xp: state.xp + gained,
-    streak: nextStreak(state.streak, today()),
     lessonsPlayed: state.lessonsPlayed + 1,
   });
+}
+
+// Mapa de afinación: por instrumento y nota escrita, suma de desviaciones (cents) para la media y la dispersión
+export function addTuningSamples(samples) {
+  if (!samples.length) return state;
+  const mine = { ...(state.tuning[state.instrument] || {}) };
+  samples.forEach(({ midi, cents }) => {
+    const prev = mine[midi] || { n: 0, sum: 0, sumSq: 0 };
+    mine[midi] = { n: prev.n + 1, sum: prev.sum + cents, sumSq: prev.sumSq + cents * cents };
+  });
+  return update({ tuning: { ...state.tuning, [state.instrument]: mine } });
+}
+
+export function recordGym(exerciseId, bpm) {
+  const key = `${state.instrument}:${exerciseId}`;
+  if ((state.gym[key] || 0) >= bpm) return state;
+  return update({ gym: { ...state.gym, [key]: bpm } });
+}
+
+// Práctica fuera de las lecciones (herramientas de Estudio): suma minutos, mantiene la racha y da unos puntos
+export function logPractice(minutes, xp = 2) {
+  return update({ ...dayPatch(minutes), xp: state.xp + xp });
+}
+
+// Minutos del día y racha (con protectores) tras practicar
+function dayPatch(minutes) {
+  const day = today();
+  const { streak, freezes } = advanceStreak(state.streak, state.freezes, day);
+  return {
+    practiceLog: { ...state.practiceLog, [day]: Math.round(((state.practiceLog[day] || 0) + minutes) * 10) / 10 },
+    streak, freezes,
+  };
 }
 
 const MAX_RECORDINGS = 20;

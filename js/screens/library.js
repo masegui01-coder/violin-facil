@@ -2,7 +2,7 @@
 import { $, esc, icon, starsHtml } from '../ui.js';
 import { register } from '../router.js';
 import { allSongs, STYLES, MY_STYLE, styleById } from '../songs.js';
-import { getState } from '../store.js';
+import { getState, instrumentProgress } from '../store.js';
 import { songLesson } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { initImporter, openGuide } from './importer.js';
@@ -24,7 +24,7 @@ function renderFilter() {
 
 function songHtml(song) {
   const style = styleById(song.style);
-  const best = getState().progress['song:' + song.id] || 0;
+  const best = instrumentProgress()['song:' + song.id] || 0;
   const dots = [1, 2, 3].map(i => `<i class="${i <= song.difficulty ? 'on' : ''}"></i>`).join('');
   return `<button type="button" class="song" data-song="${song.id}" style="--chip:${style.color}">
     <span class="song-art"><span class="ic">${icon('song')}</span></span>

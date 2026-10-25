@@ -1,5 +1,7 @@
 // Curso progresivo. Desde la unidad 4 cada unidad trae lecciones «Tu música» con canciones de los estilos elegidos.
-import { SONGS, songById } from './songs.js';
+import { SONGS, songById, octaveShiftFor } from './songs.js';
+import { instrumentById } from './instruments.js';
+import { windUnits } from './course-winds.js';
 
 const theory = (id, title, cards) => ({ id, kind: 'theory', title, cards });
 const notes = (id, title, sub, list) => ({ id, kind: 'notes', title, sub, notes: list });
@@ -96,8 +98,8 @@ export const UNITS = [
 const CORE_SONG_IDS = new Set(UNITS.flatMap(u => u.lessons.filter(l => l.songId).map(l => l.songId)));
 
 // Canciones candidatas para «Tu música»: primero las de tus estilos, alternando estilos
-function pickSongs(count, difficulty, styles, used) {
-  const free = SONGS.filter(s => !CORE_SONG_IDS.has(s.id) && !used.has(s.id));
+function pickSongs(count, difficulty, styles, used, inst) {
+  const free = SONGS.filter(s => !CORE_SONG_IDS.has(s.id) && !used.has(s.id) && octaveShiftFor(s, inst) !== null);
   const byStyle = styles.map(st => free.filter(s => s.style === st && s.difficulty === difficulty));
   const picked = [];
   for (let round = 0; picked.length < count && byStyle.some(list => list.length > round); round++) {
@@ -110,13 +112,17 @@ function pickSongs(count, difficulty, styles, used) {
   return [...picked, ...fallback.slice(0, count - picked.length).map(s => ({ song: s, fromStyles: styles.includes(s.style) }))];
 }
 
-export function buildCourse(styles) {
+const HELPERS = { theory, notes, song, exercise, slots, warmup };
+
+export function buildCourse(styles, instId = 'violin') {
+  const inst = instrumentById(instId);
+  const units = inst.id === 'violin' ? UNITS : windUnits(inst, HELPERS);
   const used = new Set();
-  return UNITS.map(unit => ({
+  return units.map(unit => ({
     ...unit,
     lessons: unit.lessons.flatMap(l => {
       if (l.kind !== 'slots') return [l];
-      const picks = pickSongs(l.count, l.difficulty, styles, used);
+      const picks = pickSongs(l.count, l.difficulty, styles, used, inst);
       picks.forEach(p => used.add(p.song.id));
       return picks.map((p, i) => ({ id: `${unit.id}-tu${i + 1}`, kind: 'song', songId: p.song.id, slot: true, fromStyles: p.fromStyles, sub: 'Tu música' }));
     }),

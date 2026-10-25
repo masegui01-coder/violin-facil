@@ -1,7 +1,7 @@
 // Lecciones de teoría: tarjetas con texto y, si hace falta, el diapasón con las notas marcadas.
 import { $, esc } from '../ui.js';
 import { register, go } from '../router.js';
-import { renderFingerboard } from '../fingerboard.js';
+import { renderDiagram } from '../keydiagram.js';
 import { getState } from '../store.js';
 import { finishLesson } from './result.js';
 
@@ -14,7 +14,7 @@ function render() {
   $('theoryProg').style.width = ((page + 1) / cards.length * 100) + '%';
   $('theoryCard').innerHTML = `<p class="eyebrow">${esc(ctx.eyebrow || ctx.lesson.title)} · ${page + 1} de ${cards.length}</p>
     <h1>${esc(card.title)}</h1><p>${esc(card.text)}</p>${card.board ? '<svg class="board" id="theoryBoard" role="img" aria-label="Diapasón"></svg>' : ''}`;
-  if (card.board) renderFingerboard($('theoryBoard'), card.board, getState().nom);
+  if (card.board) renderDiagram($('theoryBoard'), getState().instrument, card.board, getState().nom);
   $('theoryPrev').disabled = page === 0;
   $('theoryNext').textContent = page === cards.length - 1 ? 'Terminar' : 'Siguiente';
 }

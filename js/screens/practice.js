@@ -1,7 +1,8 @@
 // Herramientas de práctica: afinador y metrónomo («Toca libre» está en free.js).
 import { $ } from '../ui.js';
 import { register, back } from '../router.js';
-import { STRINGS, noteLabel, freqToMidi, spell } from '../music.js';
+import { STRINGS, noteLabel, spell } from '../music.js';
+import { instrumentById } from '../instruments.js';
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
 
@@ -23,26 +24,50 @@ export async function withMic(gateId, errId) {
 }
 
 // ---------- Afinador ----------
+// Violín: las cuatro cuerdas. Viento: cromático, con la nota escrita y, si transporta, la real.
+const isViolin = () => getState().instrument === 'violin';
+
+function showTuning(name, cents, sub) {
+  const ok = Math.abs(cents) <= IN_TUNE_CENTS;
+  $('needle').style.transform = `rotate(${Math.max(-50, Math.min(50, cents)) * 1.6}deg)`;
+  $('tunerName').textContent = name;
+  $('tunerName').style.color = ok ? 'var(--ok)' : '';
+  $('tunerCents').textContent = (ok ? 'Afinada' : (cents > 0 ? 'Alta ' : 'Baja ') + Math.abs(Math.round(cents)) + ' cents') + (sub ? ' · ' + sub : '');
+  return ok;
+}
+
 function tunerTick() {
   const p = audio.readPitch();
   const btns = $('stringPick').querySelectorAll('button');
   if (!p || p.freq === null) { btns.forEach(b => b.classList.remove('on')); return; }
-  const det = freqToMidi(p.freq);
+  const nom = getState().nom;
+  const inst = instrumentById(getState().instrument);
+  if (!isViolin()) {
+    const near = Math.round(p.midi);
+    const real = near + inst.transpose;
+    showTuning(noteLabel({ midi: near }, nom, true), (p.midi - near) * 100, inst.transpose ? 'suena ' + noteLabel({ midi: real }, nom, true) : '');
+    return;
+  }
+  const det = p.midi;
   const near = STRINGS.reduce((a, b) => (Math.abs(b.midi - det) < Math.abs(a.midi - det) ? b : a));
   const cents = (det - near.midi) * 100;
-  const nom = getState().nom;
   if (Math.abs(cents) > 300) { $('tunerCents').textContent = 'Oigo ' + noteLabel({ midi: Math.round(det) }, nom) + ': toca una cuerda al aire'; return; }
-  $('needle').style.transform = `rotate(${Math.max(-50, Math.min(50, cents)) * 1.6}deg)`;
-  $('tunerName').textContent = nom === 'us' ? near.us : near.eu;
-  $('tunerName').style.color = Math.abs(cents) <= IN_TUNE_CENTS ? 'var(--ok)' : '';
-  $('tunerCents').textContent = Math.abs(cents) <= IN_TUNE_CENTS ? 'Afinada' : (cents > 0 ? 'Alta: afloja ' : 'Baja: tensa ') + Math.abs(Math.round(cents)) + ' cents';
-  btns.forEach(b => b.classList.toggle('on', Number(b.dataset.midi) === near.midi && Math.abs(cents) <= IN_TUNE_CENTS));
+  const ok = showTuning(nom === 'us' ? near.us : near.eu, cents, '');
+  if (!ok) $('tunerCents').textContent = (cents > 0 ? 'Alta: afloja ' : 'Baja: tensa ') + Math.abs(Math.round(cents)) + ' cents';
+  btns.forEach(b => b.classList.toggle('on', Number(b.dataset.midi) === near.midi && ok));
+}
+
+// Notas de afinación habituales: cuerdas al aire (violín) o el Si♭ y La de concierto (viento)
+function referenceNotes() {
+  if (isViolin()) return STRINGS.map(s => ({ midi: s.midi, label: getState().nom === 'us' ? s.us : s.eu }));
+  const inst = instrumentById(getState().instrument);
+  return [70, 69, 65].map(real => real - inst.transpose).map(midi => ({ midi, label: noteLabel({ midi }, getState().nom, true) }));
 }
 
 register('tuner', {
   enter() {
-    const nom = getState().nom;
-    $('stringPick').innerHTML = STRINGS.map(s => `<button type="button" data-midi="${s.midi}">${nom === 'us' ? s.us : s.eu}<small>${noteLabel(spell(s.midi), 'us')}</small></button>`).join('');
+    $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi, !isViolin()), 'us')}</small></button>`).join('');
+    $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
     $('tunerGate').hidden = audio.micReady();
     $('tunerMicError').hidden = true;
     timer = setInterval(tunerTick, TICK_MS);

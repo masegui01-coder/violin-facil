@@ -25,9 +25,13 @@ export function parseNote(str) {
   return { letter: m[1], acc, oct, midi: (oct + 1) * 12 + LETTER_PC[m[1]] + acc };
 }
 
-export function spell(midi) {
-  const [letter, acc] = SHARP_SPELLING[midi % 12];
-  return { letter, acc, oct: Math.floor(midi / 12) - 1, midi };
+const FLAT_SPELLING = [['C', 0], ['D', -1], ['D', 0], ['E', -1], ['E', 0], ['F', 0], ['G', -1], ['G', 0], ['A', -1], ['A', 0], ['B', -1], ['B', 0]];
+
+// Ortografía de una nota sin escribir: con sostenidos (cuerda) o con bemoles (viento, habitual en banda)
+export function spell(midi, flats = false) {
+  const [letter, acc] = (flats ? FLAT_SPELLING : SHARP_SPELLING)[midi % 12];
+  const oct = Math.floor((midi - acc) / 12) - 1;
+  return { letter, acc, oct, midi };
 }
 
 // Escalón diatónico (para colocar la nota en el pentagrama)
@@ -88,15 +92,18 @@ export function fingerText(midi, nom) {
   return 'Cuerda ' + stringLabel(f.string, nom) + ' · ' + finger;
 }
 
-export function noteLabel(note, nom) {
-  const n = note.letter ? note : spell(note.midi);
+export function noteLabel(note, nom, flats = false) {
+  const n = note.letter ? note : spell(note.midi, flats);
   const sign = ACC_SIGN[n.acc];
   return nom === 'us' ? n.letter + sign + n.oct : EU_LETTER[n.letter] + sign;
 }
 
 const SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
 const FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
-const KEY_COUNT = { C: 0, G: 1, D: 2, A: 3, E: 4, F: -1, Bb: -2, Eb: -3, Am: 0, Em: 1, Bm: 2, 'F#m': 3, Dm: -1, Gm: -2 };
+const KEY_COUNT = {
+  C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, 'F#': 6, F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6,
+  Am: 0, Em: 1, Bm: 2, 'F#m': 3, 'C#m': 4, 'G#m': 5, 'D#m': 6, Dm: -1, Gm: -2, Cm: -3, Fm: -4, Bbm: -5, Ebm: -6,
+};
 
 export function keyCount(key) {
   if (!(key in KEY_COUNT)) throw new Error('Tonalidad no soportada: ' + key);
@@ -117,5 +124,9 @@ export function accidentalToShow(note, sig) {
   return note.acc > 0 ? 'sharp' : 'flat';
 }
 
-export function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-export function freqToMidi(f) { return 69 + 12 * Math.log2(f / 440); }
+// La de referencia: 440 Hz por defecto; muchas bandas afinan a 442
+let referenceA = 440;
+export function setReferenceA(hz) { referenceA = hz; }
+export function getReferenceA() { return referenceA; }
+export function midiToFreq(m) { return referenceA * Math.pow(2, (m - 69) / 12); }
+export function freqToMidi(f) { return 69 + 12 * Math.log2(f / referenceA); }

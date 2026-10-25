@@ -2,7 +2,13 @@
 import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { STYLES } from '../songs.js';
-import { getState, update, resetProgress, currentStreak } from '../store.js';
+import { INSTRUMENTS } from '../instruments.js';
+import { BADGES } from '../engage.js';
+import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
+
+export function instrumentGridHtml(selected) {
+  return INSTRUMENTS.map(i => `<button type="button" class="inst-opt" data-inst="${i.id}" aria-pressed="${i.id === selected}"><b>${esc(i.name)}</b><small>${esc(i.blurb)}</small></button>`).join('');
+}
 
 export function styleGridHtml(selected) {
   return STYLES.map(s => `<button type="button" class="style-opt" data-style="${s.id}" aria-pressed="${selected.includes(s.id)}" style="--chip:${s.color}">
@@ -19,11 +25,15 @@ let confirmReset = false;
 
 function render() {
   const s = getState();
-  const done = Object.values(s.progress).filter(v => v > 0).length;
+  const done = Object.values(instrumentProgress()).filter(v => v > 0).length;
   $('stats').innerHTML = [
     [currentStreak(s.streak), 'días seguidos'], [s.xp, 'puntos'], [done, 'lecciones hechas'],
   ].map(([n, label]) => `<div class="stat"><b>${n}</b><span>${label}</span></div>`).join('');
   $('profileStyles').innerHTML = styleGridHtml(s.styles);
+  document.querySelectorAll('[data-set-goal]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setGoal) === s.dailyGoal));
+  $('profileBadges').innerHTML = BADGES.map(b => `<div class="badge${s.badges.includes(b.id) ? ' on' : ''}" title="${esc(b.desc)}"><span>${s.badges.includes(b.id) ? '★' : '·'}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('');
+  $('profileInstruments').innerHTML = instrumentGridHtml(s.instrument);
+  document.querySelectorAll('[data-set-a4]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setA4) === s.a4));
   document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
   document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
   document.querySelectorAll('[data-set-metro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setMetro === s.metroMode));
@@ -46,6 +56,15 @@ $('profileStyles').addEventListener('click', e => {
   render();
   toast('Lecciones «Tu música» actualizadas');
 });
+$('profileInstruments').addEventListener('click', e => {
+  const b = e.target.closest('[data-inst]');
+  if (!b || b.dataset.inst === getState().instrument) return;
+  update({ instrument: b.dataset.inst });
+  render();
+  toast('Curso y digitaciones adaptados a tu instrumento');
+});
+document.querySelectorAll('[data-set-goal]').forEach(b => b.addEventListener('click', () => { update({ dailyGoal: Number(b.dataset.setGoal) }); render(); }));
+document.querySelectorAll('[data-set-a4]').forEach(b => b.addEventListener('click', () => { update({ a4: Number(b.dataset.setA4) }); render(); }));
 document.querySelectorAll('[data-set-nom]').forEach(b => b.addEventListener('click', () => { update({ nom: b.dataset.setNom }); render(); }));
 document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
 document.querySelectorAll('[data-set-metro]').forEach(b => b.addEventListener('click', () => { update({ metroMode: b.dataset.setMetro }); render(); }));

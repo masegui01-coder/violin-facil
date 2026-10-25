@@ -1,11 +1,14 @@
 // Motor de lección: modo «nota a nota» (espera a que suene bien) y modo «a tempo» (la partitura avanza sola).
 import { $, toast } from '../ui.js';
 import { register, go } from '../router.js';
-import { parseScore, noteLabel, fingerText, freqToMidi } from '../music.js';
+import { parseScore, noteLabel } from '../music.js';
 import { lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
-import { renderFingerboard } from '../fingerboard.js';
-import { getState, update, TOLERANCE_CENTS } from '../store.js';
+import { renderDiagram } from '../keydiagram.js';
+import { fingeringText } from '../fingerings.js';
+import { instrumentById } from '../instruments.js';
+import { octaveShiftFor } from '../songs.js';
+import { getState, update, addTuningSamples, TOLERANCE_CENTS } from '../store.js';
 import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { showPulse, drawPulse } from './pulse.js';
@@ -67,8 +70,8 @@ function showTarget(index) {
   const nom = getState().nom;
   $('tName').textContent = noteLabel(note, nom);
   $('tName').className = 'name';
-  $('tHint').textContent = fingerText(note.midi, nom);
-  if (getState().showBoard) renderFingerboard($('lessonBoard'), [note.midi], nom);
+  $('tHint').textContent = fingeringText(getState().instrument, note.midi, nom);
+  if (getState().showBoard) renderDiagram($('lessonBoard'), getState().instrument, [note.midi], nom);
 }
 
 function updateProgress(done) {
@@ -78,9 +81,9 @@ function updateProgress(done) {
 
 function showHeard(p, target) {
   if (!p || p.freq === null) { $('heard').innerHTML = '&nbsp;'; setMeter(null); return null; }
-  const detected = freqToMidi(p.freq);
+  const detected = p.midi;
   const cents = target ? (detected - target.midi) * 100 : 0;
-  $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom) + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
+  $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom, getState().instrument !== 'violin') + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
   setMeter(target ? (Math.abs(cents) <= 100 ? cents : Math.sign(cents) * 50) : null);
   return cents;
 }
@@ -93,7 +96,7 @@ function renderTempoControls() {
   $('lmUp').hidden = !learn;
   $('tempoBpm').textContent = `♩ = ${tempoBpm()}`;
   document.querySelectorAll('[data-speed]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.speed) === run.speed));
-  $('playControls').hidden = !run.playing;
+  $('playControls').hidden = !run.playing || run.oneTake;
   $('tempoBar').hidden = learn || run.playing;
 }
 
@@ -136,10 +139,16 @@ function learnTick(p, dt) {
     run.wrong = 0;
     run.hold += dt;
     $('tName').className = 'name ok';
-    if (run.hold >= HOLD_MS) learnAdvance(false);
+    run.centsSum += cents; run.centsN++;
+    if (run.hold >= HOLD_MS) {
+      run.tuning.push({ midi: target.midi, cents: run.centsSum / run.centsN });
+      run.centsSum = 0; run.centsN = 0;
+      learnAdvance(false);
+    }
     return;
   }
   run.hold = 0;
+  run.centsSum = 0; run.centsN = 0;
   run.wrong += dt;
   $('tName').className = 'name';
   if (run.wrong >= WRONG_MS) {
@@ -180,6 +189,7 @@ function playFrom(beatStart) {
     audio.startMetronome(firstBar + Math.max(0, Math.ceil((countEnd - firstBar) / barLen - 1e-6)) * barLen);
   }
   showPulse(metroVisual());
+  audio.startRecording();
   setStatus('Sigue la línea y toca cada nota cuando llegue');
   renderTempoControls();
 }
@@ -220,15 +230,18 @@ function tempoTick(p, dt) {
   if (shownIdx !== undefined) showTarget(shownIdx);
   if (p !== 'masked') {
     showHeard(p, shownIdx !== undefined ? run.notes[shownIdx] : null);
-    run.heardMidi = p && p.freq ? freqToMidi(p.freq) : null;
+    run.heardMidi = p && p.freq ? p.midi : null;
   }
   if (run.heardMidi !== null && run.heardMidi !== undefined) {
     started.forEach(i => {
       const n = run.notes[i];
       if (n.hit || Math.abs(run.heardMidi - n.midi) * 100 > tolerance()) return;
       n.inTune = (n.inTune || 0) + dt / 1000;
+      n.centsSum = (n.centsSum || 0) + (run.heardMidi - n.midi) * 100;
+      n.centsN = (n.centsN || 0) + 1;
       if (n.inTune >= Math.min(MIN_HIT_S, n.beats * run.spb * 0.5)) {
         n.hit = true;
+        run.tuning.push({ midi: n.midi, cents: n.centsSum / n.centsN });
         staff.setState(i, 'done');
         if (i === shownIdx) $('tName').className = 'name ok';
       }
@@ -262,12 +275,19 @@ function scoreStars() {
   return { stars, text: `${total - run.skips} de ${total} notas · ${run.errors} ${run.errors === 1 ? 'fallo' : 'fallos'}` + (run.skips ? ` · ${run.skips} saltadas` : '') };
 }
 
+function scoreAccuracy() {
+  if (run.mode === 'tempo') return run.playable.filter(i => run.notes[i].hit).length / run.playable.length;
+  return Math.max(0, (run.playable.length - run.skips - run.errors * 0.5) / run.playable.length);
+}
+
 function finish() {
   if (run.finished) return;
   run.finished = true;
   audio.stopMetronome();
   const { stars, text } = scoreStars();
-  finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title });
+  addTuningSamples(run.tuning);
+  const minutes = (performance.now() - run.startedAt) / 60000;
+  finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title, minutes, accuracy: scoreAccuracy(), take: audio.stopRecording(), speed: run.speed });
 }
 
 // ---------- Demo ----------
@@ -296,25 +316,32 @@ function stopDemo() {
 function enter({ lesson, mode, from, eyebrow }) {
   const meta = buildMeta(lesson);
   const score = meta.parsed ? structuredClone(meta.parsed) : parseScore(meta.score);
+  const shift = lesson.songId ? (octaveShiftFor(meta, instrumentById(getState().instrument)) ?? 0) : 0;
+  if (shift) score.notes.forEach(n => { if (!n.rest) { n.midi += shift; n.oct += shift / 12; } });
   const notes = score.notes.map(n => ({ ...n }));
   const playable = notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0);
   run = {
     lesson, mode, from, title: lessonTitle(lesson), notes, playable, score, bars: score.bars, totalBeats: score.totalBeats,
-    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: getState().speed,
+    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.fixedSpeed ? 1 : getState().speed,
     renderOpts: { key: meta.key, time: meta.time, mode },
     firstBeat: () => notes[playable[0]].start,
     pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0,
     playing: false, finished: false, shown: -1, last: performance.now(), demoStop: null, demoIdx: -1, praise: 0,
-    wantMetro: getState().lessonMetro,
+    wantMetro: getState().lessonMetro, tuning: [], centsSum: 0, centsN: 0, startedAt: performance.now(),
+    oneTake: !!lesson.oneTake,
   };
   $('lessonEyebrow').textContent = eyebrow || '';
   $('lessonTitle').textContent = run.title;
-  $('modeChip').textContent = mode === 'tempo' ? 'A tempo' : 'Nota a nota';
+  $('modeChip').textContent = lesson.oneTake ? 'Una toma' : mode === 'tempo' ? 'A tempo' : 'Nota a nota';
   $('micGate').hidden = audio.micReady();
   $('micError').hidden = true;
   $('countdown').hidden = true;
   $('skipNote').hidden = mode === 'tempo';
-  const showBoard = getState().showBoard;
+  $('playDemo').hidden = !!lesson.oneTake;
+  $('playRef').hidden = !!lesson.oneTake;
+  $('tHint').hidden = !!lesson.noHints;
+  document.querySelector('#tempoBar .seg').hidden = !!lesson.fixedSpeed;
+  const showBoard = getState().showBoard && !lesson.noHints;
   $('lessonBoard').hidden = !showBoard;
   document.querySelector('#lesson .target-row').classList.toggle('no-board', !showBoard);
   setStatus(mode === 'tempo' ? 'Elige la velocidad y pulsa Empezar' : 'Toca la nota marcada');
@@ -342,6 +369,7 @@ function leave() {
   clearInterval(timer);
   if (offBeat) offBeat();
   if (run && run.demoStop) run.demoStop();
+  if (run && !run.finished) audio.stopRecording();
   audio.stopMetronome();
   showPulse(false);
 }

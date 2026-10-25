@@ -1,16 +1,16 @@
 // Arranca lecciones y calcula la siguiente del curso.
 import { buildCourse, lessonStates, lessonSong } from './course.js';
 import { styleById } from './songs.js';
-import { getState } from './store.js';
+import { getState, instrumentProgress } from './store.js';
 import { go } from './router.js';
 
 export function currentCourse() {
-  return buildCourse(getState().styles);
+  return buildCourse(getState().styles, getState().instrument);
 }
 
 export function currentStates(course = currentCourse()) {
   const s = getState();
-  return lessonStates(course, s.progress, { level: s.level, unlockAll: s.unlockAll });
+  return lessonStates(course, instrumentProgress(), { level: s.level, unlockAll: s.unlockAll });
 }
 
 export function unitOf(lessonId, course = currentCourse()) {
@@ -37,6 +37,7 @@ function eyebrowFor(lesson, from) {
     if (lesson.slot && song) return 'Tu música · ' + (styleById(song.style)?.name || '');
     return unit ? unit.title : '';
   }
+  if (song && !song.style) return song.by || '';
   return song && song.style ? styleById(song.style).name + ' · ' + song.by : '';
 }
 

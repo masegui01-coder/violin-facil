@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B4461F">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="description" content="Aprende violín tocando: lecciones progresivas que te escuchan por el micrófono y canciones de tu estilo favorito.">
-<title>Violin Flow</title>
+<meta name="description" content="Aprende y ensaya tu instrumento con una app que te escucha: violín, trompeta, clarinete, saxofón, flauta y oboe. Con tareas de banda para directores y músicos.">
+<title>Band Flow</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23B4461F'/%3E%3Cpath d='M19 6v14' stroke='white' stroke-width='3'/%3E%3Cellipse cx='14' cy='21' rx='6' ry='4.5' transform='rotate(-20 14 21)' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap">
 <link rel="stylesheet" href="css/app.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 <div class="shell">
 
   <!-- Barra superior de las pestañas -->
   <header id="topbar" class="topbar" hidden>
-    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Violin Flow</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Band Flow</span></div>
     <div class="chips">
       <span class="chip-stat streak" title="Días seguidos practicando"><span id="streakIcon" class="ic"></span><b id="streakCount">0</b></span>
       <span class="chip-stat xp" title="Puntos"><b id="xpCount">0</b> pts</span>
@@ -38,6 +40,7 @@
 
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
+      <div id="todayCard"></div>
       <div id="continueCard"></div>
       <div id="courseMap" class="course"></div>
     </section>
@@ -60,17 +63,32 @@
       <div id="songList" class="song-list"></div>
     </section>
 
-    <!-- Pestaña Práctica -->
+    <!-- Pestaña Estudio -->
     <section id="practice" class="screen" hidden>
       <div class="screen-head">
-        <h1>Práctica</h1>
-        <p class="muted">Herramientas para el día a día.</p>
+        <h1>Estudio</h1>
+        <p class="muted">Herramientas para mejorar cada día, también si ya tienes nivel.</p>
       </div>
+      <h2 class="tools-title">Cada día</h2>
       <div class="tools">
-        <button class="tool" type="button" data-go="tuner"><span class="tool-ic" data-icon="tuner"></span><span><b>Afinador</b><small>Afina Sol, Re, La y Mi</small></span></button>
+        <button class="tool" type="button" data-go="tuner"><span class="tool-ic" data-icon="tuner"></span><span><b>Afinador</b><small>Cromático, con La 440 o 442</small></span></button>
         <button class="tool" type="button" data-go="metro"><span class="tool-ic" data-icon="metro"></span><span><b>Metrónomo</b><small><span id="toolBpm">80</span> BPM · compás y tap</small></span></button>
-        <button class="tool" type="button" data-go="free"><span class="tool-ic" data-icon="free"></span><span><b>Toca libre</b><small>Ve cada nota en el pentagrama y en el diapasón</small></span></button>
+        <button class="tool" type="button" data-go="longtone"><span class="tool-ic" data-icon="longtone"></span><span><b>Notas tenidas</b><small>Gráfica en vivo de afinación, volumen y vibrato</small></span></button>
+        <button class="tool" type="button" data-go="free"><span class="tool-ic" data-icon="free"></span><span><b>Toca libre</b><small>Escribe lo que tocas y compáralo con una canción</small></span></button>
       </div>
+      <h2 class="tools-title">Para subir de nivel</h2>
+      <div class="tools">
+        <button class="tool" type="button" data-go="tuningmap"><span class="tool-ic" data-icon="map"></span><span><b>Mapa de afinación</b><small>Qué notas te salen altas o bajas</small></span></button>
+        <button class="tool" type="button" data-go="gym"><span class="tool-ic" data-icon="gym"></span><span><b>Gimnasio de técnica</b><small>Escalas, arpegios y terceras en las 12 tonalidades</small></span></button>
+        <button class="tool" type="button" data-go="chord"><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
+        <button class="tool" type="button" id="toolSight"><span class="tool-ic" data-icon="sight"></span><span><b>Lectura a primera vista</b><small>Partituras nuevas cada vez, en tres niveles</small></span></button>
+        <button class="tool" type="button" id="toolAudition"><span class="tool-ic" data-icon="audition"></span><span><b>Modo audición</b><small>Una obra al azar, una sola toma, sin ayudas</small></span></button>
+      </div>
+    </section>
+
+    <!-- Pestaña Banda -->
+    <section id="band" class="screen" hidden>
+      <div id="bandBody" class="band"></div>
     </section>
 
     <!-- Pestaña Perfil -->
@@ -78,9 +96,24 @@
       <div class="screen-head"><h1>Tu perfil</h1></div>
       <div id="stats" class="stats"></div>
       <div class="panel">
+        <h2>Tu instrumento</h2>
+        <p class="muted">El curso, las digitaciones y el detector se adaptan. Tu progreso se guarda por instrumento.</p>
+        <div id="profileInstruments" class="inst-grid"></div>
+        <div class="setting"><span id="setA4Label">La de referencia</span>
+          <div class="seg three" role="group" aria-labelledby="setA4Label"><button type="button" data-set-a4="440">440 Hz</button><button type="button" data-set-a4="441">441 Hz</button><button type="button" data-set-a4="442">442 Hz</button></div>
+          <small class="muted">Muchas bandas y orquestas afinan a 442.</small></div>
+      </div>
+      <div class="panel">
         <h2>Tu música</h2>
         <p class="muted">Las lecciones «Tu música» del curso usan canciones de estos estilos. Cámbialos cuando quieras.</p>
         <div id="profileStyles" class="style-grid"></div>
+      </div>
+      <div class="panel">
+        <h2>Objetivo e insignias</h2>
+        <div class="setting"><span id="setGoalLabel">Minutos de práctica al día</span>
+          <div class="seg four" role="group" aria-labelledby="setGoalLabel"><button type="button" data-set-goal="5">5</button><button type="button" data-set-goal="10">10</button><button type="button" data-set-goal="15">15</button><button type="button" data-set-goal="20">20</button></div>
+          <small class="muted">Cada 7 días seguidos ganas un protector de racha (máximo 2): si un día no practicas, se gasta y tu racha sigue.</small></div>
+        <div id="profileBadges" class="badges"></div>
       </div>
       <div class="panel settings">
         <h2>Ajustes</h2>
@@ -91,7 +124,7 @@
         <div class="setting"><span id="setMetroLabel">Pulso en las lecciones</span>
           <div class="seg three" role="group" aria-labelledby="setMetroLabel"><button type="button" data-set-metro="visual">Visual</button><button type="button" data-set-metro="both">Visual y sonido</button><button type="button" data-set-metro="sound">Sonido</button></div>
           <small class="muted">El sonido del metrónomo puede confundir al micrófono. Con «Visual» verás un péndulo encima de la partitura.</small></div>
-        <label class="switch-row" for="setBoard"><span>Mostrar el diapasón en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
+        <label class="switch-row" for="setBoard"><span>Mostrar la digitación en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
       </div>
@@ -134,7 +167,7 @@
         <div id="countdown" class="countdown" hidden></div>
       </div>
       <div id="micGate" class="mic-gate" hidden>
-        <p><strong>Necesito el micrófono</strong> para escuchar tu violín. El navegador te pedirá permiso.</p>
+        <p><strong>Necesito el micrófono</strong> para escucharte. El navegador te pedirá permiso.</p>
         <p id="micError" class="muted" hidden></p>
         <button id="startMic" class="btn" type="button">Activar micrófono</button>
       </div>
@@ -177,6 +210,7 @@
         <div id="resStars" class="big-stars"></div>
         <p id="resText" class="muted"></p>
         <p id="resXp" class="xp-gain"></p>
+        <div id="resTake" class="take" hidden><p class="small muted">Escucha tu toma</p><audio id="resAudio" controls></audio></div>
         <div id="resReview" class="review" hidden>
           <div class="review-scroll"><svg id="resStaff" class="staff" role="img" aria-label="Partitura con tus aciertos"></svg></div>
           <p class="small muted"><span class="dot-ok"></span> bien · <span class="dot-bad"></span> fallada o cambiada</p>
@@ -193,7 +227,7 @@
     <section id="tuner" class="screen lesson-screen" hidden>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Afinador</h2></div>
       <div id="tunerGate" class="mic-gate" hidden>
-        <p><strong>Necesito el micrófono</strong> para escuchar tus cuerdas.</p>
+        <p><strong>Necesito el micrófono</strong> para escucharte.</p>
         <p id="tunerMicError" class="muted" hidden></p>
         <button id="tunerStart" class="btn" type="button">Activar micrófono</button>
       </div>
@@ -208,7 +242,7 @@
       <div id="tunerName" class="tuner-name">–</div>
       <p id="tunerCents" class="tuner-cents">Toca una cuerda al aire</p>
       <div id="stringPick" class="string-pick"></div>
-      <p class="muted center small">Pulsa una cuerda para oír su nota (La = 440 Hz).</p>
+      <p id="tunerHelp" class="muted center small"></p>
     </section>
 
     <!-- Metrónomo -->
@@ -256,12 +290,68 @@
       </div>
       <div id="recordings" class="recordings"></div>
     </section>
+    <!-- Notas tenidas -->
+    <section id="longtone" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Notas tenidas</h2></div>
+      <div id="ltGate" class="mic-gate" hidden><p><strong>Necesito el micrófono</strong> para escucharte.</p><p id="ltMicError" class="muted" hidden></p><button id="ltStart" class="btn" type="button">Activar micrófono</button></div>
+      <div class="lt-controls">
+        <label for="ltNote" class="muted small">Nota</label>
+        <select id="ltNote" class="select"></select>
+        <div class="seg three" role="group" aria-label="Duración"><button type="button" data-lt-secs="6">6 s</button><button type="button" data-lt-secs="10">10 s</button><button type="button" data-lt-secs="16">16 s</button></div>
+      </div>
+      <div class="graph-card">
+        <canvas id="ltCanvas" class="graph" width="680" height="320" aria-label="Gráfica de afinación y volumen"></canvas>
+        <div class="graph-legend small muted"><span><i class="lg-pitch"></i> afinación (cents)</span><span><i class="lg-vol"></i> volumen</span></div>
+      </div>
+      <div id="ltStats" class="stats"></div>
+      <p id="ltTip" class="status"></p>
+      <div class="row" style="justify-content:center">
+        <button id="ltRef" class="btn ghost small" type="button"><span data-icon="speaker" class="ic"></span>Nota</button>
+        <button id="ltGo" class="btn" type="button">Empezar</button>
+      </div>
+      <p class="small muted center">Prueba un crescendo y un diminuendo sin que la línea se mueva: así se trabaja la afinación con dinámicas.</p>
+    </section>
+
+    <!-- Mapa de afinación -->
+    <section id="tuningmap" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Mapa de afinación</h2></div>
+      <p id="tmSummary" class="muted"></p>
+      <div id="tmList" class="tm-list"></div>
+    </section>
+
+    <!-- Afinar en acorde -->
+    <section id="chord" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Afinar en acorde</h2></div>
+      <div id="chGate" class="mic-gate" hidden><p><strong>Necesito el micrófono</strong> para escucharte.</p><p id="chMicError" class="muted" hidden></p><button id="chStart" class="btn" type="button">Activar micrófono</button></div>
+      <p class="muted small">En un acorde afinado de verdad (afinación justa), cada grado tiene su sitio: la tercera mayor va unos 14 cents por debajo del afinador y la quinta unos 2 por encima.</p>
+      <div class="setting"><span id="chRootLabel">Acorde (sonido real)</span><div id="chRoots" class="seg four" role="group" aria-labelledby="chRootLabel"></div></div>
+      <div class="setting"><span id="chIntLabel">Tú tocas</span><div id="chIntervals" class="seg three wrap" role="group" aria-labelledby="chIntLabel"></div></div>
+      <div class="setting"><span id="chModeLabel">Cómo suena el acorde</span>
+        <div class="seg" role="group" aria-labelledby="chModeLabel"><button type="button" data-ch-mode="loop">Escuchar y repetir</button><button type="button" data-ch-mode="drone">Continuo (auriculares)</button></div></div>
+      <div class="target">
+        <div id="chName" class="name">–</div>
+        <div id="chHint" class="hint"></div>
+        <div class="meter wide" aria-hidden="true"><div class="track"></div><div class="center"></div><div id="chDot" class="dot"></div></div>
+        <p id="chCents" class="heard">&nbsp;</p>
+      </div>
+      <p id="chStatus" class="status">&nbsp;</p>
+      <button id="chGo" class="btn big" type="button">Empezar</button>
+    </section>
+
+    <!-- Gimnasio de técnica -->
+    <section id="gym" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Gimnasio de técnica</h2></div>
+      <p class="muted small">Cada ejercicio empieza a tu mejor tempo. Si lo haces con 2 estrellas o más, sube 4 BPM.</p>
+      <div class="setting"><span id="gymKindLabel">Ejercicio</span><div id="gymKinds" class="seg three" role="group" aria-labelledby="gymKindLabel"></div></div>
+      <div id="gymList" class="gym-list"></div>
+    </section>
   </main>
 
   <nav id="tabbar" class="tabbar" hidden>
     <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span>Aprender</button>
     <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span>Canciones</button>
-    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span>Práctica</button>
+    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span>Estudio</button>
+    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span>Banda</button>
     <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span>Perfil</button>
   </nav>
 </div>

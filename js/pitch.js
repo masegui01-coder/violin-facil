@@ -1,7 +1,7 @@
 // Detección de tono con el algoritmo YIN (de Cheveigné y Kawahara, 2002).
 
 export const MIN_FREQ = 180;
-export const MAX_FREQ = 1500;
+export const MAX_FREQ = 1600;
 const YIN_THRESHOLD = 0.15;
 
 export function rms(buf) {
@@ -31,10 +31,10 @@ function cumulativeMeanNormalize(d) {
   return d;
 }
 
-// Devuelve la frecuencia fundamental en Hz o null si no hay un tono claro
-export function detectPitch(buf, sampleRate) {
-  const tauMin = Math.floor(sampleRate / MAX_FREQ);
-  const tauMax = Math.min(Math.floor(sampleRate / MIN_FREQ), Math.floor(buf.length / 2));
+// Devuelve la frecuencia fundamental en Hz o null si no hay un tono claro. El registro depende del instrumento.
+export function detectPitch(buf, sampleRate, minHz = MIN_FREQ, maxHz = MAX_FREQ) {
+  const tauMin = Math.max(2, Math.floor(sampleRate / maxHz));
+  const tauMax = Math.min(Math.floor(sampleRate / minHz), Math.floor(buf.length / 2));
   const d = cumulativeMeanNormalize(differenceFunction(buf, tauMax));
   let tau = tauMin;
   while (tau <= tauMax && d[tau] >= YIN_THRESHOLD) tau++;

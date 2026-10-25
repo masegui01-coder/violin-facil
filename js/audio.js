@@ -1,6 +1,6 @@
 // Audio del navegador: micrófono, notas de referencia y metrónomo.
 import { detectPitch, rms } from './pitch.js';
-import { midiToFreq } from './music.js';
+import { midiToFreq, freqToMidi } from './music.js';
 
 const MIN_RMS = 0.01;
 const MEDIAN_FRAMES = 3;
@@ -9,7 +9,14 @@ const CLICK_MASK_AFTER_S = 0.13;
 const LOOKAHEAD_S = 0.12;
 const SCHED_MS = 25;
 
-const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [] };
+const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600 };
+
+// Instrumento activo: registro del detector y transposición (las notas que entran y salen son ESCRITAS)
+export function setInstrument(inst) {
+  state.transpose = inst.transpose;
+  state.minHz = inst.minHz;
+  state.maxHz = inst.maxHz;
+}
 
 export function ctx() {
   if (!state.ctx) state.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -29,6 +36,7 @@ export async function startMic() {
   const analyser = c.createAnalyser();
   analyser.fftSize = 2048;
   c.createMediaStreamSource(stream).connect(analyser);
+  state.stream = stream;
   state.analyser = analyser;
   state.buf = new Float32Array(analyser.fftSize);
 }
@@ -47,17 +55,18 @@ export function readPitch() {
   if (performance.now() < state.muteUntil) { state.recent = []; return null; }
   state.analyser.getFloatTimeDomainData(state.buf);
   const level = rms(state.buf);
-  const f = level < MIN_RMS ? null : detectPitch(state.buf, state.ctx.sampleRate);
-  if (!f) { state.recent = []; return { freq: null, level }; }
+  const f = level < MIN_RMS ? null : detectPitch(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
+  if (!f) { state.recent = []; return { freq: null, midi: null, level }; }
   state.recent = [...state.recent, f].slice(-MEDIAN_FRAMES);
   const sorted = [...state.recent].sort((x, y) => x - y);
-  return { freq: sorted[Math.floor(sorted.length / 2)], level };
+  const freq = sorted[Math.floor(sorted.length / 2)];
+  return { freq, midi: freqToMidi(freq) - state.transpose, level };
 }
 
 function voice(c, midi, start, seconds, peak = 0.16) {
   const osc = c.createOscillator(), filt = c.createBiquadFilter(), gain = c.createGain();
   osc.type = 'sawtooth';
-  osc.frequency.value = midiToFreq(midi);
+  osc.frequency.value = midiToFreq(midi + state.transpose);
   filt.type = 'lowpass';
   filt.frequency.value = 2400;
   const end = start + seconds;
@@ -95,6 +104,66 @@ export function playScore(notes, bpm, onNote) {
     oscs.forEach(o => { try { o.stop(); } catch (e) { /* ya parado */ } });
     state.muteUntil = 0;
   };
+}
+
+// Acorde de fondo con notas REALES (sin transponer). Con «seconds» suena ese tiempo y tapa el micrófono.
+export function playChord(soundingMidis, seconds = null) {
+  const c = ctx();
+  const t = c.currentTime;
+  const peak = 0.22 / soundingMidis.length;
+  const nodes = soundingMidis.map(m => {
+    const osc = c.createOscillator(), gain = c.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = midiToFreq(m);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + 0.15);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t);
+    return { osc, gain };
+  });
+  let stopped = false;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    const n = c.currentTime;
+    nodes.forEach(({ osc, gain }) => {
+      gain.gain.cancelScheduledValues(n);
+      gain.gain.setValueAtTime(gain.gain.value, n);
+      gain.gain.linearRampToValueAtTime(0, n + 0.12);
+      osc.stop(n + 0.2);
+    });
+  };
+  if (seconds) {
+    state.muteUntil = performance.now() + seconds * 1000 + 300;
+    setTimeout(stop, seconds * 1000);
+  }
+  return stop;
+}
+
+// ---------- Grabación de la toma ----------
+let recorder = null;
+let chunks = [];
+
+export function startRecording() {
+  stopRecording();
+  if (!state.stream || typeof MediaRecorder === 'undefined') return;
+  try {
+    chunks = [];
+    recorder = new MediaRecorder(state.stream);
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    recorder.start();
+  } catch (e) { recorder = null; }
+}
+
+// Para la grabación y devuelve una promesa con la URL del audio (o null si no había)
+export function stopRecording() {
+  if (!recorder || recorder.state === 'inactive') { recorder = null; return Promise.resolve(null); }
+  const rec = recorder;
+  recorder = null;
+  return new Promise(resolve => {
+    rec.onstop = () => resolve(chunks.length ? URL.createObjectURL(new Blob(chunks, { type: rec.mimeType })) : null);
+    rec.stop();
+  });
 }
 
 // ---------- Metrónomo ----------

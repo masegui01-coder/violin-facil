@@ -3,9 +3,10 @@ import { $, esc, icon, starsHtml } from '../ui.js';
 import { register } from '../router.js';
 import { lessonKey, lessonTitle, lessonSong } from '../course.js';
 import { styleById } from '../songs.js';
-import { getState } from '../store.js';
+import { instrumentProgress } from '../store.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
+import { renderToday } from './daily.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -31,7 +32,7 @@ function continueCard() {
 
 function nodeHtml(lesson, unit) {
   const st = states[lesson.id];
-  const best = getState().progress[lessonKey(lesson)] || 0;
+  const best = instrumentProgress()[lessonKey(lesson)] || 0;
   const song = lessonSong(lesson);
   const slotColor = lesson.slot && song ? styleById(song.style).color : null;
   const cls = ['node', st, lesson.id === currentId ? 'current' : '', lesson.slot ? 'slot' : ''].join(' ');
@@ -60,6 +61,7 @@ function render() {
   states = currentStates(course);
   const next = nextLesson(null, course);
   currentId = next ? next.id : null;
+  renderToday();
   $('continueCard').innerHTML = continueCard();
   $('courseMap').innerHTML = course.map(unitHtml).join('');
   const btn = $('continueBtn');

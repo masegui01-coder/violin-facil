@@ -1,8 +1,8 @@
 // Navegación entre pantallas. Las pestañas muestran la barra superior y la inferior.
 import { $ } from './ui.js';
 
-export const TABS = ['learn', 'songs', 'practice', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free'];
+export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'gym'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';

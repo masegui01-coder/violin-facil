@@ -1,12 +1,14 @@
 // «Toca libre» y modo «De memoria»: escribe en el pentagrama lo que tocas, lo guarda y lo compara con una canción.
 import { $, esc, toast } from '../ui.js';
 import { register } from '../router.js';
-import { noteLabel, fingerText, freqToMidi, parseScore, spell } from '../music.js';
+import { noteLabel, parseScore, spell } from '../music.js';
+import { fingeringText } from '../fingerings.js';
+import { renderDiagram } from '../keydiagram.js';
+import { instrumentById } from '../instruments.js';
 import { createStaff } from '../staff.js';
-import { renderFingerboard } from '../fingerboard.js';
 import { createTracker } from '../tracker.js';
 import { compareNotes, starsFor } from '../compare.js';
-import { songById, songScore } from '../songs.js';
+import { songById, songScore, octaveShiftFor } from '../songs.js';
 import { getState, saveRecording, deleteRecording } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
@@ -15,14 +17,15 @@ import { openSongPicker } from './sheet.js';
 
 const TICK_MS = 30;
 const TRAIL_SHOWN = 10;
-const LOWEST = 55;
-const HIGHEST = 88;
 
 const freeStaff = createStaff($('freeStaff'));
 let free = { all: [], tracker: null, lesson: null, from: 'practice' };
 let timer = 0;
 
-const tokenOf = midi => { const n = spell(midi); return `${n.letter}${n.acc ? '#' : ''}${n.oct}q`; };
+const tokenOf = midi => {
+  const n = spell(midi, getState().instrument !== 'violin');
+  return `${n.letter}${n.acc > 0 ? '#' : n.acc < 0 ? 'b' : ''}${n.oct}q`;
+};
 
 function renderTrail() {
   const shown = free.all.slice(-TRAIL_SHOWN);
@@ -46,29 +49,32 @@ function freeTick() {
   const p = audio.readPitch();
   const midi = free.tracker.feed(p, TICK_MS);
   if (p && p.freq !== null) {
-    const det = freqToMidi(p.freq);
+    const det = p.midi;
     const near = Math.round(det);
     const cents = (det - near) * 100;
     const nom = getState().nom;
-    $('freeName').textContent = noteLabel({ midi: near }, nom);
-    $('freeHint').textContent = fingerText(near, nom);
+    $('freeName').textContent = noteLabel({ midi: near }, nom, getState().instrument !== 'violin');
+    $('freeHint').textContent = fingeringText(getState().instrument, near, nom);
     $('freeCents').textContent = (cents >= 0 ? '+' : '') + Math.round(cents) + ' cents';
     $('freeDot').style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
     $('freeDot').style.background = Math.abs(cents) <= 15 ? 'var(--ok)' : Math.abs(cents) <= 30 ? 'var(--warn)' : 'var(--bad)';
   } else {
     $('freeDot').style.left = '50%';
   }
-  if (midi !== null && midi >= LOWEST && midi <= HIGHEST) {
+  const inst = instrumentById(getState().instrument);
+  if (midi !== null && midi >= inst.written[0] - 2 && midi <= inst.written[1] + 2) {
     free = { ...free, all: [...free.all, midi] };
     renderTrail();
-    if (getState().showBoard) renderFingerboard($('freeBoard'), [midi], getState().nom);
+    if (getState().showBoard) renderDiagram($('freeBoard'), getState().instrument, [midi], getState().nom);
   }
 }
 
 // Compara una secuencia tocada con una canción y muestra el resultado con la partitura coloreada
 export function compareWithSong(songId, played, { lesson = null, from = 'practice' } = {}) {
-  const song = songById(songId);
+  const song = (lesson && lesson.song) || songById(songId);
   const score = songScore(song);
+  const shift = lesson && lesson.song ? 0 : (octaveShiftFor(song, instrumentById(getState().instrument)) ?? 0);
+  score.notes.forEach(n => { if (!n.rest) { n.midi += shift; n.oct += shift / 12; } });
   const expected = score.notes.filter(n => !n.rest).map(n => n.midi);
   const result = compareNotes(expected, played);
   let k = 0;
@@ -77,14 +83,14 @@ export function compareWithSong(songId, played, { lesson = null, from = 'practic
   const text = `${result.correct} de ${expected.length} notas en su sitio (${Math.round(result.accuracy * 100)} %)` + (result.extra ? ` · ${result.extra} de más` : '');
   finishLesson({
     lesson: lesson || { id: 'compare-' + songId, kind: 'compare', songId }, mode: lesson ? 'memory' : 'compare', from,
-    stars, text, title: song.title, record: !!lesson,
+    stars, text, title: song.title, record: !!lesson, accuracy: result.accuracy,
     review: { score, key: song.key, time: song.time, states },
   });
 }
 
 function enter({ lesson = null, from = 'practice' } = {}) {
   free = { all: [], tracker: createTracker(), lesson, from };
-  const song = lesson ? songById(lesson.songId) : null;
+  const song = lesson ? (lesson.song || songById(lesson.songId)) : null;
   $('freeTitle').textContent = song ? 'De memoria' : 'Toca libre';
   $('freeIntro').textContent = song
     ? `Toca «${song.title}» sin mirar la partitura. Cuando acabes, pulsa «Terminar y comparar».`
@@ -93,7 +99,7 @@ function enter({ lesson = null, from = 'practice' } = {}) {
   $('freeActions').hidden = !!song;
   renderTrail();
   renderRecordings();
-  renderFingerboard($('freeBoard'), [], getState().nom);
+  renderDiagram($('freeBoard'), getState().instrument, [], getState().nom);
   $('freeBoard').hidden = !getState().showBoard;
   $('freeGate').hidden = audio.micReady();
   $('freeMicError').hidden = true;
