@@ -115,7 +115,7 @@ function learnFocus() {
 function learnAdvance(skipped) {
   const prev = run.notes[run.pos];
   staff.setState(run.pos, skipped ? 'miss' : 'done');
-  if (skipped) { run.skips++; run.missed.add(run.pos); }
+  if (skipped) { run.skips++; run.missed.add(run.pos); run.skipped.add(run.pos); }
   else setStatus(PRAISE[run.praise++ % PRAISE.length], 'var(--ok)');
   run.pos++;
   run.hold = 0; run.wrong = 0; run.wrongCounted = false; run.peak = 0; run.releaseWait = 0;
@@ -294,7 +294,17 @@ function finish() {
   addTuningSamples(run.tuning);
   const minutes = (performance.now() - run.startedAt) / 60000;
   finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title, minutes, accuracy: scoreAccuracy(), take: audio.stopRecording(), speed: run.speed,
-    missed: run.playable.map(i => (run.mode === 'tempo' ? !run.notes[i].hit : run.missed.has(i))) });
+    missed: run.playable.map(i => (run.mode === 'tempo' ? !run.notes[i].hit : run.missed.has(i))), review: reviewOf() });
+}
+
+// La partitura entera para el resultado: verde bien, naranja te costó (fallaste antes de acertarla), rojo fallada o saltada
+function reviewOf() {
+  const states = run.notes.map((n, i) => {
+    if (n.rest) return 'future';
+    if (run.mode === 'tempo') return n.hit ? 'done' : 'miss';
+    return run.skipped.has(i) ? 'miss' : run.missed.has(i) ? 'heat1' : 'done';
+  });
+  return { score: run.score, key: run.renderOpts.key, time: run.renderOpts.time, clef: run.renderOpts.clef, sticking: run.renderOpts.sticking, states };
 }
 
 // ---------- Demo ----------
@@ -329,7 +339,7 @@ function enter({ lesson, mode, from, eyebrow }) {
   const playable = notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0);
   run = {
     lesson, mode, from, title: lessonTitle(lesson), notes, playable, score, bars: score.bars, totalBeats: score.totalBeats,
-    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed), missed: new Set(),
+    bpm: meta.bpm, time: meta.time, pickup: meta.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed), missed: new Set(), skipped: new Set(),
     renderOpts: { key: meta.key, time: meta.time, mode, clef: lesson.clef || instrumentById(getState().instrument).clef || 'treble', sticking: lesson.fingers ? lesson.fingers.split(' ') : null },
     firstBeat: () => notes[playable[0]].start,
     pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0,

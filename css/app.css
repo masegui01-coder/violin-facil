@@ -356,6 +356,7 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .review-scroll .staff { width: auto; height: 150px; max-width: none; }
 .dot-ok, .dot-bad { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); vertical-align: 0; }
 .dot-bad { background: var(--bad); }
+.dot-warn { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--warn); vertical-align: 0; }
 .recordings { display: flex; flex-direction: column; gap: 8px; }
 .recording { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; }
 .recording > div { min-width: 0; }
