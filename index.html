@@ -132,9 +132,8 @@
           <div class="seg" role="group" aria-labelledby="setNomLabel"><button type="button" data-set-nom="eu">Do · Re · Mi</button><button type="button" data-set-nom="us">G3 · A4 · E5</button></div></div>
         <div class="setting"><span id="setTolLabel">Exigencia de afinación</span>
           <div class="seg three" role="group" aria-labelledby="setTolLabel"><button type="button" data-set-tol="facil">Fácil</button><button type="button" data-set-tol="normal">Normal</button><button type="button" data-set-tol="exigente">Exigente</button></div></div>
-        <div class="setting"><span id="setMetroLabel">Pulso en las lecciones</span>
-          <div class="seg three" role="group" aria-labelledby="setMetroLabel"><button type="button" data-set-metro="visual">Visual</button><button type="button" data-set-metro="both">Visual y sonido</button><button type="button" data-set-metro="sound">Sonido</button></div>
-          <small class="muted">El sonido del metrónomo puede confundir al micrófono. Con «Visual» verás un péndulo encima de la partitura.</small></div>
+        <div class="setting"><label class="switch-row" for="setClick"><span>Clic del metrónomo al tocar a tempo</span><input id="setClick" type="checkbox" class="switch"></label>
+          <small class="muted">La cuenta previa siempre suena y el péndulo siempre se ve encima de la partitura. El clic durante la canción es opcional: la app no lo confunde con tu instrumento, pero con auriculares te escuchará mejor. También puedes cambiarlo en cada lección.</small></div>
         <label class="switch-row" for="setBoard"><span>Mostrar la digitación en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
@@ -174,7 +173,7 @@
         <div><p id="lessonEyebrow" class="eyebrow"></p><h2 id="lessonTitle"></h2></div>
         <span id="modeChip" class="mode-chip"></span>
       </div>
-      <div id="pulse" class="pulse" hidden aria-hidden="true"><span class="pulse-mark l"></span><span class="pulse-mark r"></span><span id="pulseBob" class="pulse-bob"></span></div>
+      <div id="pulse" class="pulse" hidden aria-hidden="true"><span class="pulse-mark l"></span><span class="pulse-mark r"></span><span class="pulse-bob"></span></div>
       <div class="staff-card"><svg id="lessonStaff" class="staff" role="img" aria-label="Partitura de la lección"></svg>
         <div id="countdown" class="countdown" hidden></div>
       </div>
@@ -196,6 +195,7 @@
       <div id="tempoBar" class="tempo-bar" hidden>
         <div class="row spread"><span class="muted">Velocidad</span><b id="tempoBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-speed="0.4">40 %</button><button type="button" data-speed="0.5">50 %</button><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
+        <label class="switch-row" for="lmClick"><span>Clic del metrónomo (la cuenta previa suena siempre)</span><input id="lmClick" type="checkbox" class="switch"></label>
         <label class="switch-row" id="vbRow" for="vbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="vbToggle" type="checkbox" class="switch"></label>
         <button id="tempoStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button>
       </div>
@@ -312,6 +312,7 @@
         <span class="beat-row"><span id="rhBeat" class="beat-dot"></span><b id="rhCounter" class="beat-count"></b></span>
       </div>
       <div class="lesson-title"><div><p id="rhEyebrow" class="eyebrow"></p><h2 id="rhTitle"></h2></div><span class="mode-chip">Percusión</span></div>
+      <div id="rhPulse" class="pulse" hidden aria-hidden="true"><span class="pulse-mark l"></span><span class="pulse-mark r"></span><span class="pulse-bob"></span></div>
       <div class="staff-card"><svg id="rhythmStaff" class="staff" role="img" aria-label="Partitura de percusión"></svg><div id="rhCountdown" class="countdown" hidden></div></div>
       <div id="rhGate" class="mic-gate" hidden>
         <p><strong>Necesito el micrófono</strong> para oír tus golpes.</p>
@@ -323,7 +324,7 @@
       <div id="rhTempoBar" class="tempo-bar">
         <div class="row spread"><span class="muted">Velocidad</span><b id="rhBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-rspeed="0.4">40 %</button><button type="button" data-rspeed="0.5">50 %</button><button type="button" data-rspeed="0.6">60 %</button><button type="button" data-rspeed="0.8">80 %</button><button type="button" data-rspeed="1">100 %</button></div>
-        <label class="switch-row" for="rhClick"><span>Clic del metrónomo (con auriculares)</span><input id="rhClick" type="checkbox" class="switch"></label>
+        <label class="switch-row" for="rhClick"><span>Clic del metrónomo (la cuenta previa suena siempre)</span><input id="rhClick" type="checkbox" class="switch"></label>
         <label class="switch-row" id="rhVbRow" for="rhVbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="rhVbToggle" type="checkbox" class="switch"></label>
         <div class="row" style="justify-content:center"><button id="rhDemo" class="btn ghost" type="button"><span data-icon="speaker" class="ic"></span>Escuchar</button><button id="rhStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button></div>
       </div>
@@ -388,6 +389,7 @@
         <span class="beat-row"><span id="cdBeat" class="beat-dot"></span><b id="cdCounter" class="beat-count"></b></span>
       </div>
       <div class="lesson-title"><div><p id="cdEyebrow" class="eyebrow"></p><h2 id="cdTitle"></h2></div><span id="cdChip" class="mode-chip"></span></div>
+      <div id="cdPulse" class="pulse" hidden aria-hidden="true"><span class="pulse-mark l"></span><span class="pulse-mark r"></span><span class="pulse-bob"></span></div>
       <div id="cdStrip" class="chord-strip" aria-label="Acordes de la lección"></div>
       <div class="chord-stage">
         <svg id="cdDiagram" class="board chord-board" role="img" aria-label="Diagrama del acorde"></svg>
@@ -402,7 +404,7 @@
       <p id="cdStatus" class="status">&nbsp;</p>
       <div id="cdStrumRow" class="tempo-bar" hidden>
         <div class="seg three" role="group" aria-label="Velocidad"><button type="button" data-cdspeed="0.6">60 %</button><button type="button" data-cdspeed="0.8">80 %</button><button type="button" data-cdspeed="1">100 %</button></div>
-        <label class="switch-row" for="cdClick"><span>Clic del metrónomo (con auriculares)</span><input id="cdClick" type="checkbox" class="switch"></label>
+        <label class="switch-row" for="cdClick"><span>Clic del metrónomo (la cuenta previa suena siempre)</span><input id="cdClick" type="checkbox" class="switch"></label>
       </div>
       <div class="row" style="justify-content:center">
         <button id="cdDemo" class="btn ghost" type="button"><span data-icon="speaker" class="ic"></span>Escuchar</button>

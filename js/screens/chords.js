@@ -10,9 +10,10 @@ import { noteLabel } from '../music.js';
 import { lessonTitle } from '../course.js';
 import { playableCount } from '../songbook.js';
 import { smoother, changeCounter, strumWindows, strumStars, changesStars, holdStars, HOLD_MS, STRUM_GRACE_BEATS, STRUM_OK_RATIO, CHANGES_SECONDS } from '../chord-practice.js';
-import { getState, learnChords, knownChords, recordChanges, changesHistory } from '../store.js';
+import { getState, update, learnChords, knownChords, recordChanges, changesHistory } from '../store.js';
 import { finishLesson } from './result.js';
 import { withMic } from './practice.js';
+import { createPulse } from './pulse.js';
 
 const TICK_MS = 35;
 const RELEASE_MS = 250;
@@ -26,6 +27,7 @@ const TIP = {
 
 let run = null;
 let speed = 0.8;
+const pulse = createPulse('cdPulse');
 const avg = smoother();
 
 const inst = () => getState().instrument;
@@ -143,6 +145,7 @@ function changesTick(now) {
 function strumTick() {
   const spb = 60 / (run.lesson.bpm * speed);
   const beat = (audio.audioTime() - run.t0) / spb;
+  pulse.draw(beat, run.lesson.time);
   if (beat < 0) { $('cdCounter').textContent = String(Math.ceil(-beat)); return; }
   const i = run.windows.findIndex(w => beat >= w.start && beat < w.end);
   $('cdBeat').classList.toggle('on', beat % 1 < 0.2);
@@ -211,7 +214,8 @@ function start() {
     run.windows.forEach((_, i) => markChip(i, ''));
     showChord(run.windows[0].chord, run.windows[1]?.chord);
     run.t0 = audio.countIn(lesson.time, bpm, true);
-    if ($('cdClick').checked) { audio.configureMetronome({ bpm, meter: lesson.time, sound: true }); audio.startMetronome(run.t0); }
+    if (getState().metroClick) { audio.configureMetronome({ bpm, meter: lesson.time, sound: true }); audio.startMetronome(run.t0); }
+    pulse.show(true);
     $('cdStatus').textContent = 'Un compás de cuenta y empezamos';
   }
   run.timer = setInterval(tick, TICK_MS);
@@ -222,6 +226,7 @@ function stop() {
   clearInterval(run.timer);
   run.playing = false;
   audio.stopMetronome();
+  pulse.show(false);
 }
 
 function finishRun(stars, text, accuracy = null) {
@@ -264,6 +269,7 @@ function enter({ lesson, from, eyebrow }) {
   $('cdMicError').hidden = true;
   $('cdChanges').hidden = lesson.mode !== 'changes';
   $('cdStrumRow').hidden = lesson.mode !== 'strum';
+  $('cdClick').checked = getState().metroClick;
   $('cdSkip').hidden = true;
   $('cdGo').textContent = 'Empezar';
   $('cdCounter').textContent = '';
@@ -292,6 +298,7 @@ $('cdSkip').addEventListener('click', () => { if (run && run.playing && run.less
 $('cdDemo').addEventListener('click', () => run && demo());
 $('cdStartMic').addEventListener('click', async () => { await withMic('cdGate', 'cdMicError'); });
 $('cdExit').addEventListener('click', () => { stop(); go(run && run.from === 'songs' ? 'songs' : 'learn'); });
+$('cdClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('cdStrumRow').addEventListener('click', e => {
   const b = e.target.closest('[data-cdspeed]');
   if (!b || (run && run.playing)) return;

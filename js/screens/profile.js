@@ -38,7 +38,7 @@ function render() {
   document.querySelectorAll('[data-set-a4]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setA4) === s.a4));
   document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
   document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
-  document.querySelectorAll('[data-set-metro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setMetro === s.metroMode));
+  $('setClick').checked = s.metroClick;
   $('setBig').checked = s.bigText;
   $('setBoard').checked = s.showBoard;
   $('setUnlock').checked = s.unlockAll;
@@ -69,7 +69,7 @@ document.querySelectorAll('[data-set-goal]').forEach(b => b.addEventListener('cl
 document.querySelectorAll('[data-set-a4]').forEach(b => b.addEventListener('click', () => { update({ a4: Number(b.dataset.setA4) }); render(); }));
 document.querySelectorAll('[data-set-nom]').forEach(b => b.addEventListener('click', () => { update({ nom: b.dataset.setNom }); render(); }));
 document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
-document.querySelectorAll('[data-set-metro]').forEach(b => b.addEventListener('click', () => { update({ metroMode: b.dataset.setMetro }); render(); }));
+$('setClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
 $('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));
 $('setUnlock').addEventListener('change', e => update({ unlockAll: e.target.checked }));

@@ -45,8 +45,8 @@ function buildMeta(lesson) {
 }
 
 const tolerance = () => TOLERANCE_CENTS[getState().tolerance] || TOLERANCE_CENTS.facil;
-const metroSound = () => getState().metroMode !== 'visual';
-const metroVisual = () => getState().metroMode !== 'sound';
+// Metrónomo en toda la app: la cuenta previa siempre suena, el péndulo siempre se ve y el clic durante la canción es opcional
+const metroSound = () => getState().metroClick;
 const tempoBpm = () => Math.round(run.bpm * run.speed);
 
 // ---------- Interfaz ----------
@@ -92,7 +92,9 @@ function showHeard(p, target) {
 function renderTempoControls() {
   const learn = run.mode === 'learn';
   $('lmBpm').textContent = learn ? getState().bpm : tempoBpm();
-  $('lessonMetro').setAttribute('aria-pressed', learn ? audio.metronome().on : run.wantMetro);
+  $('lessonMetro').setAttribute('aria-pressed', audio.metronome().on);
+  document.querySelector('#lesson .metro-group').hidden = !learn;
+  $('lmClick').checked = getState().metroClick;
   $('lmDown').hidden = !learn;
   $('lmUp').hidden = !learn;
   $('tempoBpm').textContent = `♩ = ${tempoBpm()}`;
@@ -175,7 +177,7 @@ function playFrom(beatStart) {
     staff.setState(i, 'future');
   });
   run.spb = 60 / (run.bpm * run.speed);
-  const countEnd = audio.countIn(run.time, tempoBpm(), metroSound());
+  const countEnd = audio.countIn(run.time, tempoBpm(), true);
   run.t0 = countEnd - beatStart * run.spb;
   run.countEnd = countEnd;
   run.beatStart = beatStart;
@@ -183,13 +185,13 @@ function playFrom(beatStart) {
   run.shown = -1;
   showTarget(run.playable.find(i => !run.notes[i].judged) ?? run.playable[0]);
   updateProgress(run.playable.filter(i => run.notes[i].judged).length);
-  if (run.wantMetro) {
+  if (metroSound()) {
     const firstBar = run.t0 + run.pickup * run.spb;
     const barLen = run.spb * run.time;
-    audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: metroSound() });
+    audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: true });
     audio.startMetronome(firstBar + Math.max(0, Math.ceil((countEnd - firstBar) / barLen - 1e-6)) * barLen);
   }
-  showPulse(metroVisual());
+  showPulse(true);
   if (run.stopAccomp) run.stopAccomp();
   run.stopAccomp = $('vbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
   audio.startRecording();
@@ -216,7 +218,7 @@ function judgePassed(t) {
 function tempoTick(p, dt) {
   const t = audio.audioTime() - run.t0;
   const beat = t / run.spb;
-  if (metroVisual()) drawPulse(beat - run.pickup, run.time);
+  drawPulse(beat - run.pickup, run.time);
   const countLeft = run.countEnd - audio.audioTime();
   if (countLeft > 0) {
     $('countdown').hidden = false;
@@ -259,7 +261,7 @@ function tick() {
   const dt = Math.min(100, now - run.last);
   run.last = now;
   if (run.finished || run.demoStop) return;
-  if (run.mode === 'learn' && metroVisual() && audio.metronome().on) drawPulse(audio.metronomeBeat(), getState().meter);
+  if (run.mode === 'learn' && audio.metronome().on) drawPulse(audio.metronomeBeat(), getState().meter);
   if (!audio.micReady()) return;
   const p = audio.clickMasked() ? 'masked' : audio.readPitch();
   if (run.mode === 'learn') learnTick(p, dt);
@@ -385,7 +387,7 @@ function leave() {
 function startLearnMetronome() {
   audio.configureMetronome({ bpm: getState().bpm, meter: getState().meter, sound: metroSound() });
   audio.startMetronome();
-  showPulse(metroVisual());
+  showPulse(true);
 }
 
 function setLearnBpm(bpm) {
@@ -428,15 +430,12 @@ document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click
 }));
 $('lmDown').addEventListener('click', () => setLearnBpm(getState().bpm - BPM_STEP));
 $('lmUp').addEventListener('click', () => setLearnBpm(getState().bpm + BPM_STEP));
+$('lmClick').addEventListener('change', e => {
+  update({ metroClick: e.target.checked });
+  if (audio.metronome().on) audio.configureMetronome({ sound: e.target.checked });
+  if (e.target.checked) toast('Con auriculares el micrófono no oye el clic y te escucha mejor');
+});
 $('lessonMetro').addEventListener('click', () => {
-  if (run.mode === 'tempo') {
-    run.wantMetro = !run.wantMetro;
-    update({ lessonMetro: run.wantMetro });
-    if (run.playing && !run.wantMetro) audio.stopMetronome();
-    toast(run.wantMetro ? 'El pulso sonará o se verá en el próximo inicio' : 'Sin pulso durante la canción');
-    renderTempoControls();
-    return;
-  }
   if (audio.metronome().on) { audio.stopMetronome(); showPulse(false); }
   else startLearnMetronome();
   run.wantMetro = audio.metronome().on;

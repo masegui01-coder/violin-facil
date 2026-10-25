@@ -9,6 +9,9 @@ import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { decodeScore } from '../passage.js';
+import { createPulse } from './pulse.js';
+
+const pulse = createPulse('rhPulse', '#rhythm .staff-card');
 
 const TICK_MS = 30;
 const SNARE = { letter: 'C', acc: 0, oct: 5, midi: 72 };
@@ -47,7 +50,7 @@ function renderControls() {
   document.querySelectorAll('[data-rspeed]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.rspeed) === run.speed));
   $('rhTempoBar').hidden = run.playing;
   $('rhPlaying').hidden = !run.playing;
-  $('rhClick').checked = getState().percClick;
+  $('rhClick').checked = getState().metroClick;
 }
 
 // ---------- Golpes en directo ----------
@@ -81,6 +84,7 @@ function tick() {
   $('rhCounter').textContent = beat < 0 && left <= 0 ? '' : String(inBar + 1);
   $('rhBeat').classList.toggle('on', beat - Math.floor(beat) < 0.15);
   $('rhBeat').classList.toggle('down', inBar === 0 && beat - Math.floor(beat) < 0.15);
+  pulse.draw(beat - run.pickup, run.time);
   if (beat > run.totalBeats + 0.6) finish();
 }
 
@@ -95,11 +99,12 @@ function start() {
   audio.startOnsetCapture(onHits);
   if (run.stopAccomp) run.stopAccomp();
   run.stopAccomp = $('rhVbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
-  if (getState().percClick) {
+  if (getState().metroClick) {
     audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: true });
     audio.startMetronome(run.t0 + run.pickup * run.spb);
   }
   run.playing = true;
+  pulse.show(true);
   run.startedAt = performance.now();
   setStatus('Sigue la línea y golpea en cada nota');
   renderControls();
@@ -110,6 +115,7 @@ function stop() {
   if (run && run.stopAccomp) { run.stopAccomp(); run.stopAccomp = null; }
   audio.stopMetronome();
   if (run) run.playing = false;
+  pulse.show(false);
   $('rhCountdown').hidden = true;
 }
 
@@ -186,7 +192,7 @@ $('rhStart').addEventListener('click', start);
 $('rhDemo').addEventListener('click', demo);
 $('rhRestart').addEventListener('click', () => { stop(); start(); });
 $('rhClick').addEventListener('change', e => {
-  update({ percClick: e.target.checked });
+  update({ metroClick: e.target.checked });
   if (e.target.checked) toast('Con el clic sonando, usa auriculares para que el micrófono no lo confunda con tus golpes');
 });
 document.querySelectorAll('[data-rspeed]').forEach(b => b.addEventListener('click', () => {

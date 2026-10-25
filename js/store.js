@@ -12,10 +12,10 @@ const DEFAULTS = Object.freeze({
   onboarded: false, nom: 'eu', level: 'new', styles: [], tolerance: 'facil', showBoard: true,
   unlockAll: false, bpm: 80, meter: 4, lessonMetro: false, progress: {}, xp: 0,
   streak: { count: 0, last: null }, lessonsPlayed: 0,
-  speed: 0.6, metroMode: 'visual', bigText: false, recordings: [], importedSongs: [],
+  speed: 0.6, bigText: false, recordings: [], importedSongs: [],
   instrument: 'violin', a4: 440, tuning: {}, gym: {}, practiceLog: {}, band: null,
   freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false, tourDone: false,
-  percLatency: 0, percClick: false,
+  percLatency: 0, metroClick: true,
   history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
   chordsKnown: {}, changes: {}, theoryAnswers: {},
 });
