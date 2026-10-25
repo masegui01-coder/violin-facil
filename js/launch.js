@@ -18,12 +18,13 @@ export function unitOf(lessonId, course = currentCourse()) {
   return course.find(u => u.lessons.some(l => l.id === lessonId)) || null;
 }
 
-// Primera lección abierta y sin hacer después de la indicada (o desde el principio). Los calentamientos se saltan.
+// Primera lección abierta y sin hacer después de la indicada (o desde el principio). Los calentamientos se saltan;
+// las píldoras de teoría sí se proponen una vez (si las saltas, no bloquean nada).
 export function nextLesson(afterId = null, course = currentCourse()) {
   const states = currentStates(course);
   const flat = course.flatMap(u => u.lessons);
   const from = afterId ? flat.findIndex(l => l.id === afterId) + 1 : 0;
-  return flat.slice(from).find(l => states[l.id] === 'open' && !l.optional) || null;
+  return flat.slice(from).find(l => states[l.id] === 'open' && (!l.optional || l.pill)) || null;
 }
 
 export function defaultMode(lesson) {

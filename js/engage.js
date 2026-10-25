@@ -68,6 +68,7 @@ export const BADGES = [
   { id: 'routine7', name: 'Rutina de hierro', desc: '7 rutinas diarias completas', test: s => Object.keys(s.routineDone || {}).length >= 7 },
   { id: 'week5', name: 'Semana completa', desc: '5 días de práctica en una semana', test: s => Object.values(s.history || {}).some(w => (w.days || []).length >= 5) },
   { id: 'longtone50', name: 'Sonido redondo', desc: '50 notas tenidas', test: s => (s.longtones || 0) >= 50 },
+  { id: 'theory8', name: 'Teórico', desc: '8 píldoras de teoría', test: s => Object.keys(s.progress).filter(k => k.includes('lesson:th-')).length >= 8 },
   { id: 'passage', name: 'Pasaje dominado', desc: 'Un pasaje al 100 % del tempo', test: s => (s.passagesMastered || 0) >= 1 },
   { id: 'multi', name: 'Multiinstrumentista', desc: 'Lecciones con dos instrumentos', test: s => new Set(Object.keys(s.progress).map(k => (/^[a-z-]+:(lesson|song):/.test(k) ? k.split(':')[0] : 'violin'))).size >= 2 },
 ];

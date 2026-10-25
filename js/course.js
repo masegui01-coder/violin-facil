@@ -7,6 +7,7 @@ import { guitarUnits } from './course-guitar.js';
 import { pianoUnits } from './course-piano.js';
 import { songbookById, songbookLesson } from './songbook.js';
 import { chordLabel } from './chords.js';
+import { pillsFor } from './theory-pills.js';
 import { getState } from './store.js';
 
 const theory = (id, title, cards) => ({ id, kind: 'theory', title, cards });
@@ -132,15 +133,23 @@ export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);
   const units = inst.id === 'violin' ? UNITS : inst.rhythmOnly ? percUnits(HELPERS) : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : windUnits(inst, HELPERS);
   const used = new Set();
-  return units.map(unit => ({
+  const pills = pillsFor(inst.id);
+  return units.map((unit, ui) => ({
     ...unit,
-    lessons: unit.lessons.flatMap(l => {
+    lessons: withPills(unit.lessons, pills.filter(p => Math.min(p.unit, units.length - 1) === ui)).flatMap(l => {
       if (l.kind !== 'slots') return [l];
       const picks = pickSongs(l.count, l.difficulty, styles, used, inst);
       picks.forEach(p => used.add(p.song.id));
       return picks.map((p, i) => ({ id: `${unit.id}-tu${i + 1}`, kind: 'song', songId: p.song.id, slot: true, fromStyles: p.fromStyles, sub: 'Tu música' }));
     }),
   }));
+}
+
+// Las píldoras de teoría van al principio de su unidad, justo después de la teoría propia de la unidad (si la hay)
+function withPills(lessons, pills) {
+  if (!pills.length) return lessons;
+  const at = lessons[0] && lessons[0].kind === 'theory' ? 1 : 0;
+  return [...lessons.slice(0, at), ...pills, ...lessons.slice(at)];
 }
 
 export function lessonKey(lesson) {

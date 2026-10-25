@@ -17,7 +17,7 @@ const DEFAULTS = Object.freeze({
   freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false, tourDone: false,
   percLatency: 0, percClick: false,
   history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
-  chordsKnown: {}, changes: {},
+  chordsKnown: {}, changes: {}, theoryAnswers: {},
 });
 
 function read(key) {
@@ -157,6 +157,12 @@ export function recordErrors(key, missed) {
 
 export function errorsFor(key) {
   return state.errors[progressKey(key)] || null;
+}
+
+// Respuestas a las preguntas de teoría (para repasar más las que se fallan)
+export function recordTheoryAnswer(id, right, day = today()) {
+  const prev = state.theoryAnswers[id] || { right: 0, wrong: 0 };
+  return update({ theoryAnswers: { ...state.theoryAnswers, [id]: { right: prev.right + (right ? 1 : 0), wrong: prev.wrong + (right ? 0 : 1), last: day } } });
 }
 
 // Guitarra y piano: acordes que ya sabes (desbloquean canciones) y récords de cambios en un minuto

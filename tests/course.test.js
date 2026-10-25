@@ -24,3 +24,38 @@ test('guitar and piano courses: valid chords, notes in range and a real song in 
     });
   }
 });
+
+import { pillsFor, reviewQuestion, resolveQuestion } from '../js/theory-pills.js';
+
+test('every instrument gets its own tuning pill plus level pills with valid questions', () => {
+  for (const inst of ['violin', 'trumpet', 'clarinet', 'sax', 'sax-tenor', 'sax-bari', 'flute', 'oboe', 'percussion', 'guitar', 'piano']) {
+    const pills = pillsFor(inst);
+    assert.equal(pills[0].title, 'Tu instrumento y la afinación', inst);
+    assert.ok(pills.length >= 6, inst);
+    pills.forEach(p => {
+      assert.ok(p.cards.length >= 2 && p.cards.length <= 4, p.id);
+      (p.quiz || []).forEach(q => {
+        const r = resolveQuestion(q, () => 0.99);
+        assert.ok(r.answer >= 0 && r.answer < r.options.length, `${inst} ${q.id}`);
+      });
+    });
+    const course = buildCourse([], inst);
+    assert.equal(course.flatMap(u => u.lessons).filter(l => l.pill).length, pills.length, inst + ' all pills placed');
+  }
+});
+
+test('band tuning question matches each instrument transposition', () => {
+  const answerFor = inst => { const q = pillsFor(inst)[0].quiz[0]; return q.options[q.answer]; };
+  assert.equal(answerFor('trumpet'), 'Do');
+  assert.equal(answerFor('clarinet'), 'Do');
+  assert.equal(answerFor('sax'), 'Sol');
+  assert.equal(answerFor('sax-bari'), 'Sol');
+  assert.equal(answerFor('flute'), 'Si♭');
+});
+
+test('review prefers questions you got wrong', () => {
+  const pills = pillsFor('trumpet').slice(0, 3);
+  const q = reviewQuestion(pills, { 'fig-half': { right: 0, wrong: 2 } }, 5);
+  assert.equal(q.id, 'fig-half');
+  assert.equal(reviewQuestion([], {}, 1), null);
+});

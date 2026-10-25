@@ -669,3 +669,14 @@ b.link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px
 .changes-list { display: flex; flex-direction: column; gap: 6px; }
 .changes-row { display: grid; grid-template-columns: 1fr 90px 36px; gap: 10px; align-items: center; font-weight: 600; }
 .changes-row b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Preguntas de las píldoras de teoría */
+.quiz-play { align-self: flex-start; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt { text-align: left; font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.quiz-opt.right { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.quiz-opt.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.quiz-opt:disabled { opacity: 1; }
+.quiz-why { border-radius: 12px; padding: 10px 12px; font-size: .98rem; }
+.quiz-why.right { background: var(--ok-soft); }
+.quiz-why.wrong { background: var(--accent-soft); }

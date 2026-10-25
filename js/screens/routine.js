@@ -1,13 +1,16 @@
 // «Mi rutina de hoy»: unos 10 minutos encadenados con un solo botón y un cofre sorpresa al terminar.
-// 1) sonido (notas tenidas, pulso o cambios de acordes), 2) técnica del día, 3) repertorio (tarea de la banda, pasaje difícil o siguiente lección).
+// 0) una pregunta de repaso de teoría (si ya viste alguna píldora), 1) sonido (notas tenidas, pulso o cambios de acordes),
+// 2) técnica del día, 3) repertorio (tarea de la banda, pasaje difícil o siguiente lección).
 import { $, toast, icon } from '../ui.js';
 import { go } from '../router.js';
 import { technique, MAJOR_KEYS, keyLabel } from '../generate.js';
 import { instrumentById } from '../instruments.js';
 import { noteLabel, parseNote } from '../music.js';
 import { openChest, CARDS, THEMES } from '../rewards.js';
-import { getState, update, today, knownChords } from '../store.js';
+import { getState, update, today, knownChords, instrumentProgress } from '../store.js';
 import { chordLabel } from '../chords.js';
+import { pillsFor, reviewQuestion } from '../theory-pills.js';
+import { lessonKey } from '../course.js';
 import { launch, nextLesson } from '../launch.js';
 import { RUDIMENTS, rudimentLesson } from './perc-tools.js';
 import { tuningStats } from './tuningmap.js';
@@ -42,6 +45,14 @@ function techniqueLesson(inst) {
   return { lesson: { id, kind: 'song', song: technique(kind, key, inst, bpm), fixedSpeed: true, gym: { id, bpm } }, title: `${KIND_NAME[kind]} de ${keyLabel(key)} a ${bpm} BPM` };
 }
 
+// Repaso espaciado: una pregunta de las píldoras que ya viste (primero las que fallaste)
+function theoryReview(inst) {
+  const done = instrumentProgress();
+  const seen = pillsFor(inst.id).filter(p => (done[lessonKey(p)] || 0) > 0);
+  const q = reviewQuestion(seen, getState().theoryAnswers, dayNumber());
+  return q ? { title: 'Repaso de teoría: una pregunta', lesson: { id: 'rv-' + q.id, kind: 'theory', review: true, title: 'Repaso de teoría', cards: [], quiz: [q] } } : null;
+}
+
 // Guitarra y piano: un minuto de cambios entre los dos últimos acordes que has aprendido
 function chordWarmup() {
   const known = knownChords();
@@ -53,6 +64,8 @@ function chordWarmup() {
 async function buildSteps() {
   const inst = instrumentById(getState().instrument);
   const steps = [];
+  const review = theoryReview(inst);
+  if (review) steps.push(review);
   if (inst.rhythmOnly) {
     const pulse = RUDIMENTS[0];
     steps.push({ title: pulse.name, lesson: rudimentLesson(pulse, best('rud-pulse') || START_BPM), mode: 'tempo' });
