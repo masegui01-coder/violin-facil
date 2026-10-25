@@ -18,6 +18,7 @@ const DEFAULTS = Object.freeze({
   percLatency: 0, metroClick: true,
   history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
   chordsKnown: {}, changes: {}, theoryAnswers: {},
+  accountPromptSince: null, analyticsConsent: null,
 });
 
 function read(key) {
@@ -44,6 +45,14 @@ export function getState() { return state; }
 export function update(patch) {
   state = { ...state, ...patch };
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* sin almacenamiento: se sigue sin guardar */ }
+  listeners.forEach(fn => fn(state));
+  return state;
+}
+
+// Sustituye todo el estado (al recuperar el progreso de la cuenta en otro dispositivo)
+export function replaceState(next) {
+  state = { ...DEFAULTS, ...next };
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* sin almacenamiento */ }
   listeners.forEach(fn => fn(state));
   return state;
 }

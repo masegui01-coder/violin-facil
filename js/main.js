@@ -28,6 +28,9 @@ import './screens/social.js';
 import './screens/rhythm.js';
 import './screens/perc-tools.js';
 import './growth.js';
+import { accountGate } from './screens/account.js';
+import { initAnalytics } from './analytics.js';
+import { cloudConfigured } from './cloud.js';
 
 function hydrateIcons(root = document) {
   root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
@@ -81,25 +84,34 @@ $('fbForm').addEventListener('submit', e => {
   $('fbDialog').close();
 });
 
-go(getState().onboarded ? 'learn' : 'onboarding');
-
 // Tutorial: tras la bienvenida, y una vez para quien ya usaba la app
 const maybeTour = () => { if (!getState().tourDone) startTour(); };
 window.addEventListener('onboarding-done', maybeTour);
 $('replayTour').addEventListener('click', startTour);
 
-// Quien ya usaba la app (solo violín) elige ahora su instrumento una vez y después ve el tutorial
-if (getState().onboarded && !getState().instrumentChosen) {
-  openInstrumentPicker({
-    title: 'Novedad: elige tu instrumento',
-    intro: 'Band Flow ya no es solo para violín. Elige el instrumento que quieres aprender o practicar; podrás cambiarlo cuando quieras desde el botón de arriba.',
-    onPicked: () => { refreshScreen(); maybeTour(); },
-    onClosed: maybeTour,
-  });
-} else if (getState().onboarded) {
-  maybeTour();
-  if (getState().tourDone) maybeWeeklyReport();
+function startApp() {
+  go(getState().onboarded ? 'learn' : 'onboarding');
+  // Quien ya usaba la app (solo violín) elige ahora su instrumento una vez y después ve el tutorial
+  if (getState().onboarded && !getState().instrumentChosen) {
+    openInstrumentPicker({
+      title: 'Novedad: elige tu instrumento',
+      intro: 'Band Flow ya no es solo para violín. Elige el instrumento que quieres aprender o practicar; podrás cambiarlo cuando quieras desde el botón de arriba.',
+      onPicked: () => { refreshScreen(); maybeTour(); },
+      onClosed: maybeTour,
+    });
+  } else if (getState().onboarded) {
+    maybeTour();
+    if (getState().tourDone) maybeWeeklyReport();
+  }
 }
+
+// Cuenta obligatoria en la beta: quien llega nuevo empieza creando su usuario
+if (cloudConfigured() && !getState().onboarded) {
+  go('account');
+  window.addEventListener('account-ready', startApp, { once: true });
+} else startApp();
+accountGate();
+initAnalytics();
 
 // App instalable (icono en la pantalla de inicio)
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

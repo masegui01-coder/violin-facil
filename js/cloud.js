@@ -1,7 +1,7 @@
 // Conexión con Firebase (se carga solo cuando hace falta). Músicos: acceso anónimo. Directores: Google.
 import { FIREBASE_CONFIG } from './firebase-config.js';
 
-const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+export const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 let cloud = null;
 
 export const cloudConfigured = () => !!FIREBASE_CONFIG;
@@ -15,7 +15,7 @@ export async function getCloud() {
   const app = initializeApp(FIREBASE_CONFIG);
   const a = auth.getAuth(app);
   await new Promise(resolve => { const off = auth.onAuthStateChanged(a, () => { off(); resolve(); }); });
-  cloud = { auth: a, authFns: auth, db: fs.getFirestore(app), fs };
+  cloud = { app, auth: a, authFns: auth, db: fs.getFirestore(app), fs };
   return cloud;
 }
 

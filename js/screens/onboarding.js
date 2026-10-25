@@ -19,7 +19,7 @@ const HERO = `<div class="ob-hero">
   </svg>
   <h1>Band Flow</h1>
   <p class="muted">La app te escucha por el micrófono, te dice si vas afinado y te lleva paso a paso desde las primeras notas hasta las obras de tu banda.</p>
-  <p class="ob-note"><b>Sin registros.</b> Elige tu instrumento y empieza en un minuto: todo se guarda en este dispositivo.</p>
+  <p class="ob-note"><b>Tu progreso queda guardado en tu cuenta.</b> Elige tu instrumento y empieza en un minuto.</p>
 </div>`;
 
 let step = 0;

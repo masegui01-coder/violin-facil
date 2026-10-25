@@ -2,7 +2,7 @@
 import { $ } from './ui.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';
@@ -25,6 +25,7 @@ export function go(id, params = {}) {
   current = id;
   window.scrollTo(0, 0);
   if (hooks[id] && hooks[id].enter) hooks[id].enter(params);
+  window.dispatchEvent(new CustomEvent('screen-change', { detail: { id } }));
 }
 
 export function back() { go(lastTab); }

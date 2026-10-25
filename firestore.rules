@@ -12,6 +12,22 @@ service cloud.firestore {
     function isDirectorAfter(bandId) { return signedIn() && getAfter(bandPath(bandId)).data.directorUid == request.auth.uid; }
     function isMember(bandId) { return signedIn() && exists(/databases/$(db)/documents/bands/$(bandId)/members/$(request.auth.uid)); }
 
+    // Cuentas: el progreso de cada usuario solo lo lee y escribe él mismo
+    function isAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }
+    match /users/{uid} {
+      allow read, write: if signedIn() && uid == request.auth.uid;
+    }
+    // Resumen de cada tester: lo escribe él y lo lee el administrador (panel de testers)
+    match /testers/{uid} {
+      allow read: if (signedIn() && uid == request.auth.uid) || isAdmin();
+      allow write: if signedIn() && uid == request.auth.uid;
+    }
+    // Administradores: se dan de alta a mano desde la consola; cada uno solo puede comprobar si lo es
+    match /admins/{uid} {
+      allow get: if signedIn() && uid == request.auth.uid;
+      allow list, write: if false;
+    }
+
     // Código de invitación → banda. Se consulta uno a uno, nunca se listan.
     match /bandCodes/{code} {
       allow get: if signedIn();

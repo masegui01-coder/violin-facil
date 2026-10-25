@@ -4,6 +4,7 @@ import { register, go } from '../router.js';
 import { STYLES } from '../songs.js';
 import { BADGES } from '../engage.js';
 import { renderProgress } from './progress-ui.js';
+import { renderAccountPanel } from './account-panel.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 
@@ -44,6 +45,7 @@ function render() {
   $('setUnlock').checked = s.unlockAll;
   confirmReset = false;
   $('resetProgress').textContent = 'Borrar progreso';
+  renderAccountPanel();
 }
 
 register('profile', { enter: render });
