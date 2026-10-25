@@ -14,6 +14,7 @@ let confirmDelete = false;
 const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—');
 
 export async function renderAccountPanel() {
+  confirmDelete = false;
   const box = $('accountPanel');
   const acc = cloudConfigured() ? currentAccount() : null;
   const consent = analyticsAvailable() ? `<label class="switch-row" for="setAnalytics"><span>Estadísticas de uso (Google Analytics)</span><input id="setAnalytics" type="checkbox" class="switch" ${getState().analyticsConsent ? 'checked' : ''}></label>` : '';
@@ -42,7 +43,8 @@ async function signOut() {
   await flushPush();
   stopSync();
   await signOutAccount();
-  replaceState({});
+  const { importedSongs, recordings } = getState();
+  replaceState({ importedSongs, recordings, onboarded: true });
   go('account');
 }
 
@@ -63,7 +65,8 @@ async function removeAccount() {
 function testersCsv(list) {
   const head = ['Nombre', 'Correo', 'Instrumento', 'Instrumentos', 'Alta', 'Último uso', 'Días de práctica', 'Minutos', 'Lecciones', 'Nivel', 'Racha', 'Banda', 'Dispositivo'];
   const rows = list.map(t => [t.name, t.email, t.instrument, (t.instruments || []).join(', '), fmtDay(t.createdAt), fmtDay(t.lastSeen), t.daysPracticed, t.minutes, t.lessons, t.level, t.streak, t.band, t.platform]);
-  const cell = v => (/[;"\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ''));
+  const safe = v => { const t = String(v ?? ''); return /^[=+\-@\t]/.test(t) ? "'" + t : t; }; // evita fórmulas maliciosas en Excel
+  const cell = raw => { const v = safe(raw); return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   return [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
 }
 

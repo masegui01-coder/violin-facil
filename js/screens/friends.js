@@ -3,7 +3,7 @@
 import { $, esc, toast, num } from '../ui.js';
 import { register, go, currentScreen } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
-import { currentAccount } from '../account.js';
+import { currentAccount, onAccount } from '../account.js';
 import * as fr from '../friends-api.js';
 import { levelFor } from '../rewards.js';
 import { weekId } from '../engage.js';
@@ -72,6 +72,8 @@ window.addEventListener('lesson-finished', e => {
   const isSong = lesson.kind === 'song' || (lesson.kind === 'chords' && lesson.mode === 'strum');
   if (isSong && stars === 3 && title && !lesson.oneTake) post({ type: 'song', icon: '🎵', text: `ha tocado «${title}» con 3 estrellas` });
 });
+
+onAccount(acc => { if (!acc) ready = false; });
 
 // Al entrar con la cuenta: código de amigo, perfil y avisos pendientes
 window.addEventListener('account-ready', async () => {

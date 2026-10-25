@@ -1,7 +1,7 @@
 // Acceso obligatorio en la beta. Quien llega nuevo crea su usuario antes de la bienvenida.
 // Quien ya usaba la app ve un aviso para crearlo sin perder su avance; durante una semana puede posponerlo.
 import { $, esc, toast } from '../ui.js';
-import { register, go, currentScreen } from '../router.js';
+import { register, go, currentScreen, TABS } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, accountErrorText } from '../account.js';
 import { startSync, stopSync, schedulePush, flushPush, armSync } from '../sync.js';
@@ -69,7 +69,9 @@ async function afterSignIn() {
   toast(decision === 'download' ? `¡Hola de nuevo, ${account.displayName || ''}! He recuperado tu progreso`
     : decision === 'error' ? 'Has entrado. Tu progreso se guardará en la nube en cuanto haya conexión'
       : 'Cuenta lista: tu progreso queda guardado');
-  go(currentScreen() === 'account' ? (getState().onboarded ? 'learn' : 'onboarding') : currentScreen());
+  const here = currentScreen();
+  if (here === 'account') go(getState().onboarded ? 'learn' : 'onboarding');
+  else if (TABS.includes(here)) go(here);
   window.dispatchEvent(new CustomEvent('account-ready'));
 }
 
@@ -121,7 +123,7 @@ export async function accountGate() {
   const account = currentAccount();
   if (account) {
     const decision = await beginSync(account).catch(() => null);
-    if (decision === 'download' && currentScreen() !== 'account') go(currentScreen());
+    if (decision === 'download' && TABS.includes(currentScreen())) go(currentScreen());
     leaveGate();
     window.dispatchEvent(new CustomEvent('account-ready'));
     return;

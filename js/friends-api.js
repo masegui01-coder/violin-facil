@@ -124,6 +124,8 @@ export async function removeFriend(fid) {
   const batch = fs.writeBatch(db);
   batch.delete(fs.doc(db, 'friends', uid, 'list', fid));
   batch.delete(fs.doc(db, 'friends', fid, 'list', uid));
+  batch.delete(fs.doc(db, 'requests', uid, 'in', fid));
+  batch.delete(fs.doc(db, 'requests', fid, 'in', uid));
   await batch.commit();
 }
 

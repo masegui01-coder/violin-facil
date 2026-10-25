@@ -23,21 +23,25 @@ function sheet(html) {
   if (!$('sheet').open) $('sheet').showModal();
 }
 
-// Nombre público: el de la banda, uno guardado o se pide una vez
+// Apodo público: para salir en retos y clasificaciones hace falta elegirlo y aceptarlo (nunca el nombre real).
+// En el modo niño no se publica nada.
 function nickname() {
   const s = getState();
-  const known = s.nickname || (s.band && s.band.nickname);
-  if (known) return Promise.resolve(known);
-  return new Promise(resolve => {
-    sheet(`<h2>¿Cómo te llamamos?</h2><p class="muted small">Es el nombre que verán tus amigos en los retos y clasificaciones. Usa un apodo si prefieres.</p>
-      <input id="nickInput" class="input" maxlength="30" placeholder="Tu apodo"><button type="button" class="btn" id="nickOk">Guardar</button>`);
+  if (s.kidMode) { toast('En el modo niño no hay clasificaciones públicas'); return Promise.reject(new Error('kid')); }
+  if (s.publicBoards && s.publicName) return Promise.resolve(s.publicName);
+  return new Promise((resolve, reject) => {
+    sheet(`<h2>Tu apodo público</h2><p class="muted small">Es el nombre que verá cualquiera en los retos y clasificaciones. No pongas tu nombre real ni datos personales.</p>
+      <input id="nickInput" class="input" maxlength="20" placeholder="Ej.: Trompetista42">
+      <label class="check-chip"><input type="checkbox" id="nickOkPublic"> Quiero aparecer en las clasificaciones públicas</label>
+      <button type="button" class="btn" id="nickOk">Guardar</button>`);
     $('nickOk').addEventListener('click', () => {
       const name = $('nickInput').value.trim();
-      if (!name) return;
-      update({ nickname: name });
+      if (!name || !$('nickOkPublic').checked) { toast('Escribe un apodo y marca la casilla'); return; }
+      update({ publicName: name, publicBoards: true });
       $('sheet').close();
       resolve(name);
     });
+    $('sheet').addEventListener('close', () => reject(new Error('cancel')), { once: true });
   });
 }
 
@@ -62,7 +66,8 @@ async function showBoard(title, path, extra = '', unit = 'pct') {
 
 // ---------- Acciones desde la ficha de una canción ----------
 async function challengeFriend(song) {
-  const name = await nickname();
+  const name = await nickname().catch(() => null);
+  if (!name) return;
   try {
     const code = await social.createChallenge(songPayload(song), inst(), name);
     await shareText(`${name} te reta a tocar «${song.title}» (${instName()}) en Band Flow. ¿Quién lo hace mejor?`, linkWith('reto', code));
@@ -71,7 +76,8 @@ async function challengeFriend(song) {
 }
 
 async function shareScore(song) {
-  const name = await nickname();
+  const name = await nickname().catch(() => null);
+  if (!name) return;
   try {
     const code = await social.shareScore(songPayload(song), name);
     await shareText(`${name} te comparte la partitura «${song.title}» para ensayar en Band Flow.`, linkWith('partitura', code));
@@ -137,8 +143,9 @@ window.addEventListener('lesson-finished', async e => {
   const { lesson, mode, stars, accuracy, speed } = e.detail;
   if (accuracy === null || accuracy === undefined) return;
   try {
-    const name = getState().nickname || (getState().band && getState().band.nickname);
-    if (!name) return;
+    const s = getState();
+    if (s.kidMode || !s.publicBoards || !s.publicName) return;
+    const name = s.publicName;
     const entry = { name, score: accuracy, stars, instrument: inst() };
     if (lesson.challenge) await social.submitScore(['challenges', lesson.challenge], entry);
     if (lesson.daily) await social.submitScore(['daily', `${lesson.daily}_${inst()}`], entry);

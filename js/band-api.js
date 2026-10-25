@@ -48,6 +48,25 @@ export async function joinBand(code, nickname, instrument) {
   return { bandId, name: bandName, role: 'member', nickname, uid: user.uid };
 }
 
+export async function leaveBand(band) {
+  const { db, fs } = await refs();
+  await fs.deleteDoc(fs.doc(db, 'bands', band.bandId, 'members', band.uid));
+}
+
+// Código nuevo para la banda (p. ej. si el antiguo circula por donde no debe): el viejo deja de servir
+export async function rotateCode(band) {
+  const { db, fs } = await refs();
+  for (let i = 0; i < MAX_CODE_TRIES; i++) {
+    const code = randomCode();
+    const batch = fs.writeBatch(db);
+    batch.set(fs.doc(db, 'bandCodes', code), { bandId: band.bandId, bandName: band.name });
+    batch.update(fs.doc(db, 'bands', band.bandId), { code });
+    if (band.code) batch.delete(fs.doc(db, 'bandCodes', band.code));
+    try { await batch.commit(); return code; } catch (e) { if (!String(e.code).includes('permission')) throw e; }
+  }
+  throw new Error('No he podido generar un código nuevo. Inténtalo otra vez.');
+}
+
 export async function updateMyMember(band, patch) {
   const { db, fs } = await refs();
   await fs.setDoc(fs.doc(db, 'bands', band.bandId, 'members', band.uid), patch, { merge: true });

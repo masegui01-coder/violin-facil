@@ -68,7 +68,8 @@ export function bandCsv(members, tasks, progress, today, nameOf) {
     return [m.nickname, nameOf(m.instrument), m.voice || '', Math.round(minutesInLast(m, today, 7)), Math.round(minutesInLast(m, today, 30)), Math.round(minutesInLast(m, today, 90)), days[days.length - 1] || '',
       ...tasks.map(t => { const p = progress.find(x => x.taskId === t.id && x.uid === m.id); return p ? (p.completed ? 'Hecha' : `${p.bestStars}★`) : 'Sin empezar'; })];
   });
-  const cell = v => (/[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const safe = v => (/^[=+\-@\t]/.test(String(v)) ? "'" + v : String(v)); // evita fórmulas maliciosas en Excel
+  const cell = raw => { const v = safe(raw); return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   return [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
 }
 

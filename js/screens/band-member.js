@@ -82,7 +82,7 @@ export function memberView(ctx) {
     ${duel.length > 1 ? `<h2>Duelo de secciones</h2><p class="muted small">Minutos por músico en los últimos 7 días.</p>
       ${duel.map((g, i) => `<div class="duel-row"><span>${i + 1}. ${FAMILY_NAME[g.family] || g.family}</span>${bar(g.perMusician / Math.max(1, duel[0].perMusician))}<b>${Math.round(g.perMusician)}</b></div>`).join('')}` : ''}
     ${b.role === 'leader' ? sectionPanel(ctx, me) : ''}
-    <button type="button" class="btn ghost small" id="leaveBand">Salir de la banda en este móvil</button>`;
+    <button type="button" class="btn ghost small" id="leaveBand">Salir de la banda</button>`;
 }
 
 export function bindMember(ctx, reload) {
@@ -102,5 +102,10 @@ export function bindMember(ctx, reload) {
       reload();
     } catch (err) { toast(cloudErrorText(err)); }
   });
-  $('leaveBand').addEventListener('click', () => { update({ band: null }); reload(); });
+  $('leaveBand').addEventListener('click', async e => {
+    if (!e.target.dataset.confirm) { e.target.dataset.confirm = '1'; e.target.textContent = '¿Seguro? Toca otra vez'; return; }
+    await api.leaveBand(b).catch(() => {});
+    update({ band: null });
+    reload();
+  });
 }

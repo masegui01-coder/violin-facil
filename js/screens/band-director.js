@@ -5,7 +5,7 @@ import * as api from '../band-api.js';
 import { bandCsv, weekStarSuggestion } from '../band-stats.js';
 import { instrumentById } from '../instruments.js';
 import { weekId } from '../engage.js';
-import { today } from '../store.js';
+import { today, getState, update } from '../store.js';
 import { cloudErrorText } from '../cloud.js';
 import { attachTooltips } from '../charts.js';
 import { openTaskForm } from './band-task.js';
@@ -166,6 +166,10 @@ async function act(key, el, ctx, reload, rerender) {
     } else if (name === 'del-sub' && confirmFirst(el)) {
       const [col, id] = arg.split(':');
       await api.deleteSub(b.bandId, col, id); reload();
+    } else if (name === 'rotate-code' && confirmFirst(el)) {
+      const code = await api.rotateCode(b);
+      update({ band: { ...getState().band, code } });
+      toast(`Nuevo código: ${code}`); reload();
     } else if (name === 'remove-member' && confirmFirst(el)) {
       await api.removeMember(b.bandId, arg); closeSheet(); toast('Músico quitado de la banda'); reload();
     }

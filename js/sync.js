@@ -110,5 +110,17 @@ export async function listTesters() {
 export async function deleteCloudData(uid) {
   const { db, fs } = await getCloud();
   stopSync();
-  await Promise.all([fs.deleteDoc(fs.doc(db, 'users', uid)), fs.deleteDoc(fs.doc(db, 'testers', uid))]);
+  const del = ref => fs.deleteDoc(ref).catch(() => {});
+  const all = async path => (await fs.getDocs(fs.collection(db, ...path)).catch(() => ({ docs: [] }))).docs;
+  const profile = await fs.getDoc(fs.doc(db, 'profiles', uid)).catch(() => null);
+  const code = profile && profile.exists() ? profile.data().code : null;
+  const friends = await all(['friends', uid, 'list']);
+  await Promise.all([
+    ...friends.flatMap(f => [del(f.ref), del(fs.doc(db, 'friends', f.id, 'list', uid))]),
+    ...(await all(['activity', uid, 'events'])).map(d => del(d.ref)),
+    ...(await all(['inbox', uid, 'items'])).map(d => del(d.ref)),
+    ...(await all(['requests', uid, 'in'])).map(d => del(d.ref)),
+    code ? del(fs.doc(db, 'friendCodes', code)) : null,
+    del(fs.doc(db, 'profiles', uid)), del(fs.doc(db, 'users', uid)), del(fs.doc(db, 'testers', uid)),
+  ]);
 }

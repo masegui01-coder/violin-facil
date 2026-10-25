@@ -36,7 +36,7 @@ function welcome() {
       <input id="joinNick" class="input" maxlength="30" placeholder="Como te conoce tu banda">
       <label for="joinInst">Instrumento</label>
       <select id="joinInst" class="select">${INSTRUMENTS.map(i => `<option value="${i.id}" ${i.id === inst ? 'selected' : ''}>${i.name}</option>`).join('')}</select>
-      <p class="muted small">No hace falta email. Solo tu director verá tu progreso.</p>
+      <p class="muted small">Tu director verá tu progreso en las tareas; tus compañeros, solo los minutos de práctica y tu nivel.</p>
       <button class="btn" type="submit">Unirme</button>
       <p id="joinError" class="warn" hidden></p>
     </form>
@@ -46,7 +46,7 @@ function welcome() {
       <input id="createName" class="input" maxlength="60" placeholder="Ej.: Banda Municipal de…">
       <label for="createNick">Tu nombre</label>
       <input id="createNick" class="input" maxlength="30">
-      <p class="muted small">Entrarás con tu cuenta de Google para no perder la banda si cambias de móvil.</p>
+      <p class="muted small">La banda queda en tu cuenta: no la pierdes si cambias de móvil.</p>
       <button class="btn ghost" type="submit">Crear banda</button>
       <p id="createError" class="warn" hidden></p>
     </form>`);
@@ -116,8 +116,9 @@ async function load() {
     data = { tasks, members, progress, bandDoc, events, notices, rewards, library: library.sort((a, b) => a.title.localeCompare(b.title)) };
     show();
   } catch (err) {
-    body(`<div class="panel"><h2>No he podido cargar la banda</h2><p class="warn">${esc(cloudErrorText(err))}</p><button type="button" class="btn small" id="retryBand">Reintentar</button></div>`);
+    body(`<div class="panel"><h2>No he podido cargar la banda</h2><p class="warn">${esc(cloudErrorText(err))}</p><div class="row"><button type="button" class="btn small" id="retryBand">Reintentar</button><button type="button" class="btn ghost small" id="forgetBand">Salir de esta banda</button></div></div>`);
     $('retryBand').addEventListener('click', load);
+    $('forgetBand').addEventListener('click', () => { update({ band: null }); render(); });
   }
 }
 

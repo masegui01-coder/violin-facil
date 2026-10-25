@@ -53,7 +53,8 @@ function invite(ctx) {
   const b = ctx.band;
   return section('Invitar a la banda', `<div class="invite"><div><small>Código de la banda</small><div class="band-code dark">${esc(b.code)}</div>
       <p class="muted small">Los músicos lo escriben en la pestaña Banda, o abren el enlace. Proyecta el QR en el ensayo y que lo escaneen.</p>
-      <div class="row"><button type="button" class="btn small" data-act="share-invite">Compartir enlace</button><button type="button" class="btn ghost small" data-act="show-qr">Mostrar QR</button></div></div>
+      <div class="row"><button type="button" class="btn small" data-act="share-invite">Compartir enlace</button><button type="button" class="btn ghost small" data-act="show-qr">Mostrar QR</button></div>
+      <button type="button" class="text-link" data-act="rotate-code">Cambiar el código (el anterior dejará de servir)</button></div>
     <div id="qrBox" class="qr-box" hidden></div></div>`);
 }
 

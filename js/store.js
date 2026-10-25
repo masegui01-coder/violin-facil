@@ -19,6 +19,7 @@ const DEFAULTS = Object.freeze({
   history: {}, recentAcc: [], recentReading: [], errors: {}, routineDone: {}, cards: [], themes: [], theme: 'barniz', reportSeen: null, longtones: 0,
   chordsKnown: {}, changes: {}, theoryAnswers: {},
   accountPromptSince: null, analyticsConsent: null,
+  publicName: '', publicBoards: false, kidMode: false,
 });
 
 function read(key) {

@@ -30,6 +30,14 @@ export function ctx() {
 
 export function micReady() { return !!state.analyser; }
 
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!state.ctx) return;
+    if (document.visibilityState === 'hidden') state.ctx.suspend().catch(() => {});
+    else state.ctx.resume().catch(() => {});
+  });
+}
+
 export async function startMic() {
   if (state.analyser) return;
   const c = ctx();
