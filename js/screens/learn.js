@@ -3,10 +3,12 @@ import { $, esc, icon, starsHtml } from '../ui.js';
 import { register } from '../router.js';
 import { lessonKey, lessonTitle, lessonSong } from '../course.js';
 import { styleById } from '../songs.js';
-import { instrumentProgress } from '../store.js';
+import { getState, instrumentProgress } from '../store.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
+import { instrumentIcon } from './instrument-picker.js';
+import { instrumentById } from '../instruments.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -61,6 +63,10 @@ function render() {
   states = currentStates(course);
   const next = nextLesson(null, course);
   currentId = next ? next.id : null;
+  const inst = instrumentById(getState().instrument);
+  $('courseHead').innerHTML = `<span class="inst-ic">${instrumentIcon(inst.id)}</span><div><small>Estás aprendiendo</small><b>${esc(inst.name)}</b></div>
+    <button type="button" class="btn ghost small" id="changeInst">Cambiar</button>`;
+  $('changeInst').addEventListener('click', () => window.dispatchEvent(new CustomEvent('pick-instrument')));
   renderToday();
   $('continueCard').innerHTML = continueCard();
   $('courseMap').innerHTML = course.map(unitHtml).join('');

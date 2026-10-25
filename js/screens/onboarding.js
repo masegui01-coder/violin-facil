@@ -2,6 +2,7 @@
 import { $ } from '../ui.js';
 import { register, go } from '../router.js';
 import { getState, update } from '../store.js';
+import { instrumentById } from '../instruments.js';
 import { styleGridHtml, instrumentGridHtml } from './profile.js';
 
 const LEVELS = [
@@ -18,6 +19,7 @@ const HERO = `<div class="ob-hero">
   </svg>
   <h1>Band Flow</h1>
   <p class="muted">La app te escucha por el micrófono, te dice si vas afinado y te lleva paso a paso desde las primeras notas hasta las obras de tu banda.</p>
+  <p class="ob-note"><b>Sin registros.</b> Elige tu instrumento y empieza en un minuto: todo se guarda en este dispositivo.</p>
 </div>`;
 
 let step = 0;
@@ -26,7 +28,7 @@ let draft = null;
 const STEPS = [
   { render: () => HERO, valid: () => true },
   {
-    render: () => `<h1>¿Qué instrumento tocas?</h1><p class="muted">Podrás cambiarlo cuando quieras en tu perfil.</p><div class="inst-grid">${instrumentGridHtml(draft.instrument)}</div>`,
+    render: () => `<h1>¿Qué instrumento quieres aprender o practicar?</h1><p class="muted">Toca uno para elegirlo. Podrás cambiarlo cuando quieras con el botón del instrumento, arriba.</p><div class="inst-grid">${instrumentGridHtml(draft.instrument)}</div>`,
     valid: () => !!draft.instrument,
   },
   {
@@ -49,7 +51,8 @@ function render() {
   $('obDots').innerHTML = STEPS.map((_, i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('');
   $('obStep').innerHTML = STEPS[step].render();
   $('obBack').hidden = step === 0;
-  $('obNext').textContent = step === 0 ? 'Empezar' : step === STEPS.length - 1 ? 'Ir al curso' : 'Continuar';
+  const name = draft.instrument ? instrumentById(draft.instrument).name : '';
+  $('obNext').textContent = step === 0 ? 'Empezar' : step === 1 ? (name ? `Continuar con ${name}` : 'Elige un instrumento') : step === STEPS.length - 1 ? `Empezar a tocar` : 'Continuar';
   $('obNext').disabled = !STEPS[step].valid();
 }
 
@@ -79,6 +82,6 @@ $('obStep').addEventListener('click', e => {
 $('obBack').addEventListener('click', () => { step = Math.max(0, step - 1); render(); });
 $('obNext').addEventListener('click', () => {
   if (step < STEPS.length - 1) { step++; render(); return; }
-  update({ ...draft, onboarded: true, unlockAll: draft.level === 'fluent' });
+  update({ ...draft, onboarded: true, instrumentChosen: true, unlockAll: draft.level === 'fluent' });
   go('learn');
 });

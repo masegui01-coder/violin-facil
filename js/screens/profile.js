@@ -2,13 +2,13 @@
 import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { STYLES } from '../songs.js';
-import { INSTRUMENTS } from '../instruments.js';
 import { BADGES } from '../engage.js';
+import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 
-export function instrumentGridHtml(selected) {
-  return INSTRUMENTS.map(i => `<button type="button" class="inst-opt" data-inst="${i.id}" aria-pressed="${i.id === selected}"><b>${esc(i.name)}</b><small>${esc(i.blurb)}</small></button>`).join('');
-}
+export { instrumentGridHtml };
+
+
 
 export function styleGridHtml(selected) {
   return STYLES.map(s => `<button type="button" class="style-opt" data-style="${s.id}" aria-pressed="${selected.includes(s.id)}" style="--chip:${s.color}">
@@ -59,7 +59,7 @@ $('profileStyles').addEventListener('click', e => {
 $('profileInstruments').addEventListener('click', e => {
   const b = e.target.closest('[data-inst]');
   if (!b || b.dataset.inst === getState().instrument) return;
-  update({ instrument: b.dataset.inst });
+  update({ instrument: b.dataset.inst, instrumentChosen: true });
   render();
   toast('Curso y digitaciones adaptados a tu instrumento');
 });

@@ -13,7 +13,7 @@ const DEFAULTS = Object.freeze({
   streak: { count: 0, last: null }, lessonsPlayed: 0,
   speed: 0.6, metroMode: 'visual', bigText: false, recordings: [], importedSongs: [],
   instrument: 'violin', a4: 440, tuning: {}, gym: {}, practiceLog: {}, band: null,
-  freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null,
+  freezes: 0, dailyGoal: 10, dailyDone: {}, badges: [], nickname: '', goalCelebrated: null, instrumentChosen: false,
 });
 
 function read(key) {

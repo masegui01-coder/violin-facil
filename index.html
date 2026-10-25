@@ -22,6 +22,7 @@
   <header id="topbar" class="topbar" hidden>
     <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Band Flow</span></div>
     <div class="chips">
+      <button type="button" id="instChip" class="chip-stat inst" aria-label="Cambiar de instrumento"><span id="instChipIcon" class="ic"></span><b id="instChipName"></b><span aria-hidden="true">▾</span></button>
       <span class="chip-stat streak" title="Días seguidos practicando"><span id="streakIcon" class="ic"></span><b id="streakCount">0</b></span>
       <span class="chip-stat xp" title="Puntos"><b id="xpCount">0</b> pts</span>
     </div>
@@ -40,6 +41,7 @@
 
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
+      <div id="courseHead" class="course-head"></div>
       <div id="todayCard"></div>
       <div id="continueCard"></div>
       <div id="courseMap" class="course"></div>
@@ -95,6 +97,11 @@
     <section id="profile" class="screen" hidden>
       <div class="screen-head"><h1>Tu perfil</h1></div>
       <div id="stats" class="stats"></div>
+      <div class="panel account">
+        <h2>Tu cuenta</h2>
+        <p>No hace falta registrarse. Tu instrumento, tu progreso y tus partituras se guardan <b>en este dispositivo</b>, en este navegador.</p>
+        <p class="muted small">Si borras los datos del navegador o cambias de móvil, empezarás de cero. Para ensayar con tu banda, únete desde la pestaña <b>Banda</b> con el código que te dé tu director.</p>
+      </div>
       <div class="panel">
         <h2>Tu instrumento</h2>
         <p class="muted">El curso, las digitaciones y el detector se adaptan. Tu progreso se guarda por instrumento.</p>

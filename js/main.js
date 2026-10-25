@@ -6,6 +6,7 @@ import { setInstrument } from './audio.js';
 import { setReferenceA } from './music.js';
 import { instrumentById } from './instruments.js';
 import { checkCelebrations } from './screens/daily.js';
+import { openInstrumentPicker, instrumentIcon } from './screens/instrument-picker.js';
 import './screens/player.js';
 import './screens/theory.js';
 import './screens/learn.js';
@@ -34,6 +35,8 @@ function renderTopbar(s) {
   $('toolBpm').textContent = s.bpm;
   document.documentElement.classList.toggle('big', s.bigText);
   setInstrument(instrumentById(s.instrument));
+  $('instChipName').textContent = instrumentById(s.instrument).name;
+  $('instChipIcon').innerHTML = instrumentIcon(s.instrument);
   setReferenceA(s.a4);
 }
 
@@ -45,6 +48,11 @@ subscribe(checkCelebrations);
 
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
 document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+
+// Cambiar de instrumento desde cualquier pestaña: se vuelve a pintar la pantalla actual
+const refreshScreen = () => go(currentScreen());
+$('instChip').addEventListener('click', () => openInstrumentPicker({ onPicked: refreshScreen }));
+window.addEventListener('pick-instrument', () => openInstrumentPicker({ onPicked: refreshScreen }));
 
 // ---------- Comentarios ----------
 function feedbackText() {
@@ -67,6 +75,15 @@ $('fbForm').addEventListener('submit', e => {
 });
 
 go(getState().onboarded ? 'learn' : 'onboarding');
+
+// Quien ya usaba la app (solo violín) elige ahora su instrumento una vez
+if (getState().onboarded && !getState().instrumentChosen) {
+  openInstrumentPicker({
+    title: 'Novedad: elige tu instrumento',
+    intro: 'Band Flow ya no es solo para violín. Elige el instrumento que quieres aprender o practicar; podrás cambiarlo cuando quieras desde el botón de arriba.',
+    onPicked: refreshScreen,
+  });
+}
 
 // App instalable (icono en la pantalla de inicio)
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
