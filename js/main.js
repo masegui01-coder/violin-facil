@@ -56,6 +56,12 @@ function renderTopbar(s) {
 }
 
 hydrateIcons();
+new MutationObserver(() => {
+  const dlg = $('sheet');
+  if (!dlg.open) return;
+  const title = dlg.querySelector('h1, h2, h3');
+  if (title) { title.id = title.id || 'sheetTitle'; dlg.setAttribute('aria-labelledby', title.id); } else dlg.removeAttribute('aria-labelledby');
+}).observe($('sheet'), { attributes: true, attributeFilter: ['open'] });
 $('streakIcon').innerHTML = icon('flame');
 renderTopbar(getState());
 subscribe(renderTopbar);

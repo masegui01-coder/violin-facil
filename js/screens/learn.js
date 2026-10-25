@@ -51,6 +51,7 @@ function nodeHtml(lesson, unit) {
   return `<button type="button" class="${cls}" data-lesson="${lesson.id}" style="--unit:${unit.color}${slotColor ? ';--slot:' + slotColor : ''}">
     <span class="bubble"><span class="ic">${icon(glyph)}</span></span>
     <span class="node-text"><b>${tag}${esc(lessonTitle(lesson))}</b><small>${esc(sub)}</small>${st === 'done' ? starsHtml(best) : ''}</span>
+    <span class="sr-only">${st === 'locked' ? ', bloqueada' : st === 'done' ? ', hecha' : lesson.id === currentId ? ', siguiente lección' : ''}</span>
   </button>`;
 }
 

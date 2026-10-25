@@ -19,9 +19,9 @@ let toastTimer = 0;
 export function toast(msg) {
   const el = $('toast');
   el.textContent = msg;
-  el.hidden = false;
+  el.classList.remove('off');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 2400);
+  toastTimer = setTimeout(() => { el.classList.add('off'); el.textContent = ''; }, 2400);
 }
 
 // Iconos en línea (trazo con currentColor)

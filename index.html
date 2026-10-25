@@ -199,7 +199,7 @@
         </div>
         <svg id="lessonBoard" class="board" role="img" aria-label="Dónde poner el dedo"></svg>
       </div>
-      <p id="status" class="status">&nbsp;</p>
+      <p id="status" class="status" aria-live="polite">&nbsp;</p>
       <div id="tempoBar" class="tempo-bar" hidden>
         <div class="row spread"><span class="muted">Velocidad</span><b id="tempoBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-speed="0.4">40 %</button><button type="button" data-speed="0.5">50 %</button><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
@@ -329,7 +329,7 @@
         <button id="rhStartMic" class="btn" type="button">Activar micrófono</button>
       </div>
       <div class="timing" aria-hidden="true"><span>Pronto</span><div class="timing-track"><i class="ok-zone"></i><div class="center"></div><div id="rhDot" class="dot"></div></div><span>Tarde</span></div>
-      <p id="rhLast" class="status">&nbsp;</p>
+      <p id="rhLast" class="status" aria-live="polite">&nbsp;</p>
       <div id="rhTempoBar" class="tempo-bar">
         <div class="row spread"><span class="muted">Velocidad</span><b id="rhBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-rspeed="0.4">40 %</button><button type="button" data-rspeed="0.5">50 %</button><button type="button" data-rspeed="0.6">60 %</button><button type="button" data-rspeed="0.8">80 %</button><button type="button" data-rspeed="1">100 %</button></div>
@@ -386,7 +386,7 @@
         <div class="meter wide" aria-hidden="true"><div class="track"></div><div class="center"></div><div id="chDot" class="dot"></div></div>
         <p id="chCents" class="heard">&nbsp;</p>
       </div>
-      <p id="chStatus" class="status">&nbsp;</p>
+      <p id="chStatus" class="status" aria-live="polite">&nbsp;</p>
       <button id="chGo" class="btn big" type="button">Empezar</button>
     </section>
 
@@ -468,9 +468,9 @@
 </dialog>
 <div id="tour" class="tour" hidden>
   <div id="tourSpot" class="tour-spot" hidden></div>
-  <div id="tourCard" class="tour-card" role="dialog" aria-live="polite"></div>
+  <div id="tourCard" class="tour-card" role="dialog" aria-modal="true" aria-label="Recorrido por la app" aria-live="polite"></div>
 </div>
-<div id="toast" class="toast" role="status" hidden></div>
+<div id="toast" class="toast off" role="status" aria-live="polite"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

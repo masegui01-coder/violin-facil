@@ -802,3 +802,6 @@ details > summary.muted { cursor: pointer; padding: 6px 0; }
 /* Zonas táctiles de al menos 44 px para dedos (pautas de accesibilidad WCAG 2.5.5) */
 .btn.small, .chip-btn, .seg button { min-height: 44px; }
 .text-link, .today-link { min-height: 44px; display: inline-flex; align-items: center; }
+.toast.off { opacity: 0; pointer-events: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }

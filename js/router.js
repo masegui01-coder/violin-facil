@@ -62,8 +62,19 @@ export function go(id, params = {}) {
   arm();
   window.scrollTo(0, 0);
   if (hooks[id] && hooks[id].enter) hooks[id].enter(params);
+  announce(id);
   window.dispatchEvent(new CustomEvent('screen-change', { detail: { id } }));
 }
 
 export function back() { go(lastTab); }
+
+const TAB_NAMES = { learn: 'Aprender', songs: 'Canciones', practice: 'Estudio', band: 'Banda', profile: 'Perfil' };
+function announce(id) {
+  const heading = $(id).querySelector(TABS.includes(id) ? 'h1' : 'h1, h2');
+  const name = TAB_NAMES[id] || (heading && heading.textContent.trim());
+  document.title = name ? `${name} · Band Flow` : 'Band Flow';
+  if (!heading || !document.activeElement || document.activeElement === document.body) return;
+  heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: true });
+}
 export function currentScreen() { return current; }
