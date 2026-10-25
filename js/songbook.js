@@ -25,6 +25,11 @@ export const SONGBOOK = [
   { id: 'kumbaya-do', title: 'Kumbayá (en Do)', by: 'Tradicional', time: 4, bpm: 80, chart: 'C | F | C | C | C | F | G | G | C | F | C | C | F | C | G | C' },
   { id: 'saints-do', title: 'When the Saints (en Do)', by: 'Tradicional', time: 4, bpm: 110, chart: 'C | C | C | C | C | C | G7 | G7 | C | C7 | F | F | C | G7 | C | C' },
   { id: 'vals-lam', title: 'Vals en Lam', by: 'Ejercicio', time: 3, bpm: 110, chart: 'Am | Am | Dm | Dm | E | E | Am | Am | Am | Am | Dm | Dm | Am | E | Am | Am' },
+  // Flamenco: formas tradicionales (de todos, sin autor) para acompañar
+  { id: 'cadencia-andaluza', title: 'Cadencia andaluza', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 80, chart: 'Am | G | F | E | Am | G | F | E' },
+  { id: 'por-tangos', title: 'Por tangos', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 96, chart: 'Am | G | F | E | Am | G | F | E | Dm | Am | E | Am' },
+  { id: 'rumba-flamenca', title: 'Rumba flamenca', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 112, chart: 'Am | G | F | E | Am | G | F E | Am' },
+  { id: 'por-medio', title: 'Toque por medio', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 84, chart: 'Dm | C | Bb | A | Dm | C | Bb | A' },
   { id: 'sim-cejilla', title: 'Sim en movimiento', by: 'Ejercicio', time: 4, bpm: 80, chart: 'D | Bm | G | A | D | Bm | G | A' },
 ];
 

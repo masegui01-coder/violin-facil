@@ -2,7 +2,22 @@
 // arriba). La app distingue los dos por el sonido. Del pulso a la rumba y los tangos (4/4) y después al compás de 12
 // de la soleá, las alegrías y las bulerías (acentos en 3, 6, 8, 10 y 12).
 
+import { guitarMidis } from './chords.js';
+
 const NOTE = { G: 'F4', A: 'C5' };
+
+// Guitarra de fondo: un rasgueo por pulso con el acorde de cada compás (notas reales)
+function guitarBacking(chart, beatsPerBar = 4, bars = 1) {
+  const chords = chart.split('|').map(c => c.trim()).filter(Boolean);
+  const notes = [];
+  for (let r = 0; r < bars; r++) chords.forEach((chord, b) => {
+    for (let beat = 0; beat < beatsPerBar; beat++) {
+      const start = (r * chords.length + b) * beatsPerBar + beat;
+      guitarMidis(chord).forEach(midi => notes.push({ midi, start, beats: 0.9, rest: false }));
+    }
+  });
+  return [{ name: 'Guitarra', transpose: 0, percussion: false, notes }];
+}
 
 // «G A . A>» con una duración: G grave, A agudo, «.» silencio, «>» acento
 function cells(pattern, dur) {
@@ -45,6 +60,8 @@ export function cajonUnits({ theory, exercise, slots }) {
       ]),
       ex('u3-332', 'Rumba básica', '3 + 3 + 2', 84, ['G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G .'], 'e'),
       ex('u3-groove', 'Rumba con aire', 'Graves y agudos mezclados', 92, ['G . A G . A G A', 'G . A G . A G A', 'G A A G A A G A', 'G . A G . A G .'], 'e'),
+      { ...ex('u3-guitar', 'Rumba con guitarra', 'La guitarra hace la cadencia andaluza', 96, ['G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G A', 'G A A G A A G .'], 'e'),
+        backing: true, accompaniment: guitarBacking('Am | G | F | E', 4, 2) },
     ] },
     { id: C + 'u4', title: 'Tangos', sub: 'El uno en silencio', color: 'var(--u4)', lessons: [
       theory(C + 'u4-intro', 'Por tangos', [
@@ -53,6 +70,8 @@ export function cajonUnits({ theory, exercise, slots }) {
       ex('u4-basic', 'Tangos básicos', 'El uno se siente', 80, ['. A G A', '. A G A', '. A G A', '. A G A'], 'q'),
       ex('u4-eighths', 'Tangos con corcheas', 'Rellenando', 84, ['. G A . G G A .', '. G A . G G A .', '. G A G G G A .', '. G A . G . A .'], 'e'),
       ex('u4-accents', 'Tangos con acentos', 'Marca el cuatro', 88, ['. A G A>', '. A G A>', '. A G A>', '. A G A>'], 'q'),
+      { ...ex('u4-guitar', 'Tangos con guitarra', 'Por tangos, con la guitarra de fondo', 90, ['. A G A>', '. A G A>', '. A G A>', '. A G A>', '. A G A>', '. A G A>', '. A G A>', '. A G A>'], 'q'),
+        backing: true, accompaniment: guitarBacking('Am | G | F | E', 4, 2) },
     ] },
     { id: C + 'u5', title: 'El compás de 12', sub: 'La base del flamenco', color: 'var(--u5)', lessons: [
       theory(C + 'u5-intro', 'Contar hasta 12', [

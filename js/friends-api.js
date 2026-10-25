@@ -9,6 +9,7 @@ export const REACTIONS = ['👏', '❤️', '🔥'];
 const FEED_PER_FRIEND = 10;
 const STREAK_MILESTONES = [3, 7, 14, 30, 50, 100, 200, 365];
 const MAX_CODE_TRIES = 5;
+const MAX_WALL = 30;       // el muro guarda solo las últimas publicaciones (plan gratuito de Firebase)
 
 const refs = async () => { const c = await getCloud(); return { db: c.db, fs: c.fs, uid: c.auth.currentUser && c.auth.currentUser.uid }; };
 const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -137,7 +138,16 @@ export async function listFriends() {
 export async function postEvent(event) {
   const { db, fs, uid } = await refs();
   if (!uid) return;
-  await fs.addDoc(fs.collection(db, 'activity', uid, 'events'), { ...event, at: Date.now(), reactions: {} });
+  const col = fs.collection(db, 'activity', uid, 'events');
+  await fs.addDoc(col, { ...event, at: Date.now(), reactions: {} });
+  // se borran las publicaciones más antiguas para no llenar la base de datos
+  const snap = await fs.getDocs(fs.query(col, fs.orderBy('at', 'desc'), fs.limit(MAX_WALL + 10)));
+  const old = snap.docs.slice(MAX_WALL);
+  if (old.length) {
+    const batch = fs.writeBatch(db);
+    old.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
 }
 
 export async function loadFeed(friends) {

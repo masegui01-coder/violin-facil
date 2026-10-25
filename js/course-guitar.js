@@ -109,5 +109,17 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       sbSong('gu8-bm', 'sim-cejilla', 'Cejilla en el traste 2'),
       slots(2, 3),
     ] },
+    { id: 'gu9', title: 'Flamenco', sub: 'Cadencia andaluza, tangos y rumba', color: 'var(--u1)', lessons: [
+      theory('gu9-intro', 'La guitarra flamenca', [
+        { title: 'La cadencia andaluza', text: '{Am}, {G}, {F} y {E}: bajando de uno en uno hasta el {E}. Es el sonido del flamenco y lo usan los tangos, la rumba y las sevillanas.', chord: 'E' },
+        { title: 'El rasgueo de rumba', text: 'Golpe hacia abajo con el pulgar, arriba con el índice y un golpe seco con la palma que apaga las cuerdas en el 2 y el 4. Empieza despacio.' },
+        { title: 'Por medio', text: 'El mismo camino empezando en {Dm}: {Dm}, {C}, {Bb} y {A}. Lo llaman «por medio» porque descansa en La.', chord: 'Bb' },
+      ]),
+      changes('gu9-ch', 'F', 'E', 20),
+      sbSong('gu9-cadencia', 'cadencia-andaluza', 'El sonido del flamenco'),
+      sbSong('gu9-tangos', 'por-tangos', 'Con {Dm} al final'),
+      sbSong('gu9-rumba', 'rumba-flamenca', 'Alegre y rápida'),
+      sbSong('gu9-medio', 'por-medio', 'Con {Bb} con cejilla'),
+    ] },
   ];
 }

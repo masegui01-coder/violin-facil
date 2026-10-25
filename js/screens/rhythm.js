@@ -180,6 +180,7 @@ function enter({ lesson, from, eyebrow }) {
     accompaniment: lesson.accompaniment || (song.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
   };
   $('rhVbRow').hidden = !run.accompaniment.length;
+  $('rhVbRow').querySelector('span').textContent = lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
   $('rhEyebrow').textContent = eyebrow || '';
   $('rhTitle').textContent = run.title;
   $('rhGate').hidden = audio.micReady();

@@ -9,7 +9,7 @@ test('guitar and piano courses: valid chords, notes in range and a real song in 
   for (const id of ['guitar', 'piano']) {
     const inst = instrumentById(id);
     const course = buildCourse(['clasica', 'populares'], id);
-    assert.equal(course.length, 8);
+    assert.ok(course.length >= 8);
     const first = course[0].lessons;
     assert.ok(first.some(l => (l.kind === 'chords' && l.mode === 'strum') || (l.kind === 'song' && l.song)), id + ' first-day song');
     course.flatMap(u => u.lessons).forEach(l => {
