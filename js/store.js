@@ -1,6 +1,8 @@
 // Preferencias y progreso guardados solo en este navegador.
 import { advanceStreak, weekId } from './engage.js';
 import { addToWeek } from './report.js';
+import { addAttempts, addLongtone } from './coach.js';
+import { instrumentById } from './instruments.js';
 
 const KEY = 'violin-facil-v2';
 const LEGACY_KEY = 'violin-facil-v1';
@@ -20,7 +22,7 @@ const DEFAULTS = Object.freeze({
   chordsKnown: {}, changes: {}, theoryAnswers: {},
   accountPromptSince: null, analyticsConsent: null,
   publicName: '', publicBoards: false, kidMode: false, bandPending: [],
-  groups: [], bandView: 'band', placement: {}, seenScreens: {}, listenMelody: true, accompOn: false, learnView: 'casual', bookPlays: {}, bookShelf: {}, booksUnlocked: {}, school: null, proTester: false, adminUser: false, rhythmBookOpts: null, rhythmBook: null, lang: null,
+  groups: [], bandView: 'band', placement: {}, seenScreens: {}, listenMelody: true, accompOn: false, learnView: 'casual', bookPlays: {}, bookShelf: {}, booksUnlocked: {}, school: null, proTester: false, adminUser: false, rhythmBookOpts: null, rhythmBook: null, lang: null, coach: {}, tipsSeen: {},
 });
 
 function read(key) {
@@ -115,6 +117,20 @@ export function addTuningSamples(samples) {
     mine[midi] = { n: prev.n + 1, sum: prev.sum + cents, sumSq: prev.sumSq + cents * cents };
   });
   return update({ tuning: { ...state.tuning, [state.instrument]: mine }, history: weekPatch({ tuneAbs: samples.map(x => x.cents) }) });
+}
+
+// Para los consejos personalizados: notas intentadas y tropiezos (qué sonó en vez de la nota) por registro
+export function recordAttempts(notes, slips) {
+  if (!notes.length) return state;
+  const inst = instrumentById(state.instrument);
+  const coach = addAttempts((state.coach || {})[state.instrument], inst, { notes, slips });
+  return update({ coach: { ...(state.coach || {}), [state.instrument]: coach } });
+}
+
+export function recordLongtoneTake(result) {
+  if (!result) return state;
+  const coach = addLongtone((state.coach || {})[state.instrument], result);
+  return update({ coach: { ...(state.coach || {}), [state.instrument]: coach } });
 }
 
 export function recordGym(exerciseId, bpm) {

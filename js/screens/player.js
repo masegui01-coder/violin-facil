@@ -9,7 +9,7 @@ import { renderDiagram } from '../keydiagram.js';
 import { fingeringText } from '../fingerings.js';
 import { instrumentById } from '../instruments.js';
 import { octaveShiftFor } from '../songs.js';
-import { getState, update, addTuningSamples, TOLERANCE_CENTS } from '../store.js';
+import { getState, update, addTuningSamples, recordAttempts, TOLERANCE_CENTS } from '../store.js';
 import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { showPulse, drawPulse } from './pulse.js';
@@ -22,6 +22,7 @@ const RELEASE_DIP = 0.55;
 const RELEASE_FALLBACK_MS = 700;
 const EARLY_S = 0.1;
 const GRACE_S = 0.18;
+const LIGHT_EARLY_BEATS = 0.02; // margen para que la nota se encienda al tocar la línea, no un instante después
 const MIN_HIT_S = 0.22;
 const BPM_STEP = 2;
 const BPM_MIN = 30;
@@ -167,7 +168,7 @@ function learnTick(p, dt) {
   if (run.wrong >= WRONG_MS) {
     $('tName').className = 'name bad';
     setStatus(Math.abs(cents) > 100 ? 'Esa es otra nota' : cents > 0 ? 'Un poco alto: retrocede el dedo' : 'Un poco bajo: adelanta el dedo', 'var(--bad)');
-    if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; run.missed.add(run.pos); }
+    if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; run.missed.add(run.pos); run.slips.push({ midi: target.midi, off: Math.round(cents / 100) }); }
   }
 }
 
@@ -225,6 +226,17 @@ function judgePassed(t) {
   });
 }
 
+// La nota se enciende en el instante en que su cabeza toca la línea y se apaga al acabar (si aún no se ha juzgado)
+function lightSounding(idx, seenBeat) {
+  const n = run.notes[idx];
+  const lit = seenBeat >= n.start - LIGHT_EARLY_BEATS && seenBeat < n.start + n.beats ? idx : null;
+  if (lit === run.lit) return;
+  const prev = run.lit !== null ? run.notes[run.lit] : null;
+  if (prev && !prev.judged && !prev.hit) staff.setState(run.lit, 'future');
+  if (lit !== null && !n.hit) staff.setState(lit, 'current');
+  run.lit = lit;
+}
+
 function tempoTick(p, dt) {
   const t = audio.audioTime() - run.t0;
   const beat = t / run.spb;
@@ -247,6 +259,7 @@ function tempoTick(p, dt) {
   // en pantalla, la nota que está sonando ahora (no la siguiente) y cuánto le queda
   const shownIdx = noteAt(seenBeat);
   showTarget(shownIdx);
+  lightSounding(shownIdx, seenBeat);
   setFill((seenBeat - run.notes[shownIdx].start) / run.notes[shownIdx].beats);
   if (p !== 'masked') {
     showHeard(p, judging !== undefined ? run.notes[judging] : null);
@@ -307,6 +320,7 @@ function finish() {
   if (run.stopAccomp) run.stopAccomp();
   const { stars, text } = scoreStars();
   addTuningSamples(run.tuning);
+  if (run.mode === 'learn') recordAttempts(run.playable.filter(i => !run.skipped.has(i)).map(i => run.notes[i].midi), run.slips);
   const minutes = (performance.now() - run.startedAt) / 60000;
   finishLesson({ lesson: run.lesson, mode: run.mode, from: run.from, stars, text, title: run.title, minutes, accuracy: scoreAccuracy(), take: audio.stopRecording(), speed: run.speed,
     missed: run.playable.map(i => (run.mode === 'tempo' ? !run.notes[i].hit : run.missed.has(i))), review: reviewOf() });
@@ -366,7 +380,7 @@ function enter({ lesson, mode, from, eyebrow }) {
     firstBeat: () => notes[playable[0]].start,
     pos: 0, hold: 0, wrong: 0, wrongCounted: false, errors: 0, skips: 0, needRelease: false, peak: 0, releaseWait: 0,
     playing: false, finished: false, shown: -1, last: performance.now(), demoStop: null, demoIdx: -1, praise: 0,
-    wantMetro: getState().lessonMetro, tuning: [], centsSum: 0, centsN: 0, startedAt: performance.now(),
+    wantMetro: getState().lessonMetro, tuning: [], slips: [], lit: null, centsSum: 0, centsN: 0, startedAt: performance.now(),
     oneTake: !!lesson.oneTake,
     accompaniment: lesson.accompaniment || (meta.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
   };

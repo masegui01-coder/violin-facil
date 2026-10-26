@@ -4,7 +4,7 @@ import { register } from '../router.js';
 import { noteLabel, parseNote } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { analyzeLongTone, longToneTip } from '../analysis.js';
-import { getState, update, addTuningSamples, logPractice } from '../store.js';
+import { getState, update, addTuningSamples, logPractice, recordLongtoneTake } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
 
@@ -70,6 +70,7 @@ function showResult() {
     + stat('±' + Math.round(r.stability) + ' ¢', 'estabilidad')
     + stat(r.vibrato ? `${r.vibrato.rate.toFixed(1)} Hz` : '—', r.vibrato ? `vibrato · ${Math.round(r.vibrato.width)} ¢` : 'sin vibrato');
   addTuningSamples([{ midi: target, cents: r.mean }]);
+  recordLongtoneTake(r);
   logPractice(r.seconds / 60);
   update({ longtones: getState().longtones + 1 });
 }
