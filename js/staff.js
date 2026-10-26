@@ -12,6 +12,7 @@ const BASE = { treble: E4, perc: E4, bass: G2 };
 const BASS_SIG_SHIFT = 14;     // en clave de fa las alteraciones de la armadura van dos octavas más abajo
 const FOCUS_X = 190;           // donde queda la nota actual (deja ver las siguientes y la que suena)
 const NOTE_PAD = 26;
+const HEAD_RX = 8; // radio horizontal de la cabeza de la nota
 const SHARP_STEPS = [38, 35, 39, 36, 33, 37, 34];
 const FLAT_STEPS = [34, 37, 33, 36, 32, 35, 31];
 const ACC_GLYPH = { sharp: '♯', flat: '♭', natural: '♮' };
@@ -83,7 +84,7 @@ function drawNote(g, x, note, sig) {
   const acc = accidentalToShow(note, sig);
   if (acc) text(g, x - 23, ny + 5, ACC_GLYPH[acc], { class: 'st-acc-note' });
   const hollow = note.dur === 'h' || note.dur === 'w';
-  el('ellipse', { cx: x, cy: ny, rx: 8, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
+  el('ellipse', { cx: x, cy: ny, rx: HEAD_RX, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
   if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
   if (note.dotted) el('circle', { cx: x + 13, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
   if (note.dur === 'w') return;
@@ -111,6 +112,7 @@ export function createStaff(svg) {
   let playhead = null;
   let highlight = null;
   let highlightLines = null;
+  let tempoMode = false;
 
   const xOfBeat = beat => startX + NOTE_PAD + beat * beatPx;
 
@@ -159,15 +161,21 @@ export function createStaff(svg) {
       }
       return g;
     });
-    playhead = el('line', { x1: FOCUS_X - 10, x2: FOCUS_X - 10, y1: 16, y2: HEIGHT - 16, class: 'st-playhead' }, svg);
-    playhead.style.display = mode === 'tempo' ? '' : 'none';
+    // A tempo la línea de lectura queda fija justo después de la clave y la partitura pasa por debajo:
+    // cada nota suena cuando el borde izquierdo de su cabeza toca la línea
+    tempoMode = mode === 'tempo';
+    const lineX = startX + NOTE_PAD - HEAD_RX;
+    playhead = el('rect', { x: lineX - 2, y: 16, width: 4, height: HEIGHT - 32, rx: 2, class: 'st-playhead' }, svg);
+    playhead.style.display = tempoMode ? '' : 'none';
     highlight.style.display = mode === 'learn' ? '' : 'none';
     highlightLines.style.display = highlight.style.display;
   }
 
   // Desplaza la partitura para que el pulso indicado quede bajo el foco
   function scrollTo(beat, smooth = true) {
-    const shift = Math.min(0, FOCUS_X - 10 - xOfBeat(beat));
+    // a tempo: el pulso actual siempre bajo la línea fija (también al principio, sin topes);
+    // aprendiendo: la nota actual en el foco, dejando ver la anterior
+    const shift = tempoMode ? -beat * beatPx : Math.min(0, FOCUS_X - 10 - xOfBeat(beat));
     scroller.style.transition = smooth ? 'transform .3s ease' : 'none';
     scroller.style.transform = `translateX(${shift}px)`;
   }

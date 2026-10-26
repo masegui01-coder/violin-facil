@@ -252,7 +252,7 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .st-acc-note { font-family: var(--f-music), sans-serif; font-size: 20px; fill: currentColor; }
 .st-highlight { fill: var(--accent-soft); }
 .st-highlight-lines line { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); stroke-width: 1.4; }
-.st-playhead { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; opacity: .85; }
+.st-playhead { fill: var(--accent); opacity: .7; }
 @media (prefers-reduced-motion: reduce) { .st-scroll { transition: none !important; } .node.current .bubble, .ob-staff .n { animation: none; } }
 .target-row { display: grid; grid-template-columns: 1fr 118px; gap: 12px; align-items: center; }
 .target-row.no-board { grid-template-columns: 1fr; }
