@@ -29,7 +29,8 @@ export function arm([sx, sy], [ex, ey], [hx, hy], { far = false, hand = true } =
 
 // Trazo de carne con contorno: brazos, dedos, piernas (d = recorrido, w = grosor)
 export const limb = (d, w, color = SKIN, line = SKIN_LINE) =>
-  `<path d="${d}" fill="none" stroke="${line}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  `<path d="${d}" fill="none" stroke="${line}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`
+  + (color === SKIN ? `<path d="${d}" fill="none" stroke="#FFF4EA" stroke-width="${Math.max(2, w * 0.28)}" stroke-linecap="round" stroke-linejoin="round" opacity=".55" transform="translate(-${(w * 0.18).toFixed(1)} -${(w * 0.18).toFixed(1)})"/>` : '');
 // Manga o pantalón (sin contorno de piel)
 export const cloth = (d, w, color = SHIRT) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
 

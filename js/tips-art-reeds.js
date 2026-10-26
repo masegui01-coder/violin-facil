@@ -166,7 +166,7 @@ export function reedArt(reedLip) {
         ${label(135, 100, L('pelota', 'ball'), { color: C.green, anchor: 'middle', size: 12 })}${ok(240, 30)}${label(135, 214, L('yemas planas sobre los agujeros', 'flat pads on the holes'), { color: C.ink, anchor: 'middle', size: 12 })}`),
       panel(`${standingSide(80)}${clarinet(96, 52, 52, 140)}${arm([76, 82], [92, 116], [130, 92], { far: true })}${arm(shoulderStanding(80), [96, 120], [150, 124])}
         ${dashed('M108 37 L262 37')}${label(262, 28, L('cabeza recta', 'head straight'), { anchor: 'end', size: 13 })}
-        ${arrow('M120 132 L150 150')}${label(150, 172, L('codos sueltos', 'loose elbows'), { size: 12 })}${ok(236, 196)}`),
+        ${arrow('M150 182 L118 140')}${label(150, 200, L('codos sueltos', 'loose elbows'), { size: 12 })}${ok(236, 196)}`),
     ],
 
     // ---- Oboe: como el clarinete, pero con su caña doble y su campana pequeña ----
@@ -174,7 +174,7 @@ export function reedArt(reedLip) {
       const base = this['woodwind-hold'];
       return [base[0], base[1], panel(`${standingSide(80)}${clarinet(104, 50, 52, 150, { oboe: true })}${arm([76, 82], [92, 116], [130, 92], { far: true })}${arm(shoulderStanding(80), [96, 120], [150, 124])}
         ${dashed('M108 37 L262 37')}${label(262, 28, L('cabeza recta', 'head straight'), { anchor: 'end', size: 13 })}
-        ${arrow('M120 132 L150 150')}${label(150, 172, L('codos sueltos', 'loose elbows'), { size: 12 })}${ok(236, 196)}`)];
+        ${arrow('M150 182 L118 140')}${label(150, 200, L('codos sueltos', 'loose elbows'), { size: 12 })}${ok(236, 196)}`)];
     },
 
     // ---- Clarinete: boquilla y barrilete ----
