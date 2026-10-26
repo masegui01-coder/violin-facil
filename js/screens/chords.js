@@ -4,7 +4,7 @@ import { $, esc, toast } from '../ui.js';
 import { register, go, originTab } from '../router.js';
 import * as audio from '../audio.js';
 import { matchChord, chordCoverage } from '../chroma.js';
-import { parseChord, chordLabel, guitarMidis, pianoMidis } from '../chords.js';
+import { parseChord, chordLabel, chordMidis, isFretted, pianoMidis } from '../chords.js';
 import { drawChord } from '../boards.js';
 import { noteLabel } from '../music.js';
 import { lessonTitle } from '../course.js';
@@ -22,6 +22,7 @@ const MIN_HEARD_SHARE = 0.06;
 const MODE_CHIP = { hold: 'Acorde a acorde', changes: 'Un minuto', strum: 'A tempo' };
 const TIP = {
   guitar: 'Rasguea todas las cuerdas del acorde y deja que suenen. Si una nota no sale, apoya mejor la yema justo detrás del traste.',
+  ukulele: 'Rasguea las cuatro cuerdas con el índice, suave y cerca del final del mástil. Si una nota zumba, apoya la yema justo detrás del traste.',
   piano: 'Baja las teclas del acorde a la vez y mantenlas. Puedes tocarlo en cualquier octava: lo que cuenta son las notas.',
 };
 
@@ -32,11 +33,11 @@ const avg = smoother();
 
 const inst = () => getState().instrument;
 const label = name => chordLabel(name, getState().nom);
-const soundOf = name => (inst() === 'guitar' ? guitarMidis(name) : pianoMidis(name));
+const soundOf = name => (isFretted(inst()) ? chordMidis(name, inst()) : pianoMidis(name));
 
 function showChord(name, next) {
   const svg = $('cdDiagram');
-  svg.setAttribute('class', inst() === 'guitar' ? 'board chord-board' : 'board');
+  svg.setAttribute('class', isFretted(inst()) ? 'board chord-board' : 'board');
   drawChord(svg, name, inst(), getState().nom);
   $('cdName').textContent = label(name);
   $('cdNext').textContent = next ? `Después: ${label(next)}` : '';

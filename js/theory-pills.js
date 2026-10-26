@@ -127,6 +127,11 @@ const INSTRUMENT_PILL = {
     { title: 'Suena una octava más grave', text: 'La guitarra se escribe una octava por encima de como suena, para no llenar la partitura de líneas adicionales. Por lo demás está en Do.' },
     { title: 'Afina cada vez', text: 'Las cuerdas se destensan con el calor, la humedad y el uso. Afina siempre antes de tocar, empezando por la 5.ª cuerda: un La de 110 Hz, dos octavas por debajo del La 440 del diapasón.' },
   ], quiz: [{ id: 'gtr-third', q: '¿Entre qué dos cuerdas el intervalo no es una cuarta?', options: ['Mi y La', 'Re y Sol', 'Sol y Si', 'La y Re'], answer: 2, why: 'Entre Sol y Si hay una tercera mayor; entre las demás, cuartas.', play: [55, 59] }] },
+  ukulele: { cards: [
+    { title: 'La afinación reentrante', text: 'Sol, Do, Mi, La, pero el Sol está por encima del Do: la cuerda de arriba no es la más grave. Por eso los acordes suenan cerrados y brillantes.', board: [67, 60, 64, 69] },
+    { title: 'Se escribe como suena', text: 'El ukelele lee la clave de sol tal cual, sin transportar. Su nota más grave al aire es el Do central (Do4).' },
+    { title: 'Afina cada vez', text: 'Las cuerdas de nailon se estiran mucho las primeras semanas: afina antes de cada sesión. La 1.ª cuerda es el La 440 del diapasón.' },
+  ], quiz: [{ id: 'uke-reentrant', q: '¿Cuál es la cuerda más grave del ukelele con afinación normal?', options: ['La 4.ª (Sol)', 'La 3.ª (Do)', 'La 2.ª (Mi)', 'La 1.ª (La)'], answer: 1, why: 'La 3.ª, el Do central. El Sol de la 4.ª está afinado agudo: es la afinación reentrante.', play: [67, 60] }] },
   piano: { cards: [
     { title: 'Tú no lo afinas', text: 'Un piano acústico lo afina un afinador profesional, una o dos veces al año. Un piano digital nunca se desafina.' },
     { title: 'Doce semitonos iguales', text: 'Se afina el La central a 440 Hz y se reparten los doce semitonos de la octava exactamente iguales (temperamento igual). Así suena bien en todas las tonalidades.' },

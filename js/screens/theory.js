@@ -1,5 +1,6 @@
 // Lecciones de teoría: tarjetas con texto (y el diapasón con las notas marcadas o el diagrama de un acorde)
 // y, en las píldoras, 1-2 preguntas al final, algunas con sonido.
+import { isFretted } from '../chords.js';
 import { $, esc, icon } from '../ui.js';
 import { register, go, originTab } from '../router.js';
 import { renderDiagram } from '../keydiagram.js';
@@ -30,7 +31,7 @@ function playQuestion(play) {
 function renderCard(card) {
   const { instrument, nom } = getState();
   $('theoryCard').innerHTML = `<p class="eyebrow">${esc(ctx.eyebrow || lessonTitle(ctx.lesson))} · ${page + 1} de ${total()}</p>
-    <h1>${esc(chordText(card.title))}</h1><p>${esc(chordText(card.text))}</p>${card.board || card.chord ? `<svg class="board${card.chord && instrument === 'guitar' ? ' chord-board' : ''}" id="theoryBoard" role="img" aria-label="Diagrama"></svg>` : ''}`;
+    <h1>${esc(chordText(card.title))}</h1><p>${esc(chordText(card.text))}</p>${card.board || card.chord ? `<svg class="board${card.chord && isFretted(instrument) ? ' chord-board' : ''}" id="theoryBoard" role="img" aria-label="Diagrama"></svg>` : ''}`;
   if (card.chord) drawChord($('theoryBoard'), card.chord, instrument, nom);
   else if (card.board) renderDiagram($('theoryBoard'), instrument, card.board, nom);
 }

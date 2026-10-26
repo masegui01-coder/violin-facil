@@ -30,7 +30,11 @@ const GUITAR_STRINGS = [
   { midi: 52, eu: '6.ª Mi', us: 'E2' }, { midi: 57, eu: '5.ª La', us: 'A2' }, { midi: 62, eu: '4.ª Re', us: 'D3' },
   { midi: 67, eu: '3.ª Sol', us: 'G3' }, { midi: 71, eu: '2.ª Si', us: 'B3' }, { midi: 76, eu: '1.ª Mi', us: 'E4' },
 ];
-const STRINGS_OF = { violin: STRINGS, guitar: GUITAR_STRINGS };
+// Ukelele: Sol (agudo), Do, Mi y La
+const UKULELE_STRINGS = [
+  { midi: 67, eu: '4.ª Sol', us: 'G4' }, { midi: 60, eu: '3.ª Do', us: 'C4' }, { midi: 64, eu: '2.ª Mi', us: 'E4' }, { midi: 69, eu: '1.ª La', us: 'A4' },
+];
+const STRINGS_OF = { violin: STRINGS, guitar: GUITAR_STRINGS, ukulele: UKULELE_STRINGS };
 const openStrings = () => STRINGS_OF[getState().instrument] || null;
 const isViolin = () => !!openStrings();
 

@@ -1,4 +1,4 @@
-// Acordes: notas, nombre en las dos nomenclaturas, forma en la guitarra y posición en el piano.
+// Acordes: notas, nombre en las dos nomenclaturas, forma en la guitarra y el ukelele y posición en el piano.
 
 const LETTERS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const EU = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
@@ -36,6 +36,42 @@ const GUITAR = {
 };
 export const GUITAR_OPEN = [40, 45, 50, 55, 59, 64]; // sonido real de las cuerdas al aire: Mi2 La2 Re3 Sol3 Si3 Mi4
 
+// Ukelele (Sol-Do-Mi-La, con el Sol agudo): trastes de la 4.ª (Sol) a la 1.ª (La)
+const UKULELE = {
+  C: { frets: [0, 0, 0, 3], fingers: [0, 0, 0, 3] },
+  Am: { frets: [2, 0, 0, 0], fingers: [2, 0, 0, 0] },
+  F: { frets: [2, 0, 1, 0], fingers: [2, 0, 1, 0] },
+  G: { frets: [0, 2, 3, 2], fingers: [0, 1, 3, 2] },
+  G7: { frets: [0, 2, 1, 2], fingers: [0, 2, 1, 3] },
+  C7: { frets: [0, 0, 0, 1], fingers: [0, 0, 0, 1] },
+  Em: { frets: [0, 4, 3, 2], fingers: [0, 3, 2, 1] },
+  Dm: { frets: [2, 2, 1, 0], fingers: [2, 3, 1, 0] },
+  D: { frets: [2, 2, 2, 0], fingers: [1, 2, 3, 0] },
+  A: { frets: [2, 1, 0, 0], fingers: [2, 1, 0, 0] },
+  A7: { frets: [0, 1, 0, 0], fingers: [0, 1, 0, 0] },
+  D7: { frets: [2, 0, 2, 0], fingers: [2, 0, 3, 0] },
+  E7: { frets: [1, 2, 0, 2], fingers: [1, 2, 0, 3] },
+  E: { frets: [1, 4, 0, 2], fingers: [1, 4, 0, 2] },
+  Em7: { frets: [0, 2, 0, 2], fingers: [0, 1, 0, 2] },
+  Am7: { frets: [0, 0, 0, 0], fingers: [0, 0, 0, 0] },
+  Fmaj7: { frets: [2, 4, 1, 0], fingers: [2, 3, 1, 0] },
+  Bb: { frets: [3, 2, 1, 1], fingers: [3, 2, 1, 1], barre: 1 },
+  Bm: { frets: [4, 2, 2, 2], fingers: [3, 1, 1, 1], barre: 2 },
+  B7: { frets: [2, 3, 2, 2], fingers: [1, 2, 1, 1], barre: 2 },
+};
+export const UKULELE_OPEN = [67, 60, 64, 69]; // Sol4 Do4 Mi4 La4
+
+// Instrumentos de trastes: formas de acorde y cuerdas al aire (sonido real)
+const FRETTED = { guitar: { shapes: GUITAR, open: GUITAR_OPEN }, ukulele: { shapes: UKULELE, open: UKULELE_OPEN } };
+export const isFretted = instId => instId in FRETTED;
+export const chordShape = (name, instId = 'guitar') => (FRETTED[instId] && FRETTED[instId].shapes[name]) || null;
+
+// Notas reales que suenan con la forma del acorde
+export function chordMidis(name, instId = 'guitar') {
+  const shape = chordShape(name, instId);
+  return shape ? shape.frets.map((f, i) => (f < 0 ? null : FRETTED[instId].open[i] + f)).filter(x => x !== null) : [];
+}
+
 // Posiciones de la mano derecha en el piano pensadas para moverse poco (Do, Fa y Sol cerca del Do central)
 const PIANO = {
   C: [60, 64, 67], F: [60, 65, 69], G: [59, 62, 67], Am: [60, 64, 69], Dm: [62, 65, 69], Em: [59, 64, 67],
@@ -58,13 +94,8 @@ export function chordLabel(name, nom = 'eu') {
   return (nom === 'us' ? c.letter : EU[c.letter]) + ACC[c.acc] + q;
 }
 
-export const guitarShape = name => GUITAR[name] || null;
-
-// Notas reales que suenan con la forma de guitarra
-export function guitarMidis(name) {
-  const shape = GUITAR[name];
-  return shape ? shape.frets.map((f, i) => (f < 0 ? null : GUITAR_OPEN[i] + f)).filter(x => x !== null) : [];
-}
+export const guitarShape = name => chordShape(name, 'guitar');
+export const guitarMidis = name => chordMidis(name, 'guitar');
 
 export function pianoMidis(name) {
   if (PIANO[name]) return PIANO[name];

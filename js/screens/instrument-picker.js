@@ -22,7 +22,7 @@ const ICONS = {
   sax: `<path d="M14 2v9.5c0 4.5-2.5 8.5-6 8.5-2.2 0-3.5-1.4-3.5-3.2 0-1.5 1.1-2.6 2.6-2.6h2.4" ${S}/><path d="M12 2h4" ${S}/><circle cx="14" cy="6" r=".9" fill="currentColor"/><circle cx="14" cy="9" r=".9" fill="currentColor"/>`,
 };
 
-const ICON_ALIAS = { 'bass-clarinet': 'clarinet', 'eb-clarinet': 'clarinet', piccolo: 'flute', flugelhorn: 'trumpet' };
+const ICON_ALIAS = { ukulele: 'guitar', 'bass-clarinet': 'clarinet', 'eb-clarinet': 'clarinet', piccolo: 'flute', flugelhorn: 'trumpet' };
 
 export function instrumentIcon(id) {
   const key = id.startsWith('sax') ? 'sax' : ICON_ALIAS[id] || id;

@@ -4,6 +4,7 @@ import { instrumentById } from './instruments.js';
 import { windUnits } from './course-winds.js';
 import { percUnits } from './course-perc.js';
 import { guitarUnits } from './course-guitar.js';
+import { ukuleleUnits } from './course-ukulele.js';
 import { pianoUnits } from './course-piano.js';
 import { recorderUnits } from './course-recorder.js';
 import { cajonUnits } from './course-cajon.js';
@@ -122,14 +123,14 @@ function pickSongs(count, difficulty, styles, used, inst) {
   return [...picked, ...fallback.slice(0, count - picked.length).map(s => ({ song: s, fromStyles: styles.includes(s.style) }))];
 }
 
-// Guitarra y piano: acordes uno a uno, cambios de un minuto y canciones del cancionero a tempo
+// Guitarra, ukelele y piano: acordes uno a uno, cambios de un minuto y canciones del cancionero a tempo
 const chordsHold = (id, title, sub, chords) => ({ id, kind: 'chords', mode: 'hold', title, sub, chords });
 const changes = (id, a, b, target) => ({ id, kind: 'chords', mode: 'changes', title: `Cambios {${a}}–{${b}}`, sub: `Un minuto: ¿cuántos cambios? Meta: ${target}`, pair: [a, b], chords: [a, b], target });
 const sbSong = (id, songbookId, sub) => ({ ...songbookLesson(songbookById(songbookId)), id, sub });
 
 const HELPERS = { theory, notes, song, exercise, slots, warmup, chordsHold, changes, sbSong };
 
-const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, piano: pianoUnits, recorder: recorderUnits, cajon: cajonUnits };
+const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, ukulele: ukuleleUnits, piano: pianoUnits, recorder: recorderUnits, cajon: cajonUnits };
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);

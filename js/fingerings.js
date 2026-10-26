@@ -91,6 +91,14 @@ export function guitarPosition(writtenMidi) {
   return options.sort((a, b) => a.fret - b.fret || a.string - b.string)[0];
 }
 
+// Ukelele: se escribe como suena. Cuerdas de la 4.ª (Sol agudo) a la 1.ª (La)
+const UKULELE_STRINGS = [67, 60, 64, 69];
+export function ukulelePosition(midi) {
+  const options = UKULELE_STRINGS.map((open, i) => ({ string: 4 - i, fret: midi - open })).filter(o => o.fret >= 0 && o.fret <= GUITAR_MAX_FRET);
+  if (!options.length) return null;
+  return options.sort((a, b) => a.fret - b.fret || a.string - b.string)[0];
+}
+
 const PIANO_OCTAVE = { 2: 'octava grave', 3: 'a la izquierda del Do central', 4: 'junto al Do central', 5: 'octava aguda', 6: 'muy aguda' };
 
 // Devuelve la digitación de una nota escrita o null si no está en las tablas
@@ -98,6 +106,10 @@ export function fingeringFor(rawId, midi) {
   const instId = SAME_AS[rawId] || rawId;
   if (instId === 'guitar') {
     const pos = guitarPosition(midi);
+    return pos ? { type: 'fret', ...pos } : null;
+  }
+  if (instId === 'ukulele') {
+    const pos = ukulelePosition(midi);
     return pos ? { type: 'fret', ...pos } : null;
   }
   if (instId === 'piano') return midi >= 21 && midi <= 108 ? { type: 'key', midi } : null;
@@ -125,7 +137,7 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => ['recorder', 'violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'piano'].includes(instId);
+export const fingeringsReviewed = instId => ['recorder', 'violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'ukulele', 'piano'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };

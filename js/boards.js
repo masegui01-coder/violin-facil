@@ -1,5 +1,5 @@
-// Diagramas de guitarra y piano: mástil con la nota, caja de acorde y teclado con las teclas que se tocan.
-import { guitarShape, pianoMidis, chordLabel } from './chords.js';
+// Diagramas de guitarra, ukelele y piano: mástil con la nota, caja de acorde y teclado con las teclas que se tocan.
+import { chordShape, isFretted, pianoMidis, chordLabel } from './chords.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const BLACK = new Set([1, 3, 6, 8, 10]);
@@ -19,13 +19,14 @@ function reset(svg, w, h, label) {
 }
 
 // Mástil en horizontal (cuerda 1 arriba, como lo ves al mirar hacia abajo) con las posiciones {string, fret}
-export function drawFretboard(svg, positions) {
-  const W = 240, H = 120, X0 = 30, FRET_W = 40, Y0 = 18, GAP = 17, FRETS = 5;
-  reset(svg, W, H, 'Mástil de la guitarra');
-  el('rect', { x: X0, y: Y0 - 6, width: FRET_W * FRETS, height: GAP * 5 + 12, rx: 4, class: 'gb-neck' }, svg);
-  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0 + f * FRET_W, x2: X0 + f * FRET_W, y1: Y0 - 6, y2: Y0 + GAP * 5 + 6, class: f ? 'gb-fret' : 'gb-nut' }, svg);
-  [3, 5].forEach(f => el('circle', { cx: X0 + (f - 0.5) * FRET_W, cy: Y0 + GAP * 2.5, r: 4, class: 'gb-inlay' }, svg));
-  for (let s = 1; s <= 6; s++) {
+export function drawFretboard(svg, positions, strings = 6) {
+  const W = 240, X0 = 30, FRET_W = 40, Y0 = 18, GAP = 17, FRETS = 5;
+  const H = Y0 + GAP * (strings - 1) + 33;
+  reset(svg, W, H, strings === 4 ? 'Mástil del ukelele' : 'Mástil de la guitarra');
+  el('rect', { x: X0, y: Y0 - 6, width: FRET_W * FRETS, height: GAP * (strings - 1) + 12, rx: 4, class: 'gb-neck' }, svg);
+  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0 + f * FRET_W, x2: X0 + f * FRET_W, y1: Y0 - 6, y2: Y0 + GAP * (strings - 1) + 6, class: f ? 'gb-fret' : 'gb-nut' }, svg);
+  [3, 5].forEach(f => el('circle', { cx: X0 + (f - 0.5) * FRET_W, cy: Y0 + GAP * (strings - 1) / 2, r: 4, class: 'gb-inlay' }, svg));
+  for (let s = 1; s <= strings; s++) {
     const y = Y0 + (s - 1) * GAP;
     el('line', { x1: X0, x2: X0 + FRET_W * FRETS, y1: y, y2: y, class: 'gb-string', 'stroke-width': 0.8 + s * 0.25 }, svg);
     el('text', { x: 10, y: y + 4, class: 'kd-label' }, svg, String(s));
@@ -41,17 +42,19 @@ export function drawFretboard(svg, positions) {
   for (let f = 1; f <= FRETS; f++) el('text', { x: X0 + (f - 0.5) * FRET_W, y: H - 4, class: 'kd-label' }, svg, String(f));
 }
 
-// Caja de acorde en vertical, como en los cancioneros: cuerdas de la 6.ª (izquierda) a la 1.ª, x = no suena, o = al aire
-export function drawChordBox(svg, name, nom) {
-  const shape = guitarShape(name);
-  const W = 130, H = 168, X0 = 22, Y0 = 44, SW = 17, FH = 22, FRETS = 5;
+// Caja de acorde en vertical, como en los cancioneros: de la cuerda más grave (izquierda) a la 1.ª, x = no suena, o = al aire
+export function drawChordBox(svg, name, nom, instId = 'guitar') {
+  const shape = chordShape(name, instId);
+  const W = 130, H = 168, Y0 = 44, FH = 22, FRETS = 5;
+  const n = shape ? shape.frets.length : 6;
+  const SW = n === 4 ? 24 : 17, X0 = (W - SW * (n - 1)) / 2 - 8;
   reset(svg, W, H, 'Acorde ' + chordLabel(name, nom));
   el('text', { x: W / 2, y: 18, class: 'gb-title' }, svg, chordLabel(name, nom));
   if (!shape) { el('text', { x: W / 2, y: H / 2, class: 'kd-caption' }, svg, 'Sin diagrama'); return; }
   const first = shape.barre && shape.barre > 2 ? shape.barre : 1;
-  for (let s = 0; s < 6; s++) el('line', { x1: X0 + s * SW, x2: X0 + s * SW, y1: Y0, y2: Y0 + FH * FRETS, class: 'gb-string', 'stroke-width': 1.6 - s * 0.12 }, svg);
-  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0, x2: X0 + 5 * SW, y1: Y0 + f * FH, y2: Y0 + f * FH, class: f === 0 && first === 1 ? 'gb-nut' : 'gb-fret' }, svg);
-  if (first > 1) el('text', { x: X0 + 5 * SW + 12, y: Y0 + FH / 2 + 4, class: 'kd-label' }, svg, first + 'ª');
+  for (let s = 0; s < n; s++) el('line', { x1: X0 + s * SW, x2: X0 + s * SW, y1: Y0, y2: Y0 + FH * FRETS, class: 'gb-string', 'stroke-width': 1.6 - s * 0.12 }, svg);
+  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0, x2: X0 + (n - 1) * SW, y1: Y0 + f * FH, y2: Y0 + f * FH, class: f === 0 && first === 1 ? 'gb-nut' : 'gb-fret' }, svg);
+  if (first > 1) el('text', { x: X0 + (n - 1) * SW + 12, y: Y0 + FH / 2 + 4, class: 'kd-label' }, svg, first + 'ª');
   if (shape.barre) {
     const strings = shape.frets.map((f, i) => (f === shape.barre ? i : -1)).filter(i => i >= 0);
     const fy = Y0 + (shape.barre - first + 0.5) * FH;
@@ -96,6 +99,6 @@ export function drawKeyboard(svg, midis, { fingers = null } = {}) {
 }
 
 export function drawChord(svg, name, instId, nom) {
-  if (instId === 'guitar') drawChordBox(svg, name, nom);
+  if (isFretted(instId)) drawChordBox(svg, name, nom, instId);
   else drawKeyboard(svg, pianoMidis(name));
 }

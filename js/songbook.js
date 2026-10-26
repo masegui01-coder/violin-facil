@@ -30,6 +30,13 @@ export const SONGBOOK = [
   { id: 'por-tangos', title: 'Por tangos', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 96, chart: 'Am | G | F | E | Am | G | F | E | Dm | Am | E | Am' },
   { id: 'rumba-flamenca', title: 'Rumba flamenca', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 112, chart: 'Am | G | F | E | Am | G | F E | Am' },
   { id: 'por-medio', title: 'Toque por medio', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 84, chart: 'Dm | C | Bb | A | Dm | C | Bb | A' },
+  // Ukelele (sirven también en guitarra)
+  { id: 'uke-do-lam', title: 'Balada en Do y Lam', by: 'Ejercicio', time: 4, bpm: 76, chart: 'C | C | Am | Am | C | C | Am | C' },
+  { id: 'aloha-oe', title: 'Aloha ʻOe', by: 'Liliʻuokalani, 1878', time: 4, bpm: 80, chart: 'C | C7 | F | C | G7 | G7 | C | C | C | C7 | F | Dm | C | G7 | C | C' },
+  { id: 'blues-la', title: 'Blues en La', by: 'Ejercicio', time: 4, bpm: 96, chart: 'A7 | A7 | A7 | A7 | D7 | D7 | A7 | A7 | E7 | D7 | A7 | E7' },
+  { id: 'nana-lam', title: 'Nana en Lam', by: 'Ejercicio', time: 3, bpm: 90, chart: 'Am | Am | Dm | Dm | Am | Am | E7 | E7 | Am | Am | Dm | Dm | Am | E7 | Am | Am' },
+  { id: 'uke-reggae', title: 'Reggae en Do', by: 'Ejercicio', time: 4, bpm: 84, chart: 'C | Am | F | G | C | Am | F | G | Em7 | Am | F | G | C | Am | F | C' },
+  { id: 'oh-susanna', title: 'Oh! Susanna', by: 'Stephen Foster, 1848', time: 4, bpm: 110, chart: 'C | C | C | G7 | C | C | G7 | C | F | F | C | G7 | C | C | G7 | C' },
   { id: 'sim-cejilla', title: 'Sim en movimiento', by: 'Ejercicio', time: 4, bpm: 80, chart: 'D | Bm | G | A | D | Bm | G | A' },
 ];
 

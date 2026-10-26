@@ -99,6 +99,11 @@ export const INSTRUMENTS = [
     blurb: 'Acordes, rasgueo y punteo',
   },
   {
+    id: 'ukulele', name: 'Ukelele', family: 'pulsada', polyphonic: true, transpose: 0, written: [60, 84], minHz: 230, maxHz: 1400,
+    board: 'fretboard', firstNotes: ['A4', 'B4', 'C5'], bandKey: 'C',
+    blurb: 'Cuatro cuerdas: canciones desde el primer día',
+  },
+  {
     id: 'piano', name: 'Piano', family: 'tecla', polyphonic: true, transpose: 0, written: [36, 96], minHz: 60, maxHz: 2100,
     board: 'keyboard', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C',
     blurb: 'Piano o teclado, las dos manos',
