@@ -7,6 +7,7 @@ import { instrumentById } from '../instruments.js';
 import { coachAdvice } from '../coach.js';
 import { tipsFor, tipOfKind, SOURCES } from '../tips.js';
 import { artPanels } from '../tips-art.js';
+import { photoFor, photoHtml } from '../tips-photos.js';
 import { L } from '../tips-l10n.js';
 
 // Textos fijos de la pantalla (y de la herramienta en Estudio y del resultado), con su traducción
@@ -75,7 +76,7 @@ function tipHtml(tip) {
     <h2>${esc(tip.title)}</h2>
     <p>${esc(tip.intro)}</p>
     <ol class="tip-steps">${tip.steps.map((s, i) => `<li class="tip-step">
-      <div class="tip-figure">${panels[i] || ''}<span class="tip-num">${i + 1}</span></div>
+      <div class="tip-figure">${photoFor(tip.art, i) ? photoHtml(photoFor(tip.art, i), s.t) : panels[i] || ''}<span class="tip-num">${i + 1}</span></div>
       <p><b>${esc(s.t)}</b><br>${esc(s.d)}</p></li>`).join('')}</ol>
     <p class="tip-check"><b>Comprueba:</b> <span>${esc(tip.check)}</span></p>
     ${tip.avoid && tip.avoid.length ? `<p class="tip-avoid"><b>Evita:</b></p><ul class="tip-avoid-list">${tip.avoid.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
