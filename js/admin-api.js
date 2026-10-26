@@ -20,3 +20,15 @@ export async function listGroupsWithSongs() {
     songs: rows(await fs.getDocs(fs.collection(db, 'groups', g.id, 'songs'))),
   })));
 }
+
+// Checklist de pruebas: lo que el administrador marca como revisado a mano
+export async function getChecklist() {
+  const { db, fs } = await getCloud();
+  const snap = await fs.getDoc(fs.doc(db, 'adminData', 'checklist'));
+  return snap.exists() ? snap.data().items || {} : {};
+}
+
+export async function setChecked(id, ok) {
+  const { db, fs } = await getCloud();
+  await fs.setDoc(fs.doc(db, 'adminData', 'checklist'), { items: { [id]: { ok, at: Date.now() } } }, { merge: true });
+}

@@ -1,5 +1,6 @@
 // Progreso en la nube: con cuenta, el estado de la app se guarda en Firestore (users/{uid}) y se recupera en
 // cualquier dispositivo. Además cada tester deja un resumen (testers/{uid}) que solo ve el administrador.
+import { featuresFromState } from './test-coverage.js';
 import { getCloud } from './cloud.js';
 import { levelFor } from './rewards.js';
 import { instrumentById } from './instruments.js';
@@ -40,6 +41,7 @@ export function testerSummary(state, account, now = Date.now()) {
     xp: state.xp || 0, level: levelFor(state.xp || 0).name, lessons: state.lessonsPlayed || 0,
     minutes: Math.round(minutes), daysPracticed: days.length, firstDay: days[0] || null, lastPractice: days[days.length - 1] || null,
     streak: (state.streak && state.streak.count) || 0, badges: (state.badges || []).length,
+    features: featuresFromState(state), instrumentIds: [...used],
     band: state.band ? `${state.band.name} (${state.band.role === 'director' ? 'director' : 'músico'})` : '',
     platform: typeof navigator === 'undefined' ? '' : platform(),
     createdAt: account.metadata && account.metadata.creationTime ? Date.parse(account.metadata.creationTime) : now,

@@ -20,7 +20,7 @@ const DEFAULTS = Object.freeze({
   chordsKnown: {}, changes: {}, theoryAnswers: {},
   accountPromptSince: null, analyticsConsent: null,
   publicName: '', publicBoards: false, kidMode: false, bandPending: [],
-  groups: [], bandView: 'band', placement: {},
+  groups: [], bandView: 'band', placement: {}, seenScreens: {},
 });
 
 function read(key) {

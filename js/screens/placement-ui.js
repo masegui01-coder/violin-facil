@@ -39,6 +39,7 @@ export function openPlacementIntro() {
 }
 
 function run(steps, stars, i) {
+  if (i === 0) update({ seenScreens: { ...(getState().seenScreens || {}), placement: Date.now() } });
   const { lesson, unit } = steps[i];
   const test = {
     ...lesson, noRecord: true, placement: true,

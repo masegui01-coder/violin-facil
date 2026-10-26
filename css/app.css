@@ -829,3 +829,9 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .gs-track-ctl input[type=range] { flex: 1; min-width: 100px; }
 .chips-row.wrap { flex-wrap: wrap; }
 .placement-card { gap: 8px; margin-top: 12px; border-color: var(--accent); }
+.check-row { grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.check-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.check-side .check-chip { font-size: .8rem; }
+.pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.check-row > span:first-child { flex: 1; min-width: 0; }
+.check-row b, .check-row small { white-space: normal; overflow: visible; text-overflow: clip; }

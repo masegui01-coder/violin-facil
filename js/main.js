@@ -1,7 +1,8 @@
 // Arranque de la app: iconos, barra superior, pestañas y comentarios.
 import { $, icon, toast } from './ui.js';
 import { go, currentScreen } from './router.js';
-import { getState, subscribe, currentStreak } from './store.js';
+import { getState, subscribe, currentStreak, update } from './store.js';
+import { TRACKED_SCREENS } from './test-coverage.js';
 import { setInstrument } from './audio.js';
 import { setReferenceA } from './music.js';
 import { instrumentById } from './instruments.js';
@@ -58,6 +59,12 @@ function renderTopbar(s) {
 }
 
 hydrateIcons();
+// Checklist de pruebas de la beta: se apunta (una vez) cada parte de la app que usa este tester
+window.addEventListener('screen-change', e => {
+  const id = e.detail.id;
+  const s = getState();
+  if (TRACKED_SCREENS.includes(id) && !(s.seenScreens || {})[id]) update({ seenScreens: { ...(s.seenScreens || {}), [id]: Date.now() } });
+});
 new MutationObserver(() => {
   const dlg = $('sheet');
   if (!dlg.open) return;

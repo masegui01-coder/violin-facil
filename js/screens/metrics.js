@@ -1,12 +1,14 @@
 // Métricas de la app (solo administrador). Enlace directo: ?panel=metricas
-import { $, esc } from '../ui.js';
+import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { currentAccount, onAccount } from '../account.js';
 import { isAdmin, listTesters } from '../sync.js';
 import { cloudErrorText } from '../cloud.js';
 import { instrumentById } from '../instruments.js';
 import { userMetrics, groupMetrics, isAdminEmail } from '../metrics.js';
-import { listBandsWithMembers, listGroupsWithSongs } from '../admin-api.js';
+import { listBandsWithMembers, listGroupsWithSongs, getChecklist, setChecked } from '../admin-api.js';
+import { coverage, untested } from '../test-coverage.js';
+import { INSTRUMENTS } from '../instruments.js';
 import { columns, hbars, statTile, attachTooltips } from '../charts.js';
 import { openTesters } from './account-panel.js';
 
@@ -27,14 +29,36 @@ async function enter() {
   if (!(await adminCheck(acc))) { body('<p class="warn">Esta página es solo para el administrador de la app.</p>'); return; }
   body('<p class="empty">Calculando…</p>');
   try {
-    const [testers, bands, groups] = await Promise.all([
-      listTesters(), listBandsWithMembers().catch(() => null), listGroupsWithSongs().catch(() => null),
+    const [testers, bands, groups, manual] = await Promise.all([
+      listTesters(), listBandsWithMembers().catch(() => null), listGroupsWithSongs().catch(() => null), getChecklist().catch(() => ({})),
     ]);
-    render(testers, bands, groups);
+    render(testers, bands, groups, manual);
   } catch (err) { body(`<p class="warn">${esc(cloudErrorText(err))}</p>`); }
 }
 
-function render(testers, bands, groups) {
+const STATUS = { ok: ['ok', 'Probado'], few: ['warn', 'Poco probado'], missing: ['bad', 'Falta por probar'] };
+const OS_LIST = ['Android', 'iOS', 'Windows', 'Mac'];
+
+// Checklist de pruebas: cada parte de la app con cuántos testers la han usado y la casilla «revisado por mí»
+export function checklistHtml(testers, manual) {
+  const rows = coverage(testers, manual);
+  const areas = [...new Set(rows.map(r => r.area))];
+  const done = rows.filter(r => r.status === 'ok' || r.checked).length;
+  const noInst = untested(INSTRUMENTS.map(i => i.id), testers, t => t.instrumentIds || (t.instrument ? [t.instrument] : []));
+  const noOs = untested(OS_LIST, testers, t => [String(t.platform || '').split(' ')[0]]);
+  return `<h2>Checklist de pruebas</h2>
+    <p class="muted small">${done} de ${rows.length} partes probadas por 2 testers o más (o revisadas por ti). Se rellena sola con lo que usa cada tester; los que no han abierto la app desde esta versión aún no cuentan.</p>
+    ${areas.map(area => `<h3>${esc(area)}</h3><div class="list">${rows.filter(r => r.area === area).map(r => `<div class="list-row check-row">
+      <span><b>${esc(r.label)}</b><small>${r.count ? `${r.count} ${r.count === 1 ? 'tester' : 'testers'}: ${esc(r.names.join(', '))}${r.count > r.names.length ? '…' : ''}` : 'Nadie todavía'}</small></span>
+      <span class="check-side"><span class="pill ${STATUS[r.status][0]}">${STATUS[r.status][1]}</span>
+      <label class="check-chip"><input type="checkbox" data-check="${esc(r.id)}" ${r.checked ? 'checked' : ''}> Revisado</label></span></div>`).join('')}</div>`).join('')}
+    <h3>Instrumentos sin probar</h3>
+    <p>${noInst.length ? noInst.map(id => `<span class="pill">${esc(instrumentById(id).name)}</span>`).join(' ') : '<span class="pill ok">Todos probados</span>'}</p>
+    <h3>Sistemas sin probar</h3>
+    <p>${noOs.length ? noOs.map(os => `<span class="pill">${esc(os)}</span>`).join(' ') : '<span class="pill ok">Todos probados</span>'}</p>`;
+}
+
+function render(testers, bands, groups, manual = {}) {
   const m = userMetrics(testers.map(t => ({ ...t, instrumentName: t.instrument ? instrumentById(t.instrument).name : '' })));
   const g = groups ? groupMetrics(groups) : null;
   const musicians = bands ? bands.reduce((s, b) => s + Math.max(0, b.members - 1), 0) : 0;
@@ -47,6 +71,7 @@ function render(testers, bands, groups) {
       ${statTile({ label: 'Minutos de práctica', value: m.minutes, hint: `${m.minutesPerUser} por usuario` })}
       ${statTile({ label: 'Lecciones tocadas', value: m.lessons })}
     </div>
+    ${checklistHtml(testers, manual)}
     <h2>Altas por semana</h2>
     ${columns(m.signups, { unit: 'altas', title: 'Usuarios nuevos por semana', xLabels: [0, 3, 7] })}
     <h2>¿Vuelven?</h2>
@@ -73,6 +98,9 @@ function render(testers, bands, groups) {
     </div>`);
   attachTooltips($('metricsBody'));
   $('metricsTesters').addEventListener('click', openTesters);
+  $('metricsBody').querySelectorAll('[data-check]').forEach(box => box.addEventListener('change', async () => {
+    try { await setChecked(box.dataset.check, box.checked); } catch (err) { box.checked = !box.checked; toast(cloudErrorText(err)); }
+  }));
   $('metricsReload').addEventListener('click', enter);
 }
 

@@ -34,6 +34,10 @@ service cloud.firestore {
         && optNumber(request.resource.data, 'daysPracticed') && optNumber(request.resource.data, 'xp');
     }
     // Administradores: se dan de alta a mano desde la consola; cada uno solo puede comprobar si lo es
+    // Datos del panel del administrador (checklist de pruebas)
+    match /adminData/{doc} {
+      allow read, write: if isAdmin();
+    }
     match /admins/{uid} {
       allow get: if signedIn() && uid == request.auth.uid;
       allow list, write: if false;
