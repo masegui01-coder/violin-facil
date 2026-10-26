@@ -835,3 +835,10 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
 .check-row > span:first-child { flex: 1; min-width: 0; }
 .check-row b, .check-row small { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* Nota que suena: su valor con una barra que se llena y la siguiente en pequeño */
+.note-value { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+.note-fill { display: block; width: 120px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.note-fill i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .08s linear; }
+.next-note { font-size: .85rem; color: var(--muted); }
+.mix-row { gap: 8px; }

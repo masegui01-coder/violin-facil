@@ -1,4 +1,5 @@
 // Motor de lección: modo «nota a nota» (espera a que suene bien) y modo «a tempo» (la partitura avanza sola).
+import { harmonize, accompanimentNotes, noteValueName } from '../harmony.js';
 import { $, toast } from '../ui.js';
 import { register, go, originTab } from '../router.js';
 import { parseScore, noteLabel } from '../music.js';
@@ -30,6 +31,7 @@ const BPM_MAX = 220;
 const PRAISE = ['¡Bien!', '¡Muy bien!', '¡Eso es!', '¡Qué buen sonido!', '¡Sigue así!', '¡Perfecto!'];
 
 const staff = createStaff($('lessonStaff'));
+const DEMO_LEAD_S = 0.15;
 let run = null;
 let timer = 0;
 let offBeat = null;
@@ -72,7 +74,24 @@ function showTarget(index) {
   $('tName').textContent = noteLabel(note, nom);
   $('tName').className = 'name';
   $('tHint').textContent = fingeringText(getState().instrument, note.midi, nom);
+  // como el indicador de marchas del coche: la nota que tocas en grande, su valor, y la que viene en pequeño
+  $('tValue').textContent = noteValueName(note.beats);
+  setFill(0);
+  const next = run.playable.find(i => i > index);
+  $('tNext').textContent = next !== undefined ? `Después: ${noteLabel(run.notes[next], nom)}` : 'Última nota';
   if (getState().showBoard) renderDiagram($('lessonBoard'), getState().instrument, [note.midi], nom);
+}
+
+// Barra bajo la nota: se va llenando mientras dura
+function setFill(frac) {
+  $('tFill').style.width = `${Math.round(Math.max(0, Math.min(1, frac)) * 100)}%`;
+}
+
+// Nota que suena en el pulso «beat» (o la siguiente si estamos en un silencio)
+function noteAt(beat) {
+  let idx;
+  for (const i of run.playable) { if (run.notes[i].start <= beat + 1e-6) idx = i; else break; }
+  return idx === undefined ? run.playable[0] : idx;
 }
 
 function updateProgress(done) {
@@ -141,6 +160,7 @@ function learnTick(p, dt) {
   if (Math.abs(cents) <= tolerance()) {
     run.wrong = 0;
     run.hold += dt;
+    setFill(run.hold / HOLD_MS);
     $('tName').className = 'name ok';
     run.centsSum += cents; run.centsN++;
     if (run.hold >= HOLD_MS) {
@@ -193,7 +213,7 @@ function playFrom(beatStart) {
   }
   showPulse(true);
   if (run.stopAccomp) run.stopAccomp();
-  run.stopAccomp = $('vbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
+  run.stopAccomp = getState().accompOn && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
   audio.startRecording();
   setStatus('Sigue la línea y toca cada nota cuando llegue');
   renderTempoControls();
@@ -218,7 +238,9 @@ function judgePassed(t) {
 function tempoTick(p, dt) {
   const t = audio.audioTime() - run.t0;
   const beat = t / run.spb;
-  drawPulse(beat - run.pickup, run.time);
+  // lo que se ve va con lo que se oye (el altavoz suena un poco después); la escucha del micrófono no cambia
+  const seenBeat = beat - audio.outputLatency() / run.spb;
+  drawPulse(seenBeat - run.pickup, run.time);
   const countLeft = run.countEnd - audio.audioTime();
   if (countLeft > 0) {
     $('countdown').hidden = false;
@@ -227,14 +249,17 @@ function tempoTick(p, dt) {
     return;
   }
   $('countdown').hidden = true;
-  staff.scrollTo(beat, false);
+  staff.scrollTo(seenBeat, false);
   judgePassed(t);
   // notas que ya han empezado y siguen abiertas (la anterior conserva un margen de gracia)
   const started = run.playable.filter(i => !run.notes[i].judged && t >= run.notes[i].start * run.spb - EARLY_S);
-  const shownIdx = started.length ? started[started.length - 1] : run.playable.find(i => !run.notes[i].judged);
-  if (shownIdx !== undefined) showTarget(shownIdx);
+  const judging = started.length ? started[started.length - 1] : run.playable.find(i => !run.notes[i].judged);
+  // en pantalla, la nota que está sonando ahora (no la siguiente) y cuánto le queda
+  const shownIdx = noteAt(seenBeat);
+  showTarget(shownIdx);
+  setFill((seenBeat - run.notes[shownIdx].start) / run.notes[shownIdx].beats);
   if (p !== 'masked') {
-    showHeard(p, shownIdx !== undefined ? run.notes[shownIdx] : null);
+    showHeard(p, judging !== undefined ? run.notes[judging] : null);
     run.heardMidi = p && p.freq ? p.midi : null;
   }
   if (run.heardMidi !== null && run.heardMidi !== undefined) {
@@ -313,11 +338,18 @@ function toggleDemo() {
   if (run.playing) return;
   $('playDemo').lastChild.textContent = 'Parar';
   const bpm = run.mode === 'tempo' ? tempoBpm() : run.bpm;
-  run.demoStop = audio.playScore(run.notes, bpm, (beat, done) => {
+  const s = getState();
+  const at = audio.ctx().currentTime + DEMO_LEAD_S;
+  const withAccomp = s.accompOn && run.accompaniment.length;
+  const stopScore = audio.playScore(run.notes, bpm, (beat, done) => {
     if (done) { stopDemo(); return; }
-    const idx = run.notes.findIndex(n => beat >= n.start && beat < n.start + n.beats);
-    if (idx >= 0 && idx !== run.demoIdx) { run.demoIdx = idx; staff.focus(idx); showTarget(idx); }
-  });
+    if (beat < 0) return;
+    const idx = noteAt(beat);
+    if (idx !== run.demoIdx) { run.demoIdx = idx; staff.focus(idx); showTarget(idx); }
+    setFill((beat - run.notes[idx].start) / run.notes[idx].beats);
+  }, { at, silent: !s.listenMelody && withAccomp });
+  const stopAccomp = withAccomp ? audio.playAccompaniment(run.accompaniment, at, 60 / bpm) : null;
+  run.demoStop = () => { stopScore(); if (stopAccomp) stopAccomp(); };
 }
 
 function stopDemo() {
@@ -348,7 +380,13 @@ function enter({ lesson, mode, from, eyebrow }) {
     oneTake: !!lesson.oneTake,
     accompaniment: lesson.accompaniment || (meta.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
   };
-  $('vbRow').hidden = !run.accompaniment.length;
+  // Sin otras voces: armonización automática de la melodía (la crea la app, sin arreglos de terceros)
+  run.bandVoices = run.accompaniment.length > 0;
+  if (!run.bandVoices && score.bars && score.bars.length) {
+    const chords = harmonize(notes, score.bars, { key: meta.key, time: meta.time });
+    run.accompaniment = [{ notes: accompanimentNotes(chords, { time: meta.time, transpose: instrumentById(getState().instrument).transpose }), transpose: instrumentById(getState().instrument).transpose }];
+  }
+  renderMix();
   $('lessonEyebrow').textContent = eyebrow || '';
   $('lessonTitle').textContent = run.title;
   $('modeChip').textContent = lesson.oneTake ? 'Una toma' : mode === 'tempo' ? 'A tempo' : 'Nota a nota';
@@ -452,4 +490,23 @@ $('lessonMetro').addEventListener('click', () => {
   update({ lessonMetro: run.wantMetro });
   renderTempoControls();
 });
-$('vbToggle').addEventListener('change', e => { if (e.target.checked) toast('Ponte auriculares: si el micrófono oye la banda virtual, se confunde con tu instrumento'); });
+// Qué suena al escuchar y al tocar: la melodía y el acompañamiento (otras voces de la banda o armonización automática)
+function renderMix() {
+  const s = getState();
+  $('mixRow').hidden = !run.accompaniment.length || run.oneTake;
+  $('mixAccompName').textContent = run.bandVoices ? 'Otras voces de la banda' : 'Acompañamiento';
+  $('mixMelody').setAttribute('aria-pressed', String(s.listenMelody));
+  $('mixAccomp').setAttribute('aria-pressed', String(s.accompOn));
+}
+$('mixMelody').addEventListener('click', () => {
+  update({ listenMelody: !getState().listenMelody });
+  if (!getState().listenMelody && !getState().accompOn) update({ accompOn: true });
+  renderMix();
+  toast(getState().listenMelody ? 'Al escuchar suena la melodía' : 'Al escuchar, solo el acompañamiento: tú pones la melodía');
+});
+$('mixAccomp').addEventListener('click', () => {
+  update({ accompOn: !getState().accompOn });
+  if (!getState().accompOn && !getState().listenMelody) update({ listenMelody: true });
+  renderMix();
+  if (getState().accompOn) toast('Con auriculares: si el micrófono oye el acompañamiento, se confunde con tu instrumento');
+});

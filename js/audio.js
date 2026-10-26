@@ -117,15 +117,21 @@ export function playTone(midi, seconds = 1) {
 }
 
 // Reproduce una partitura (demostración). Devuelve una función para pararla.
-export function playScore(notes, bpm, onNote) {
+// Retraso de lo que suena por el altavoz (en Bluetooth puede pasar de 0,2 s): el cursor lo espera para ir con lo que oyes
+export function outputLatency() {
+  const c = ctx();
+  return c.outputLatency || c.baseLatency || 0;
+}
+
+export function playScore(notes, bpm, onNote, { at = null, silent = false } = {}) {
   const c = ctx();
   const spb = 60 / bpm;
-  const t0 = c.currentTime + 0.15;
-  const oscs = notes.filter(n => !n.rest).map(n => voice(c, n.midi, t0 + n.start * spb, Math.max(0.12, n.beats * spb * 0.92)));
+  const t0 = at ?? c.currentTime + 0.15;
+  const oscs = silent ? [] : notes.filter(n => !n.rest).map(n => voice(c, n.midi, t0 + n.start * spb, Math.max(0.12, n.beats * spb * 0.92)));
   const total = notes.length ? (notes[notes.length - 1].start + notes[notes.length - 1].beats) * spb : 0;
   state.muteUntil = performance.now() + (total + 0.5) * 1000;
   const timer = setInterval(() => {
-    const beat = (c.currentTime - t0) / spb;
+    const beat = (c.currentTime - outputLatency() - t0) / spb;
     onNote(beat, beat * spb >= total);
     if (beat * spb >= total) clearInterval(timer);
   }, SCHED_MS);

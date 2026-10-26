@@ -210,6 +210,8 @@
       <div class="target-row">
         <div class="target">
           <div id="tName" class="name">La</div>
+          <div class="note-value"><span id="tValue"></span><span class="note-fill" aria-hidden="true"><i id="tFill"></i></span></div>
+          <div id="tNext" class="next-note"></div>
           <div id="tHint" class="hint"></div>
           <div class="meter" aria-hidden="true"><div class="track"></div><div class="center"></div><div id="meterDot" class="dot"></div></div>
           <p id="heard" class="heard">&nbsp;</p>
@@ -221,7 +223,6 @@
         <div class="row spread"><span class="muted">Velocidad</span><b id="tempoBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-speed="0.4">40 %</button><button type="button" data-speed="0.5">50 %</button><button type="button" data-speed="0.6">60 %</button><button type="button" data-speed="0.8">80 %</button><button type="button" data-speed="1">100 %</button></div>
         <label class="switch-row" for="lmClick"><span>Clic del metrónomo (la cuenta previa suena siempre)</span><input id="lmClick" type="checkbox" class="switch"></label>
-        <label class="switch-row" id="vbRow" for="vbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="vbToggle" type="checkbox" class="switch"></label>
         <button id="tempoStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button>
       </div>
       <div id="playControls" class="controls" hidden>
@@ -232,6 +233,10 @@
         <button id="playRef" class="btn ghost small" type="button"><span data-icon="speaker" class="ic"></span>Nota</button>
         <button id="playDemo" class="btn ghost small" type="button"><span data-icon="play" class="ic"></span>Escuchar</button>
         <button id="skipNote" class="btn ghost small" type="button">Saltar ›</button>
+      </div>
+      <div id="mixRow" class="controls mix-row" role="group" aria-label="Qué suena">
+        <button type="button" class="chip-btn" id="mixMelody" aria-pressed="true">Melodía</button>
+        <button type="button" class="chip-btn" id="mixAccomp" aria-pressed="false"><span id="mixAccompName">Acompañamiento</span></button>
       </div>
       <div class="metro-group">
         <button id="lmDown" class="round mini" type="button" aria-label="Más lento">−</button>
