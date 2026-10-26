@@ -9,6 +9,8 @@ import { lessonTitle, chordText } from '../course.js';
 import { currentCourse, currentStates, launch } from '../launch.js';
 import { recordPlay, medalOf, nextGoal, chapterStats, reviewPage, MEDAL_NAME, REPEAT_XP, REVIEW_MULTIPLIER } from '../book.js';
 import { buildLibrary, bookOpen, EXAM_PASS_STARS } from '../books.js';
+import { schoolBookOpen, bookSummary } from '../school.js';
+import { saveProgress } from '../school-api.js';
 
 const MEDAL_ICON = { none: '', bronze: '🥉', silver: '🥈', gold: '🥇' };
 const KIND = { theory: 'Teoría', chords: 'Acordes', song: 'Partitura', notes: 'Ejercicio' };
@@ -45,7 +47,14 @@ export const isConcert = (chapter, page) => {
   return /^b\d-/.test(chapter.id) ? false : songs.length > 0 && songs[songs.length - 1] === page;
 };
 
-const isOpen = n => bookOpen(n, bookPlays(), { unlockAll: getState().unlockAll, unlocked: unlockedBooks() });
+// En una escuela manda el curso del alumno: su libro y los anteriores; el profesor los ve todos
+const schoolStudent = () => { const s = getState().school; return s && s.role === 'student' ? s : null; };
+const isOpen = n => {
+  const school = getState().school;
+  if (school && school.role === 'teacher') return true;
+  if (schoolStudent()) return schoolBookOpen(n, schoolStudent().level);
+  return bookOpen(n, bookPlays(), { unlockAll: getState().unlockAll, unlocked: unlockedBooks() });
+};
 
 // Estado de una página. Libro 1: el del curso (y las páginas añadidas siguen a la anterior).
 // Libros 2 y 3: cerrados hasta aprobar el examen anterior; dentro, cada página se abre al tocar la anterior.
@@ -114,7 +123,8 @@ export function renderBook() {
       <p class="muted small">${esc(book.sub)}. Página a página, con partitura, armonización, teoría y consejos. Repetir premia: bronce al pasarla, plata al repetirla bien y oro al dominarla.</p>
       <div class="book-tally"><span>🥇 ${totals.gold}</span><span>🥈 ${totals.silver}</span><span>🥉 ${totals.bronze}</span><span class="muted">de ${totals.pages} páginas</span>
         <button type="button" class="btn ghost small" id="bookPrintBtn">Libro en PDF</button></div></div>
-    ${open ? '' : `<div class="panel book-locked"><b>Este libro se abre al aprobar el examen del Libro ${book.n - 1}</b>
+    ${open ? '' : schoolStudent() ? `<div class="panel book-locked"><b>Este libro es de un curso más avanzado</b>
+      <span class="muted small">Tu escuela te lo abrirá cuando pases de curso. Mientras, completa tu libro y apruébalo.</span></div>` : `<div class="panel book-locked"><b>Este libro se abre al aprobar el examen del Libro ${book.n - 1}</b>
       <span class="muted small">Está al final del Libro ${book.n - 1}: preguntas de lenguaje musical y una lectura. ¿Ya tocas a este nivel? Puedes abrirlo directamente.</span>
       <button type="button" class="btn ghost small" id="bookForceOpen">Abrirlo ya</button></div>`}
     ${review ? `<button type="button" class="book-review" data-page="${esc(review.page.lesson.id)}"><span class="ic">↻</span><div><b>Repaso de hoy · página ${review.page.number}</b>
@@ -147,6 +157,14 @@ $('bookView').addEventListener('click', e => {
   if (btn) openPage(btn.dataset.page);
 });
 
+// Alumno de una escuela: su profesor ve el resumen del libro de su curso
+function syncSchool(book, plays) {
+  const school = schoolStudent();
+  if (!school || book.n !== school.level) return;
+  const s = getState();
+  saveProgress(school.schoolId, { ...bookSummary(book, plays), nickname: String(school.nickname || '').slice(0, 30), instrument: s.instrument, level: school.level }).catch(() => {});
+}
+
 // Cada vez que se toca una página (desde el libro o desde el curso) cuenta para sus medallas.
 // Repasar una página ya pasada da puntos extra; la del repaso de hoy, el doble. Aprobar un examen abre el libro siguiente.
 window.addEventListener('lesson-finished', e => {
@@ -167,8 +185,9 @@ window.addEventListener('lesson-finished', e => {
   update({ bookPlays: { ...(s.bookPlays || {}), [s.instrument]: nextPlays }, xp: getState().xp + bonus });
   const stampAfter = chapterStats(hit.chapter, nextPlays).stamp;
   const passed = lesson.exam && stars >= EXAM_PASS_STARS && !(prev && prev.best >= EXAM_PASS_STARS);
+  syncSchool(hit.book, nextPlays);
   setTimeout(() => {
-    if (passed) toast(hit.book.n < 3 ? `¡Examen aprobado! Se abre el Libro ${hit.book.n + 1}` : '¡Examen aprobado! Has terminado los tres libros');
+    if (passed) toast(hit.book.n === 3 ? '¡Examen aprobado! Has terminado los tres libros' : schoolStudent() ? '¡Examen aprobado! Pasarás al siguiente libro con el nuevo curso' : `¡Examen aprobado! Se abre el Libro ${hit.book.n + 1}`);
     else if (stampAfter && stampAfter !== stampBefore) toast(stampAfter === 'gold' ? `¡Capítulo ${hit.chapter.number} dominado: todo de oro!` : `¡Sello del capítulo ${hit.chapter.number}!`);
     else if (after !== before && after !== 'bronze') toast(`¡Medalla de ${MEDAL_NAME[after].toLowerCase()} en la página ${hit.page.number}!`);
     else if (bonus) toast(`Repaso: +${bonus} puntos`);

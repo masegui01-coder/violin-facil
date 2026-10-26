@@ -12,6 +12,7 @@ import { myBand, syncActivity } from './band-sync.js';
 import { directorView, bindDirector } from './band-director.js';
 import { memberView, bindMember } from './band-member.js';
 import { renderGroups, groupInviteCode } from './groups.js';
+import { renderSchool, schoolInviteCode } from './school.js';
 
 export { pendingBandLesson } from './band-sync.js';
 
@@ -143,7 +144,9 @@ function render() {
   document.querySelectorAll('[data-band-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.bandView === view));
   $('bandBody').hidden = view !== 'band';
   $('groupBody').hidden = view !== 'groups';
+  $('schoolBody').hidden = view !== 'school';
   if (view === 'groups') { renderGroups(); return; }
+  if (view === 'school') { renderSchool(); return; }
   if (!cloudConfigured()) { notConfigured(); return; }
   if (!band()) { welcome(); return; }
   load();
@@ -151,6 +154,12 @@ function render() {
 
 register('band', { enter: render });
 document.querySelectorAll('[data-band-view]').forEach(b => b.addEventListener('click', () => { update({ bandView: b.dataset.bandView }); render(); }));
+
+// Enlace de invitación a una escuela (?escuela=CÓDIGO): abre «Escuela» con el código puesto
+if (schoolInviteCode() && getState().onboarded) {
+  update({ bandView: 'school' });
+  setTimeout(() => { if (currentScreen() !== 'band') go('band'); }, 0);
+}
 
 // Enlace de invitación a un grupo (?grupo=CÓDIGO): abre «Mis grupos» con el código puesto
 if (groupInviteCode() && getState().onboarded) {

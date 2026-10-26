@@ -241,5 +241,53 @@ service cloud.firestore {
         }
       }
     }
+    // ---------- Escuelas de música (premium) ----------
+    // El profesor crea la escuela; los alumnos entran con el código y solo ven lo suyo. La licencia la pone el administrador.
+    function schoolPath(sid) { return /databases/$(db)/documents/schools/$(sid); }
+    function schoolMember(sid, uid) { return /databases/$(db)/documents/schools/$(sid)/members/$(uid); }
+    function schoolOwner(sid) { return signedIn() && get(schoolPath(sid)).data.ownerUid == request.auth.uid; }
+    function inSchool(sid) { return signedIn() && exists(schoolMember(sid, request.auth.uid)); }
+    function schoolLimit(d) { return ('premium' in d) && d.premium.active == true ? 200 : 5; }
+    match /schoolCodes/{code} {
+      allow get: if signedIn();
+      allow list, update: if false;
+      allow create: if signedIn() && validCode(code) && shortText(request.resource.data.schoolName, 80)
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.ownerUid == request.auth.uid;
+      allow delete: if schoolOwner(resource.data.schoolId);
+    }
+    match /schools/{sid} {
+      allow get: if schoolOwner(sid) || inSchool(sid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid && shortText(request.resource.data.name, 80)
+        && validCode(request.resource.data.code) && !('premium' in request.resource.data) && request.resource.data.students == 0;
+      // El profesor cambia el nombre, el curso escolar y el número de alumnos (al dar de baja); nunca la licencia
+      allow update: if (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'year', 'students'])
+            && shortText(request.resource.data.name, 80))
+        // Un alumno que entra suma uno (si cabe en la licencia) y uno que sale resta uno
+        || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students'])
+            && ((request.resource.data.students == resource.data.students + 1 && resource.data.students < schoolLimit(resource.data)
+                 && !exists(schoolMember(sid, request.auth.uid)) && existsAfter(schoolMember(sid, request.auth.uid)))
+              || (request.resource.data.students == resource.data.students - 1
+                 && exists(schoolMember(sid, request.auth.uid)) && !existsAfter(schoolMember(sid, request.auth.uid)))))
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium']));
+      allow delete: if schoolOwner(sid);
+      match /members/{uid} {
+        allow read: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid) || isAdmin();
+        allow create: if signedIn() && uid == request.auth.uid && shortText(request.resource.data.nickname, 30)
+          && shortText(request.resource.data.instrument, 24) && validCode(request.resource.data.code) && request.resource.data.level == 1
+          && getAfter(/databases/$(db)/documents/schoolCodes/$(request.resource.data.code)).data.schoolId == sid;
+        allow update: if (signedIn() && uid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'instrument'])
+            && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24))
+          || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['level', 'instrument'])
+            && request.resource.data.level in [1, 2, 3]);
+        allow delete: if (signedIn() && uid == request.auth.uid) || schoolOwner(sid);
+      }
+      match /progress/{uid} {
+        allow read: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid) || isAdmin();
+        allow create, update: if signedIn() && uid == request.auth.uid && inSchool(sid)
+          && request.resource.data.done is number && request.resource.data.total is number && shortText(request.resource.data.nickname, 30);
+        allow delete: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid);
+      }
+    }
   }
 }

@@ -1,5 +1,5 @@
 // Métricas de la app (solo administrador). Enlace directo: ?panel=metricas
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, num } from '../ui.js';
 import { register, go } from '../router.js';
 import { currentAccount, onAccount } from '../account.js';
 import { isAdmin, listTesters } from '../sync.js';
@@ -8,6 +8,8 @@ import { instrumentById } from '../instruments.js';
 import { userMetrics, groupMetrics, isAdminEmail } from '../metrics.js';
 import { listBandsWithMembers, listGroupsWithSongs, getChecklist, setChecked } from '../admin-api.js';
 import { coverage, untested } from '../test-coverage.js';
+import { listSchools, setPremium } from '../school-api.js';
+import { premiumActive } from '../school.js';
 import { INSTRUMENTS } from '../instruments.js';
 import { columns, hbars, statTile, attachTooltips } from '../charts.js';
 import { openTesters } from './account-panel.js';
@@ -29,10 +31,10 @@ async function enter() {
   if (!(await adminCheck(acc))) { body('<p class="warn">Esta página es solo para el administrador de la app.</p>'); return; }
   body('<p class="empty">Calculando…</p>');
   try {
-    const [testers, bands, groups, manual] = await Promise.all([
-      listTesters(), listBandsWithMembers().catch(() => null), listGroupsWithSongs().catch(() => null), getChecklist().catch(() => ({})),
+    const [testers, bands, groups, manual, schools] = await Promise.all([
+      listTesters(), listBandsWithMembers().catch(() => null), listGroupsWithSongs().catch(() => null), getChecklist().catch(() => ({})), listSchools().catch(() => null),
     ]);
-    render(testers, bands, groups, manual);
+    render(testers, bands, groups, manual, schools);
   } catch (err) { body(`<p class="warn">${esc(cloudErrorText(err))}</p>`); }
 }
 
@@ -58,7 +60,18 @@ export function checklistHtml(testers, manual) {
     <p>${noOs.length ? noOs.map(os => `<span class="pill">${esc(os)}</span>`).join(' ') : '<span class="pill ok">Todos probados</span>'}</p>`;
 }
 
-function render(testers, bands, groups, manual = {}) {
+// Escuelas: el administrador activa la licencia premium hasta el final del curso escolar
+const SCHOOL_YEAR_END = '-08-31';
+function schoolsHtml(schools) {
+  if (!schools) return '';
+  const until = `${new Date().getMonth() >= 8 ? new Date().getFullYear() + 1 : new Date().getFullYear()}${SCHOOL_YEAR_END}`;
+  return `<h2>Escuelas</h2>${schools.length ? `<div class="list">${schools.map(s => `<div class="list-row check-row"><span><b>${esc(s.name)}</b><small>${esc(s.ownerName || '')} · ${num(s.students)} alumnos · curso ${esc(s.year || '')}</small></span>
+    <span class="check-side">${premiumActive(s) ? `<span class="pill ok">Premium hasta ${esc(s.premium.until)}</span><button type="button" class="btn ghost small" data-premium="${esc(s.id)}" data-on="0">Quitar</button>`
+      : `<span class="pill">Modo prueba</span><button type="button" class="btn small" data-premium="${esc(s.id)}" data-on="1" data-until="${until}">Activar premium</button>`}</span></div>`).join('')}</div>`
+    : '<p class="muted small">Todavía no hay escuelas.</p>'}`;
+}
+
+function render(testers, bands, groups, manual = {}, schools = null) {
   const m = userMetrics(testers.map(t => ({ ...t, instrumentName: t.instrument ? instrumentById(t.instrument).name : '' })));
   const g = groups ? groupMetrics(groups) : null;
   const musicians = bands ? bands.reduce((s, b) => s + Math.max(0, b.members - 1), 0) : 0;
@@ -89,6 +102,7 @@ function render(testers, bands, groups, manual = {}) {
     </div>
     ${bands && bands.length ? `<div class="table-wrap"><table class="prog-table"><thead><tr><th>Banda</th><th>Director</th><th class="num">Músicos</th></tr></thead><tbody>
       ${bands.sort((a, b) => b.members - a.members).map(b => `<tr><td>${esc(b.name)}</td><td>${esc(b.directorName || '')}</td><td class="num">${Math.max(0, b.members - 1)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${schoolsHtml(schools)}
     <div class="row"><button type="button" class="btn small" id="metricsTesters">Lista de testers y CSV</button><button type="button" class="btn ghost small" id="metricsReload">Actualizar</button></div>
     <h2>Más datos en Firebase</h2>
     <div class="list">
@@ -98,6 +112,13 @@ function render(testers, bands, groups, manual = {}) {
     </div>`);
   attachTooltips($('metricsBody'));
   $('metricsTesters').addEventListener('click', openTesters);
+  $('metricsBody').querySelectorAll('[data-premium]').forEach(b => b.addEventListener('click', async () => {
+    try {
+      await setPremium(b.dataset.premium, b.dataset.on === '1' ? { active: true, until: b.dataset.until, since: Date.now() } : { active: false });
+      toast(b.dataset.on === '1' ? 'Licencia de escuela activada' : 'Licencia quitada');
+      enter();
+    } catch (err) { toast(cloudErrorText(err)); }
+  }));
   $('metricsBody').querySelectorAll('[data-check]').forEach(box => box.addEventListener('change', async () => {
     try { await setChecked(box.dataset.check, box.checked); } catch (err) { box.checked = !box.checked; toast(cloudErrorText(err)); }
   }));
