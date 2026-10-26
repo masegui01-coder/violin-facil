@@ -5,6 +5,10 @@ const WEEKS = 8;
 
 export const isAdminEmail = email => !!email && ADMIN_EMAILS.includes(String(email).toLowerCase());
 
+// Testers pro: ven todo el contenido abierto (lecciones y los tres libros), pero no el panel de administrador
+export const PRO_TESTER_EMAILS = ['fran-saxo@hotmail.com'];
+export const isProTesterEmail = email => !!email && PRO_TESTER_EMAILS.includes(String(email).toLowerCase());
+
 const activeIn = (list, days, now) => list.filter(t => now - (t.lastSeen || 0) < days * DAY_MS).length;
 const countBy = (list, key) => Object.entries(list.reduce((m, t) => {
   const k = key(t) || 'Sin dato';

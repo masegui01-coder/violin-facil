@@ -33,6 +33,8 @@ import { accountGate } from './screens/account.js';
 import './screens/friends.js';
 import './screens/group-song.js';
 import './screens/metrics.js';
+import { onAccount, currentAccount } from './account.js';
+import { isProTesterEmail } from './metrics.js';
 import './screens/book-page.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
@@ -60,6 +62,11 @@ function renderTopbar(s) {
 }
 
 hydrateIcons();
+// Tester pro: todo el contenido abierto mientras esté su cuenta en este móvil
+const applyRole = acc => { const pro = isProTesterEmail(acc && acc.email); if (pro !== !!getState().proTester) update({ proTester: pro }); };
+onAccount(applyRole);
+applyRole(currentAccount());
+
 // Checklist de pruebas de la beta: se apunta (una vez) cada parte de la app que usa este tester
 window.addEventListener('screen-change', e => {
   const id = e.detail.id;

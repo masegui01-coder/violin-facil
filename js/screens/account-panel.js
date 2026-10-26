@@ -7,7 +7,7 @@ import { flushPush, stopSync, deleteCloudData, isAdmin, listTesters } from '../s
 import { analyticsAvailable, setAnalyticsConsent } from '../analytics.js';
 import { getState, replaceState } from '../store.js';
 import { openAccountReminder } from './account.js';
-import { isAdminEmail } from '../metrics.js';
+import { isAdminEmail, isProTesterEmail } from '../metrics.js';
 
 const DAY_MS = 86400000;
 let confirmDelete = false;
@@ -27,6 +27,7 @@ export async function renderAccountPanel() {
     box.innerHTML = `<h2>Tu cuenta</h2><p>Has entrado como <b>${esc(acc.displayName || acc.email)}</b>${acc.displayName && acc.email ? ` (${esc(acc.email)})` : ''}. Tu progreso se guarda en tu cuenta y lo recuperas en cualquier dispositivo.</p>
       <p class="muted small">Las grabaciones y las partituras importadas se quedan en este dispositivo.</p>
       ${consent}
+      ${isProTesterEmail(acc.email) ? '<p><span class="pill ok">Tester pro</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>' : ''}
       <div id="accAdmin"></div>
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
     $('accSignOut').addEventListener('click', signOut);

@@ -50,6 +50,7 @@ export const isConcert = (chapter, page) => {
 // En una escuela manda el curso del alumno: su libro y los anteriores; el profesor los ve todos
 const schoolStudent = () => { const s = getState().school; return s && s.role === 'student' ? s : null; };
 const isOpen = n => {
+  if (getState().proTester) return true;
   const school = getState().school;
   if (school && school.role === 'teacher') return true;
   if (schoolStudent()) return schoolBookOpen(n, schoolStudent().level);
@@ -64,7 +65,7 @@ export function pageState(hit, states = currentStates()) {
   if (plays[page.lesson.id] && plays[page.lesson.id].best > 0) return 'done';
   if (!isOpen(book.n)) return 'locked';
   if (book.n === 1 && states[page.lesson.id]) return states[page.lesson.id];
-  if (index === 0 || getState().unlockAll) return 'open';
+  if (index === 0 || getState().unlockAll || getState().proTester) return 'open';
   const prev = flat[index - 1];
   if (book.n === 1) return pageState({ ...hit, ...prev, index: index - 1 }, states) === 'locked' ? 'locked' : 'open';
   return plays[prev.page.lesson.id] && plays[prev.page.lesson.id].best > 0 ? 'open' : 'locked';

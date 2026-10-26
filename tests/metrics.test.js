@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { userMetrics, groupMetrics, weekStart, isAdminEmail } from '../js/metrics.js';
+import { userMetrics, groupMetrics, weekStart, isAdminEmail, isProTesterEmail } from '../js/metrics.js';
 
 const now = new Date(2026, 9, 26, 12).getTime();
 const day = 864e5;
@@ -40,4 +40,10 @@ test('administrador por correo', () => {
   assert.equal(isAdminEmail('Masegui01@gmail.com'), true);
   assert.equal(isAdminEmail('otro@gmail.com'), false);
   assert.equal(isAdminEmail(''), false);
+});
+
+test('tester pro por correo, que no es administrador', () => {
+  assert.equal(isProTesterEmail('Fran-Saxo@hotmail.com'), true);
+  assert.equal(isAdminEmail('fran-saxo@hotmail.com'), false);
+  assert.equal(isProTesterEmail('otro@hotmail.com'), false);
 });
