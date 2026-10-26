@@ -18,6 +18,13 @@ Hoy cualquiera con cuenta puede crear una banda y ser su director. Propuesta en 
 
 Por decidir: el límite de músicos sin verificar y qué pruebas se aceptan (correo oficial, web/redes o ambas).
 
+## Cobro de la licencia de escuela (2026-10-26)
+
+La sección Escuela es premium, pero aún no hay pagos: la licencia (hasta 200 alumnos, hasta el 31 de agosto) la activa
+el administrador a mano desde Métricas → Escuelas, y sin ella la escuela funciona en modo prueba con 5 alumnos.
+Antes de la versión final: decidir el precio y la forma de cobro (transferencia y factura, Stripe o Google Play)
+y automatizar la activación.
+
 ## Otros pendientes
 
 - Poner el `measurementId` de Google Analytics en `js/firebase-config.js` (hay que activarlo antes en Firebase).
