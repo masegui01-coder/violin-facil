@@ -25,6 +25,21 @@ el administrador a mano desde Métricas → Escuelas, y sin ella la escuela func
 Antes de la versión final: decidir el precio y la forma de cobro (transferencia y factura, Stripe o Google Play)
 y automatizar la activación.
 
+## Revisar con un profesor antes de subir (2026-10-26)
+
+Tras la revisión de los 24 instrumentos quedaron datos sin rellenar, a falta de confirmarlos con Fran o con un profesor
+de cada instrumento (no se han inventado):
+
+- **Oboe:** faltan digitaciones de la escala de la banda (Si♭4, Do5, Re5, Mi♭5, Fa5, Si♭5) y del Fa4; ahora sale
+  «consulta tu tabla». Incluir el medio agujero del Re5 y decidir Fa de horquilla o con llave.
+- **Clarinete y clarinete bajo:** falta el Fa5 escrito (última nota de su «Escala de Fa»).
+- **Trompa en Fa:** confirmar Re♭5 (ahora «cilindro 2»; las tablas suelen dar 1-2) y Mi4 (ahora al aire; suelen dar 1-2).
+- **Detector de cuerda vecina:** solo mira saltos de 5 y 7 semitonos; no detecta los 4 de Sol–Si en la guitarra
+  ni de Do–Mi en el ukelele.
+- **Rutina del cajón:** recibe los rudimentos de caja (paradiddle); valorar una rutina propia de palmas y tonos.
+- **Imágenes de los consejos:** pendientes de generar con IA a partir de `docs/prompts-imagenes-consejos.md`
+  (el clarinete bajo aún usa la del barrilete).
+
 ## Otros pendientes
 
 - Poner el `measurementId` de Google Analytics en `js/firebase-config.js` (hay que activarlo antes en Firebase).
