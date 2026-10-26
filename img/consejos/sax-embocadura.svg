@@ -1,0 +1,63 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="Figtree, Segoe UI, Roboto, sans-serif">
+  <title>Embocadura del saxofón: corte de perfil</title>
+  <rect width="720" height="460" rx="24" fill="#F7F3EE"/>
+  <text x="32" y="46" font-size="24" font-weight="800" fill="#141B26">La embocadura · corte de perfil</text>
+  <text x="32" y="72" font-size="15" fill="#5A6678">Dientes de arriba sobre la boquilla · labio de abajo doblado sobre los dientes</text>
+
+  <!-- Interior de la boca (a la izquierda) -->
+  <path d="M40 120 L232 120 L232 340 L40 340 Z" fill="#F4E3D3"/>
+  <text x="70" y="330" font-size="13" fill="#A08060">dentro de la boca</text>
+
+  <!-- Boquilla: la punta dentro de la boca, la caña debajo -->
+  <path d="M150 214 L470 196 L470 246 L150 232 Z" fill="#1E2430"/>
+  <path d="M150 232 L470 246 L470 253 L156 239 Z" fill="#D9B26A"/>
+  <rect x="392" y="188" width="40" height="72" rx="6" fill="none" stroke="#8A93A3" stroke-width="5"/>
+  <path d="M470 204 C540 204 590 214 650 252 L650 270 C590 238 540 238 470 238 Z" fill="#D7A63A"/>
+  <text x="612" y="300" font-size="14" fill="#5A6678" text-anchor="middle">tudel</text>
+  <text x="440" y="282" font-size="14" fill="#8A6A2A" text-anchor="middle">caña</text>
+
+  <!-- Diente superior apoyado en la boquilla (con protector rojo) -->
+  <rect x="180" y="207" width="30" height="6" rx="2" fill="#B4461F"/>
+  <path d="M182 207 L182 168 C188 158 204 158 210 168 L210 207 Z" fill="#FFFFFF" stroke="#9AA3B2" stroke-width="2"/>
+  <!-- Labio superior: por fuera de los dientes, cerrando sobre la boquilla -->
+  <path d="M212 150 C236 150 252 170 256 196 C258 206 254 212 246 213 L214 213 C212 190 212 170 212 150 Z" fill="#D9827A"/>
+
+  <!-- Diente inferior (no toca la caña) -->
+  <path d="M182 300 L182 262 C188 254 204 254 210 262 L210 300 Z" fill="#FFFFFF" stroke="#9AA3B2" stroke-width="2"/>
+  <!-- Labio inferior doblado sobre el diente: almohadilla entre diente y caña -->
+  <path d="M178 244 C190 238 230 240 252 244 C262 248 262 266 250 272 C236 278 222 274 214 266 C214 290 214 300 212 312 C236 312 252 300 258 280"
+        fill="#D9827A"/>
+  <path d="M178 244 C190 238 230 240 252 244 C262 250 262 266 250 272 C236 278 222 274 212 262 L178 262 Z" fill="#D9827A"/>
+
+  <!-- Medida desde la punta hasta los dientes -->
+  <path d="M150 150 L150 140 M196 150 L196 140 M150 145 L196 145" stroke="#141B26" stroke-width="2"/>
+  <text x="173" y="132" font-size="14" font-weight="700" fill="#141B26" text-anchor="middle">≈ 1 cm</text>
+
+  <!-- Presión de los labios hacia el centro -->
+  <path d="M300 128 l0 34 m-8 -10 l8 10 l8 -10" stroke="#2B7A4B" stroke-width="3" fill="none"/>
+  <path d="M300 330 l0 -34 m-8 10 l8 -10 l8 10" stroke="#2B7A4B" stroke-width="3" fill="none"/>
+  <text x="312" y="146" font-size="13" font-weight="700" fill="#2B7A4B">los labios cierran hacia el centro,</text>
+  <text x="312" y="162" font-size="13" font-weight="700" fill="#2B7A4B">como una bolsa con cordón</text>
+
+  <!-- Rótulos numerados -->
+  <g font-size="14" fill="#141B26">
+    <path d="M206 176 L250 96 L330 96" fill="none" stroke="#141B26" stroke-width="1.5"/>
+    <text x="336" y="92" font-weight="800">1 · Dientes de arriba sobre la boquilla</text>
+    <text x="336" y="110">con un protector de goma</text>
+
+    <path d="M252 262 L320 360" fill="none" stroke="#141B26" stroke-width="1.5"/>
+    <text x="326" y="360" font-weight="800">2 · Labio de abajo doblado</text>
+    <text x="326" y="378">almohadilla para la caña</text>
+
+    <path d="M196 300 L196 410 L318 410" fill="none" stroke="#141B26" stroke-width="1.5"/>
+    <text x="326" y="408" font-weight="800">3 · Los dientes de abajo</text>
+    <text x="326" y="426">nunca tocan la caña</text>
+  </g>
+
+  <!-- Errores frecuentes -->
+  <rect x="560" y="330" width="140" height="104" rx="14" fill="#FFFFFF" stroke="#E2D7CB" stroke-width="2"/>
+  <text x="630" y="352" font-size="13" font-weight="800" fill="#C2372F" text-anchor="middle">Evita</text>
+  <text x="630" y="374" font-size="12.5" fill="#141B26" text-anchor="middle">sonreír: tensa</text>
+  <text x="630" y="394" font-size="12.5" fill="#141B26" text-anchor="middle">morder: se ahoga</text>
+  <text x="630" y="414" font-size="12.5" fill="#141B26" text-anchor="middle">aflojar: suena a aire</text>
+</svg>

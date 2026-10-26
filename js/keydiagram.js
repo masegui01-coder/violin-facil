@@ -16,7 +16,7 @@ function el(tag, attrs, parent, text) {
   return node;
 }
 
-function drawValves(svg, f) {
+function drawValves(svg, f, instId) {
   [1, 2, 3].forEach((v, i) => {
     const x = 33 + i * 42;
     const on = f.valves.includes(v);
@@ -24,8 +24,8 @@ function drawValves(svg, f) {
     el('rect', { x: x - 11, y: on ? 108 : 90, width: 22, height: 70 - (on ? 18 : 0), rx: 6, class: 'kd-body' }, svg);
     el('text', { x, y: on ? 96 : 78, class: on ? 'kd-num on' : 'kd-num' }, svg, String(v));
   });
-  el('text', { x: W / 2, y: 30, class: 'kd-caption' }, svg, f.valves.length ? 'Pistones' : 'Al aire');
-  if (f.slide) el('text', { x: W / 2, y: 188, class: 'kd-caption' }, svg, '+ bomba del 3.º');
+  el('text', { x: W / 2, y: 30, class: 'kd-caption' }, svg, f.valves.length ? (instId === 'horn' ? 'Cilindros' : 'Pistones') : 'Al aire');
+  if (f.slide && instId === 'trumpet') el('text', { x: W / 2, y: 188, class: 'kd-caption' }, svg, '+ bomba del 3.º');
 }
 
 // Trombón: la vara con sus siete posiciones; la marcada es la que toca
@@ -82,7 +82,7 @@ export function renderDiagram(svg, instId, midis, nom) {
     el('text', { x: W / 2, y: H / 2, class: 'kd-caption' }, svg, midis.length ? 'Sin diagrama' : '');
     return false;
   }
-  if (f.type === 'valves') drawValves(svg, f);
+  if (f.type === 'valves') drawValves(svg, f, instId);
   else if (f.type === 'slide') drawSlide(svg, f);
   else if (f.type === 'recorder') drawRecorder(svg, f);
   else drawKeys(svg, f, instId);

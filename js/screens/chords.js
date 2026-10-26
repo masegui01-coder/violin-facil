@@ -71,7 +71,7 @@ function listen() {
 // Pista cuando un acorde no sale: qué notas no se oyen
 function missingHint(chroma, name) {
   const missing = parseChord(name).pcs.filter(pc => chroma[pc] < MIN_HEARD_SHARE);
-  if (!missing.length) return 'Casi: alguna cuerda suena de más o rozada.';
+  if (!missing.length) return isFretted(getState().instrument) ? 'Casi: alguna cuerda suena de más o rozada.' : 'Casi: alguna tecla de más suena a la vez.';
   return `No oigo ${missing.map(pc => noteLabel({ midi: 60 + pc }, getState().nom, true).replace(/\d/, '')).join(' ni ')}: revisa ese dedo.`;
 }
 

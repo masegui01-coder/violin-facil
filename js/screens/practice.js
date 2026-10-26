@@ -1,7 +1,7 @@
 // Herramientas de práctica: afinador y metrónomo («Toca libre» está en free.js).
 import { $ } from '../ui.js';
 import { register, back } from '../router.js';
-import { STRINGS, CELLO_STRINGS, noteLabel, spell } from '../music.js';
+import { STRINGS, CELLO_STRINGS, noteLabel, spell, bandTuningNotes } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
@@ -68,17 +68,17 @@ function tunerTick() {
   btns.forEach(b => b.classList.toggle('on', Number(b.dataset.midi) === near.midi && ok));
 }
 
-// Notas de afinación habituales: cuerdas al aire (violín) o el Si♭ y La de concierto (viento)
+// Notas de afinación habituales: cuerdas al aire (violín) o el Si♭, La y Fa de concierto (viento, ver bandTuningNotes)
 function referenceNotes() {
   if (isViolin()) return openStrings().map(s => ({ midi: s.midi, label: getState().nom === 'us' ? s.us : s.eu }));
-  const inst = instrumentById(getState().instrument);
-  return [70, 69, 65].map(real => real - inst.transpose).map(midi => ({ midi, label: noteLabel({ midi }, getState().nom, true) }));
+  return bandTuningNotes(instrumentById(getState().instrument)).map(n => ({ midi: n.midi, label: noteLabel(n, getState().nom) }));
 }
 
 register('tuner', {
   enter() {
     $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi + instrumentById(getState().instrument).transpose, !isViolin()), 'us')}</small></button>`).join('');
     $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : instrumentById(getState().instrument).polyphonic ? `Afinador cromático (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
+    $('tunerCents').textContent = isViolin() ? 'Toca una cuerda al aire' : 'Toca cualquier nota';
     $('tunerGate').hidden = audio.micReady();
     $('tunerMicError').hidden = true;
     timer = setInterval(tunerTick, TICK_MS);

@@ -12,14 +12,28 @@ const LONGTONES_KEPT = 8;
 // Tipo de técnica de cada instrumento (decide qué fallos tienen sentido)
 const KIND_BY_ID = {
   sax: 'reed', 'sax-tenor': 'reed', 'sax-bari': 'reed', 'sax-soprano': 'reed',
-  clarinet: 'clarinet', 'eb-clarinet': 'clarinet', 'bass-clarinet': 'clarinet', oboe: 'reed',
+  clarinet: 'clarinet', 'eb-clarinet': 'clarinet', 'bass-clarinet': 'clarinet', oboe: 'oboe',
   flute: 'flute', piccolo: 'flute', recorder: 'recorder',
   trumpet: 'brass', flugelhorn: 'brass', horn: 'brass', euphonium: 'brass', tuba: 'brass', trombone: 'trombone',
   violin: 'bowed', cello: 'bowed', guitar: 'fretted', ukulele: 'fretted', piano: 'keys', cajon: 'perc', percussion: 'perc',
 };
 export const techniqueKind = inst => KIND_BY_ID[inst.id] || 'reed';
-const WINDS = ['reed', 'clarinet', 'flute', 'recorder', 'brass', 'trombone'];
+const WINDS = ['reed', 'oboe', 'clarinet', 'flute', 'recorder', 'brass', 'trombone'];
 const isWind = kind => WINDS.includes(kind);
+
+// Avisos durante la lección: repetir la nota y corregir la afinación con el gesto de cada instrumento
+const PLAY_HINTS = {
+  bowed: { repeat: 'Cambia de arco y repite la nota', sharp: 'Un poco alto: retrocede el dedo', flat: 'Un poco bajo: adelanta el dedo' },
+  trombone: { repeat: 'Vuelve a atacar la nota con la lengua', sharp: 'Un poco alto: saca un poco la vara', flat: 'Un poco bajo: mete un poco la vara' },
+  wind: { repeat: 'Vuelve a atacar la nota con la lengua', sharp: 'Un poco alto: relaja el aire y los labios', flat: 'Un poco bajo: más apoyo de aire' },
+  recorder: { repeat: 'Vuelve a atacar la nota con la lengua', sharp: 'Un poco alto: sopla más suave', flat: 'Un poco bajo: sopla un poco más' },
+  fretted: { repeat: 'Vuelve a pulsar la nota', sharp: 'Un poco alto: pisa con menos fuerza', flat: 'Esa no es la nota' },
+  keys: { repeat: 'Vuelve a pulsar la tecla', sharp: 'Esa no es la nota', flat: 'Esa no es la nota' },
+};
+export function playHints(inst) {
+  const kind = techniqueKind(inst);
+  return PLAY_HINTS[kind] || (isWind(kind) ? PLAY_HINTS.wind : PLAY_HINTS.keys);
+}
 
 // Registro de una nota escrita dentro de la tesitura del instrumento: tercio grave, medio o agudo
 export function registerOf(midi, inst) {
@@ -113,6 +127,7 @@ const RULES = [
       brass: L('Al subir, la afinación sube más que en las graves. Suele ser apretar la boquilla contra los labios para llegar arriba.', 'As you go up, the pitch rises more than in the low notes. It is usually pressing the mouthpiece against the lips to reach the top.'),
       trombone: L('Al subir, la afinación sube más que en las graves. Suele ser apretar la boquilla contra los labios para llegar arriba.', 'As you go up, the pitch rises more than in the low notes. It is usually pressing the mouthpiece against the lips to reach the top.'),
       recorder: L('Al subir, la afinación sube más que en las graves: estás soplando demasiado fuerte en las agudas.', 'As you go up, the pitch rises more than in the low notes: you are blowing too hard on the high notes.'),
+      oboe: L('Al subir, la afinación sube más que en las graves. Es la señal típica de pellizcar la caña con los labios para que salgan las agudas.', 'As you go up, the pitch rises more than in the low notes. That is the classic sign of pinching the reed with the lips to get the high notes out.'),
     }, k),
     action: k => pick({
       default: L('Deja la mandíbula quieta en las agudas y sube con el aire, no con los labios. Repasa el cojín del labio de abajo.', 'Keep your jaw still on the high notes and go up with the air, not the lips. Review the lower lip cushion.'),
@@ -120,6 +135,7 @@ const RULES = [
       brass: L('Toca las agudas con la mitad de presión: si no salen, pide más velocidad de aire (sílaba «i»), no más fuerza contra la boquilla.', 'Play the high notes with half the pressure: if they do not come out, ask for faster air (the syllable "ee"), not more force on the mouthpiece.'),
       trombone: L('Toca las agudas con la mitad de presión: si no salen, pide más velocidad de aire (sílaba «i»), no más fuerza contra la boquilla.', 'Play the high notes with half the pressure: if they do not come out, ask for faster air (the syllable "ee"), not more force on the mouthpiece.'),
       recorder: L('Sopla como si dijeras «du» suave también arriba: el pulgar de atrás entreabierto hace el trabajo, no el aire.', 'Blow as if saying a soft "doo" up high too: the half-open back thumb does the work, not the air.'),
+      oboe: L('Los dos labios rodean la caña como un cordón, sin pellizcar: en las agudas sube con la velocidad del aire y mete apenas un poco más de caña.', 'Both lips surround the reed like a drawstring, without pinching: on high notes go up with air speed and take in just a little more reed.'),
     }, k),
     evidence: s => [ev(REG.high, cents(s.reg.high.mean)), ev(REG.low, cents(s.reg.low.mean))],
   },
@@ -134,7 +150,7 @@ const RULES = [
     evidence: s => [ev(REG.high, cents(s.reg.high.mean)), ev(REG.low, cents(s.reg.low.mean))],
   },
   {
-    id: 'octave-up-low', kinds: ['reed', 'clarinet', 'flute', 'recorder'],
+    id: 'octave-up-low', kinds: ['reed', 'oboe', 'clarinet', 'flute', 'recorder'],
     count: (s, k) => slipsWhere(s, off => off === 12 || (k === 'clarinet' && off === 19), 'low'),
     test: (s, k) => { const c = RULES_BY_ID['octave-up-low'].count(s, k); return c >= MIN_SLIPS && rate(c, attemptsIn(s, 'low')) >= 0.12; },
     weight: (s, k) => 100 * rate(RULES_BY_ID['octave-up-low'].count(s, k), attemptsIn(s, 'low')),
@@ -145,12 +161,14 @@ const RULES = [
       clarinet: L('Varias veces, en las notas graves, ha sonado una nota de arriba o un chirrido. Suele ser un agujero mal tapado o morder la caña.', 'Several times a higher note or a squeak sounded on low notes. It is usually a hole not fully covered or biting the reed.'),
       flute: L('Varias veces, en las notas graves, ha sonado la octava de arriba: el aire va demasiado rápido o la abertura es muy pequeña.', 'Several times the upper octave sounded on low notes: the air is too fast or the opening is too small.'),
       recorder: L('Varias veces, en las notas graves, ha sonado la octava de arriba: algún agujero no queda bien tapado o soplas demasiado.', 'Several times the upper octave sounded on low notes: a hole is not fully covered or you blow too hard.'),
+      oboe: L('Varias veces, en las notas graves, ha sonado la octava de arriba. Pasa al apretar la caña o al meterla demasiado en la boca.', 'Several times the upper octave sounded on low notes. It happens when you squeeze the reed or take too much of it into the mouth.'),
     }, k),
     action: k => pick({
       default: L('En las graves, baja la mandíbula, abre la garganta como al decir «o» y suelta presión del labio sin perder el cojín.', 'On low notes, drop the jaw, open the throat as when saying "oh" and release lip pressure without losing the cushion.'),
       clarinet: L('Tapa los agujeros con la yema plana (no la punta) y comprueba en el espejo que la barbilla sigue estirada, sin morder.', 'Cover the holes with the flat pad of the finger (not the tip) and check in a mirror that the chin stays flat, without biting.'),
       flute: L('En las graves, agranda un poco la abertura, dirige el aire más hacia abajo y sopla más lento y cálido.', 'On low notes, open the aperture a little, aim the air lower and blow slower, warmer air.'),
       recorder: L('Comprueba que cada dedo tapa con la yema entera (te tiene que quedar la marca del agujero) y sopla «du» más suave.', 'Check each finger covers with the whole pad (it should leave a ring mark) and blow a softer "doo".'),
+      oboe: L('En las graves, saca un poco de caña, abre la garganta como al decir «o» y afloja los labios sin dejar de cubrir los dientes.', 'On low notes, take a little less reed, open the throat as when saying "oh" and relax the lips while still covering the teeth.'),
     }, k),
     evidence: (s, k) => [ev(L('Saltos de octava en graves', 'Octave jumps on low notes'), String(RULES_BY_ID['octave-up-low'].count(s, k))), ev(L('Notas graves', 'Low notes'), String(attemptsIn(s, 'low')))],
   },
@@ -230,7 +248,7 @@ const RULES = [
       fretted: L('Toca cada nota cuatro veces seguidas mirando el afinador y busca la presión mínima que suene limpia.', 'Play each note four times in a row watching the tuner and look for the least pressure that sounds clean.'),
     }, k),
     evidence: s => [ev(L('Variación media', 'Average variation'), `±${round(s.spread)} ¢`)],
-    goto: 'longtone',
+    goto: k => (k === 'fretted' ? 'tuner' : 'longtone'),
   },
   {
     id: 'dynamic-pitch', kinds: [...WINDS],
@@ -238,8 +256,14 @@ const RULES = [
     weight: s => 3 * Math.abs(avgSlope(s)),
     tip: k => (k === 'brass' || k === 'trombone' || k === 'recorder' ? 'breath' : 'embouchure'),
     title: L('El volumen te cambia la afinación', 'Volume changes your tuning'),
-    why: () => L('En tus notas tenidas, al cambiar de piano a forte la afinación se mueve. Los labios acompañan al aire en vez de quedarse quietos.', 'In your long notes the pitch moves when you go from soft to loud. The lips follow the air instead of staying still.'),
-    action: () => L('Crescendo y diminuendo en una nota: más aire para el forte sin apretar, y en el piano mantén la velocidad del aire.', 'Crescendo and diminuendo on one note: more air for forte without squeezing, and keep the air speed up in piano.'),
+    why: k => pick({
+      default: L('En tus notas tenidas, al cambiar de piano a forte la afinación se mueve. Los labios acompañan al aire en vez de quedarse quietos.', 'In your long notes the pitch moves when you go from soft to loud. The lips follow the air instead of staying still.'),
+      recorder: L('En tus notas tenidas, al cambiar de piano a forte la afinación se mueve. En la flauta dulce es normal: soplar más fuerte sube la nota, así que el volumen apenas puede cambiar.', 'In your long notes the pitch moves when you go from soft to loud. On the recorder that is normal: blowing harder raises the note, so the volume can barely change.'),
+    }, k),
+    action: k => pick({
+      default: L('Crescendo y diminuendo en una nota: más aire para el forte sin apretar, y en el piano mantén la velocidad del aire.', 'Crescendo and diminuendo on one note: more air for forte without squeezing, and keep the air speed up in piano.'),
+      recorder: L('Busca un soplo «du» siempre igual, el que deja la nota afinada en el afinador, y toca las dinámicas con la articulación (más o menos marcada), no con el aire.', 'Find a steady "doo" breath, the one that keeps the note in tune on the tuner, and shape dynamics with the articulation (more or less accented), not with the air.'),
+    }, k),
     evidence: s => [ev(L('Cambio por cada 10 dB', 'Change per 10 dB'), cents(avgSlope(s)))],
     goto: 'longtone',
   },
@@ -285,9 +309,23 @@ function globalOffset(s, kind) {
     id: sharp ? 'tune-sharp' : 'tune-flat', tip: 'mouthpiece', weight: Math.abs(s.mean), goto: 'tuner',
     title: sharp ? L('Afinas alto en todas las notas', 'You play sharp on every note') : L('Afinas bajo en todas las notas', 'You play flat on every note'),
     why: L('Todo el registro se desvía lo mismo, así que no parece un problema de técnica: es la afinación del instrumento.', 'The whole range is off by the same amount, so it does not look like a technique problem: it is how the instrument is tuned.'),
-    action: pick({
-      default: sharp ? L('Saca un poco la boquilla (o la bomba de afinación) y vuelve a comprobar con el afinador.', 'Pull the mouthpiece (or tuning slide) out a little and check again with the tuner.')
-        : L('Mete un poco la boquilla (o la bomba de afinación) y vuelve a comprobar con el afinador.', 'Push the mouthpiece (or tuning slide) in a little and check again with the tuner.'),
+    action: pick(sharp ? {
+      default: L('Saca un poco la boquilla del tudel y vuelve a comprobar con el afinador.', 'Pull the mouthpiece out on the neck a little and check again with the tuner.'),
+      clarinet: L('Saca un poco el barrilete (o el tudel en el clarinete bajo) y vuelve a comprobar con el afinador.', 'Pull the barrel out a little (or the neck on bass clarinet) and check again with the tuner.'),
+      flute: L('Saca un poco la cabeza de la flauta y vuelve a comprobar con el afinador.', 'Pull the headjoint out a little and check again with the tuner.'),
+      recorder: L('Saca un poco la cabeza de la flauta dulce y sopla más suave; vuelve a comprobar con el afinador.', 'Pull the recorder head out a little and blow more gently; check again with the tuner.'),
+      oboe: L('Saca un poco la caña del oboe (apenas un milímetro) y vuelve a comprobar con el afinador.', 'Pull the oboe reed out slightly (barely a millimetre) and check again with the tuner.'),
+      brass: L('Saca un poco la bomba general de afinación y vuelve a comprobar con el afinador.', 'Pull the main tuning slide out a little and check again with the tuner.'),
+      trombone: L('Saca un poco la bomba de afinación y vuelve a comprobar con el afinador.', 'Pull the tuning slide out a little and check again with the tuner.'),
+      bowed: L('Afina las cuatro cuerdas al aire con el afinador antes de empezar.', 'Tune the four open strings with the tuner before you start.'),
+    } : {
+      default: L('Mete un poco la boquilla en el tudel y vuelve a comprobar con el afinador.', 'Push the mouthpiece further onto the neck and check again with the tuner.'),
+      clarinet: L('Mete un poco el barrilete (o el tudel en el clarinete bajo) y vuelve a comprobar con el afinador.', 'Push the barrel in a little (or the neck on bass clarinet) and check again with the tuner.'),
+      flute: L('Mete un poco la cabeza de la flauta y vuelve a comprobar con el afinador.', 'Push the headjoint in a little and check again with the tuner.'),
+      recorder: L('Mete un poco la cabeza de la flauta dulce y sopla con un aire constante; vuelve a comprobar con el afinador.', 'Push the recorder head in a little and blow with steady air; check again with the tuner.'),
+      oboe: L('Mete bien la caña hasta el fondo y vuelve a comprobar con el afinador.', 'Push the reed fully in and check again with the tuner.'),
+      brass: L('Mete un poco la bomba general de afinación y vuelve a comprobar con el afinador.', 'Push the main tuning slide in a little and check again with the tuner.'),
+      trombone: L('Mete un poco la bomba de afinación y vuelve a comprobar con el afinador.', 'Push the tuning slide in a little and check again with the tuner.'),
       bowed: L('Afina las cuatro cuerdas al aire con el afinador antes de empezar.', 'Tune the four open strings with the tuner before you start.'),
     }, kind),
     evidence: [ev(L('Media', 'Average'), cents(s.mean))],
@@ -302,7 +340,7 @@ export function coachAdvice(inst, tuning, coach, extra = {}) {
   if (s.samples < needed && kind !== 'perc') return { ready: false, progress: s.samples / needed, items: [] };
   const items = RULES.filter(r => r.kinds.includes(kind) && r.test(s, kind, extra)).map(r => ({
     id: r.id, tip: r.tip(kind), weight: r.weight(s, kind, extra), title: r.title,
-    why: r.why(kind), action: r.action(kind), evidence: r.evidence(s, kind, extra), goto: r.goto || null,
+    why: r.why(kind), action: r.action(kind), evidence: r.evidence(s, kind, extra), goto: (typeof r.goto === 'function' ? r.goto(kind) : r.goto) || null,
   }));
   const offset = globalOffset(s, kind);
   if (offset) items.push(offset);

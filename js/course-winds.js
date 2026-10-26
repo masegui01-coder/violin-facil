@@ -5,6 +5,8 @@ import { getState } from './store.js';
 
 // «C4 D4 E4» → «Do, Re, Mi» (o «C4, D4, E4» con la nomenclatura americana)
 const names = list => list.map(n => noteLabel(parseNote(n), getState().nom)).join(', ');
+// «Eb» → «Mi♭» (o «E♭»): nombre de una tonalidad, sin octava
+const keyName = k => noteLabel(parseNote(k + '4'), getState().nom).replace(/\d+$/, '');
 
 const SCALES = {
   C: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], G: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'], D: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
@@ -20,7 +22,7 @@ const HIGH_NOTES = {
   trumpet: 'C5 D5 E5 F5 G5', clarinet: 'B4 C5 D5 E5 F#5 G5', sax: 'D5 E5 F#5 G5 A5', 'sax-tenor': 'D5 E5 F5 G5 A5', 'sax-bari': 'D5 E5 F#5 G5 A5',
   flute: 'D5 E5 F5 G5 A5 Bb5', oboe: 'E5 G5 A5 B5',
   'eb-clarinet': 'B4 C5 D5 E5 F#5 G5', 'bass-clarinet': 'B4 C5 D5 E5 F#5 G5', piccolo: 'D5 E5 F5 G5 A5 Bb5', 'sax-soprano': 'D5 E5 F5 G5 A5',
-  flugelhorn: 'C5 D5 E5 F5 G5', horn: 'G5 A5 Bb5 C6', trombone: 'D4 Eb4 F4 G4', euphonium: 'C5 D5 E5 F5 G5', tuba: 'D3 Eb3 F3 G3',
+  flugelhorn: 'C5 D5 E5 F5 G5', horn: 'D5 E5 F5 G5', trombone: 'D4 Eb4 F4 G4', euphonium: 'C5 D5 E5 F5 G5', tuba: 'D3 Eb3 F3 G3',
 };
 const SECOND_KEY = {
   trumpet: 'F', clarinet: 'F', sax: 'D', 'sax-tenor': 'F', 'sax-bari': 'D', flute: 'F', oboe: 'F',
@@ -30,13 +32,20 @@ const SECOND_KEY = {
 const FAMILY_CARDS = {
   metal: [
     { title: 'La respiración', text: 'Coge aire por la boca, profundo y sin subir los hombros, como si bostezaras. Sopla con el aire rápido y constante: la nota depende más del aire que de apretar los labios.' },
-    { title: 'La embocadura', text: 'Labios juntos, comisuras firmes y la boquilla centrada, mitad arriba y mitad abajo. Haz vibrar los labios (el «buzz») y deja que la boquilla lo amplifique.' },
+    { title: 'La embocadura', text: 'Labios juntos, comisuras firmes y la boquilla centrada de lado a lado; la altura depende del instrumento (en la trompa, unos dos tercios de labio de arriba). Haz vibrar los labios (el «buzz») y deja que la boquilla lo amplifique.' },
   ],
   madera: [
     { title: 'La respiración', text: 'Coge aire profundo, con el abdomen, sin subir los hombros. Mantén la columna de aire constante: un sonido estable sale de un aire estable.' },
-    { title: 'La embocadura', text: 'Comisuras firmes y labios relajados alrededor de la boquilla, la caña o la embocadura. No muerdas: si el sonido sale alto y estrecho, afloja la mandíbula.' },
+    { title: 'La embocadura', text: 'El labio de abajo cubre un poco los dientes, los dientes de arriba apoyan en la boquilla y los labios rodean la boquilla como una goma, sin morder. Si el sonido sale alto y estrecho, afloja la mandíbula.' },
   ],
 };
+// La flauta y el oboe no tienen boquilla con caña: su propia tarjeta de embocadura
+const EMBOUCHURE_OF = {
+  flute: { title: 'La embocadura', text: 'La placa de la embocadura apoya bajo el labio de abajo, que tapa un tercio del agujero. Labios relajados y una abertura pequeña: sopla hacia el borde del agujero, como al soplar sobre una botella.' },
+  oboe: { title: 'La embocadura', text: 'Los dos labios cubren los dientes y rodean la punta de la caña doble como un cordón, sin morder. Solo entran unos milímetros de caña.' },
+};
+EMBOUCHURE_OF.piccolo = EMBOUCHURE_OF.flute;
+const cardsFor = inst => FAMILY_CARDS[inst.family].map(c => (c.title === 'La embocadura' && EMBOUCHURE_OF[inst.id]) || c);
 const MIC_CARD = { title: 'Cómo te escucha la app', text: 'Deja el móvil a un metro y no soples hacia el micrófono. La app enseña la nota escrita en tu instrumento, aunque el sonido real sea otro si transporta.' };
 
 function scaleFrom(key, letter, octave) {
@@ -73,11 +82,11 @@ export function windUnits(inst, helpers) {
   const fits = list => midis(list).every(m => m >= inst.written[0] && m <= inst.written[1]);
   const scale2 = [4, 3, 5, 2, 1].map(o => scaleFrom(second, second, o)).find(fits) || scaleFrom(second, second, 4);
   const high = HIGH_NOTES[inst.id].split(' ');
-  const cards = FAMILY_CARDS[inst.family];
+  const cards = cardsFor(inst);
   const p = `${inst.id}-`;
   return [
     { id: p + 'u1', title: 'Primeros sonidos', sub: 'Aire, embocadura y tres notas', color: 'var(--u1)', lessons: [
-      theory(p + 'u1-intro', `Conoce tu ${inst.name.toLowerCase()}`, [...cards, { title: 'Tus primeras notas', text: `Empezamos por ${names(first.slice(0, 3))} (notas escritas). El diagrama te muestra qué pulsar en cada una.`, board: midis(first.slice(0, 1)) }, MIC_CARD]),
+      theory(p + 'u1-intro', `Conoce tu ${inst.name.toLowerCase()}`, [...cards, { title: 'Tus primeras notas', text: `Empezamos por ${names(first.slice(0, 3))} (notas escritas). ${inst.id === 'trombone' ? 'El diagrama te muestra en qué posición va la vara' : 'El diagrama te muestra qué pulsar'} en cada una.`, board: midis(first.slice(0, 1)) }, MIC_CARD]),
       warmup(p + 'u1-warm', 'Notas tenidas', repeatPattern(first, [0, 0, 1, 1, 2, 2, 1, 1, 0, 0])),
       notes(p + 'u1-three', 'Tres notas', names(first.slice(0, 3)), repeatPattern(first, [0, 1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 0])),
       exercise(p + 'u1-long', 'Sonidos largos', 'Redondas: mantén el aire 4 pulsos', { key: 'C', time: 4, bpm: 60, score: toScore([first[0], first[1], first[2], first[1], first[0]], 'w') }),
@@ -91,7 +100,7 @@ export function windUnits(inst, helpers) {
     ] },
     { id: p + 'u3', title: 'La escala de la banda', sub: 'Si♭ mayor de concierto', color: 'var(--u3)', lessons: [
       theory(p + 'u3-intro', 'La escala de la banda', [
-        { title: 'Si♭ de concierto', text: inst.inKey ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${names([scale[0]]).replace(/\d/, '')}.` : inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} suena una octava más aguda de lo escrito, pero la escala se escribe igual: Si♭ mayor.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu instrumento está en Do, así que para ti es Si♭ mayor tal cual.' },
+        { title: 'Si♭ de concierto', text: inst.inKey ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${names([scale[0]]).replace(/\d/, '')}.` : inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} suena una octava más aguda de lo escrito, pero la escala se escribe igual: Si♭ mayor.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu parte se escribe en sonido real, así que para ti es Si♭ mayor tal cual.' },
       ]),
       notes(p + 'u3-scale', 'Escala de la banda', 'Subir y bajar', upDown(scale)),
       song(p + 'u3-oda', 'oda', 'Beethoven'),
@@ -110,10 +119,10 @@ export function windUnits(inst, helpers) {
       slots(2, 2),
     ] },
     { id: p + 'u6', title: 'Escalas y arpegios', sub: 'Técnica de banda', color: 'var(--u6)', lessons: [
-      theory(p + 'u6-intro', 'Escalas', [{ title: 'Otra tonalidad', text: `Muchas obras de banda están en Mi♭ y Fa de concierto. Practicamos la escala de ${second} escrita y su arpegio.` }]),
-      notes(p + 'u6-scale', `Escala de ${second}`, 'Subir y bajar', upDown(scale2)),
-      notes(p + 'u6-arp', 'Arpegio', 'Tónica, tercera y quinta', [scale[0], scale[2], scale[4], scale[7], scale[4], scale[2], scale[0]].join(' ')),
-      song(p + 'u6-minueto', 'minueto', 'Bach'),
+      theory(p + 'u6-intro', 'Escalas', [{ title: 'Otra tonalidad', text: `Muchas obras de banda están en Mi♭ y Fa de concierto. Practicamos la escala de ${keyName(second)} escrita y su arpegio.` }]),
+      notes(p + 'u6-scale', `Escala de ${keyName(second)}`, 'Subir y bajar', upDown(scale2)),
+      notes(p + 'u6-arp', `Arpegio de ${keyName(second)}`, 'Tónica, tercera y quinta', [scale2[0], scale2[2], scale2[4], scale2[7], scale2[4], scale2[2], scale2[0]].join(' ')),
+      song(p + 'u6-minueto', 'minueto', 'Petzold'),
       slots(2, 2),
     ] },
     { id: p + 'u7', title: 'Afinar en banda', sub: 'Terceras, quintas y expresión', color: 'var(--u7)', lessons: [

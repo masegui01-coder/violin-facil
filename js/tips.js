@@ -144,6 +144,37 @@ const CLARINET = [
   BREATH,
 ];
 
+const BASS_CLARINET = [
+  {
+    ...CLARINET[0],
+    steps: [
+      CLARINET[0].steps[0], CLARINET[0].steps[1],
+      { t: L('El ángulo', 'The angle'), d: L('El clarinete bajo va casi vertical: la boquilla entra en la boca más recta que en el clarinete, como en el saxo. Dientes de arriba sobre la boquilla y comisuras firmes.', 'The bass clarinet stands almost upright: the mouthpiece enters the mouth more horizontally than on the clarinet, as on the sax. Upper teeth on the mouthpiece and firm corners.') },
+    ],
+    avoid: [L('Barbilla arrugada, con bultos', 'A bunched-up, lumpy chin'), L('Bajar la cabeza hacia la boquilla', 'Lowering the head to the mouthpiece'), L('Morder: chirridos y sonido fino', 'Biting: squeaks and a thin sound')],
+  },
+  {
+    ...CLARINET[1],
+    intro: L('El clarinete bajo se apoya en el suelo con la pica (o cuelga del arnés); las manos solo lo equilibran y quedan libres para las llaves.', 'The bass clarinet rests on the floor on its peg (or hangs from a strap); the hands only balance it and stay free for the keys.'),
+    steps: [
+      { t: L('La pica a tu medida', 'Set the peg'), d: L('Ajusta la pica para que la boquilla llegue a la boca con la cabeza recta, sentado con la espalda recta.', 'Adjust the peg so the mouthpiece reaches your mouth with your head straight, sitting upright.') },
+      { t: L('Dedos en C', 'C-shaped fingers'), d: L('Manos curvadas, como sujetando una pelota de tenis; los dedos tapan con la yema plana y no aguantan peso.', 'Curved hands, as if holding a tennis ball; the fingers cover with the flat pad and carry no weight.') },
+      { t: L('El instrumento a un lado', 'Instrument to one side'), d: L('El clarinete bajo queda entre las rodillas o algo a la derecha, casi vertical. Codos sueltos.', 'The bass clarinet sits between the knees or slightly to the right, almost upright. Loose elbows.') },
+    ],
+  },
+  {
+    ...CLARINET[2],
+    title: L('Para empezar: boquilla y tudel', 'To start: mouthpiece and neck'),
+    intro: L('Con la boquilla sola, o con boquilla y tudel, compruebas la embocadura antes de montar todo el clarinete bajo.', 'With the mouthpiece alone, or mouthpiece and neck, you can check your embouchure before assembling the whole bass clarinet.'),
+    steps: [
+      { t: L('Solo la boquilla', 'Mouthpiece alone'), d: L('Debe dar una nota clara y estable, más grave que en el clarinete en Si♭. Anota cuál es con el afinador.', 'It should give a clear, steady note, lower than on the B♭ clarinet. Note which one it is with the tuner.') },
+      { t: L('Con el tudel', 'With the neck'), d: L('Al añadir el tudel la nota baja: también debe salir estable y sin chillar.', 'Adding the neck lowers the note: it should also come out steady and without shrieking.') },
+      { t: L('Corrige', 'Correct it'), d: L('Si sale más baja de lo habitual, falta aire o la embocadura está floja; si chilla, estás mordiendo. Usa siempre la misma nota de referencia.', 'If it is lower than usual, you need more air or a firmer embouchure; if it shrieks, you are biting. Always use the same reference note.') },
+    ],
+  },
+  BREATH,
+];
+
 const OBOE = [
   {
     kind: 'embouchure', art: 'oboe-embouchure', sources: ['rothwell'],
@@ -169,7 +200,15 @@ const OBOE = [
     check: L('Si solo suena agudo, la caña está cerrada o muerdes; si suena muy grave y sucio, está demasiado abierta.', 'If it only sounds high, the reed is closed or you are biting; if it is very low and fuzzy, it is too open.'),
     avoid: [L('Caña seca', 'A dry reed'), L('Apretar la mandíbula', 'Clenching the jaw')],
   },
-  { ...CLARINET[1], art: 'oboe-hold', sources: ['rothwell', 'conable'], intro: L('El oboe se sujeta como el clarinete: el peso en el pulgar derecho y los dedos curvados, cerca de las llaves.', 'The oboe is held like the clarinet: the weight on the right thumb and the fingers curved, close to the keys.') },
+  {
+    ...CLARINET[1], art: 'oboe-hold', sources: ['rothwell', 'conable'],
+    intro: L('El oboe se sujeta como el clarinete: el peso en el pulgar derecho y los dedos curvados, cerca de las llaves.', 'The oboe is held like the clarinet: the weight on the right thumb and the fingers curved, close to the keys.'),
+    steps: [
+      CLARINET[1].steps[0],
+      { t: L('Dedos en C', 'C-shaped fingers'), d: L('Manos curvadas, como sujetando una pelota de tenis; las yemas tapan los agujeros de los platillos y rozan las llaves.', 'Curved hands, as if holding a tennis ball; the pads cover the holes in the plates and stay close to the keys.') },
+      { t: L('Cabeza recta', 'Head straight'), d: L('El oboe sube hacia la boca, no la cabeza baja hacia él, con un ángulo algo menor que el clarinete. Codos sueltos, separados del cuerpo.', 'The oboe comes up to the mouth, the head does not go down to it, at a slightly smaller angle than the clarinet. Loose elbows, away from the body.') },
+    ],
+  },
   BREATH,
 ];
 
@@ -280,6 +319,15 @@ const BRASS = [
   BREATH,
 ];
 
+const HORN_POSTURE = {
+  ...BRASS[2],
+  steps: [
+    BRASS[2].steps[0],
+    { t: L('Las dos manos', 'Both hands'), d: L('La mano izquierda sostiene la trompa y acciona los cilindros con los dedos curvados; la derecha va dentro de la campana.', 'The left hand holds the horn and works the rotary valves with curved fingers; the right hand goes inside the bell.') },
+    { t: L('Cabeza recta', 'Head straight'), d: L('Lleva la boquilla a la boca sin bajar la barbilla. Sentado, el borde de la campana puede apoyarse en el muslo derecho.', 'Bring the mouthpiece to the mouth without dropping the chin. Sitting, the rim of the bell can rest on the right thigh.') },
+  ],
+};
+
 const HORN_HAND = {
   kind: 'hand', art: 'horn-hand', sources: ['farkasHorn'],
   title: L('La mano derecha en la campana', 'The right hand in the bell'),
@@ -303,7 +351,7 @@ const SLIDE = {
     { t: L('Afina con el oído', 'Tune by ear'), d: L('Toca despacio con el afinador y corrige la vara un poco hacia dentro (sube) o hacia fuera (baja).', 'Play slowly with the tuner and nudge the slide in (sharper) or out (flatter).') },
   ],
   check: L('Cambia entre 1.ª y 4.ª con los ojos cerrados y comprueba en el afinador si llegas.', 'Move between 1st and 4th with your eyes closed and check on the tuner whether you land.'),
-  avoid: [L('Mover el hombro en vez del codo', 'Moving the shoulder instead of the elbow'), L('Agarrar la vara con toda la mano', 'Gripping the slide with the whole hand'), L('Cambiar de posición sin parar el aire', 'Changing position with the air stopped')],
+  avoid: [L('Mover el hombro en vez del codo', 'Moving the shoulder instead of the elbow'), L('Agarrar la vara con toda la mano', 'Gripping the slide with the whole hand'), L('Cortar el aire al cambiar de posición', 'Stopping the air when changing position')],
 };
 
 const VIOLIN = [
@@ -473,7 +521,7 @@ const CAJON = [
     title: L('Los golpes del cajón', 'Cajón strokes'),
     intro: L('El cajón tiene dos sonidos básicos: el grave en el centro y el agudo en el borde de arriba. La mano rebota, nunca se queda pegada.', 'The cajón has two basic sounds: the bass in the centre and the slap at the top edge. The hand bounces, it never sticks.'),
     steps: [
-      { t: L('Postura', 'Posture'), d: L('Siéntate encima, hacia el borde delantero, con las piernas abiertas y el cuerpo un poco inclinado.', 'Sit on top, towards the front edge, legs apart and body leaning slightly forward.') },
+      { t: L('Postura', 'Posture'), d: L('Siéntate encima, en la mitad de atrás, con las piernas abiertas y el cuerpo un poco inclinado hacia la tapa.', 'Sit on top, on the back half, legs apart and body leaning slightly towards the front.') },
       { t: L('El grave', 'The bass'), d: L('Golpea con la palma relajada cerca del centro de la tapa y deja que la mano rebote.', 'Hit with a relaxed palm near the centre of the front plate and let the hand bounce off.') },
       { t: L('El agudo', 'The slap'), d: L('Golpea con los dedos juntos en el borde de arriba, cerca de las esquinas.', 'Hit with the fingers together on the top edge, near the corners.') },
     ],
@@ -499,10 +547,10 @@ const PERCUSSION = [
 
 const GROUPS = {
   sax: SAX, 'sax-tenor': SAX, 'sax-bari': SAX, 'sax-soprano': SAX,
-  clarinet: CLARINET, 'eb-clarinet': CLARINET, 'bass-clarinet': CLARINET,
+  clarinet: CLARINET, 'eb-clarinet': CLARINET, 'bass-clarinet': BASS_CLARINET,
   oboe: OBOE, flute: FLUTE, piccolo: FLUTE, recorder: RECORDER,
   trumpet: BRASS, flugelhorn: BRASS, euphonium: BRASS, tuba: BRASS,
-  horn: [...BRASS.slice(0, 3), HORN_HAND, BREATH], trombone: [BRASS[0], BRASS[1], SLIDE, BRASS[2], BREATH],
+  horn: [BRASS[0], BRASS[1], HORN_POSTURE, HORN_HAND, BREATH], trombone: [BRASS[0], BRASS[1], SLIDE, BRASS[2], BREATH],
   violin: VIOLIN, cello: CELLO, guitar: GUITAR, ukulele: UKULELE, piano: PIANO, cajon: CAJON, percussion: PERCUSSION,
 };
 

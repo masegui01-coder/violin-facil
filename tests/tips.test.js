@@ -21,7 +21,7 @@ test('cada instrumento tiene consejos con sus viñetas, fuentes y textos complet
 
 test('los consejos a los que apunta el detector existen para cada instrumento', () => {
   const NEEDS = {
-    reed: ['embouchure', 'breath', 'mouthpiece'], clarinet: ['embouchure', 'breath', 'mouthpiece'], flute: ['embouchure', 'breath', 'mouthpiece'],
+    reed: ['embouchure', 'breath', 'mouthpiece'], oboe: ['embouchure', 'breath', 'mouthpiece'], clarinet: ['embouchure', 'breath', 'mouthpiece'], flute: ['embouchure', 'breath', 'mouthpiece'],
     recorder: ['breath', 'holes'], brass: ['buzz', 'breath', 'embouchure'], trombone: ['buzz', 'breath', 'slide'],
     bowed: ['left-hand', 'bow'], fretted: ['fretting', 'right-hand'], keys: ['hand'], perc: ['stroke'],
   };

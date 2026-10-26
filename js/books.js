@@ -121,7 +121,7 @@ function bookOne(course, inst) {
       }
     } else if (chords.length >= 2) {
       extra.push(chartPage(`${chapter.id}-ej1`, `Ejercicio ${++exerciseNo}: dos acordes por compás`, 'Cambia en el pulso 3', [...chords, ...chords, ...chords, ...chords].slice(0, 16), { perBar: 2, bpm: 66 }));
-      extra.push(chartPage(`${chapter.id}-ej2`, `Ejercicio ${++exerciseNo}: en tres por cuatro`, 'Abajo-arriba-arriba: un-dos-tres', [...chords, ...chords].slice(0, 8), { time: 3, bpm: 80 }));
+      extra.push(chartPage(`${chapter.id}-ej2`, `Ejercicio ${++exerciseNo}: en tres por cuatro`, kind === 'piano' ? 'Bajo en el uno y acorde en el dos y el tres' : 'Abajo-arriba-arriba: un-dos-tres', [...chords, ...chords].slice(0, 8), { time: 3, bpm: 80 }));
       extra.push(changesPage(`${chapter.id}-ej3`, chords[chords.length - 2], chords[chords.length - 1], 25));
     }
     if (kind !== 'rhythm' && pool.length >= 3 && own.length) {
@@ -146,6 +146,12 @@ function bookOne(course, inst) {
 }
 
 // ---------- Libros 2 y 3 ----------
+const PITCH_TOPICS = ['lm2-escalas', 'lm2-menores', 'lm2-intervalos', 'lm3-acordes', 'lm3-cromatica', 'lm3-menores', 'lm3-transporte'];
+const languageFor = (level, kind) => LANGUAGE[level].filter(t => kind !== 'rhythm' || !PITCH_TOPICS.includes(t.id));
+// Solo los instrumentos de banda tocan «con la banda»
+const BAND_FAMILIES = ['madera', 'metal'];
+const concertSub = inst => (BAND_FAMILIES.includes(inst.family) || inst.id === 'percussion' ? 'Para tocar con la banda' : 'Para tocarlo en público');
+
 function repertoire(level, inst, used) {
   const fits = s => !used.has(s.id) && octaveShiftFor(s, inst) !== null;
   const order = level === 2 ? [2, 1] : [3, 2];
@@ -155,7 +161,8 @@ function repertoire(level, inst, used) {
 function advancedBook(level, inst, usedSongs, usedSongbook) {
   const kind = kindOfInstrument(inst);
   const fam = familyOf(inst);
-  const topics = LANGUAGE[level];
+  // la percusión no lee alturas: sin escalas, intervalos, acordes ni transpositores (como en las píldoras)
+  const topics = languageFor(level, kind);
   const techs = (TECHNIQUE[inst.id] || TECHNIQUE[fam])[level];
   const songs = repertoire(level, inst, usedSongs);
   const sbs = SONGBOOK.filter(e => !usedSongbook.has(e.id) && chordsOf(e).every(c => !isChordInstrument(inst) || chordShape(c, inst.id)));
@@ -169,10 +176,11 @@ function advancedBook(level, inst, usedSongs, usedSongbook) {
     const key = keys[c] || fallbackKeys[c % Math.max(1, fallbackKeys.length)] || 'C';
     const lessons = [];
     const topic = topics[c % topics.length];
-    lessons.push(languagePage(p, topic));
+    if (c < topics.length) lessons.push(languagePage(p, topic)); // en la percusión hay menos temas que capítulos
     const [tTitle, tText] = techs[c % techs.length];
     lessons.push(theoryPage(`${id}-tec`, `Técnica: ${tTitle}`, 'Para tu instrumento', [{ title: tTitle, text: tText }]));
-    const prog = PROGRESSIONS[level][c % PROGRESSIONS[level].length];
+    // en el piano, la progresión en la tonalidad del capítulo cuando la hay
+    const prog = (kind === 'piano' && PROGRESSIONS[level].find(pr => pr.key === key)) || PROGRESSIONS[level][c % PROGRESSIONS[level].length];
     if (kind === 'rhythm') {
       for (let k = 0; k < 5; k++) lessons.push(songPage(`${id}-r${k + 1}`, `Ejercicio ${++exerciseNo}: lectura rítmica`, k < 2 ? 'Primero lento, contando en voz alta' : 'A tempo y sin pararte', rhythmReading(level, level * 1000 + c * 10 + k)));
     } else {
@@ -183,7 +191,7 @@ function advancedBook(level, inst, usedSongs, usedSongbook) {
         });
       }
       if (kind === 'fretted' || kind === 'piano') {
-        lessons.push(chartPage(`${id}-prog`, `Ejercicio ${++exerciseNo}: progresión en ${prog.name}`, 'Un acorde por compás, rasgueo ↓ ↓↑ ↑↓↑', prog.chords, { bpm: level === 2 ? 76 : 92 }));
+        lessons.push(chartPage(`${id}-prog`, `Ejercicio ${++exerciseNo}: progresión en ${prog.name}`, kind === 'piano' ? 'Un acorde por compás: izquierda en el bajo, derecha en el acorde' : 'Un acorde por compás, rasgueo ↓ ↓↑ ↑↓↑', prog.chords, { bpm: level === 2 ? 76 : 92 }));
         const pair = prog.chords.filter((x, i, a) => a.indexOf(x) === i).slice(-2);
         if (pair.length === 2 && kind === 'fretted') lessons.push(changesPage(`${id}-cambios`, pair[0], pair[1], level === 2 ? 30 : 40));
         if (kind === 'fretted') lessons.push(chartPage(`${id}-prog3`, `Ejercicio ${++exerciseNo}: ${prog.name} en tres por cuatro`, 'Bajo en el uno y acorde en el dos y el tres', prog.chords, { time: 3, bpm: level === 2 ? 84 : 100 }));
@@ -205,9 +213,9 @@ function advancedBook(level, inst, usedSongs, usedSongbook) {
       usedSongs.add(song.id);
       concert = { id: `${id}-concierto`, kind: 'song', songId: song.id, sub: `${song.by} · concierto del capítulo`, concert: true };
     } else if (kind === 'rhythm') {
-      concert = songPage(`${id}-concierto`, 'Estudio de concierto', 'Para tocar con la banda', rhythmReading(3, level * 1000 + c * 10 + 9), { concert: true });
+      concert = songPage(`${id}-concierto`, 'Estudio de concierto', concertSub(inst), rhythmReading(3, level * 1000 + c * 10 + 9), { concert: true });
     } else {
-      concert = songPage(`${id}-concierto`, `Estudio de concierto n.º ${c + 1}`, 'Para tocar con la banda', sightReading(3, inst, level * 1000 + c * 10 + 9), { concert: true });
+      concert = songPage(`${id}-concierto`, `Estudio de concierto n.º ${c + 1}`, concertSub(inst), sightReading(3, inst, level * 1000 + c * 10 + 9), { concert: true });
     }
     lessons.push(concert);
     const title = kind === 'rhythm' ? `${techs[c % techs.length][0]}` : kind === 'fretted' ? `Acordes: ${prog.name}` : keyLabel(key);
@@ -220,7 +228,7 @@ function advancedBook(level, inst, usedSongs, usedSongbook) {
 function examChapter(level, inst, number) {
   const kind = kindOfInstrument(inst);
   const p = `b${level}`;
-  const questions = LANGUAGE[level].flatMap(t => t.quiz);
+  const questions = languageFor(level, kind).flatMap(t => t.quiz);
   const glossary = GLOSSARY[level];
   const cards = [];
   for (let i = 0; i < glossary.length; i += GLOSSARY_PER_CARD) {

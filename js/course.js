@@ -94,7 +94,7 @@ export const UNITS = [
     warmup('u7-warm', 'Dedo 2 alto y bajo', 'A4 B4 C#5 B4 C5 B4 C#5 D5 C5 B4 A4 E5 F#5 G#5 F#5 G5 F#5 E5'),
     notes('u7-low2', 'Do natural', 'Dedo 2 bajo en La y Mi', 'A4 B4 C5 D5 C5 B4 A4 B4 C5 B4 A4 E5 F#5 G5 A5 G5 F#5 E5 F#5 G5 F#5 E5'),
     notes('u7-scale', 'Escala de Do mayor', 'Desde la cuerda Sol', 'C4 D4 E4 F4 G4 A4 B4 C5 B4 A4 G4 F4 E4 D4 C4'),
-    song('u7-minueto', 'minueto', 'Bach para violín'),
+    song('u7-minueto', 'minueto', 'Petzold, del cuaderno de Ana Magdalena Bach'),
     slots(3, 2),
   ] },
   { id: 'u8', title: 'Menores y expresión', sub: 'La menor y frases largas', color: 'var(--u8)', lessons: [
@@ -128,7 +128,7 @@ function pickSongs(count, difficulty, styles, used, inst) {
 // Guitarra, ukelele y piano: acordes uno a uno, cambios de un minuto y canciones del cancionero a tempo
 const chordsHold = (id, title, sub, chords) => ({ id, kind: 'chords', mode: 'hold', title, sub, chords });
 const changes = (id, a, b, target) => ({ id, kind: 'chords', mode: 'changes', title: `Cambios {${a}}–{${b}}`, sub: `Un minuto: ¿cuántos cambios? Meta: ${target}`, pair: [a, b], chords: [a, b], target });
-const sbSong = (id, songbookId, sub) => ({ ...songbookLesson(songbookById(songbookId)), id, sub });
+const sbSong = (id, songbookId, sub, extra = {}) => ({ ...songbookLesson(songbookById(songbookId)), id, sub, ...extra });
 
 const HELPERS = { theory, notes, song, exercise, slots, warmup, chordsHold, changes, sbSong };
 

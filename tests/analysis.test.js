@@ -36,3 +36,10 @@ test('silence gives no analysis and a helpful tip', () => {
   assert.equal(analyzeLongTone([{ cents: null, level: 0 }], DT), null);
   assert.match(longToneTip(null), /No he oído/);
 });
+
+test('long tone tips for violin and cello talk about the bow, not the air', () => {
+  const unstable = { mean: 0, stability: 20, vibrato: false, centsPer10dB: 0, dynamicRange: 0 };
+  assert.match(longToneTip(unstable, { bowed: true }), /arco/);
+  assert.doesNotMatch(longToneTip(unstable, { bowed: true }), /aire|embocadura/);
+  assert.match(longToneTip(unstable), /aire/);
+});

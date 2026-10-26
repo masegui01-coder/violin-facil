@@ -1,7 +1,7 @@
 // Notas tenidas: gráfica en vivo de afinación y volumen, con análisis de estabilidad, vibrato y dinámica.
 import { $ } from '../ui.js';
 import { register } from '../router.js';
-import { noteLabel, parseNote } from '../music.js';
+import { noteLabel, parseNote, isBowed } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { analyzeLongTone, longToneTip } from '../analysis.js';
 import { getState, update, addTuningSamples, logPractice, recordLongtoneTake } from '../store.js';
@@ -61,7 +61,7 @@ function stat(value, label) { return `<div class="stat"><b>${value}</b><span>${l
 
 function showResult() {
   const r = analyzeLongTone(frames, TICK_MS);
-  $('ltTip').textContent = longToneTip(r);
+  $('ltTip').textContent = longToneTip(r, { bowed: isBowed(getState().instrument) });
   $('ltNextStep').hidden = !routineNext;
   if (routineNext) $('ltNextStep').textContent = routineNext.label;
   if (!r) { $('ltStats').innerHTML = ''; return; }

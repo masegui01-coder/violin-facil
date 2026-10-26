@@ -60,6 +60,14 @@ $('gymList').addEventListener('click', e => {
 });
 
 // ---------- Estudio según el instrumento ----------
+// Qué cubren los consejos de técnica de cada familia
+const TIPS_TOOL_TEXT = {
+  viento: 'Embocadura, postura y respiración, y qué corregir según cómo tocas',
+  cuerda: 'Postura, arco y mano izquierda, y qué corregir según cómo tocas',
+  pulsada: 'Postura y las dos manos, y qué corregir según cómo tocas',
+  tecla: 'Postura y posición de la mano, y qué corregir según cómo tocas',
+  percusion: 'Postura y golpe, y qué corregir según cómo tocas',
+};
 register('practice', {
   enter() {
     const perc = isPerc();
@@ -67,6 +75,7 @@ register('practice', {
     document.querySelectorAll('#practice [data-family="perc"]').forEach(el => { el.hidden = !perc; });
     // Guitarra y piano: la afinación la da el instrumento; notas tenidas y afinar en acorde no les sirven
     if (instrumentById(getState().instrument).polyphonic) document.querySelectorAll('#practice [data-melodic]').forEach(el => { el.hidden = true; });
+    $('tipsToolText').textContent = TIPS_TOOL_TEXT[instrumentById(getState().instrument).family] || TIPS_TOOL_TEXT.viento;
     $('gymToolText').textContent = perc ? 'Pulso, golpes simples y dobles, paradiddle y acentos' : 'Escalas, arpegios y terceras en las 12 tonalidades';
   },
 });

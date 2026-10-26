@@ -147,6 +147,12 @@ export const fingeringsReviewed = instId => ['recorder', 'violin', 'cello', 'tru
 
 const HAND = { L: 'izq.', R: 'der.' };
 
+// Las notas con 1-3 y 1-2-3 salen altas: cada instrumento las corrige a su manera
+const SLIDE_HINT = {
+  trumpet: ' · saca la bomba del 3.er pistón',
+  flugelhorn: ' · tiende a salir alta: corrígela con el oído',
+  euphonium: ' · tiende a salir alta: usa el 4.º pistón si lo tienes',
+};
 export function fingeringText(instId, midi, nom) {
   if (instId === 'violin' || instId === 'cello') return violinText(midi, nom, instId);
   const f = fingeringFor(instId, midi);
@@ -160,8 +166,10 @@ export function fingeringText(instId, midi, nom) {
   }
   if (f.type === 'slide') return `Vara en la ${f.position}.ª posición`;
   if (f.type === 'valves') {
-    if (!f.valves.length) return 'Sin pistones (al aire)';
-    return (f.valves.length === 1 ? 'Pistón ' : 'Pistones ') + f.valves.join(' y ') + (f.slide ? ' · saca la bomba del 3.er pistón' : '');
+    const [one, many] = instId === 'horn' ? ['Cilindro ', 'Cilindros '] : ['Pistón ', 'Pistones '];
+    if (!f.valves.length) return instId === 'horn' ? 'Sin cilindros (al aire)' : 'Sin pistones (al aire)';
+    const list = f.valves.length === 1 ? String(f.valves[0]) : `${f.valves.slice(0, -1).join(', ')} y ${f.valves[f.valves.length - 1]}`;
+    return (f.valves.length === 1 ? one : many) + list + (f.slide ? SLIDE_HINT[instId] || SLIDE_HINT.trumpet : '');
   }
   const parts = [];
   if (f.octave) parts.push('llave de ' + f.octaveName);

@@ -54,13 +54,17 @@ export function analyzeLongTone(frames, dtMs) {
   };
 }
 
-// Consejo principal según el resultado
-export function longToneTip(r) {
+// Consejo principal según el resultado (bowed: violín y chelo, que sostienen la nota con el arco y no con el aire)
+export function longToneTip(r, { bowed = false } = {}) {
   if (!r) return 'No he oído una nota estable. Prueba a tocar más fuerte o más cerca del móvil.';
   if (r.dynamicRange > 8 && Math.abs(r.centsPer10dB) >= 5) {
+    if (bowed) return 'Al cambiar de volumen se mueve la afinación: el dedo aprieta distinto. Haz el forte con peso y velocidad de arco, no apretando la mano izquierda.';
     return r.centsPer10dB > 0 ? 'Al subir el volumen te vas alto: abre la garganta y relaja la embocadura en el forte.' : 'Al bajar el volumen te vas alto: sostén el aire en el piano y no dejes caer la columna.';
   }
-  if (r.stability > 12 && !r.vibrato) return 'La afinación se mueve: mantén el aire constante y la embocadura quieta.';
-  if (Math.abs(r.mean) > 10) return r.mean > 0 ? 'Vas alto de media: relaja un poco o ajusta la afinación del instrumento.' : 'Vas bajo de media: más velocidad de aire o ajusta la afinación del instrumento.';
+  if (r.stability > 12 && !r.vibrato) return bowed ? 'La afinación se mueve: deja el dedo quieto y lleva el arco a velocidad constante, con el peso del brazo.' : 'La afinación se mueve: mantén el aire constante y la embocadura quieta.';
+  if (Math.abs(r.mean) > 10) {
+    if (bowed) return r.mean > 0 ? 'Vas alto de media: retrocede un poco el dedo o revisa la afinación de la cuerda.' : 'Vas bajo de media: adelanta un poco el dedo o revisa la afinación de la cuerda.';
+    return r.mean > 0 ? 'Vas alto de media: relaja un poco o ajusta la afinación del instrumento.' : 'Vas bajo de media: más velocidad de aire o ajusta la afinación del instrumento.';
+  }
   return '¡Muy estable! Prueba ahora con un crescendo y un diminuendo.';
 }

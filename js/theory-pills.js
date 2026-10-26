@@ -99,22 +99,22 @@ const INSTRUMENT_PILL = {
     { title: 'Cómo se afina', text: 'Con la bomba general, y también con la mano derecha dentro del pabellón: cuanto más la cierras, más baja la nota. ' + WARM_UP.text },
   ], quiz: [bandQuestion('Fa', 'está en Fa (suena una quinta más grave de lo escrito)')] },
   trombone: { cards: [
-    { title: 'Trombón en Do', text: 'El trombón lee en clave de fa y suena lo que lees: cuando la banda afina al Si♭, tú tocas Si♭ en 1.ª posición, con la vara cerrada.' },
+    { title: 'Lees en sonido real', text: 'El trombón es un instrumento en Si♭ (con la vara cerrada da la serie de Si♭), pero lee en clave de fa y suena lo que lees: cuando la banda afina al Si♭, tú tocas Si♭ en 1.ª posición, con la vara cerrada.' },
     BAND_FAMILIES,
     { title: 'Siete posiciones', text: 'Cada posición de la vara baja medio tono. Las posiciones no son marcas fijas: afinas con el oído, moviendo la vara un poco hacia dentro o hacia fuera.' },
     { title: 'Cómo se afina', text: 'Con la bomba de afinación de la campana, con la vara en 1.ª. ' + WARM_UP.text },
-  ], quiz: [bandQuestion('Si♭', 'está en Do (suena lo que lees)'), { id: 'tbn-pos', q: '¿Qué pasa al alargar la vara una posición?', options: ['La nota sube medio tono', 'La nota baja medio tono', 'Suena más fuerte', 'No cambia'], answer: 1, why: 'Baja medio tono: el tubo es más largo.' }] },
+  ], quiz: [bandQuestion('Si♭', 'lee en sonido real (suena lo que lees)'), { id: 'tbn-pos', q: '¿Qué pasa al alargar la vara una posición?', options: ['La nota sube medio tono', 'La nota baja medio tono', 'Suena más fuerte', 'No cambia'], answer: 1, why: 'Baja medio tono: el tubo es más largo.' }] },
   euphonium: { cards: [
     { title: 'Bombardino en Si♭', text: 'En las bandas españolas suele leerse en clave de sol en Si♭: los mismos pistones que la trompeta y suena una novena más grave. (Si lees en clave de fa, suena lo que lees.)' },
     BAND_FAMILIES, WHY_TRANSPOSE,
     { title: 'Cómo se afina', text: 'Con la bomba general: sacarla baja la afinación. Necesita aire abundante y lento. ' + WARM_UP.text },
   ], quiz: [bandQuestion('Do', 'está en Si♭ en clave de sol (suena una novena más grave de lo escrito)')] },
   tuba: { cards: [
-    { title: 'Tuba en Do (clave de fa)', text: 'En las bandas la tuba lee en clave de fa y suena lo que lees, aunque el instrumento sea en Si♭ o Fa. Cuando la banda afina al Si♭, tú tocas Si♭.' },
+    { title: 'Lees en sonido real (clave de fa)', text: 'En las bandas la tuba lee en clave de fa y suena lo que lees, aunque el instrumento sea en Si♭ o Fa. Cuando la banda afina al Si♭, tú tocas Si♭.' },
     BAND_FAMILIES,
     { title: 'El cimiento de la banda', text: 'La tuba sostiene la afinación de todos: si el bajo está afinado, el acorde entero suena mejor.' },
     { title: 'Cómo se afina', text: 'Con la bomba general. En el grave el aire debe ser lento y muy abundante. ' + WARM_UP.text },
-  ], quiz: [bandQuestion('Si♭', 'está en Do en clave de fa (suena lo que lees)')] },
+  ], quiz: [bandQuestion('Si♭', 'lee en sonido real en clave de fa (suena lo que lees)')] },
   recorder: { cards: [
     { title: 'Tu flauta dulce', text: 'La flauta del cole se llama flauta dulce soprano. Suena una octava más aguda de lo que se escribe, para que la partitura sea fácil de leer.' },
     { title: 'Tapar bien', text: 'El secreto de la flauta es tapar los agujeros con la yema del dedo, sin dejar rendijas. Si una nota chilla o no sale, mira qué dedo deja pasar el aire.' },
@@ -152,11 +152,13 @@ const TONE_EXAMPLE = {
   pulsada: L('En el mástil cada traste es un semitono: de Do a Re hay dos trastes; de Mi a Fa, solo uno.', 'On the neck each fret is a semitone: from C to D there are two frets; from E to F, just one.'),
   tecla: L('En el piano se ve en las teclas negras: entre Do y Re hay una; entre Mi y Fa y entre Si y Do, ninguna.', 'On the piano you can see it in the black keys: there is one between C and D, and none between E and F or between B and C.'),
   cuerda: L('En el diapasón se nota en los dedos: de Do a Re se separan; de Mi a Fa van pegados.', 'On the fingerboard you feel it in the fingers: from C to D they are apart; from E to F they sit together.'),
+  // en el chelo cada dedo está a medio tono del siguiente
+  cello: L('En el chelo cada dedo está a medio tono del siguiente: de Do a Re te saltas un dedo; de Mi a Fa usas dos dedos seguidos.', 'On the cello each finger is a semitone from the next: from C to D you skip a finger; from E to F you use two neighbouring fingers.'),
   viento: L('En tu instrumento cada semitono tiene su propia digitación: lo verás en el diagrama de cada nota.', 'On your instrument each semitone has its own fingering: you will see it in the diagram for each note.'),
 };
 function toneCard(instId) {
   const fam = instrumentById(instId).family;
-  const example = TONE_EXAMPLE[fam] || TONE_EXAMPLE.viento;
+  const example = TONE_EXAMPLE[instId] || TONE_EXAMPLE[fam] || TONE_EXAMPLE.viento;
   const base = L('Entre Do y Re, Re y Mi, Fa y Sol, Sol y La y La y Si hay un tono: cabe una nota en medio (Do♯ o Re♭, por ejemplo). Entre Mi y Fa y entre Si y Do solo hay un semitono: no cabe ninguna.', 'Between C and D, D and E, F and G, G and A and A and B there is a whole tone: one note fits in between (C♯ or D♭, for example). Between E and F and between B and C there is only a semitone: nothing fits.');
   return { title: 'Siete nombres, doce sonidos', text: L(`${base} ${example}`, `${TIPS_EN[base]} ${TIPS_EN[example]}`) };
 }
@@ -177,7 +179,7 @@ const LEVEL_PILLS = [
   ], quiz: [{ id: 'meter-34', q: 'Un vals va en…', options: ['2/4', '3/4', '4/4', '6/8'], answer: 1, why: 'En 3/4: tres pulsos por compás, el primero fuerte.' }] },
   { id: 'accidentals', unit: 3, title: 'Sostenidos y bemoles', skip: ['percussion', 'cajon'], cards: [
     { title: 'Medio tono arriba o abajo', text: 'El sostenido (♯) sube la nota medio tono; el bemol (♭) la baja medio tono; el becuadro (♮) la devuelve a natural.' },
-    { title: 'Dos nombres para un sonido', text: 'Do♯ y Re♭ suenan igual en el piano: se escribe uno u otro según la tonalidad.' },
+    { title: 'Dos nombres para un sonido', text: 'Do♯ y Re♭ suenan igual (en el piano son la misma tecla negra): se escribe uno u otro según la tonalidad.' },
   ], quiz: [{ id: 'acc-sharp', q: 'Escucha: ¿la segunda nota está más alta o más baja?', options: ['Más alta: es un sostenido', 'Más baja: es un bemol', 'Es la misma nota'], answer: 0, why: 'Sube medio tono: Fa y luego Fa♯.', play: [[65], [66]] }] },
   { id: 'key', unit: 4, title: 'La armadura', skip: ['percussion', 'cajon'], cards: [
     { title: 'Alteraciones fijas', text: 'Los sostenidos o bemoles del principio de cada línea valen para toda la obra: si hay un Fa♯, todos los Fa son sostenidos.' },

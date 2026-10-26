@@ -9,7 +9,7 @@ export function recorderUnits({ theory, notes, exercise, slots }) {
     { id: R + 'u1', title: 'Si, La y Sol', sub: 'Tus tres primeras notas', color: 'var(--u1)', lessons: [
       theory(R + 'u1-intro', '¡Hola, flautista!', [
         { title: 'Cómo se coge', text: 'La mano izquierda va arriba, cerca de la boquilla, y la derecha abajo. El pulgar izquierdo tapa el agujerito de detrás.' },
-        { title: 'Sopla suave', text: 'Sopla despacito, como si dijeras «tuuu» para apagar una vela sin que se caiga la cera. Si la flauta pita, estás soplando demasiado fuerte.' },
+        { title: 'Sopla suave', text: 'Sopla despacito, como si dijeras «duuu» para calentarte las manos, no para apagar una vela. Si la flauta pita, estás soplando demasiado fuerte.' },
         { title: 'Tu primera nota: Si', text: 'Tapa el agujero de detrás con el pulgar y el primer agujero con el dedo índice izquierdo. Usa la yema del dedo, que quede bien tapado.', board: [71] },
         { title: 'Cómo te escucha la app', text: 'Deja el móvil cerca, en un sitio sin ruido. Cuando suene la nota correcta se pondrá verde. ¡Así sabrás que lo haces bien!' },
       ]),

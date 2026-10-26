@@ -14,6 +14,7 @@ import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { showPulse, drawPulse } from './pulse.js';
 import { decodeScore } from '../passage.js';
+import { playHints } from '../coach.js';
 
 const TICK_MS = 30;
 const HOLD_MS = 250;
@@ -146,7 +147,7 @@ function learnTick(p, dt) {
     run.peak = Math.max(run.peak, p.level);
     run.releaseWait += dt;
     if (p.level < run.peak * RELEASE_DIP || run.releaseWait >= RELEASE_FALLBACK_MS) run.needRelease = false;
-    else { setStatus('Cambia de arco y repite la nota'); return; }
+    else { setStatus(playHints(instrumentById(getState().instrument)).repeat); return; }
   }
   if (Math.abs(cents) <= tolerance()) {
     run.wrong = 0;
@@ -167,7 +168,8 @@ function learnTick(p, dt) {
   $('tName').className = 'name';
   if (run.wrong >= WRONG_MS) {
     $('tName').className = 'name bad';
-    setStatus(Math.abs(cents) > 100 ? 'Esa es otra nota' : cents > 0 ? 'Un poco alto: retrocede el dedo' : 'Un poco bajo: adelanta el dedo', 'var(--bad)');
+    const hints = playHints(instrumentById(getState().instrument));
+    setStatus(Math.abs(cents) > 100 ? 'Esa es otra nota' : cents > 0 ? hints.sharp : hints.flat, 'var(--bad)');
     if (!run.wrongCounted) { run.errors++; run.wrongCounted = true; run.missed.add(run.pos); run.slips.push({ midi: target.midi, off: Math.round(cents / 100) }); }
   }
 }

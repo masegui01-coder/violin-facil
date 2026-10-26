@@ -74,7 +74,7 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
       notes('uk5-e', 'Cuerda Mi', 'Mi, Fa y Sol', 'E4 F4 G4 F4 E4 F4 G4 G4 F4 E4 E4 G4 F4 E4'),
       notes('uk5-scale', 'Escala de Do', 'Tres cuerdas', 'C4 D4 E4 F4 G4 A4 B4 C5 B4 A4 G4 F4 E4 D4 C4'),
       exercise('uk5-oda', 'Oda a la alegría', 'Beethoven en las cuerdas Do y Mi', { key: 'C', time: 4, bpm: 72, score: '| E4q E4q F4q G4q | G4q F4q E4q D4q | C4q C4q D4q E4q | E4q. D4e D4h | E4q E4q F4q G4q | G4q F4q E4q D4q | C4q C4q D4q E4q | D4q. C4e C4h |' }),
-      song('uk5-estrellita', 'estrellita', 'Melodía nota a nota'),
+      exercise('uk5-estrellita', 'Estrellita', 'En Do, en las cuerdas Do, Mi y La', { key: 'C', time: 4, bpm: 80, score: '| C4q C4q G4q G4q | A4q A4q G4h | F4q F4q E4q E4q | D4q D4q C4h | G4q G4q F4q F4q | E4q E4q D4h | G4q G4q F4q F4q | E4q E4q D4h | C4q C4q G4q G4q | A4q A4q G4h | F4q F4q E4q E4q | D4q D4q C4h |' }),
       slots(1, 1),
     ] },
     { id: 'uk6', title: 'Menores y fingerpicking', sub: 'Tocar con los dedos', color: 'var(--u6)', lessons: [
@@ -97,7 +97,7 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
       ]),
       sbSong('uk7-reggae', 'uke-reggae', 'Rasgueo a contratiempo'),
       sbSong('uk7-susanna', 'oh-susanna', 'Con chuck en el 2 y el 4'),
-      sbSong('uk7-balada', 'pop-cejilla', 'Balada con {Em}'),
+      sbSong('uk7-balada', 'pop-cejilla', 'Balada con {Em}', { title: 'Balada en La menor' }),
       slots(1, 2),
     ] },
     { id: 'uk8', title: 'Cejilla y Si♭', sub: 'Acordes móviles', color: 'var(--u8)', lessons: [

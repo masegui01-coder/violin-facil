@@ -30,6 +30,8 @@ const nom = () => getState().nom;
 function tipFor(lesson) {
   if (lesson.chapterReview) return 'Es una página nueva hecha con lo que ya sabes: léela despacio, sin miedo a fallar. Vuelve mañana y verás cómo sale mejor.';
   if (lesson.kind === 'theory') return '';
+  if (lesson.kind === 'chords' && inst().id === 'piano') return lesson.mode === 'strum' ? 'Escucha primero el ritmo, luego toca solo el primer pulso de cada compás y, cuando salga, el acompañamiento completo.'
+    : 'Coloca la mano sobre las teclas del acorde antes de tocar y baja los dedos a la vez, con el peso del brazo.';
   if (lesson.kind === 'chords') return lesson.mode === 'changes' ? 'Cuenta los cambios en voz alta. Cada día que repites, la cifra sube: es la mejor prueba de que avanzas.'
     : lesson.mode === 'strum' ? 'Escucha primero el ritmo, luego toca solo el primer pulso de cada compás y, cuando salga, el rasgueo completo.'
       : 'Pon los dedos sin prisa, rasguea y deja sonar. Si una cuerda no suena, apoya la yema justo detrás del traste.';

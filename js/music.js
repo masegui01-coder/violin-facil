@@ -237,3 +237,18 @@ export function transposeScore(score, key, semitones) {
   });
   return { score: { ...score, notes }, key: target };
 }
+
+// Notas de afinación de banda (Si♭, La y Fa de concierto) escritas para el instrumento, en la octava cómoda de su
+// registro y con la grafía de su tonalidad (el La de concierto es Fa♯ en el saxo alto, no Sol♭)
+const SHARP_KEYS = [0, 2, 4, 7, 9, 11]; // Do, Re, Mi, Sol, La y Si mayor se escriben con sostenidos
+export function bandTuningNotes(inst) {
+  const [lo, hi] = inst.comfort || inst.written;
+  const target = lo + (hi - lo) * 0.4;
+  const flats = !SHARP_KEYS.includes(((10 - inst.transpose) % 12 + 12) % 12);
+  // la octava se elige con el Si♭ y las tres notas se quedan juntas
+  let bb = 70 - inst.transpose;
+  while (bb - 12 >= lo + 5 && Math.abs(bb - 12 - target) < Math.abs(bb - target)) bb -= 12;
+  while (bb + 12 <= hi && Math.abs(bb + 12 - target) < Math.abs(bb - target)) bb += 12;
+  const shift = bb - (70 - inst.transpose);
+  return [70, 69, 65].map(real => spell(real - inst.transpose + shift, flats));
+}

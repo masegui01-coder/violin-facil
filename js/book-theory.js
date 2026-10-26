@@ -144,7 +144,7 @@ export const LANGUAGE = {
     ] },
     { id: 'lm3-cromatica', title: 'Escala cromática y enarmonías', cards: [
       { title: 'Doce semitonos', text: 'La escala cromática recorre todos los semitonos de la octava. Subiendo se escribe con sostenidos y bajando con bemoles.' },
-      { title: 'Enarmonía', text: 'Do♯ y Re♭ suenan igual en tu instrumento: son la misma tecla o posición escrita de dos maneras. Se escribe una u otra según la tonalidad.' },
+      { title: 'Enarmonía', text: 'Do♯ y Re♭ suenan igual: son la misma nota escrita de dos maneras (en el piano, la misma tecla negra). Se escribe una u otra según la tonalidad.' },
     ], quiz: [
       { id: 'lm3-enarm', q: '¿Qué nota suena igual que Sol♯?', options: ['La♭', 'La♯', 'Sol♭', 'Fa♯'], answer: 0, why: 'Sol♯ y La♭ son enarmónicas.' },
     ] },
@@ -230,6 +230,52 @@ export const TECHNIQUE = {
       ['Tocar con otros', 'En un grupo el ukelele suena brillante: deja espacio a la voz y fíjate en el bajo y el ritmo de los demás.'],
     ],
   },
+  // El cajón se toca con las manos: grave en el centro, agudo en el borde superior
+  cajon: {
+    2: [
+      ['Postura y manos', 'Sentado encima del cajón, algo inclinado hacia delante, con la espalda recta. Las manos golpean desde la muñeca y rebotan: nunca se quedan pegadas a la tapa.'],
+      ['Grave y agudo', 'El grave, con la palma en el centro de la tapa, un poco por debajo del borde; el agudo, con los dedos juntos en la esquina superior. Que se distingan bien.'],
+      ['Golpes alternos', 'D-I-D-I con el mismo sonido en las dos manos. Empieza lento con el metrónomo y sube de 4 en 4 cuando salga igualado.'],
+      ['Acentos', 'Un acento es un golpe más abierto, no más tenso: sube más la mano y deja las demás notas suaves.'],
+      ['Leer ritmos', 'Cuenta en voz alta «1-y-2-y» o «1-e-y-a». Leer bien el ritmo es la mitad del trabajo del percusionista.'],
+      ['Matices', 'Más recorrido de la mano, más volumen. Practica crescendos de pp a ff sin acelerar.'],
+      ['Ghost notes', 'Notas muy suaves con la punta de los dedos entre los golpes fuertes: rellenan el ritmo sin taparlo.'],
+      ['Estudiar con metrónomo', 'El metrónomo es tu compañero de ensayo. Ponlo también en las corcheas para comprobar que lo de entre pulsos está igualado.'],
+    ],
+    3: [
+      ['El redoble de dedos', 'Golpes muy rápidos con las yemas, alternando manos o dedo a dedo, cerca del borde. Empieza lento y sin tensión.'],
+      ['El flam en el cajón', 'Una mano muy suave justo antes que la otra en el mismo golpe: engorda el sonido. Practícalo empezando con cada mano.'],
+      ['Compases compuestos', 'En 6/8 y 12/8 siente el pulso en grupos de tres. Las bulerías y la soleá se cuentan en ciclos de 12.'],
+      ['Independencia', 'El grave marca el pulso y el agudo hace el ritmo: practica cada mano sola y luego juntas, lento.'],
+      ['Tonos de la tapa', 'Prueba sonidos entre el centro y el borde, y con la palma apagando la tapa: cada zona tiene su color.'],
+      ['Los palos flamencos', 'Rumba, tangos, bulerías y soleá: aprende su compás y dónde caen los acentos. Escucha discos y cuenta con ellos.'],
+      ['Lectura a primera vista', 'Busca primero las figuras más rápidas y los cambios de compás. Al tocar, no te pares nunca.'],
+      ['Acompañar a otros', 'El cajón sostiene el ritmo del grupo: escucha la guitarra y la voz, toca menos de lo que sabes y no te dejes arrastrar.'],
+    ],
+  },
+  // La flauta dulce: agujeros (sin llaves), soplo muy suave con «du» y el pulgar de atrás entreabierto para las agudas
+  recorder: {
+    2: [
+      ['La respiración', 'Toma aire abajo, sin subir los hombros, y suéltalo muy despacio: la flauta dulce necesita poco aire y siempre igual.'],
+      ['Notas tenidas', 'Notas largas con un «duuu» suave y constante. Si la nota sube o chilla, soplas demasiado; si suena débil y baja, falta aire.'],
+      ['Picado y ligado', 'Pica con la punta de la lengua diciendo «du». En lo ligado la lengua no se mueve y los dedos cambian a la vez.'],
+      ['Tapar bien los agujeros', 'Los dedos planos tapan con la yema, sin apretar. Si una nota grave no sale, casi siempre hay un agujero mal tapado.'],
+      ['El pulgar de atrás', 'Para las agudas, el pulgar deja una rendija pequeña en el agujero de atrás, doblándolo un poco. Practica Mi-Mi agudo despacio.'],
+      ['La afinación', 'En la flauta dulce la afinación depende del soplo: más fuerte, más alta. Busca con el afinador el aire justo de cada nota.'],
+      ['Dedos rápidos y relajados', 'Los dedos, cerca de los agujeros y curvos. Sube la velocidad con el metrónomo de 4 en 4: si se tensan, vuelve atrás.'],
+      ['Escalas de memoria', 'Do y Sol mayor primero, luego Fa con su digitación de horquilla para el Si♭. Ligadas y picadas.'],
+    ],
+    3: [
+      ['Digitaciones de horquilla', 'Notas como el Fa♯ o el Si♭ se hacen destapando un agujero entre otros tapados. Apréndelas despacio y escucha que salgan afinadas.'],
+      ['Doble picado', 'Alterna «du-gu» para picar muy rápido. Practica solo la sílaba «gu» hasta que suene igual de clara que «du».'],
+      ['Matices', 'Como el aire cambia la afinación, los matices se hacen sobre todo con la articulación y el carácter, y con algún dedo de corrección en las notas largas.'],
+      ['Ornamentos', 'Trinos, mordentes y notas de adorno son el alma de la música barroca para flauta de pico. Tócalos ligeros y a tempo.'],
+      ['Estudios y repertorio', 'Los métodos y las piezas barrocas (Van Eyck, Telemann) trabajan dedos y articulación. Una pieza por semana, lenta y perfecta.'],
+      ['Tocar en grupo', 'En clase o en un conjunto de flautas, escucha a quien toca tu voz y ajusta el soplo para sonar igual de afinados.'],
+      ['Lectura a primera vista', 'Antes de tocar, mira la armadura, el compás y los pasajes difíciles. Al tocar, mantén el pulso aunque falles notas.'],
+      ['Preparar una pieza', 'Grábate, escúchate y corrige. Decide dónde respirar y marca los matices en la partitura.'],
+    ],
+  },
   // El violonchelo tiene sus propias posiciones y estudios (Dotzauer, Lee), distintos de los del violín
   cello: {
     2: [
@@ -240,7 +286,7 @@ export const TECHNIQUE = {
       ['Las extensiones', 'Hacia atrás, el 1 se abre medio tono hacia la cejuela (Si♭ en la cuerda La); hacia delante, el 4 se estira medio tono (Do♯ en la cuerda Sol). La mano no se mueve: se abre.'],
       ['Cambios de cuerda', 'Cada cuerda tiene su altura de brazo: Do con el codo alto, La con el codo bajo. Prepara el brazo antes de cambiar.'],
       ['La afinación', 'Compara con las cuerdas al aire: el Re con el dedo 4 en la cuerda La debe «hacer vibrar» la cuerda Re al aire.'],
-      ['Escalas de dos octavas', 'Do, Re y Sol mayor en primera posición, de memoria y lentas, con la afinación vigilada nota a nota.'],
+      ['Escalas en primera posición', 'Do mayor y Re mayor de dos octavas (Re con las extensiones) y Sol mayor de una octava, de memoria y lentas, con la afinación vigilada nota a nota. Sol de dos octavas llega con la cuarta posición.'],
     ],
     3: [
       ['La cuarta posición', 'Desliza la mano hasta que el dedo 1 dé el Mi en la cuerda La (donde el pulgar toca el talón del mástil). Practica el cambio con un dedo guía y sin prisa.'],
@@ -262,7 +308,7 @@ export const TECHNIQUE = {
       ['Dedos rápidos y relajados', 'Los dedos, cerca de las llaves y curvos. Sube la velocidad con el metrónomo de 4 en 4: si se tensan, vuelve atrás.'],
       ['El registro agudo', 'Para subir, más velocidad de aire y la embocadura estable, sin morder. Practica saltos de octava lentos y afinados.'],
       ['La afinación', 'Cada instrumento tiene notas que tienden a salir altas o bajas. Usa el mapa de afinación y corrige con la embocadura y el aire.'],
-      ['Matices sin desafinar', 'En piano el sonido tiende a bajar y en forte a subir. Mantén el aire apoyado en los dos extremos.'],
+      ['Matices sin desafinar', 'Al cambiar de matiz la afinación tiende a moverse (en la flauta, el piano baja y el forte sube). Vigílala con el afinador y mantén el aire apoyado en los dos extremos.'],
       ['Escalas de memoria', 'Las escalas en todas las tonalidades son el vocabulario del músico. Tócalas de memoria, ligadas y picadas.'],
     ],
     3: [
@@ -283,7 +329,7 @@ export const TECHNIQUE = {
       ['Picado y ligado', 'Pica con la lengua como en «tu». En el ligado entre armónicos, usa el aire y una sílaba que se cierra («ta-a-i») sin volver a picar.'],
       ['Flexibilidad', 'Cambia de armónico sin mover los pistones (o la vara). Empieza con dos notas vecinas y amplía poco a poco.'],
       ['El registro agudo', 'Más velocidad de aire y apertura más pequeña, no más presión de la boquilla. Descansa tanto como tocas.'],
-      ['La afinación', 'Las notas con 1.ª y 3.ª bomba juntas salen altas: corrígelas con la bomba o la vara. El oído manda.'],
+      ['La afinación', 'Las notas con los pistones 1 y 3 (y 1, 2 y 3) salen altas: corrígelas sacando la bomba del 3.er pistón o con el 4.º pistón si lo tienes. El oído manda.'],
       ['Resistencia', 'Toca en bloques cortos con descansos. Los labios se cansan antes de lo que parece: cuídalos para que no se resientan.'],
       ['Escalas de memoria', 'Las escalas en todas las tonalidades son tu vocabulario. Tócalas de memoria, ligadas y picadas.'],
     ],
@@ -379,11 +425,27 @@ export const TECHNIQUE = {
       ['El redoble', 'Dobles cada vez más rápidos hasta que suenen continuos. El redoble a presión (buzz) se hace apoyando la baqueta.'],
       ['Flams y drags', 'El flam: una nota de adorno muy baja justo antes del golpe principal. El drag: dos notas de adorno. Dan cuerpo al golpe.'],
       ['Compases compuestos', 'En 6/8 y 12/8 siente el pulso en grupos de tres. Muchas marchas y ritmos latinos van así.'],
-      ['Independencia', 'En el cajón, el grave y el agudo; en la batería, manos y pies. Practica cada parte sola y luego juntas, lento.'],
+      ['Independencia', 'En la batería y la percusión múltiple, manos y pies hacen cosas distintas. Practica cada parte sola y luego juntas, lento.'],
       ['Estudios técnicos', 'Los estudios de caja (Wilcoxon, Delécluse) combinan rudimentos y lectura. Uno por semana, lento y perfecto.'],
-      ['Los palos flamencos', 'Rumba, tangos, bulerías y soleá: aprende su compás y dónde caen los acentos. Escucha discos y cuenta con ellos.'],
+      ['Marchas y pasodobles', 'La caja y el bombo sostienen la banda en la calle: aprende los patrones de marcha y de pasodoble y dónde caen los acentos. Escucha grabaciones y cuenta con ellas.'],
       ['Lectura a primera vista', 'Busca primero las figuras más rápidas y los cambios de compás. Al tocar, no te pares nunca.'],
       ['Preparar un solo', 'Decide los matices y las manos (stickings), márcalos y grábate. Un solo de percusión también cuenta una historia.'],
     ],
   },
 };
+
+// El trombón afina con la vara y la trompa con los cilindros y la mano derecha: cambian esos temas del bloque de metal
+const withTopics = (block, swaps) => Object.fromEntries(Object.entries(block).map(([lvl, list]) => [lvl, list.map(([t, d]) => [t, swaps[t] || d])]));
+TECHNIQUE.trombone = withTopics(TECHNIQUE.metal, {
+  Flexibilidad: 'Cambia de armónico sin mover la vara. Empieza con dos notas vecinas en 1.ª posición y amplía poco a poco.',
+  'La afinación': 'En el trombón afinas con la vara: la 3.ª y la 4.ª posición tienden a quedarse cortas y la 6.ª y la 7.ª se estiran. Escucha y ajusta un par de centímetros.',
+  'El vibrato': 'Ondulación suave con la vara o la mandíbula. En la banda se usa poco y siempre con gusto: escucha a tu sección.',
+  'Estudios técnicos': 'El Arban y los estudios de Rochut (legato) y Kopprasch trabajan flexibilidad y vara. Uno por semana, lento y perfecto antes que rápido.',
+});
+TECHNIQUE.horn = withTopics(TECHNIQUE.metal, {
+  Flexibilidad: 'Cambia de armónico sin mover los cilindros. En la trompa los armónicos están muy juntos: empieza con dos vecinos y amplía poco a poco.',
+  'La afinación': 'En la trompa la mano derecha dentro de la campana afina: más cerrada, la nota baja; más abierta, sube. Ajusta también las bombas de los cilindros.',
+  'El vibrato': 'En la trompa casi no se usa vibrato: busca un sonido redondo y estable con la mano en la campana.',
+  'Sordinas': 'Además de la sordina, la trompa tapa la campana con la mano (sonido tapado), que sube la nota medio tono: se corrige con la digitación.',
+  'Estudios técnicos': 'Los estudios de Kopprasch y Maxime-Alphonse trabajan flexibilidad y dedos. Uno por semana, lento y perfecto antes que rápido.',
+});

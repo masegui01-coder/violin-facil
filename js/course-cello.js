@@ -80,7 +80,6 @@ export function celloUnits({ theory, notes, song, exercise, slots, warmup }) {
       warmup(p + 'u7-warm', L('Dedo 2 y dedo 3', 'Finger 2 and finger 3'), 'A3 B3 C#4 B3 C4 B3 C#4 D4 C4 B3 A3 D3 E3 F#3 E3 F3 E3 D3'),
       notes(p + 'u7-low2', L('Do y Fa naturales', 'C and F natural'), L('Dedo 2 en La y en Re', 'Finger 2 on A and D'), 'A3 B3 C4 D4 C4 B3 A3 B3 C4 B3 A3 D3 E3 F3 G3 F3 E3 D3 E3 F3 E3 D3'),
       notes(p + 'u7-scale', L('Escala de Do mayor', 'C major scale'), L('Dos octavas', 'Two octaves'), 'C2 D2 E2 F2 G2 A2 B2 C3 D3 E3 F3 G3 A3 B3 C4 B3 A3 G3 F3 E3 D3 C3 B2 A2 G2 F2 E2 D2 C2'),
-      song(p + 'u7-minueto', 'minueto', L('Bach en el chelo', 'Bach on the cello')),
       slots(3, 2),
     ] },
     { id: p + 'u8', title: L('Extensiones y menores', 'Extensions and minor keys'), sub: L('Re menor y frases largas', 'D minor and long phrases'), color: 'var(--u8)', lessons: [
@@ -91,6 +90,7 @@ export function celloUnits({ theory, notes, song, exercise, slots, warmup }) {
       ]),
       warmup(p + 'u8-warm', L('Si y Si♭', 'B and B♭'), 'A3 B3 A3 Bb3 A3 B3 C4 Bb3 A3 G3 A3 Bb3 C4 D4 C4 Bb3 A3'),
       notes(p + 'u8-dmajor', L('Escala de Re mayor', 'D major scale'), L('Dos octavas, con extensiones', 'Two octaves, with extensions'), 'D2 E2 F#2 G2 A2 B2 C#3 D3 E3 F#3 G3 A3 B3 C#4 D4 C#4 B3 A3 G3 F#3 E3 D3 C#3 B2 A2 G2 F#2 E2 D2'),
+      song(p + 'u8-minueto', 'minueto', L('Petzold, del cuaderno de Ana Magdalena Bach', 'Petzold, from the Anna Magdalena Bach notebook')),
       song(p + 'u8-estrellita', 'estrellita', L('En La mayor, con el Do♯ extendido', 'In A major, with the extended C♯')),
       notes(p + 'u8-scale', L('Escala de Re menor', 'D minor scale'), L('Natural, una octava', 'Natural, one octave'), 'D3 E3 F3 G3 A3 Bb3 C4 D4 C4 Bb3 A3 G3 F3 E3 D3'),
       song(p + 'u8-greensleeves', 'greensleeves', L('Tradicional en menor', 'Traditional, in a minor key')),

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="Figtree, Segoe UI, Roboto, sans-serif">
+  <title>Postura con el saxofón y ajuste del arnés</title>
+  <rect width="720" height="460" rx="24" fill="#F7F3EE"/>
+  <text x="32" y="46" font-size="24" font-weight="800" fill="#141B26">La postura · el saxo viene a ti</text>
+  <text x="32" y="72" font-size="15" fill="#5A6678">Ajusta el arnés para que la boquilla llegue a la boca sin bajar la cabeza</text>
+
+  <!-- Figura principal (perfil) -->
+  <g transform="translate(150 96)">
+    <!-- suelo -->
+    <line x1="-80" x2="160" y1="330" y2="330" stroke="#E2D7CB" stroke-width="4"/>
+    <!-- piernas y pies separados -->
+    <path d="M30 210 L18 326 M52 210 L66 326" stroke="#2F55A4" stroke-width="18" stroke-linecap="round"/>
+    <path d="M10 328 L36 328 M60 328 L88 328" stroke="#141B26" stroke-width="8" stroke-linecap="round"/>
+    <!-- tronco -->
+    <rect x="12" y="92" width="58" height="126" rx="26" fill="#B4461F"/>
+    <!-- cabeza recta -->
+    <circle cx="44" cy="58" r="30" fill="#F1DCC6" stroke="#C9A985" stroke-width="3"/>
+    <path d="M70 60 L80 64 L70 66" fill="#F1DCC6" stroke="#C9A985" stroke-width="2"/>
+    <!-- arnés -->
+    <path d="M30 88 C36 120 60 128 82 138" fill="none" stroke="#141B26" stroke-width="4"/>
+    <circle cx="84" cy="140" r="5" fill="#141B26"/>
+    <!-- saxofón -->
+    <path d="M78 64 L96 70 C108 76 112 90 108 110 L98 196 C96 226 110 250 132 250 C150 250 160 236 160 218 L160 198"
+          fill="none" stroke="#D7A63A" stroke-width="16" stroke-linecap="round"/>
+    <path d="M150 196 C150 186 170 184 172 196" fill="#D7A63A"/>
+    <!-- brazos relajados -->
+    <path d="M58 106 C80 118 92 126 100 120" fill="none" stroke="#F1DCC6" stroke-width="12" stroke-linecap="round"/>
+    <path d="M40 120 C36 160 60 186 98 178" fill="none" stroke="#F1DCC6" stroke-width="12" stroke-linecap="round"/>
+    <!-- línea de la mirada horizontal -->
+    <path d="M80 50 L190 50" stroke="#2B7A4B" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="196" y="54" font-size="13" font-weight="700" fill="#2B7A4B">cabeza recta</text>
+  </g>
+
+  <!-- Rótulos -->
+  <g font-size="14" fill="#141B26">
+    <path d="M232 236 L300 250" stroke="#141B26" stroke-width="1.5"/>
+    <text x="306" y="246" font-weight="800">Arnés a la medida</text>
+    <text x="306" y="264">la boquilla llega sola a la boca</text>
+    <path d="M190 196 L300 186" stroke="#141B26" stroke-width="1.5"/>
+    <text x="306" y="182" font-weight="800">Hombros sueltos</text>
+    <text x="306" y="200">manos curvas, como con</text>
+    <text x="306" y="218">una pelota de tenis</text>
+    <path d="M206 424 L300 410" stroke="#141B26" stroke-width="1.5"/>
+    <text x="306" y="406" font-weight="800">Pies a la anchura de los hombros</text>
+  </g>
+
+  <!-- Errores del arnés -->
+  <g transform="translate(546 96)">
+    <rect x="-14" y="-8" width="170" height="146" rx="14" fill="#FFFFFF" stroke="#E2D7CB" stroke-width="2"/>
+    <text x="71" y="14" font-size="13" font-weight="800" fill="#C2372F" text-anchor="middle">Arnés muy largo</text>
+    <circle cx="50" cy="60" r="18" fill="#F1DCC6" stroke="#C9A985" stroke-width="2"/>
+    <rect x="24" y="80" width="40" height="46" rx="16" fill="#B4461F"/>
+    <path d="M60 70 L86 100 L84 128" fill="none" stroke="#D7A63A" stroke-width="9" stroke-linecap="round"/>
+    <path d="M58 46 L72 30" stroke="#C2372F" stroke-width="3"/>
+    <text x="118" y="70" font-size="12" fill="#141B26" text-anchor="middle">bajas</text>
+    <text x="118" y="86" font-size="12" fill="#141B26" text-anchor="middle">la cabeza</text>
+  </g>
+  <g transform="translate(546 262)">
+    <rect x="-14" y="-8" width="170" height="146" rx="14" fill="#FFFFFF" stroke="#E2D7CB" stroke-width="2"/>
+    <text x="71" y="14" font-size="13" font-weight="800" fill="#C2372F" text-anchor="middle">Arnés muy corto</text>
+    <circle cx="50" cy="56" r="18" fill="#F1DCC6" stroke="#C9A985" stroke-width="2"/>
+    <rect x="24" y="72" width="40" height="50" rx="16" fill="#B4461F"/>
+    <path d="M22 76 L12 66 M66 76 L76 66" stroke="#C2372F" stroke-width="3"/>
+    <path d="M64 58 L84 70 L82 110" fill="none" stroke="#D7A63A" stroke-width="9" stroke-linecap="round"/>
+    <text x="118" y="70" font-size="12" fill="#141B26" text-anchor="middle">subes</text>
+    <text x="118" y="86" font-size="12" fill="#141B26" text-anchor="middle">los hombros</text>
+  </g>
+</svg>
