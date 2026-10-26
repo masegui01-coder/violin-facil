@@ -1,7 +1,8 @@
 // Idioma de la interfaz. La app está escrita en español; en inglés se traduce lo que se ve en pantalla
 // (textos, etiquetas de accesibilidad y marcadores) a partir del diccionario de i18n-en.js, también lo que
 // aparece después gracias a un observador del DOM. Al volver al español se recupera el texto original.
-import { EXACT, INSTRUMENT_NAMES, PATTERNS } from './i18n-en.js';
+import { EXACT, INSTRUMENT_NAMES, PATTERNS, setDeepTranslate } from './i18n-en.js';
+import { CONTENT } from './i18n-en-content.js';
 
 export const LANGS = [['es', 'Español'], ['en', 'English']];
 const ATTRS = ['aria-label', 'placeholder', 'title'];
@@ -23,7 +24,7 @@ const instrumentsIn = text => text.replace(INSTRUMENT_RE, m => INSTRUMENT_LOWER[
 export function translate(es) {
   const trimmed = String(es).trim();
   if (!trimmed) return es;
-  let out = EXACT[trimmed] ?? INSTRUMENT_NAMES[trimmed];
+  let out = EXACT[trimmed] ?? CONTENT[trimmed] ?? INSTRUMENT_NAMES[trimmed];
   if (out === undefined) {
     for (const [re, fn] of PATTERNS) {
       const m = re.exec(trimmed);
@@ -34,6 +35,7 @@ export function translate(es) {
 }
 
 export const t = es => (lang === 'en' ? translate(es) : es);
+setDeepTranslate(text => { const out = translate(text); return out; });
 
 function translateTextNode(node) {
   const parent = node.parentNode;

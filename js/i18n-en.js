@@ -159,6 +159,28 @@ export const EXACT = {
   'Mayor': 'Major', 'Menor natural': 'Natural minor', 'Pentatónica': 'Pentatonic', 'Una sola nota': 'A single note', 'Lecturas del libro': 'Readings in the book',
   'Muy fácil': 'Very easy', 'Media': 'Medium', 'Difícil': 'Hard', 'Muy difícil': 'Very hard',
   'Métricas de Band Flow': 'Band Flow metrics', 'Checklist de pruebas': 'Test checklist', 'Revisado': 'Checked',
+  'lectura': 'reading', 'lectura rítmica': 'rhythm reading', 'ritmo nuevo': 'new rhythm', 'saltos': 'leaps', 'notas largas': 'long notes',
+  'con corcheas': 'with eighth notes', 'eco': 'echo', 'dos acordes por compás': 'two chords per bar', 'en tres por cuatro': 'in three-four',
+  'jazz en Do': 'jazz in C', 'jazz en Sol': 'jazz in G', 'blues en La': 'blues in A', 'suspendidos en Re': 'suspended chords in D', 'andaluza en Mi': 'Andalusian in E',
+  'Léela para conseguir el oro': 'Read it to earn gold', 'Tócala para conseguir el bronce': 'Play it to earn bronze',
+  'Sácala perfecta (3 estrellas al 100 %) para el oro': 'Play it perfectly (3 stars at 100 %) for gold',
+  'Es una página nueva hecha con lo que ya sabes: léela despacio, sin miedo a fallar. Vuelve mañana y verás cómo sale mejor.': "It's a new page made from what you already know: read it slowly, without fear of mistakes. Come back tomorrow and you'll see it goes better.",
+  'Cuenta los cambios en voz alta. Cada día que repites, la cifra sube: es la mejor prueba de que avanzas.': 'Count the changes out loud. Every day you repeat it the number goes up: the best proof that you are improving.',
+  'Escucha primero el ritmo, luego toca solo el primer pulso de cada compás y, cuando salga, el rasgueo completo.': 'Listen to the rhythm first, then play only the first beat of each bar and, when that works, the full strum.',
+  'Pon los dedos sin prisa, rasguea y deja sonar. Si una cuerda no suena, apoya la yema justo detrás del traste.': "Place your fingers without rushing, strum and let it ring. If a string doesn't sound, put your fingertip just behind the fret.",
+  'Cuenta en voz alta «1, 2, 3, 4» antes de empezar y mantén el pulso aunque falles un golpe.': 'Count out loud «1, 2, 3, 4» before starting and keep the pulse even if you miss a stroke.',
+  'Primero nota a nota: la app espera a que cada nota suene bien. Cuando salga sin fallos, pásate a tempo.': 'First note by note: the app waits for each note to sound right. When it goes without mistakes, switch to timed mode.',
+  'Escúchala con la banda antes de tocar. Empieza al 60 % y sube la velocidad cuando salga limpia.': 'Listen to it with the band before playing. Start at 60 % and raise the speed when it comes out clean.',
+  'Notas nuevas:': 'New notes:', 'Acordes nuevos:': 'New chords:', 'Teoría con preguntas': 'Theory with questions',
+  'Tócala con la app: Aprender → Libro → página': 'Play it with the app: Learn → Book → page',
+  'Se abre al aprobar el examen del Libro 1.': 'Opens when you pass the Book 1 exam.', 'Se abre al aprobar el examen del Libro 2.': 'Opens when you pass the Book 2 exam.',
+  'Tu escuela te lo abrirá cuando pases de curso. Mientras, completa tu libro y apruébalo.': 'Your school will open it when you move up a year. Meanwhile, complete your book and pass it.',
+  'Haz el test de nivel (unos minutos) y empieza en la unidad que te toca, sin repetir lo que ya sabes.': "Take the level test (a few minutes) and start at the right unit, without repeating what you already know.",
+  'Hacer el test': 'Take the test', 'Empiezo de cero': "I'm starting from scratch", 'Ahora no': 'Not now',
+  'No cuenta para tus estrellas ni tus puntos. Puedes salir cuando quieras y repetirlo desde Perfil.': "It doesn't count towards your stars or points. You can leave whenever you like and retake it from Profile.",
+  'Ver mi nivel': 'See my level', 'Mejor desde el principio': 'Better from the start', 'A tocar': "Let's play", 'Vamos': "Let's go",
+  'Teoría repasada': 'Theory reviewed', '¡Todas las preguntas bien!': 'Every question right!', '¡Correcto! ': 'Correct! ', 'No exactamente. ': 'Not quite. ',
+  'Respuestas': 'Answers', 'Terminar': 'Finish',
   'Probado': 'Tested', 'Poco probado': 'Barely tested', 'Falta por probar': 'Not tested yet', 'Nadie todavía': 'Nobody yet',
   // ---------- Instrumentos, estilos e insignias ----------
   'Cuerda frotada, cuatro cuerdas': 'Bowed strings, four strings', 'En Si♭, tres pistones': 'In B♭, three valves', 'En Si♭, caña simple': 'In B♭, single reed',
@@ -205,8 +227,43 @@ export const INSTRUMENT_NAMES = {
   'Cajón flamenco': 'Cajón', 'Percusión': 'Percussion',
 };
 
+// Nombres de notas y tonalidades: Do → C, Fa♯ → F♯, «Re mayor» → «D major»
+const NOTE_EN = { Do: 'C', Re: 'D', Mi: 'E', Fa: 'F', Sol: 'G', La: 'A', Si: 'B' };
+const NOTE = '(?:Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?';
+export const noteEn = n => n.replace(/^(do|re|mi|fa|sol|la|si)/i, m => NOTE_EN[m[0].toUpperCase() + m.slice(1).toLowerCase()]);
+const notesEn = text => text.replace(new RegExp(`\\b${NOTE}(?![a-záéíóúñ])`, 'g'), noteEn).replace(/ y /g, ' and ');
+const keyEn = (note, mode) => `${noteEn(note)} ${mode === 'menor' ? 'minor' : 'major'}`;
+const KEY_RE = `(${NOTE}) (mayor|menor)`;
+// En inglés se traduce lo que va detrás de «Lenguaje musical:», «Técnica:»… con el mismo diccionario
+let deep = null;
+export const setDeepTranslate = fn => { deep = fn; };
+const tr = text => (deep ? deep(text) : text);
+
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
+  [new RegExp(`^${NOTE}(?:(?:, | y | ·? ?)${NOTE})*$`), m => notesEn(m)],
+  [new RegExp(`^${KEY_RE}$`), (m, n, mode) => keyEn(n, mode)],
+  [new RegExp(`^(Escala|Arpegio|Terceras) (?:de|en) ${KEY_RE}$`, 'i'), (m, kind, n, mode) => `${keyEn(n, mode)} ${({ escala: 'scale', arpegio: 'arpeggio', terceras: 'thirds' })[kind.toLowerCase()]}`],
+  [new RegExp(`^(Escala|Arpegio) de (${NOTE})$`, 'i'), (m, kind, n) => `${noteEn(n)} ${kind.toLowerCase() === 'escala' ? 'scale' : 'arpeggio'}`],
+  [new RegExp(`^${KEY_RE} · léela antes de tocar$`), (m, n, mode) => `${keyEn(n, mode)} · read it before playing`],
+  [new RegExp(`^Nivel (\\d) · ${KEY_RE}$`), (m, l, n, mode) => `Level ${l} · ${keyEn(n, mode)}`],
+  [/^Nivel (\d)$/, (m, l) => `Level ${l}`],
+  [/^Lenguaje musical: (.+)$/, (m, x) => `Music theory: ${tr(x)}`],
+  [/^Técnica: (.+)$/, (m, x) => `Technique: ${tr(x)}`],
+  [/^Acordes: (.+)$/, (m, x) => `Chords: ${tr(x)}`],
+  [/^(.+) · concierto del capítulo$/, (m, by) => `${tr(by)} · chapter concert`],
+  [/^Ejercicio (\d+): (.+)$/, (m, n, x) => `Exercise ${n}: ${tr(x)}`],
+  [/^Estudio de concierto n\.º (\d+)$/, (m, n) => `Concert study no. ${n}`],
+  [/^Primera vista n\.º (\d+)$/, (m, n) => `Sight-reading no. ${n}`],
+  [/^Lectura rítmica n\.º (\d+)$/, (m, n) => `Rhythm reading no. ${n}`],
+  [/^(\d+) preguntas · aprueba con el (\d+) %$/, (m, n, p) => `${n} questions · pass with ${p} %`],
+  [/^Un minuto: ¿cuántos cambios\? Meta: (\d+)$/, (m, n) => `One minute: how many changes? Target: ${n}`],
+  [/^Cambios (\{[^}]+\})–(\{[^}]+\})$/, (m, a, b) => `Changes ${a}–${b}`],
+  [/^progresión en (.+)$/, (m, x) => `progression in ${tr(x)}`],
+  [/^(.+) en tres por cuatro$/, (m, x) => `${tr(x)} in three-four`],
+  // glosario: «Término: definición · Término: definición»
+  [/^([^:·]+: [^·]+)( · [^:·]+: [^·]+)+$/, m => m.split(' · ').map(part => { const i = part.indexOf(': '); return `${tr(part.slice(0, i))}: ${tr(part.slice(i + 2))}`; }).join(' · ')],
+  [/^(.+) … (.+)$/, (m, a, b) => `${tr(a)} … ${tr(b)}`],
   [/^(\d+) días? seguidos?$/, (m, n) => `${n} day${n === '1' ? '' : 's'} in a row`],
   [/^(\d+) (días|día)$/, (m, n) => `${n} day${n === '1' ? '' : 's'}`],
   [/^Capítulo (\d+)$/, (m, n) => `Chapter ${n}`],
@@ -219,7 +276,7 @@ export const PATTERNS = [
   [/^Siguiente página \((\d+)\)$/, (m, n) => `Next page (${n})`],
   [/^Después: (.+)$/, (m, n) => `Next: ${n}`],
   [/^Vence en (\d+) días$/, (m, n) => `Due in ${n} days`],
-  [/^Tu siguiente paso · (.+)$/, (m, rest) => `Your next step · ${rest}`],
+  [/^Tu siguiente paso · (.+)$/, (m, rest) => `Your next step · ${rest.split(' · ').map(tr).join(' · ')}`],
   [/^Ejercicio (\d+): (.+)$/, (m, n, rest) => `Exercise ${n}: ${rest}`],
   [/^Lectura n\.º (\d+)$/, (m, n) => `Reading no. ${n}`],
   [/^Lectura rítmica (\d+)$/, (m, n) => `Rhythm reading ${n}`],
@@ -227,6 +284,33 @@ export const PATTERNS = [
   [/^(\d+) de (\d+) notas · (\d+) fallos?(.*)$/, (m, a, b, c, rest) => `${a} of ${b} notes · ${c} mistake${c === '1' ? '' : 's'}${rest.replace(/ · (\d+) saltadas/, ' · $1 skipped')}`],
   [/^\+(\d+) puntos$/, (m, n) => `+${n} points`],
   [/^(\d+) de (\d+) días esta semana$/, (m, a, b) => `${a} of ${b} days this week`],
+  // Curso de viento: frases con las notas del instrumento (en Do-Re-Mi o en letras, según la nomenclatura)
+  [/^Añadimos (.+) y (.+)\. Mira el diagrama de cada una antes de tocarla\.$/, (m, a, b) => `We add ${notesEn(a)} and ${notesEn(b)}. Look at the diagram of each one before playing it.`],
+  [/^Empezamos por (.+) \(notas escritas\)\. El diagrama te muestra qué pulsar en cada una\.$/, (m, a) => `We start with ${notesEn(a)} (written notes). The diagram shows you what to press for each one.`],
+  [/^Las bandas afinan y calientan en Si♭ mayor de concierto\. Tu (.+) está en (.+): para ti esa escala se escribe empezando en (.+)\.$/, (m, i, k, n) => `Bands tune and warm up in concert B♭ major. Your ${tr(i).toLowerCase()} is in ${notesEn(k)}: for you that scale is written starting on ${notesEn(n)}.`],
+  [/^Muchas obras de banda están en Mi♭ y Fa de concierto\. Practicamos la escala de (.+) escrita y su arpegio\.$/, (m, n) => `Many band pieces are in concert E♭ and F. We practise the written ${notesEn(n)} scale and its arpeggio.`],
+  [/^Escala de ([A-G][#b♯♭]?)$/, (m, n) => `${n} scale`],
+  [/^Pregunta (\d+) de (\d+)$/, (m, a, b) => `Question ${a} of ${b}`],
+  [/^Repaso · (.+)$/, (m, x) => `Review · ${tr(x)}`],
+  [/^¡Aprobado! (\d+) de (\d+) bien$/, (m, a, b) => `Passed! ${a} of ${b} correct`],
+  [/^(\d+) de (\d+) bien: necesitas el 70 % para aprobar$/, (m, a, b) => `${a} of ${b} correct: you need 70 % to pass`],
+  [/^(\d+) de (\d+) bien: la repasaremos en tu rutina$/, (m, a, b) => `${a} of ${b} correct: we'll review it in your routine`],
+  [/^(.+) · (\d+) de (\d+)$/, (m, x, a, b) => `${x.split(' · ').map(tr).join(' · ')} · ${a} of ${b}`],
+  [/^¿Ya sabes tocar (.+)\?$/, (m, i) => `Can you already play the ${tr(i).toLowerCase()}?`],
+  [/^Test de nivel · (.+)$/, (m, i) => `Level test · ${tr(i)}`],
+  [/^Test (\d+) de (\d+): (.+)$/, (m, a, b, x) => `Test ${a} of ${b}: ${tr(x)}`],
+  [/^Siguiente prueba \((\d+) de (\d+)\)$/, (m, a, b) => `Next test (${a} of ${b})`],
+  [/^¡Empiezas en la unidad (\d+)!$/, (m, n) => `You start at unit ${n}!`],
+  [/^Tócala (\d+) (vez|veces) más con 2 estrellas para la plata$/, (m, n) => `Play it ${n} more time${n === '1' ? '' : 's'} with 2 stars for silver`],
+  [/^(\d+) (repaso|repasos) más con 2 estrellas( y una perfecta \(3 estrellas al 100 %\))? para el oro$/, (m, n, w, perfect) => `${n} more review${n === '1' ? '' : 's'} with 2 stars${perfect ? ' and a perfect one (3 stars at 100 %)' : ''} for gold`],
+  [/^Tocada (\d+) (vez|veces) · mejor: (\d) ★$/, (m, n, w, b) => `Played ${n} time${n === '1' ? '' : 's'} · best: ${b} ★`],
+  [/^(\d+) páginas( · concierto en la página (\d+))?( · repaso al final)?$/, (m, n, c, p, r) => `${n} pages${c ? ` · concert on page ${p}` : ''}${r ? ' · review at the end' : ''}`],
+  [/^(.+) · (\d+)\/(\d+) páginas( · (\d+) de oro)?$/, (m, sub, a, b, g, n) => `${tr(sub)} · ${a}/${b} pages${g ? ` · ${n} gold` : ''}`],
+  [/^(.+)\. Página a página, con partitura, armonización, teoría y consejos\. Repetir premia: bronce al pasarla, plata al repetirla bien y oro al dominarla\.$/, (m, sub) => `${tr(sub)}. Page by page, with score, harmony, theory and tips. Repeating pays off: bronze for passing it, silver for repeating it well and gold for mastering it.`],
+  [/^Modo libro · (.+)$/, (m, i) => `Book mode · ${tr(i)}`],
+  [/^Repaso de hoy · página (\d+)$/, (m, n) => `Today's review · page ${n}`],
+  [/^(.+) · puntos ×(\d) · (.+)$/, (m, title, x, goal) => `${tr(title)} · points ×${x} · ${tr(goal)}`],
+  [new RegExp(`^${KEY_RE} · (\\d)/4 · dificultad (\\d)( · tempo (\\d+))?$`), (m, n, mode, t, d, tp, bpm) => `${keyEn(n, mode)} · ${t}/4 · difficulty ${d}${tp ? ` · tempo ${bpm}` : ''}`],
   [/^(\d+) puntos para (.+)$/, (m, n, lvl) => `${n} points to ${lvl}`],
   [/^(Afinación|Técnica|Lectura|Ritmo|Acordes) (\d+)$/, (m, k, n) => `${({ Afinación: 'Tuning', Técnica: 'Technique', Lectura: 'Reading', Ritmo: 'Rhythm', Acordes: 'Chords' })[k]} ${n}`],
   [/^(.+) · (Clásica|Folk y country|Jazz y blues|Rock y pop|Navidad|Populares|Mis partituras|Flamenco)$/, (m, by, st) => `${by === 'Original de Violin Flow' ? 'Band Flow original' : by} · ${({ Clásica: 'Classical', 'Folk y country': 'Folk and country', 'Jazz y blues': 'Jazz and blues', 'Rock y pop': 'Rock and pop', Navidad: 'Christmas', Populares: 'Popular', 'Mis partituras': 'My scores', Flamenco: 'Flamenco' })[st]}`],

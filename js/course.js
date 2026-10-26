@@ -12,6 +12,7 @@ import { songbookById, songbookLesson } from './songbook.js';
 import { chordLabel } from './chords.js';
 import { pillsFor } from './theory-pills.js';
 import { getState } from './store.js';
+import { t } from './i18n.js';
 
 const theory = (id, title, cards) => ({ id, kind: 'theory', title, cards });
 // extra: clave ('bass') o dedos bajo las notas (piano)
@@ -178,7 +179,7 @@ export function lessonMeta(lesson) {
 
 // Los títulos llevan los acordes entre llaves («{Am}») para escribirlos en la nomenclatura elegida
 export function chordText(text, nom = getState().nom) {
-  return String(text || '').replace(/\{([^}]+)\}/g, (_, name) => chordLabel(name, nom));
+  return String(t(text || '')).replace(/\{([^}]+)\}/g, (_, name) => chordLabel(name, nom)); // en inglés, primero se traduce
 }
 
 export function lessonTitle(lesson) {
