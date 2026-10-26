@@ -1,0 +1,111 @@
+/* Band Flow en todos los formatos: móvil (base, en app.css), móvil en horizontal, tableta vertical,
+   tableta horizontal y ordenador. Se carga después de app.css y solo amplía el diseño del móvil. */
+
+/* ---------- Tableta vertical y pantallas medianas (desde 700 px) ---------- */
+@media (min-width: 700px) {
+  html { font-size: 17px; }
+  .shell { max-width: 860px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
+  .screen { gap: 22px; }
+
+  /* barra inferior: los botones juntos en el centro, no repartidos por toda la anchura */
+  .tabbar { padding-left: max(8px, calc((100vw - 620px) / 2)); padding-right: max(8px, calc((100vw - 620px) / 2)); }
+  .tabbar button { font-size: .76rem; }
+
+  /* rejillas con más columnas */
+  .tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inst-grid { grid-template-columns: repeat(4, 1fr); }
+  .style-grid { grid-template-columns: repeat(3, 1fr); }
+  .path { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+  .book-pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .today { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .today-routine, .today-daily { grid-column: span 2; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 220px)); }
+
+  /* lección: nota más grande, diagrama más grande y partitura con una altura razonable */
+  .target .name { font-size: 4.2rem; }
+  .target-row { grid-template-columns: 1fr 170px; gap: 20px; }
+  .lesson-screen .staff { max-height: 300px; }
+  .theory-card p { font-size: 1.12rem; }
+  .theory-card .board, .chord-board { max-width: 220px; }
+
+  /* libro y partituras impresas en pantalla */
+  .bp-system svg { max-height: 210px; }
+  .bp-notes svg { width: 120px; }
+  .bp-notes .chord-board { width: 140px; }
+
+  /* ventanas: centradas y algo más anchas */
+  .sheet { width: min(640px, calc(100vw - 48px)); padding: 28px; }
+  .tour-card { max-width: 520px; }
+}
+
+/* ---------- Tableta horizontal, portátil y ordenador (desde 1024 px): menú lateral ---------- */
+@media (min-width: 1024px) {
+  :root { --rail: 108px; }
+  .shell { max-width: 1120px; padding-left: calc(var(--rail) + 40px); padding-right: 40px; }
+  main { padding-bottom: 48px; }
+
+  .tabbar {
+    top: 0; right: auto; width: var(--rail); grid-template-columns: 1fr; grid-auto-rows: min-content; align-content: start; gap: 6px;
+    padding: 96px 10px 20px max(10px, env(safe-area-inset-left, 0px)); border-top: 0; border-right: 1.5px solid var(--line);
+  }
+  .tabbar button { padding: 12px 4px; font-size: .8rem; gap: 4px; }
+  .tabbar button .ic { width: 28px; height: 28px; }
+  .tabbar button[aria-current="page"] { background: var(--accent-soft); }
+  .toast { bottom: 28px; }
+  .consent { bottom: 24px; }
+
+  /* sin menú (lecciones, bienvenida…): sin hueco a la izquierda */
+  body:has(#tabbar[hidden]) .shell { padding-left: 40px; }
+
+  /* Aprender en modo casual: el mapa del curso a la izquierda y «tu día» a la derecha */
+  #casualView { display: grid; grid-template-columns: minmax(0, 1fr) 360px; column-gap: 28px; align-items: start; }
+  #casualView > * { grid-column: 2; }
+  #casualView > #courseMap { grid-column: 1; grid-row: 1 / span 6; }
+  #casualView .today { grid-template-columns: 1fr 1fr; }
+  #casualView .today-routine, #casualView .today-daily { grid-column: 1 / -1; }
+
+  .tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .inst-grid { grid-template-columns: repeat(6, 1fr); }
+  .style-grid { grid-template-columns: repeat(4, 1fr); }
+  .book-pages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  /* lección y página del libro: centradas, sin estirarse de lado a lado */
+  .lesson-screen, #bookpage, #rhythmbook, #groupsong { max-width: 960px; margin-inline: auto; width: 100%; }
+  .lesson-screen .staff { max-height: 340px; }
+  .target .name { font-size: 4.8rem; }
+  .target-row { grid-template-columns: 1fr 200px; }
+}
+
+/* ---------- Pantallas grandes (desde 1440 px) ---------- */
+@media (min-width: 1440px) {
+  .shell { max-width: 1280px; }
+  .book-pages { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------- Móvil en horizontal (poca altura): más compacto para que quepa la partitura ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root { --tabbar-h: 50px; }
+  .tabbar { padding-top: 2px; padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
+  .tabbar button { flex-direction: row; justify-content: center; gap: 6px; padding: 4px; }
+  .tabbar button .ic { width: 20px; height: 20px; }
+  .screen { gap: 12px; padding-block: 8px 4px; }
+  /* lección: partitura y controles a la izquierda, la nota y el diagrama a la derecha (todo a la vista sin bajar) */
+  .lesson-screen { display: grid; grid-template-columns: minmax(0, 1fr) 230px; column-gap: 14px; row-gap: 8px; align-content: start; }
+  .lesson-screen > * { grid-column: 1; }
+  .lesson-screen > .target-row { grid-column: 2; grid-row: 1 / span 5; align-self: start; grid-template-columns: 1fr; gap: 6px; }
+  .lesson-screen .board { max-height: 110px; }
+  .lesson-screen .staff { max-height: 42vh; }
+  .lesson-title h2 { font-size: 1.05rem; }
+  .target .name { font-size: 2.4rem; }
+  .sheet { max-height: 92vh; }
+}
+
+/* ---------- Ratón y trackpad: indicar lo que se puede pulsar ---------- */
+@media (hover: hover) and (pointer: fine) {
+  button, [role="button"], summary, label.check-chip { cursor: pointer; }
+  .btn:hover, .tool:hover, .list-row:hover, .book-page:hover, .node:hover .bubble, .chip-btn:hover, .book-spine:hover { filter: brightness(.96); }
+  .tabbar button:hover { color: var(--ink); }
+}
+
+/* Teclado: el foco siempre visible */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
