@@ -185,5 +185,52 @@ service cloud.firestore {
         allow update: if isDirector(bandId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stamp', 'comment', 'stampAt']);
       }
     }
+    // ---------- Grupos (beta): grupos pequeños que ensayan cada uno en su casa ----------
+    // Cada canción tiene una maqueta y una pista por músico; el audio va troceado en documentos de menos de 1 MiB.
+    function groupPath(gid) { return /databases/$(db)/documents/groups/$(gid); }
+    function inGroup(gid) { return signedIn() && exists(/databases/$(db)/documents/groups/$(gid)/members/$(request.auth.uid)); }
+    function groupOwner(gid) { return signedIn() && get(groupPath(gid)).data.ownerUid == request.auth.uid; }
+    function validGroupMember(d) { return shortText(d.nickname, 30) && shortText(d.instrument, 24) && validCode(d.code); }
+    function validGroupSong(d) {
+      return shortText(d.title, 80) && d.bpm is number && d.sections is list && d.sections.size() <= 40 && d.parts is map && d.parts.size() <= 10;
+    }
+    function ownTrack(tid) { return tid == request.auth.uid || tid == 'demo'; }
+    match /groupCodes/{code} {
+      allow get: if signedIn();
+      allow list, update: if false;
+      allow create: if signedIn() && validCode(code) && shortText(request.resource.data.groupName, 60)
+        && getAfter(groupPath(request.resource.data.groupId)).data.ownerUid == request.auth.uid;
+      allow delete: if groupOwner(resource.data.groupId);
+    }
+    match /groups/{gid} {
+      allow get: if inGroup(gid);
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && shortText(request.resource.data.name, 60) && validCode(request.resource.data.code);
+      allow update: if groupOwner(gid) && request.resource.data.ownerUid == resource.data.ownerUid && shortText(request.resource.data.name, 60);
+      allow delete: if groupOwner(gid);
+      match /members/{uid} {
+        allow read: if inGroup(gid);
+        // Para entrar hace falta el código del grupo (el del documento de códigos debe apuntar a este grupo)
+        allow create, update: if signedIn() && uid == request.auth.uid && validGroupMember(request.resource.data)
+          && getAfter(/databases/$(db)/documents/groupCodes/$(request.resource.data.code)).data.groupId == gid;
+        allow delete: if (signedIn() && uid == request.auth.uid) || groupOwner(gid);
+      }
+      match /songs/{sid} {
+        allow read, delete: if inGroup(gid);
+        allow create: if inGroup(gid) && request.resource.data.createdBy == request.auth.uid && validGroupSong(request.resource.data);
+        allow update: if inGroup(gid) && validGroupSong(request.resource.data) && request.resource.data.createdBy == resource.data.createdBy;
+        match /tracks/{tid} {
+          allow read, delete: if inGroup(gid);
+          allow create, update: if inGroup(gid) && ownTrack(tid) && shortText(request.resource.data.nickname, 30)
+            && request.resource.data.duration is number && request.resource.data.duration <= 330;
+          match /chunks/{n} {
+            allow read, delete: if inGroup(gid);
+            allow create, update: if inGroup(gid) && ownTrack(tid)
+              && request.resource.data.data is bytes && request.resource.data.data.size() <= 720000;
+          }
+        }
+      }
+    }
   }
 }

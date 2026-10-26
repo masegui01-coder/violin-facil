@@ -20,7 +20,7 @@
 
   <!-- Barra superior de las pestañas -->
   <header id="topbar" class="topbar" hidden>
-    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Band Flow</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Band Flow</span><span class="beta-pill" title="Versión de prueba: seguimos desarrollando la app">Beta</span></div>
     <div class="chips">
       <button type="button" id="instChip" class="chip-stat inst" aria-label="Cambiar de instrumento"><span id="instChipIcon" class="ic"></span><b id="instChipName"></b><span aria-hidden="true">▾</span></button>
       <span class="chip-stat streak" title="Días seguidos practicando"><span id="streakIcon" class="ic"></span><b id="streakCount">0</b></span>
@@ -98,7 +98,16 @@
 
     <!-- Pestaña Banda -->
     <section id="band" class="screen" hidden>
+      <p class="beta-line"><span class="beta-pill">Beta</span> «Mi banda» y «Grupos» están en pruebas: puede haber fallos y seguimos añadiendo cosas. Cuéntanos qué echas en falta desde Perfil.</p>
+      <div class="seg" role="group" aria-label="Banda o grupos"><button type="button" data-band-view="band">Mi banda</button><button type="button" data-band-view="groups">Mis grupos</button></div>
       <div id="bandBody" class="band"></div>
+      <div id="groupBody" class="band" hidden></div>
+    </section>
+
+    <!-- Canción de un grupo (beta) -->
+    <section id="groupsong" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2 id="gsTitle">Canción</h2><span class="beta-pill">Beta</span></div>
+      <div id="gsBody" class="band"></div>
     </section>
 
     <!-- Pestaña Perfil -->

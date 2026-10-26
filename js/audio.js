@@ -29,6 +29,7 @@ export function ctx() {
 }
 
 export function micReady() { return !!state.analyser; }
+export function micStream() { return state.stream || null; }
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {

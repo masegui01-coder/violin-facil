@@ -11,6 +11,7 @@ import { getState, update } from '../store.js';
 import { myBand, syncActivity } from './band-sync.js';
 import { directorView, bindDirector } from './band-director.js';
 import { memberView, bindMember } from './band-member.js';
+import { renderGroups, groupInviteCode } from './groups.js';
 
 export { pendingBandLesson } from './band-sync.js';
 
@@ -138,12 +139,24 @@ async function load() {
 }
 
 function render() {
+  const view = getState().bandView || 'band';
+  document.querySelectorAll('[data-band-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.bandView === view));
+  $('bandBody').hidden = view !== 'band';
+  $('groupBody').hidden = view !== 'groups';
+  if (view === 'groups') { renderGroups(); return; }
   if (!cloudConfigured()) { notConfigured(); return; }
   if (!band()) { welcome(); return; }
   load();
 }
 
 register('band', { enter: render });
+document.querySelectorAll('[data-band-view]').forEach(b => b.addEventListener('click', () => { update({ bandView: b.dataset.bandView }); render(); }));
+
+// Enlace de invitación a un grupo (?grupo=CÓDIGO): abre «Mis grupos» con el código puesto
+if (groupInviteCode() && getState().onboarded) {
+  update({ bandView: 'groups' });
+  setTimeout(() => { if (currentScreen() !== 'band') go('band'); }, 0);
+}
 
 // Enlace de invitación (?banda=CÓDIGO): abre la pestaña Banda con el código puesto
 if (joinCode && getState().onboarded && !band()) setTimeout(() => { if (currentScreen() !== 'band') go('band'); }, 0);
