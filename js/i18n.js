@@ -3,6 +3,7 @@
 // aparece después gracias a un observador del DOM. Al volver al español se recupera el texto original.
 import { EXACT, INSTRUMENT_NAMES, PATTERNS, setDeepTranslate } from './i18n-en.js';
 import { CONTENT } from './i18n-en-content.js';
+import { TIPS_EN } from './tips-l10n.js';
 
 export const LANGS = [['es', 'Español'], ['en', 'English']];
 const ATTRS = ['aria-label', 'placeholder', 'title'];
@@ -24,7 +25,7 @@ const instrumentsIn = text => text.replace(INSTRUMENT_RE, m => INSTRUMENT_LOWER[
 export function translate(es) {
   const trimmed = String(es).trim();
   if (!trimmed) return es;
-  let out = EXACT[trimmed] ?? CONTENT[trimmed] ?? INSTRUMENT_NAMES[trimmed];
+  let out = EXACT[trimmed] ?? CONTENT[trimmed] ?? TIPS_EN[trimmed] ?? INSTRUMENT_NAMES[trimmed];
   if (out === undefined) {
     for (const [re, fn] of PATTERNS) {
       const m = re.exec(trimmed);

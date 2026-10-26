@@ -1,5 +1,5 @@
 // Pantalla de resultado: estrellas, puntos ganados, partitura revisada y qué hacer después.
-import { $, icon } from '../ui.js';
+import { $, icon, esc } from '../ui.js';
 import { register, go, ORIGIN_TAB } from '../router.js';
 import { lessonKey } from '../course.js';
 import { createStaff } from '../staff.js';
@@ -7,6 +7,7 @@ import { getState, recordResult, update } from '../store.js';
 import { launch, nextLesson } from '../launch.js';
 import { saveTake } from '../takes.js';
 import { nextBookPage, openPage } from './book.js';
+import { freshAdvice, markAdviceSeen } from './tips.js';
 
 const FIRST_TAKE_MIN_DAYS = 7;
 
@@ -88,10 +89,22 @@ function enter(params) {
       if (prev.first.review) drawReview(firstStaff, prev.first.review);
     }
   });
+  renderAdvice(mode);
   const action = primaryAction();
   $('resPrimary').textContent = action.label;
   $('resPrimary').onclick = action.run;
   $('resRetry').hidden = stars === 0 || mode === 'compare';
+}
+
+// Consejo para ti: si el detector ve un fallo de técnica que se repite (y no lo has visto estos días)
+function renderAdvice(mode) {
+  const item = mode === 'learn' || mode === 'tempo' ? freshAdvice() : null;
+  $('resTip').hidden = !item;
+  if (!item) return;
+  markAdviceSeen(item);
+  $('resTip').innerHTML = `<p class="eyebrow">Consejo para ti</p><b>${esc(item.title)}</b><p class="small">${esc(item.action)}</p>
+    <button type="button" class="btn ghost small" id="resTipOpen">Ver por qué y cómo se hace</button>`;
+  $('resTipOpen').onclick = () => go('tips', { kind: item.tip });
 }
 
 register('result', { enter });

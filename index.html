@@ -93,6 +93,7 @@
       </div>
       <h2 class="tools-title">Para subir de nivel</h2>
       <div class="tools">
+        <button class="tool" type="button" data-go="tips"><span class="tool-ic" data-icon="tips"></span><span><b>Consejos de técnica</b><small>Embocadura, postura y respiración, y qué corregir según cómo tocas</small></span></button>
         <button class="tool" type="button" data-go="tuningmap" data-family="pitch" data-melodic><span class="tool-ic" data-icon="map"></span><span><b>Mapa de afinación</b><small>Qué notas te salen altas o bajas</small></span></button>
         <button class="tool" type="button" data-go="gym"><span class="tool-ic" data-icon="gym"></span><span><b>Gimnasio de técnica</b><small id="gymToolText">Escalas, arpegios y terceras en las 12 tonalidades</small></span></button>
         <button class="tool" type="button" id="toolCalibrate" data-family="perc"><span class="tool-ic" data-icon="audition"></span><span><b>Calibrar el micrófono</b><small>Mide el retraso de tu móvil para que los golpes cuadren al milisegundo</small></span></button>
@@ -286,6 +287,7 @@
           <div class="review-scroll"><svg id="resStaff" class="staff" role="img" aria-label="Partitura con tus aciertos"></svg></div>
           <p class="small muted">Así te ha salido: <span class="dot-ok"></span> bien · <span class="dot-warn"></span> te costó · <span class="dot-bad"></span> fallada</p>
         </div>
+        <div id="resTip" class="res-tip" hidden></div>
         <div class="col">
           <button id="resPrimary" class="btn big" type="button">Continuar</button>
           <button id="resRetry" class="btn ghost" type="button">Repetir</button>
@@ -410,6 +412,12 @@
       </div>
       <button id="ltNextStep" class="btn big" type="button" hidden>Siguiente paso</button>
       <p class="small muted center">Prueba un crescendo y un diminuendo sin que la línea se mueva: así se trabaja la afinación con dinámicas.</p>
+    </section>
+
+    <!-- Consejos de técnica -->
+    <section id="tips" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2 id="tipsTitle">Consejos</h2></div>
+      <div id="tipsBody" class="tips-body"></div>
     </section>
 
     <!-- Mapa de afinación -->

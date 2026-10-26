@@ -2,7 +2,7 @@
 // Se deduce del estado guardado y de las pantallas visitadas (state.seenScreens), que viajan en el resumen del tester.
 
 // Pantallas que cuentan como «probadas» al abrirlas
-export const TRACKED_SCREENS = ['placement', 'theory', 'lesson', 'free', 'chords', 'rhythm', 'tuner', 'metro', 'longtone', 'tuningmap', 'chord', 'gym', 'friends', 'groupsong', 'result'];
+export const TRACKED_SCREENS = ['placement', 'theory', 'lesson', 'free', 'chords', 'rhythm', 'tuner', 'metro', 'longtone', 'tuningmap', 'chord', 'gym', 'friends', 'groupsong', 'result', 'tips'];
 
 const has = obj => !!obj && Object.keys(obj).length > 0;
 const seen = (s, id) => !!(s.seenScreens && s.seenScreens[id]);
@@ -23,6 +23,7 @@ export const FEATURES = [
   { id: 'metro', area: 'Estudio', label: 'Metrónomo', test: s => seen(s, 'metro') },
   { id: 'longtone', area: 'Estudio', label: 'Notas tenidas', test: s => seen(s, 'longtone') },
   { id: 'tuningmap', area: 'Estudio', label: 'Mapa de afinación', test: s => seen(s, 'tuningmap') },
+  { id: 'tips', area: 'Estudio', label: 'Consejos de técnica', test: s => seen(s, 'tips') },
   { id: 'chord-tune', area: 'Estudio', label: 'Afinar en acorde', test: s => seen(s, 'chord') },
   { id: 'gym', area: 'Estudio', label: 'Gimnasio de técnica', test: s => seen(s, 'gym') },
   { id: 'band-member', area: 'Banda', label: 'Unirse a una banda y ensayar tareas', test: s => !!s.band && s.band.role !== 'director' },

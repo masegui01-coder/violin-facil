@@ -39,6 +39,7 @@ import { isProTesterUid } from './roles-api.js';
 import { setLang, defaultLang } from './i18n.js';
 import { refreshRhythmBookTool } from './screens/rhythm-book.js';
 import './screens/book-page.js';
+import './screens/tips.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
 
