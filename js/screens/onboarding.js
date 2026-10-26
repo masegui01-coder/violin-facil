@@ -4,6 +4,7 @@ import { register, go } from '../router.js';
 import { getState, update } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { styleGridHtml, instrumentGridHtml } from './profile.js';
+import { setLang } from '../i18n.js';
 
 const LEVELS = [
   { id: 'new', title: 'Nunca he tocado', text: 'Empezamos por las primeras notas.' },
@@ -20,6 +21,7 @@ const HERO = `<div class="ob-hero">
   <h1>Band Flow</h1>
   <p class="muted">La app te escucha por el micrófono, te dice si vas afinado y te lleva paso a paso desde las primeras notas hasta las obras de tu banda.</p>
   <p class="ob-note"><b>Tu progreso queda guardado en tu cuenta.</b> Elige tu instrumento y empieza en un minuto.</p>
+  <div class="seg ob-lang" role="group" aria-label="Idioma / Language"><button type="button" data-ob-lang="es">Español</button><button type="button" data-ob-lang="en">English</button></div>
 </div>`;
 
 let step = 0;
@@ -50,6 +52,7 @@ const STEPS = [
 function render() {
   $('obDots').innerHTML = STEPS.map((_, i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('');
   $('obStep').innerHTML = STEPS[step].render();
+  document.querySelectorAll('[data-ob-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.obLang === (getState().lang || 'es'))));
   $('obBack').hidden = step === 0;
   const name = draft.instrument ? instrumentById(draft.instrument).name : '';
   $('obNext').textContent = step === 0 ? 'Empezar' : step === 1 ? (name ? `Continuar con ${name}` : 'Elige un instrumento') : step === STEPS.length - 1 ? `Empezar a tocar` : 'Continuar';
@@ -66,6 +69,15 @@ function enter() {
 register('onboarding', { enter });
 
 $('obStep').addEventListener('click', e => {
+  const langBtn = e.target.closest('[data-ob-lang]');
+  if (langBtn) {
+    const lang = langBtn.dataset.obLang;
+    draft = { ...draft, nom: lang === 'en' ? 'us' : 'eu' };
+    update({ lang });
+    setLang(lang);
+    render();
+    return;
+  }
   const nom = e.target.closest('[data-nom]');
   const level = e.target.closest('[data-level]');
   const style = e.target.closest('[data-style]');

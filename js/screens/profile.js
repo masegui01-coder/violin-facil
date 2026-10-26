@@ -8,6 +8,7 @@ import { renderAccountPanel } from './account-panel.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 import { openPlacementIntro } from './placement-ui.js';
+import { setLang } from '../i18n.js';
 
 export { instrumentGridHtml };
 
@@ -39,6 +40,7 @@ function render() {
   $('profileInstruments').innerHTML = instrumentGridHtml(s.instrument);
   document.querySelectorAll('[data-set-a4]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setA4) === s.a4));
   document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
+  document.querySelectorAll('[data-set-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setLang === (s.lang || 'es')));
   document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
   $('setClick').checked = s.metroClick;
   $('setBig').checked = s.bigText;
@@ -75,6 +77,13 @@ $('profileInstruments').addEventListener('click', e => {
 document.querySelectorAll('[data-set-goal]').forEach(b => b.addEventListener('click', () => { update({ dailyGoal: Number(b.dataset.setGoal) }); render(); }));
 document.querySelectorAll('[data-set-a4]').forEach(b => b.addEventListener('click', () => { update({ a4: Number(b.dataset.setA4) }); render(); }));
 document.querySelectorAll('[data-set-nom]').forEach(b => b.addEventListener('click', () => { update({ nom: b.dataset.setNom }); render(); }));
+// En inglés, las notas por defecto con letras (C, D, E…); se puede cambiar justo debajo
+document.querySelectorAll('[data-set-lang]').forEach(b => b.addEventListener('click', () => {
+  const lang = b.dataset.setLang;
+  update({ lang, ...(lang === 'en' && getState().nom === 'eu' ? { nom: 'us' } : {}) });
+  setLang(lang);
+  render();
+}));
 document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
 $('setClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));

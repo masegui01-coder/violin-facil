@@ -35,6 +35,7 @@ import './screens/group-song.js';
 import './screens/metrics.js';
 import { onAccount, currentAccount } from './account.js';
 import { isProTesterEmail, isAdminEmail } from './metrics.js';
+import { setLang, defaultLang } from './i18n.js';
 import { refreshRhythmBookTool } from './screens/rhythm-book.js';
 import './screens/book-page.js';
 import { initAnalytics } from './analytics.js';
@@ -63,6 +64,8 @@ function renderTopbar(s) {
 }
 
 hydrateIcons();
+if (!getState().lang) update({ lang: defaultLang(), ...(defaultLang() === 'en' && !getState().onboarded ? { nom: 'us' } : {}) });
+setLang(getState().lang);
 // Tester pro: todo el contenido abierto mientras esté su cuenta en este móvil
 const applyRole = acc => {
   const email = acc && acc.email;
