@@ -874,3 +874,44 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .book-medals span { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; opacity: .3; filter: grayscale(1); }
 .book-medals span.on { opacity: 1; filter: none; }
 .book-medals small { font-size: .75rem; font-weight: 700; }
+
+/* ---------- Página del libro ---------- */
+.bp-where { flex: 1; font-weight: 700; font-size: .9rem; color: var(--muted); }
+.bp-medal { font-size: 1.4rem; }
+.book-sheet { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 0 var(--line); }
+.bp-opener { border-bottom: 3px solid var(--unit); padding-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.bp-opener h1 { margin: 0; }
+.bp-head { display: flex; gap: 12px; align-items: flex-start; }
+.bp-head h2 { margin: 0; }
+.bp-head p { margin: 2px 0 0; }
+.bp-num { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--unit); color: #fff; font-family: var(--f-display); font-size: 1.2rem; }
+.bp-system { display: flex; flex-direction: column; gap: 2px; }
+.bp-system svg { width: 100%; height: auto; }
+.bp-chords { font-weight: 800; font-size: .85rem; color: var(--accent); white-space: pre; min-height: 1.1em; padding-left: 64px; }
+.bp-notes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.bp-notes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bp-notes svg { width: 96px; height: auto; }
+.bp-notes .chord-board { width: 110px; }
+.bp-notes figcaption { font-weight: 800; }
+.bp-chart { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 2px solid var(--ink); }
+.bp-chart span { border-right: 2px solid var(--ink); padding: 8px 6px; font-weight: 800; text-align: center; }
+.bp-card { display: flex; flex-direction: column; gap: 6px; }
+.bp-card h3 { margin: 0; }
+.bp-card p { margin: 0; }
+.bp-card svg { width: 160px; height: auto; align-self: center; }
+.bp-tip { display: flex; flex-direction: column; gap: 3px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; font-size: .9rem; }
+.bp-medals { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.bp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 2; }
+.bp-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; }
+.book-print { display: none; }
+.bp-print-foot { font-size: .8rem; color: #555; border-top: 1px solid #ccc; padding-top: 6px; }
+.bp-cover { text-align: center; }
+.bp-index { text-align: left; padding: 0; list-style: none; }
+.bp-index li { display: flex; justify-content: space-between; border-bottom: 1px dotted #999; padding: 4px 0; }
+@media print {
+  body.print-book > *:not(#bookPrint) { display: none !important; }
+  body.print-book { background: #fff; color: #000; }
+  body.print-book #bookPrint { display: block; }
+  .bp-print-page { break-after: page; padding: 8mm 4mm; display: flex; flex-direction: column; gap: 10px; }
+  .bp-print-page .staff { width: 100%; height: auto; }
+}

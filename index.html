@@ -109,6 +109,16 @@
       <div id="groupBody" class="band" hidden></div>
     </section>
 
+    <!-- Página del libro -->
+    <section id="bookpage" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver al libro">✕</button><span id="bpWhere" class="bp-where"></span><span id="bpMedal" class="bp-medal"></span></div>
+      <article id="bpBody" class="book-sheet"></article>
+      <div class="bp-actions">
+        <button id="bpListen" class="btn ghost small" type="button">Escuchar con la banda</button>
+        <div class="bp-nav"><button id="bpPrev" class="btn ghost small" type="button">‹ Anterior</button><button id="bpPlay" class="btn" type="button">Tocar</button><button id="bpNext" class="btn ghost small" type="button">Siguiente ›</button></div>
+      </div>
+    </section>
+
     <!-- Métricas de la app (solo administrador) -->
     <section id="metrics" class="screen" hidden>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Métricas de Band Flow</h2></div>
@@ -497,6 +507,7 @@
   <div id="tourCard" class="tour-card" role="dialog" aria-modal="true" aria-label="Recorrido por la app" aria-live="polite"></div>
 </div>
 <div id="toast" class="toast off" role="status" aria-live="polite"></div>
+<div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

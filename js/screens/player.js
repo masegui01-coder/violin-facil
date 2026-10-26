@@ -1,9 +1,9 @@
 // Motor de lección: modo «nota a nota» (espera a que suene bien) y modo «a tempo» (la partitura avanza sola).
-import { harmonize, accompanimentNotes, noteValueName } from '../harmony.js';
+import { harmonize, accompanimentNotes, noteValueName, inferKey } from '../harmony.js';
 import { $, toast } from '../ui.js';
 import { register, go, originTab } from '../router.js';
 import { parseScore, noteLabel } from '../music.js';
-import { lessonSong, lessonTitle } from '../course.js';
+import { lessonMeta, lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
 import { renderDiagram } from '../keydiagram.js';
 import { fingeringText } from '../fingerings.js';
@@ -23,8 +23,6 @@ const RELEASE_FALLBACK_MS = 700;
 const EARLY_S = 0.1;
 const GRACE_S = 0.18;
 const MIN_HIT_S = 0.22;
-const NOTES_PER_BAR = 4;
-const NOTES_BPM = 60;
 const BPM_STEP = 2;
 const BPM_MIN = 30;
 const BPM_MAX = 220;
@@ -36,15 +34,7 @@ let run = null;
 let timer = 0;
 let offBeat = null;
 
-function buildMeta(lesson) {
-  if (lesson.kind === 'notes') {
-    const list = lesson.notes.split(' ');
-    const bars = [];
-    for (let i = 0; i < list.length; i += NOTES_PER_BAR) bars.push(list.slice(i, i + NOTES_PER_BAR).map(n => n + 'q').join(' '));
-    return { title: lesson.title, key: 'C', time: 4, bpm: NOTES_BPM, score: '| ' + bars.join(' | ') + ' |' };
-  }
-  return lessonSong(lesson);
-}
+const buildMeta = lessonMeta;
 
 const tolerance = () => TOLERANCE_CENTS[getState().tolerance] || TOLERANCE_CENTS.facil;
 // Metrónomo en toda la app: la cuenta previa siempre suena, el péndulo siempre se ve y el clic durante la canción es opcional
@@ -383,7 +373,7 @@ function enter({ lesson, mode, from, eyebrow }) {
   // Sin otras voces: armonización automática de la melodía (la crea la app, sin arreglos de terceros)
   run.bandVoices = run.accompaniment.length > 0;
   if (!run.bandVoices && score.bars && score.bars.length) {
-    const chords = harmonize(notes, score.bars, { key: meta.key, time: meta.time });
+    const chords = harmonize(notes, score.bars, { key: lesson.kind === 'notes' ? inferKey(notes) : meta.key, time: meta.time });
     run.accompaniment = [{ notes: accompanimentNotes(chords, { time: meta.time, transpose: instrumentById(getState().instrument).transpose }), transpose: instrumentById(getState().instrument).transpose }];
   }
   renderMix();

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseScore } from '../js/music.js';
-import { harmonize, accompanimentNotes, parseKey, noteValueName } from '../js/harmony.js';
+import { harmonize, accompanimentNotes, parseKey, noteValueName, inferKey } from '../js/harmony.js';
 import { SONGS, songScore } from '../js/songs.js';
 
 test('lee la tonalidad', () => {
@@ -40,4 +40,10 @@ test('nombre del valor de la nota', () => {
   assert.equal(noteValueName(1), 'Negra · 1 tiempo');
   assert.equal(noteValueName(0.5), 'Corchea · medio tiempo');
   assert.equal(noteValueName(1.5), 'Negra con puntillo · 1,5 tiempos');
+});
+
+test('deduce la tonalidad de un ejercicio sin tonalidad escrita', () => {
+  assert.equal(inferKey(parseScore('| A4q E5q A4q E5q | A4q E5q A4h |').notes), 'A');
+  assert.equal(inferKey(parseScore('| D4q E4q F#4q G4q | A4q G4q F#4q E4q | D4w |').notes), 'D');
+  assert.equal(inferKey(parseScore('| C4q D4q E4q F4q | G4q F4q E4q D4q | C4w |').notes), 'C');
 });

@@ -163,6 +163,19 @@ export function lessonSong(lesson) {
   return lesson.song || (lesson.songId ? songById(lesson.songId) : null);
 }
 
+// Partitura de una lección: las de notas sueltas se escriben en negras, cuatro por compás
+const NOTES_PER_BAR = 4;
+const NOTES_BPM = 60;
+export function lessonMeta(lesson) {
+  if (lesson.kind === 'notes') {
+    const list = lesson.notes.split(' ');
+    const bars = [];
+    for (let i = 0; i < list.length; i += NOTES_PER_BAR) bars.push(list.slice(i, i + NOTES_PER_BAR).map(n => n + 'q').join(' '));
+    return { title: lesson.title, key: 'C', time: 4, bpm: NOTES_BPM, score: '| ' + bars.join(' | ') + ' |' };
+  }
+  return lessonSong(lesson);
+}
+
 // Los títulos llevan los acordes entre llaves («{Am}») para escribirlos en la nomenclatura elegida
 export function chordText(text, nom = getState().nom) {
   return String(text || '').replace(/\{([^}]+)\}/g, (_, name) => chordLabel(name, nom));

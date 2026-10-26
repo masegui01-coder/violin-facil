@@ -18,6 +18,30 @@ export function parseKey(key = 'C') {
   return { tonic: (LETTER_PC[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + 12) % 12, minor: m[3] === 'm' };
 }
 
+// Tonalidad que mejor encaja con la melodía (para ejercicios sin tonalidad escrita): las notas de su escala,
+// y que empiece y sobre todo acabe en la tónica. A igualdad, la de menos alteraciones.
+const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11];
+const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10, 11];
+const KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const SIMPLE = [0, 7, 2, 5, 9, 10, 4, 3]; // Do, Sol, Re, Fa, La, Si♭, Mi, Mi♭: las tonalidades más fáciles primero
+export function inferKey(notes) {
+  const played = notes.filter(n => !n.rest);
+  if (!played.length) return 'C';
+  const pc = n => ((n.midi % 12) + 12) % 12;
+  const first = pc(played[0]), last = pc(played[played.length - 1]);
+  let best = { score: -Infinity, name: 'C' };
+  for (let t = 0; t < 12; t++) {
+    [false, true].forEach(minor => {
+      const scale = (minor ? MINOR_SCALE : MAJOR_SCALE).map(i => (t + i) % 12);
+      const fit = played.reduce((s, n) => s + (scale.includes(pc(n)) ? n.beats : -2 * n.beats), 0);
+      const ease = SIMPLE.includes(t) ? (8 - SIMPLE.indexOf(t)) * 0.01 : 0;
+      const score = fit + (last === t ? 3 : 0) + (first === t ? 1 : 0) + ease - (minor ? 0.05 : 0);
+      if (score > best.score) best = { score, name: KEY_NAMES[t] + (minor ? 'm' : '') };
+    });
+  }
+  return best.name;
+}
+
 const triad = (root, minor) => [root, (root + (minor ? 3 : 4)) % 12, (root + 7) % 12];
 export const chordName = (root, minor) => NAMES[root] + (minor ? 'm' : '');
 

@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCourse } from '../js/course.js';
-import { buildBook, recordPlay, medalOf, nextGoal, chapterStats, reviewPage } from '../js/book.js';
+import { buildBook, recordPlay, medalOf, nextGoal, chapterStats, reviewPage, buildFullBook, pageScore, sliceScore } from '../js/book.js';
+import { INSTRUMENTS } from '../js/instruments.js';
+import { parseScore } from '../js/music.js';
+import { parseChord } from '../js/chords.js';
 
 test('el libro numera las páginas seguidas, sin huecos ni píldoras', () => {
   const book = buildBook(buildCourse(['folk'], 'sax'));
@@ -42,4 +45,33 @@ test('repaso de hoy: la página empezada más olvidada, nunca una de hoy ni de o
   const stats = chapterStats(book[0], plays);
   assert.equal(stats.started, 3);
   assert.equal(stats.stamp, 'done');
+});
+
+
+for (const inst of INSTRUMENTS) {
+  test(`libro completo de ${inst.name}: páginas seguidas, novedades y repasos que se pueden tocar`, () => {
+    const book = buildFullBook(buildCourse(['folk', 'clasica'], inst.id), inst);
+    const numbers = book.flatMap(c => c.pages.map(p => p.number));
+    assert.deepEqual(numbers, numbers.map((_, i) => i + 1));
+    const ids = book.flatMap(c => c.pages.map(p => p.lesson.id));
+    assert.equal(new Set(ids).size, ids.length, 'ids repetidos');
+    const reviews = book.flatMap(c => c.pages.filter(p => p.lesson.chapterReview).map(p => p.lesson));
+    assert.ok(reviews.length >= Math.floor(book.length / 2), `${inst.id}: solo ${reviews.length} repasos`);
+    reviews.forEach(l => {
+      if (l.kind === 'chords') { l.chords.forEach(c => parseChord(c)); return; }
+      const { score } = pageScore(l, inst);
+      score.bars.forEach((b, i) => assert.equal(b.beats, l.song.time, `${l.id} compás ${i + 1}`));
+      if (!inst.rhythmOnly) score.notes.filter(n => !n.rest).forEach(n => assert.ok(n.midi >= inst.written[0] && n.midi <= inst.written[1], `${l.id}: ${n.midi}`));
+    });
+    assert.ok(book.some(c => c.news.notes.length || c.news.chords.length));
+  });
+}
+
+test('trocea la partitura en renglones', () => {
+  const score = parseScore('| C4q D4q E4q F4q | G4h G4h | A4q A4q A4q A4q | G4w |');
+  const second = sliceScore(score, 2, 2);
+  assert.equal(second.bars.length, 2);
+  assert.equal(second.bars[0].start, 0);
+  assert.equal(second.notes[0].midi, 69);
+  assert.equal(second.totalBeats, 8);
 });
