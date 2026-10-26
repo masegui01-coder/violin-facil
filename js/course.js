@@ -174,11 +174,11 @@ export function lessonTitle(lesson) {
 const START_UNIT = { new: 0, basic: 3, fluent: UNITS.length };
 
 // Estado de cada lección: done / open / locked. «Tu música» y los calentamientos no bloquean el avance.
-export function lessonStates(course, progress, { level = 'new', unlockAll = false } = {}) {
+export function lessonStates(course, progress, { level = 'new', unlockAll = false, startUnit = 0 } = {}) {
   const states = {};
   let prevCoreDone = true;
   course.forEach((unit, ui) => {
-    const preUnlocked = unlockAll || ui < START_UNIT[level];
+    const preUnlocked = unlockAll || ui < Math.max(START_UNIT[level], startUnit); // startUnit: test de nivel
     let unitOpen = false;
     unit.lessons.forEach((lesson, li) => {
       const done = (progress[lessonKey(lesson)] || 0) > 0;

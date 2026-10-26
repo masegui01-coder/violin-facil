@@ -5,6 +5,7 @@ import { lessonKey, lessonTitle, lessonSong, chordText } from '../course.js';
 import { styleById } from '../songs.js';
 import { getState, instrumentProgress, today } from '../store.js';
 import { soonBandTask } from '../next-step.js';
+import { placementCardHtml, bindPlacementCard } from './placement-ui.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
@@ -75,6 +76,8 @@ function render() {
   const task = soonBandTask(getState(), today());
   $('continueCard').innerHTML = (task ? bandStepCard(task) : '') + continueCard();
   if (task) $('bandStepBtn').addEventListener('click', () => go('band'));
+  $('placementCard').innerHTML = placementCardHtml();
+  bindPlacementCard();
   $('courseMap').innerHTML = course.map(unitHtml).join('');
   const btn = $('continueBtn');
   if (btn && next) btn.addEventListener('click', () => launch(next, { from: 'course' }));

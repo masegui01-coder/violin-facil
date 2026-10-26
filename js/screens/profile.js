@@ -7,6 +7,7 @@ import { renderProgress } from './progress-ui.js';
 import { renderAccountPanel } from './account-panel.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
+import { openPlacementIntro } from './placement-ui.js';
 
 export { instrumentGridHtml };
 
@@ -78,6 +79,7 @@ document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('cli
 $('setClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
 $('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));
+$('profilePlacement').addEventListener('click', openPlacementIntro);
 $('setUnlock').addEventListener('change', e => update({ unlockAll: e.target.checked }));
 $('setKid').addEventListener('change', e => { update({ kidMode: e.target.checked, ...(e.target.checked ? { publicBoards: false } : {}) }); render(); });
 $('setPublic').addEventListener('change', e => {

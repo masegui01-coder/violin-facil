@@ -11,7 +11,7 @@ export function currentCourse() {
 
 export function currentStates(course = currentCourse()) {
   const s = getState();
-  return lessonStates(course, instrumentProgress(), { level: s.level, unlockAll: s.unlockAll });
+  return lessonStates(course, instrumentProgress(), { level: s.level, unlockAll: s.unlockAll, startUnit: (s.placement || {})[s.instrument] || 0 });
 }
 
 export function unitOf(lessonId, course = currentCourse()) {

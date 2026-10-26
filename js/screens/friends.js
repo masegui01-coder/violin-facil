@@ -65,8 +65,8 @@ subscribe(next => {
 });
 
 window.addEventListener('lesson-finished', e => {
-  if (!ready) return;
   const { lesson, stars } = e.detail;
+  if (!ready || lesson.placement) return;
   const title = lessonTitle(lesson);
   scheduleProfile({ playing: { title, at: Date.now() } });
   const isSong = lesson.kind === 'song' || (lesson.kind === 'chords' && lesson.mode === 'strum');

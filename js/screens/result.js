@@ -15,7 +15,7 @@ let ctx = null;
 // Cierra una lección: guarda estrellas, minutos y avisa (evento «lesson-finished») a quien escuche, por ejemplo «Mi banda»
 export function finishLesson({ lesson, mode, from, stars, text, title, record = true, review = null, minutes = 0, accuracy = null, take = null, speed = 1, missed = null }) {
   const before = getState().xp;
-  if (record && stars > 0) recordResult(lessonKey(lesson), stars, minutes);
+  if (record && !lesson.noRecord && stars > 0) recordResult(lessonKey(lesson), stars, minutes);
   window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed, missed } }));
   go('result', { lesson, mode, from, stars, text, title, review, take, speed, xp: getState().xp - before });
 }

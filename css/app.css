@@ -828,3 +828,4 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .gs-track-ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .gs-track-ctl input[type=range] { flex: 1; min-width: 100px; }
 .chips-row.wrap { flex-wrap: wrap; }
+.placement-card { gap: 8px; margin-top: 12px; border-color: var(--accent); }

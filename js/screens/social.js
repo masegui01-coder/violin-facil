@@ -141,7 +141,7 @@ window.addEventListener('open-league', () => {
 window.addEventListener('lesson-finished', async e => {
   if (!cloudConfigured()) return;
   const { lesson, mode, stars, accuracy, speed } = e.detail;
-  if (accuracy === null || accuracy === undefined) return;
+  if (accuracy === null || accuracy === undefined || lesson.placement) return;
   try {
     const s = getState();
     if (s.kidMode || !s.publicBoards || !s.publicName) return;
