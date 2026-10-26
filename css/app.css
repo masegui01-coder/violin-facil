@@ -925,8 +925,9 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 }
 
 /* ---------- Lecturas rítmicas ---------- */
-.rb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.rb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 700; }
+.rb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
+.rb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 700; min-width: 0; }
+.rb-grid .select, .rb-grid .input { width: 100%; min-width: 0; box-sizing: border-box; }
 .rb-label { font-weight: 700; font-size: .9rem; }
 .rb-preview { margin-top: 12px; }
 .rb-offscreen { position: absolute; left: -10000px; top: 0; width: 900px; }
