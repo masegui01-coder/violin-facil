@@ -166,7 +166,7 @@ const OBOE = [
     check: L('Si solo suena agudo, la caña está cerrada o muerdes; si suena muy grave y sucio, está demasiado abierta.', 'If it only sounds high, the reed is closed or you are biting; if it is very low and fuzzy, it is too open.'),
     avoid: [L('Caña seca', 'A dry reed'), L('Apretar la mandíbula', 'Clenching the jaw')],
   },
-  { ...CLARINET[1], sources: ['rothwell', 'conable'], intro: L('El oboe se sujeta como el clarinete: el peso en el pulgar derecho y los dedos curvados, cerca de las llaves.', 'The oboe is held like the clarinet: the weight on the right thumb and the fingers curved, close to the keys.') },
+  { ...CLARINET[1], art: 'oboe-hold', sources: ['rothwell', 'conable'], intro: L('El oboe se sujeta como el clarinete: el peso en el pulgar derecho y los dedos curvados, cerca de las llaves.', 'The oboe is held like the clarinet: the weight on the right thumb and the fingers curved, close to the keys.') },
   BREATH,
 ];
 
