@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { userMetrics, groupMetrics, weekStart, isAdminEmail, isProTesterEmail } from '../js/metrics.js';
+import { userMetrics, groupMetrics, weekStart, isAdminEmail, isProTesterEmail, accountEmails } from '../js/metrics.js';
 
 const now = new Date(2026, 9, 26, 12).getTime();
 const day = 864e5;
@@ -46,4 +46,11 @@ test('tester pro por correo, que no es administrador', () => {
   assert.equal(isProTesterEmail('Fran-Saxo@hotmail.com'), true);
   assert.equal(isAdminEmail('fran-saxo@hotmail.com'), false);
   assert.equal(isProTesterEmail('otro@hotmail.com'), false);
+});
+
+test('accountEmails reúne el correo principal y los de cada proveedor, sin repetir y en minúsculas', () => {
+  const acc = { email: null, providerData: [{ email: 'Fran-Saxo@Hotmail.com ' }, { email: 'fran-saxo@hotmail.com' }, null] };
+  assert.deepEqual(accountEmails(acc), ['fran-saxo@hotmail.com']);
+  assert.ok(accountEmails(acc).some(isProTesterEmail));
+  assert.deepEqual(accountEmails(null), []);
 });

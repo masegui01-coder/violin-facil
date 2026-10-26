@@ -9,6 +9,10 @@ export const isAdminEmail = email => !!email && ADMIN_EMAILS.includes(String(ema
 export const PRO_TESTER_EMAILS = ['fran-saxo@hotmail.com'];
 export const isProTesterEmail = email => !!email && PRO_TESTER_EMAILS.includes(String(email).toLowerCase());
 
+// Todos los correos de una cuenta (el principal y los de Google, correo…), en minúsculas
+export const accountEmails = acc => [...new Set([acc && acc.email, ...((acc && acc.providerData) || []).map(p => p && p.email)]
+  .filter(Boolean).map(e => String(e).trim().toLowerCase()))];
+
 const activeIn = (list, days, now) => list.filter(t => now - (t.lastSeen || 0) < days * DAY_MS).length;
 const countBy = (list, key) => Object.entries(list.reduce((m, t) => {
   const k = key(t) || 'Sin dato';

@@ -8,6 +8,7 @@ import { analyticsAvailable, setAnalyticsConsent } from '../analytics.js';
 import { getState, replaceState } from '../store.js';
 import { openAccountReminder } from './account.js';
 import { isAdminEmail, isProTesterEmail } from '../metrics.js';
+import { listProTesters, setProTester } from '../roles-api.js';
 
 const DAY_MS = 86400000;
 let confirmDelete = false;
@@ -27,7 +28,7 @@ export async function renderAccountPanel() {
     box.innerHTML = `<h2>Tu cuenta</h2><p>Has entrado como <b>${esc(acc.displayName || acc.email)}</b>${acc.displayName && acc.email ? ` (${esc(acc.email)})` : ''}. Tu progreso se guarda en tu cuenta y lo recuperas en cualquier dispositivo.</p>
       <p class="muted small">Las grabaciones y las partituras importadas se quedan en este dispositivo.</p>
       ${consent}
-      ${isProTesterEmail(acc.email) ? '<p><span class="pill ok">Tester pro</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>' : ''}
+      ${getState().proTester ? '<p><span class="pill ok">Tester pro</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>' : ''}
       <div id="accAdmin"></div>
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
     $('accSignOut').addEventListener('click', signOut);
@@ -77,17 +78,23 @@ export async function openTesters() {
   $('sheetBody').innerHTML = '<div class="sheet-body"><h2>Testers</h2><p class="empty">Cargando…</p></div>';
   $('sheet').showModal();
   let list = [];
-  try { list = await listTesters(); } catch (e) { $('sheetBody').innerHTML = `<div class="sheet-body"><h2>Testers</h2><p class="warn">${esc(accountErrorText(e))}</p></div>`; return; }
+  let pros = {};
+  try { [list, pros] = await Promise.all([listTesters(), listProTesters().catch(() => ({}))]); } catch (e) { $('sheetBody').innerHTML = `<div class="sheet-body"><h2>Testers</h2><p class="warn">${esc(accountErrorText(e))}</p></div>`; return; }
   const now = Date.now();
   const active = days => list.filter(t => now - t.lastSeen < days * DAY_MS).length;
   $('sheetBody').innerHTML = `<div class="sheet-body"><h2>Testers</h2>
     <div class="stats"><div class="stat"><b>${list.length}</b><span>con cuenta</span></div><div class="stat"><b>${active(1)}</b><span>hoy</span></div><div class="stat"><b>${active(7)}</b><span>esta semana</span></div></div>
-    <div class="table-wrap"><table class="prog-table testers-table"><thead><tr><th>Tester</th><th>Instrumento</th><th>Último uso</th><th class="num">Días</th><th class="num">Min.</th><th class="num">Lecc.</th></tr></thead><tbody>
+    <div class="table-wrap"><table class="prog-table testers-table"><thead><tr><th>Tester</th><th>Instrumento</th><th>Último uso</th><th class="num">Días</th><th class="num">Min.</th><th class="num">Lecc.</th><th>Pro</th></tr></thead><tbody>
     ${list.map(t => `<tr><td><b>${esc(t.name)}</b><br><small>${esc(t.email)}</small></td><td>${esc(t.instrument || '')}<br><small>${esc(t.level || '')}</small></td>
-      <td>${fmtDay(t.lastSeen)}<br><small>${esc(t.platform || '')}</small></td><td class="num">${num(t.daysPracticed)}</td><td class="num">${num(t.minutes)}</td><td class="num">${num(t.lessons)}</td></tr>`).join('')}
+      <td>${fmtDay(t.lastSeen)}<br><small>${esc(t.platform || '')}</small></td><td class="num">${num(t.daysPracticed)}</td><td class="num">${num(t.minutes)}</td><td class="num">${num(t.lessons)}</td>
+      <td><label class="check-chip" title="Tester pro: todo abierto menos el panel de administrador"><input type="checkbox" data-pro="${esc(t.id)}" ${pros[t.id] || isProTesterEmail(t.email) ? 'checked' : ''} ${isProTesterEmail(t.email) ? 'disabled' : ''}> Pro</label></td></tr>`).join('')}
     </tbody></table></div>
+    <p class="muted small">Marca «Pro» para que ese tester vea todo (lecciones, libros, libro de lecturas…) menos este panel y las métricas. Se aplica la próxima vez que abra la app.</p>
     <div class="row"><button type="button" class="btn small" id="testersCsv">Descargar (CSV)</button><button type="button" class="btn ghost small" data-close>Cerrar</button></div></div>`;
   $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
+  $('sheetBody').querySelectorAll('[data-pro]').forEach(box => box.addEventListener('change', async () => {
+    try { await setProTester(box.dataset.pro, box.checked); toast(box.checked ? 'Ahora es tester pro' : 'Ya no es tester pro'); } catch (e) { box.checked = !box.checked; toast(accountErrorText(e)); }
+  }));
   $('testersCsv').addEventListener('click', () => {
     const url = URL.createObjectURL(new Blob(['﻿' + testersCsv(list)], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');

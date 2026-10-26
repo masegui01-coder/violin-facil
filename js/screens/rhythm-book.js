@@ -3,6 +3,7 @@
 import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { getState, update, instrumentProgress } from '../store.js';
+import { currentAccount } from '../account.js';
 import { instrumentById } from '../instruments.js';
 import { lessonKey } from '../course.js';
 import { parseScore } from '../music.js';
@@ -96,7 +97,12 @@ function drawPreview() {
 
 function render() {
   stopAudio();
-  if (!canUseRhythmBook()) { $('rbBody').innerHTML = '<p class="muted">Esta herramienta está en pruebas solo para testers pro.</p>'; return; }
+  if (!canUseRhythmBook()) {
+    const acc = currentAccount();
+    $('rbBody').innerHTML = `<p class="muted">Esta herramienta está en pruebas solo para testers pro.</p>
+      <p class="muted small">${acc ? `Has entrado con <b>${esc(acc.email || acc.displayName || '')}</b>. Pide al administrador que te marque como tester pro en su panel.` : 'Entra con tu cuenta de tester para usarla.'}</p>`;
+    return;
+  }
   const o = opts();
   $('rbBody').innerHTML = `<p class="muted small"><span class="beta-pill">Beta</span> Para ${esc(inst().name.toLowerCase())}: lecturas para dominar figuras, silencios y combinaciones sobre las notas de una escala, sin que la afinación sea el reto.</p>
     ${formHtml(o)}${previewHtml()}${bookHtml()}`;

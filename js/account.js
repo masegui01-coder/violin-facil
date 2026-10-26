@@ -23,6 +23,14 @@ export function onAccount(fn) {
   return () => listeners.delete(fn);
 }
 
+// Vincular la sesión anónima a una cuenta mantiene el mismo usuario y Firebase no avisa: lo hacemos aquí
+function announce(u) {
+  if (!isAccount(u)) return u;
+  user = u;
+  listeners.forEach(fn => fn(u));
+  return u;
+}
+
 // Google: intenta unir la sesión anónima (para conservar la banda); si no se puede por cualquier motivo
 // (la cuenta ya existía, el correo ya se usa…), entra directamente con Google. Solo se rinde si cierras la ventana.
 const USER_CANCELLED = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'];
@@ -34,7 +42,7 @@ export async function signInWithGoogle() {
   const anon = c.auth.currentUser && c.auth.currentUser.isAnonymous ? c.auth.currentUser : null;
   if (!anon) return (await c.authFns.signInWithPopup(c.auth, provider)).user;
   try {
-    return (await c.authFns.linkWithPopup(anon, provider)).user;
+    return announce((await c.authFns.linkWithPopup(anon, provider)).user);
   } catch (e) {
     if (USER_CANCELLED.includes(e.code) || e.code === 'auth/popup-blocked') throw e;
     const cred = c.authFns.GoogleAuthProvider.credentialFromError(e);
@@ -50,7 +58,7 @@ export async function signUpWithEmail(name, email, password) {
     ? (await c.authFns.linkWithCredential(anon, c.authFns.EmailAuthProvider.credential(email, password))).user
     : (await c.authFns.createUserWithEmailAndPassword(c.auth, email, password)).user;
   if (name) await c.authFns.updateProfile(u, { displayName: name });
-  return u;
+  return anon ? announce(u) : u;
 }
 
 export async function signInWithEmail(email, password) {

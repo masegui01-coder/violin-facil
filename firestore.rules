@@ -25,6 +25,11 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, write: if signedIn() && uid == request.auth.uid;
     }
+    // Roles (tester pro): los da el administrador desde el panel de testers; cada uno solo lee el suyo
+    match /roles/{uid} {
+      allow get: if (signedIn() && uid == request.auth.uid) || isAdmin();
+      allow list, write: if isAdmin();
+    }
     // Resumen de cada tester: lo escribe él y lo lee el administrador (panel de testers)
     match /testers/{uid} {
       allow read: if (signedIn() && uid == request.auth.uid) || isAdmin();

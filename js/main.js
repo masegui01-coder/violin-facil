@@ -34,7 +34,8 @@ import './screens/friends.js';
 import './screens/group-song.js';
 import './screens/metrics.js';
 import { onAccount, currentAccount } from './account.js';
-import { isProTesterEmail, isAdminEmail } from './metrics.js';
+import { isProTesterEmail, isAdminEmail, accountEmails } from './metrics.js';
+import { isProTesterUid } from './roles-api.js';
 import { setLang, defaultLang } from './i18n.js';
 import { refreshRhythmBookTool } from './screens/rhythm-book.js';
 import './screens/book-page.js';
@@ -67,10 +68,12 @@ hydrateIcons();
 if (!getState().lang) update({ lang: defaultLang(), ...(defaultLang() === 'en' && !getState().onboarded ? { nom: 'us' } : {}) });
 setLang(getState().lang);
 // Tester pro: todo el contenido abierto mientras esté su cuenta en este móvil
-const applyRole = acc => {
-  const email = acc && acc.email;
-  const pro = isProTesterEmail(email);
-  const admin = isAdminEmail(email);
+// (por la lista de correos de metrics.js o porque el administrador le ha dado el rol en el panel de testers)
+const applyRole = async acc => {
+  const emails = accountEmails(acc);
+  const admin = emails.some(isAdminEmail);
+  const pro = emails.some(isProTesterEmail) || (!!acc && !admin && await isProTesterUid(acc.uid));
+  if (acc !== currentAccount()) return; // cambió la cuenta mientras se comprobaba
   if (pro !== !!getState().proTester || admin !== !!getState().adminUser) update({ proTester: pro, adminUser: admin });
   refreshRhythmBookTool();
 };
