@@ -1,6 +1,9 @@
 // Píldoras de teoría: 2-3 tarjetas (menos de un minuto) y 1-2 preguntas, justo antes de la unidad donde hacen falta.
 // No bloquean el curso. Las preguntas vuelven después, sueltas, en la rutina diaria (repaso espaciado).
 // Pregunta: { id, q, options, answer (índice), why, play? (notas REALES que suenan al pulsar «Escuchar») }.
+// cards puede ser una función del instrumento, para explicar lo mismo con el ejemplo de cada uno.
+import { L, TIPS_EN } from './tips-l10n.js';
+import { instrumentById } from './instruments.js';
 
 const BAND_FAMILIES = {
   title: 'La banda por tonalidades',
@@ -144,11 +147,25 @@ const INSTRUMENT_PILL = {
   ], quiz: [{ id: 'piano-tuner', q: '¿Quién afina un piano acústico?', options: ['Quien lo toca, antes de cada clase', 'Un afinador profesional', 'Se afina solo', 'Nadie: nunca se desafina'], answer: 1, why: 'Un afinador profesional, una o dos veces al año (el digital no se desafina).' }] },
 };
 
+// Tono y semitono, explicado con el instrumento de cada uno (en el piano con las teclas negras, en la guitarra con los trastes…)
+const TONE_EXAMPLE = {
+  pulsada: L('En el mástil cada traste es un semitono: de Do a Re hay dos trastes; de Mi a Fa, solo uno.', 'On the neck each fret is a semitone: from C to D there are two frets; from E to F, just one.'),
+  tecla: L('En el piano se ve en las teclas negras: entre Do y Re hay una; entre Mi y Fa y entre Si y Do, ninguna.', 'On the piano you can see it in the black keys: there is one between C and D, and none between E and F or between B and C.'),
+  cuerda: L('En el diapasón se nota en los dedos: de Do a Re se separan; de Mi a Fa van pegados.', 'On the fingerboard you feel it in the fingers: from C to D they are apart; from E to F they sit together.'),
+  viento: L('En tu instrumento cada semitono tiene su propia digitación: lo verás en el diagrama de cada nota.', 'On your instrument each semitone has its own fingering: you will see it in the diagram for each note.'),
+};
+function toneCard(instId) {
+  const fam = instrumentById(instId).family;
+  const example = TONE_EXAMPLE[fam] || TONE_EXAMPLE.viento;
+  const base = L('Entre Do y Re, Re y Mi, Fa y Sol, Sol y La y La y Si hay un tono: cabe una nota en medio (Do♯ o Re♭, por ejemplo). Entre Mi y Fa y entre Si y Do solo hay un semitono: no cabe ninguna.', 'Between C and D, D and E, F and G, G and A and A and B there is a whole tone: one note fits in between (C♯ or D♭, for example). Between E and F and between B and C there is only a semitone: nothing fits.');
+  return { title: 'Siete nombres, doce sonidos', text: L(`${base} ${example}`, `${TIPS_EN[base]} ${TIPS_EN[example]}`) };
+}
+
 // Píldoras por nivel: unit = unidad del curso (0 = la primera) donde aparecen
 const LEVEL_PILLS = [
-  { id: 'names', unit: 0, title: 'Las notas tienen dos nombres', skip: ['percussion', 'cajon'], cards: [
+  { id: 'names', unit: 0, title: 'Las notas tienen dos nombres', skip: ['percussion', 'cajon'], cards: instId => [
     { title: 'Do, Re, Mi… o C, D, E…', text: 'En España decimos Do, Re, Mi, Fa, Sol, La, Si. En inglés usan letras: C, D, E, F, G, A, B. El número (C4, A4) dice la octava: el Do central es C4.' },
-    { title: 'Siete nombres, doce sonidos', text: 'Entre casi todas las notas hay una tecla negra (un semitono). Entre Mi y Fa y entre Si y Do no: ahí ya están a un semitono.' },
+    toneCard(instId),
   ], quiz: [{ id: 'names-a', q: '¿Cómo se llama el La en notación americana?', options: ['L', 'A', 'G', 'H'], answer: 1, why: 'A. C es Do, D Re, E Mi, F Fa, G Sol, A La y B Si.' }] },
   { id: 'figures', unit: 1, title: 'Pulso y figuras', cards: [
     { title: 'El pulso', text: 'Es el latido regular de la música, lo que marcas con el pie. Las figuras dicen cuántos pulsos dura cada nota.' },
@@ -205,7 +222,7 @@ export function pillsFor(instId) {
     ...(own ? [{ id: 'instrument', unit: 0, title: INSTRUMENT_TITLE, ...own }] : []),
     ...LEVEL_PILLS.filter(p => !(p.skip || []).includes(instId) && (!p.only || p.only.includes(instId))),
   ];
-  return list.map(p => ({ id: 'th-' + p.id, kind: 'theory', title: p.title, sub: 'Píldora de teoría · 1 min', cards: p.cards, quiz: p.quiz, unit: p.unit, optional: true, pill: true }));
+  return list.map(p => ({ id: 'th-' + p.id, kind: 'theory', title: p.title, sub: 'Píldora de teoría · 1 min', cards: typeof p.cards === 'function' ? p.cards(instId) : p.cards, quiz: p.quiz, unit: p.unit, optional: true, pill: true }));
 }
 
 // Concreta una pregunta: las que tienen variantes eligen una (p. ej. acorde mayor o menor al azar)

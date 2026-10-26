@@ -7,7 +7,8 @@ import { SKIN, SKIN_LINE, PANTS, SHOE, limb, arm, frontPerson, shouldersFront } 
 const G = { top: '#E2B26E', edge: '#8A5A26', neck: '#6B4423', board: '#3A2616', fret: '#C9D0DA', string: '#EDEDED', hole: '#2A1A0E' };
 
 // Guitarra de frente: cuerpo centrado en (x, y), girada rot grados (0 = mástil hacia arriba); size 1 = guitarra, 0.6 ≈ ukelele
-function guitar(x, y, rot = 0, s = 1, { frets = 12 } = {}) {
+function guitar(x, y, rot = 0, s = 1, { frets = 12, strings = 6 } = {}) {
+  const xs = strings === 4 ? [-4.5, -1.5, 1.5, 4.5] : [-5, -3, -1, 1, 3, 5];
   const body = 'M0 -72 C24 -72 38 -60 38 -42 C38 -28 30 -20 30 -10 C30 0 48 8 48 34 C48 62 28 76 0 76 C-28 76 -48 62 -48 34 C-48 8 -30 0 -30 -10 C-30 -20 -38 -28 -38 -42 C-38 -60 -24 -72 0 -72 Z';
   return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">
     <path d="${body}" fill="${G.top}" stroke="${G.edge}" stroke-width="2.5"/>
@@ -16,7 +17,7 @@ function guitar(x, y, rot = 0, s = 1, { frets = 12 } = {}) {
     <rect x="-8" y="-196" width="16" height="164" fill="${G.board}"/>
     ${Array.from({ length: frets }, (_, i) => `<line x1="-8" x2="8" y1="${-190 + i * 12.5}" y2="${-190 + i * 12.5}" stroke="${G.fret}" stroke-width="1.5"/>`).join('')}
     <path d="M-10 -196 L10 -196 L12 -228 L-12 -228 Z" fill="${G.neck}"/>
-    ${[-5, -3, -1, 1, 3, 5].map(sx => `<line x1="${sx}" y1="-196" x2="${sx}" y2="36" stroke="${G.string}" stroke-width=".9"/>`).join('')}</g>`;
+    ${xs.map(sx => `<line x1="${sx}" y1="-196" x2="${sx}" y2="36" stroke="${G.string}" stroke-width="${strings === 4 ? 1.3 : 0.9}"/>`).join('')}</g>`;
 }
 
 // Persona sentada de frente (cabeza en cx, 48). footstool: el pie izquierdo (a la derecha del dibujo) en alto
@@ -90,14 +91,14 @@ export const STRING_ART = {
 
   // ---- Ukelele ----
   'uke-hold': [
-    panel(`${frontPerson(100, 48)}${guitar(118, 150, 60, 0.5, { frets: 10 })}
+    panel(`${frontPerson(100, 48)}${guitar(118, 150, 60, 0.5, { frets: 10, strings: 4 })}
       ${arm(shouldersFront(100, 48)[0], [44, 160], [104, 150])}${arm(shouldersFront(100, 48)[1], [176, 150], [200, 104])}
       ${label(100, 222, L('contra el pecho', 'against the chest'), { color: '#fff', anchor: 'middle', size: 13 })}${ok(236, 30)}`),
-    panel(`${frontPerson(100, 48)}${guitar(118, 150, 60, 0.5, { frets: 10 })}
+    panel(`${frontPerson(100, 48)}${guitar(118, 150, 60, 0.5, { frets: 10, strings: 4 })}
       ${arm(shouldersFront(100, 48)[0], [44, 160], [104, 150])}
       ${arrow('M22 210 L60 176')}${label(14, 226, L('el antebrazo lo sujeta', 'the forearm holds it'), { color: '#fff', size: 13 })}
       ${arrow('M240 120 L240 70')}${label(262, 30, L('mástil un poco', 'neck slightly'), { anchor: 'end', size: 12 })}${label(262, 44, L('hacia arriba', 'upward'), { anchor: 'end', size: 12 })}`),
-    panel(`${guitar(84, 120, 90, 1.1, { frets: 10 })}<rect x="160" y="88" width="20" height="64" rx="4" fill="${C.green}" opacity=".25"/>
+    panel(`${guitar(84, 120, 90, 1.1, { frets: 10, strings: 4 })}<rect x="160" y="88" width="20" height="64" rx="4" fill="${C.green}" opacity=".25"/>
       ${arrow('M164 40 L164 92')}${arrow('M178 200 L178 150')}${label(150, 30, L('abajo: uña', 'down: nail'), { anchor: 'middle', size: 12 })}${label(184, 222, L('arriba: yema', 'up: pad'), { anchor: 'middle', size: 12 })}
       ${label(40, 210, L('donde el mástil', 'where the neck'), { size: 11 })}${label(40, 224, L('se une al cuerpo', 'joins the body'), { size: 11 })}`),
   ],

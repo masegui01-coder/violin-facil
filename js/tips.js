@@ -425,9 +425,19 @@ const UKULELE = [
     check: L('Suelta la mano izquierda: el ukelele no debe caerse.', 'Let go with your left hand: the ukulele should not fall.'),
     avoid: [L('Sujetar el mástil con la mano izquierda', 'Holding the neck up with the left hand'), L('Rasguear sobre la boca con fuerza', 'Strumming hard over the soundhole'), L('Muñeca rígida', 'A stiff wrist')],
   },
-  FRETTING,
-  { ...GUITAR[2], sources: ['hill'], art: 'guitar-right', title: L('La mano derecha', 'The right hand'),
-    intro: L('En el ukelele el rasgueo sale de la muñeca, suelta como al sacudir agua de la mano.', 'On the ukulele the strum comes from the wrist, loose as when shaking water off your hand.') },
+  { ...FRETTING, art: 'uke-fretting', sources: ['hill'] },
+  {
+    kind: 'right-hand', art: 'uke-right', sources: ['hill'],
+    title: L('La mano derecha', 'The right hand'),
+    intro: L('En el ukelele se rasguea con el índice y, para puntear, cada dedo tiene su cuerda. El movimiento sale de la muñeca, suelta.', 'On the ukulele you strum with the index finger and, for picking, each finger has its own string. The movement comes from a loose wrist.'),
+    steps: [
+      { t: L('Rasguea con el índice', 'Strum with the index finger'), d: L('Hacia abajo con la uña y hacia arriba con la yema, donde el mástil se une al cuerpo. El pulgar descansa junto al índice.', 'Down with the nail and up with the pad, where the neck joins the body. The thumb rests next to the index finger.') },
+      { t: L('La muñeca, suelta', 'A loose wrist'), d: L('La mano se mueve como al sacudir agua de los dedos; el antebrazo casi no se mueve y sigue sujetando el ukelele.', 'The hand moves as if shaking water off your fingers; the forearm barely moves and keeps holding the ukulele.') },
+      { t: L('Cada dedo, su cuerda', 'Each finger, its string'), d: L('Para puntear: pulgar (p) en la 4.ª (Sol), índice (i) en la 3.ª (Do), medio (m) en la 2.ª (Mi) y anular (a) en la 1.ª (La).', 'For picking: thumb (p) on the 4th string (G), index (i) on the 3rd (C), middle (m) on the 2nd (E) and ring (a) on the 1st (A).') },
+    ],
+    check: L('Rasguea despacio con el metrónomo, abajo en el pulso y arriba entre pulsos: las cuatro cuerdas tienen que sonar igual de fuerte.', 'Strum slowly with the metronome, down on the beat and up between beats: all four strings should sound equally loud.'),
+    avoid: [L('Rasguear con todo el brazo', 'Strumming with the whole arm'), L('Rasguear encima de la boca: suena más duro', 'Strumming over the soundhole: it sounds harsher'), L('Muñeca rígida', 'A stiff wrist')],
+  },
 ];
 
 const PIANO = [

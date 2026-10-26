@@ -33,3 +33,29 @@ test('todo el texto de los consejos tiene su traducción al inglés', () => {
   const missing = [...new Set(texts)].filter(es => !TIPS_EN[es]);
   assert.deepEqual(missing, []);
 });
+
+test('ukelele: digitaciones con los nombres de SUS cuerdas (no los de la guitarra)', async () => {
+  const { fingeringText } = await import('../js/fingerings.js');
+  assert.equal(fingeringText('ukulele', 69, 'eu'), 'Cuerda 1 (La) · al aire');
+  assert.equal(fingeringText('ukulele', 64, 'eu'), 'Cuerda 2 (Mi) · al aire');
+  assert.equal(fingeringText('ukulele', 62, 'eu'), 'Cuerda 3 (Do) · traste 2, dedo 2');
+  assert.equal(fingeringText('ukulele', 67, 'us'), 'Cuerda 4 (high G) · al aire');
+  assert.match(fingeringText('guitar', 76, 'eu'), /Mi aguda/);
+});
+
+test('las formas de acorde de guitarra y ukelele dan exactamente las notas del acorde', async () => {
+  const { chordShape, chordMidis, parseChord } = await import('../js/chords.js');
+  const NAMES = ['C', 'Am', 'F', 'G', 'G7', 'C7', 'Em', 'Dm', 'D', 'A', 'A7', 'D7', 'E7', 'E', 'Em7', 'Am7', 'Fmaj7', 'Bb', 'Bm', 'B7', 'F#m', 'Gm', 'Cm', 'Fm', 'C#m', 'Dm7', 'Cmaj7', 'Gmaj7', 'Dsus4', 'Asus4'];
+  const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const TONES = { '': [0, 4, 7], m: [0, 3, 7], 7: [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], sus4: [0, 5, 7] };
+  ['guitar', 'ukulele'].forEach(inst => NAMES.forEach(name => {
+    if (!chordShape(name, inst)) return;
+    const m = /^([A-G])([#b]?)(.*)$/.exec(name);
+    const root = (PC[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + 12) % 12;
+    const want = new Set(TONES[m[3]].map(t => (root + t) % 12));
+    const got = new Set(chordMidis(name, inst).map(x => x % 12));
+    [...got].forEach(pc => assert.ok(want.has(pc), `${inst} ${name}: nota ajena ${pc}`));
+    assert.ok(got.size >= Math.min(3, want.size) - (m[3] === '7' ? 1 : 0), `${inst} ${name}: faltan notas`);
+    void parseChord;
+  }));
+});

@@ -207,6 +207,29 @@ export const FAMILY_OF = {
 };
 
 export const TECHNIQUE = {
+  // El ukelele: afinación reentrante (Sol agudo), rasgueo con el índice y punteo con un dedo por cuerda
+  ukulele: {
+    2: [
+      ['Postura y relajación', 'El ukelele contra el pecho, sujeto con el antebrazo derecho, y el pulgar izquierdo detrás del mástil sin apretar.'],
+      ['Cambios limpios', 'Busca el dedo que no se mueve entre dos acordes (de {Am} a {F}, el dedo 2) y mueve los demás a la vez. Los cambios de un minuto miden tu progreso.'],
+      ['Ritmos de rasgueo', 'El índice como un péndulo: abajo en el pulso y arriba entre pulsos, toques o no. Así cualquier rasgueo sale a tempo.'],
+      ['Acordes de séptima', 'Muchas séptimas del ukelele son más fáciles que el acorde normal ({C7}, {A7}). Dan empuje a la vuelta a casa.'],
+      ['Punteo con los dedos', 'p-i-m-a, un dedo por cuerda: pulgar en el Sol, índice en el Do, medio en el Mi y anular en el La. Lento y parejo.'],
+      ['Primera posición', 'Un dedo por traste en los tres primeros trastes. La escala de Do usa las cuerdas Do, Mi y La; el Sol agudo repite notas.'],
+      ['Apagar las cuerdas', 'El chuck: rasguea hacia abajo y apaga a la vez con el canto de la mano. Un sonido limpio es tan importante como las notas.'],
+      ['Acompañar una canción', 'Cambia de acorde justo en la parte fuerte. Si dudas, simplifica el rasgueo, nunca el pulso.'],
+    ],
+    3: [
+      ['La cejilla', 'Con cuatro cuerdas poco tensas es mucho más fácil que en guitarra: el dedo 1 algo de lado y el peso del brazo.'],
+      ['Acordes móviles', 'Las formas de {Bb} y {Bm} sirven en todo el mástil: súbelas traste a traste y cambia de tonalidad sin aprender acordes nuevos.'],
+      ['Melodía en la 1.ª cuerda', 'Sube por la cuerda La más allá del traste 5 para tocar melodías agudas; el Sol agudo te deja sonar notas al aire entre medias (campanella).'],
+      ['Fingerpicking reentrante', 'Como el Sol de la 4.ª es agudo, los patrones p-i-m-a suenan como un arpa: deja que las notas se mezclen.'],
+      ['Técnicas de adorno', 'Ligados ascendentes (hammer-on), descendentes (pull-off) y deslizamientos (slides) dan expresión a la melodía.'],
+      ['Armonía funcional', 'I-IV-V, ii-V-I y el círculo de quintas: entender por qué van los acordes te permite sacar canciones de oído.'],
+      ['Lectura de cifrados', 'Lee cifrados y tablaturas de 4 líneas (la de arriba es la 1.ª cuerda, La), pero aprende también la partitura.'],
+      ['Tocar con otros', 'En un grupo el ukelele suena brillante: deja espacio a la voz y fíjate en el bajo y el ritmo de los demás.'],
+    ],
+  },
   // El violonchelo tiene sus propias posiciones y estudios (Dotzauer, Lee), distintos de los del violín
   cello: {
     2: [

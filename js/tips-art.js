@@ -11,6 +11,7 @@ import { STRING_ART } from './tips-art-strings.js';
 import { KEYS_ART } from './tips-art-keys.js';
 import { HAND_PANELS } from './tips-art-hands-panels.js';
 import { CELLO_ART } from './tips-art-cello.js';
+import { UKE_ART } from './tips-art-uke.js';
 
 // ---------- Boca de perfil (mirando a la derecha), en grande ----------
 const jaw = `<rect x="40" y="22" width="70" height="210" rx="10" fill="${C.gum}"/>`;
@@ -42,6 +43,9 @@ Object.assign(ART, reedArt(ART['reed-lip']), FLUTE_ART, BRASS_ART, STRING_ART, K
 Object.entries(HAND_PANELS).forEach(([id, panels]) => {
   ART[id] = ART[id].map((p, i) => panels[i] || p);
 });
+// el ukelele: su mástil de cuatro cuerdas y su mano derecha (la viñeta 2 de pisar es la misma que en guitarra)
+ART['uke-fretting'] = [UKE_ART['uke-fretting'][0], ART.fretting[1], UKE_ART['uke-fretting'][2]];
+ART['uke-right'] = UKE_ART['uke-right'];
 // el oboe se sujeta como el clarinete: comparte esas dos viñetas
 ART['oboe-hold'] = [ART['woodwind-hold'][0], ART['woodwind-hold'][1], ART['oboe-hold'][2]];
 

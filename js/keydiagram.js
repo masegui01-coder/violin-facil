@@ -73,7 +73,7 @@ function drawKeys(svg, f, instId) {
 // Dibuja la digitación de la nota escrita; devuelve false si no hay dato
 export function renderDiagram(svg, instId, midis, nom) {
   if (instId === 'violin' || instId === 'cello') { renderFingerboard(svg, midis, nom, instId); return true; }
-  if (instId === 'guitar' || instId === 'ukulele') { drawFretboard(svg, midis.map(m => fingeringFor(instId, m)).filter(Boolean), instId === 'ukulele' ? 4 : 6); return true; }
+  if (instId === 'guitar' || instId === 'ukulele') { drawFretboard(svg, midis.map(m => fingeringFor(instId, m)).filter(Boolean), instId === 'ukulele' ? 4 : 6, { nom }); return true; }
   if (instId === 'piano') { drawKeyboard(svg, midis); return true; }
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.replaceChildren();

@@ -83,7 +83,12 @@ export const RECORDER_BAROQUE_F = 'T 1 2 3 4 6 7';
 // midi ESCRITO (suena una octava más grave).
 const GUITAR_STRINGS = [40, 45, 50, 55, 59, 64];
 const GUITAR_MAX_FRET = 5;
-const GUITAR_STRING_EU = ['Mi grave', 'La', 'Re', 'Sol', 'Si', 'Mi aguda'];
+// Nombre de cada cuerda por su número (1 = la de abajo al tocar)
+export const STRING_NAMES = {
+  guitar: { eu: { 1: 'Mi aguda', 2: 'Si', 3: 'Sol', 4: 'Re', 5: 'La', 6: 'Mi grave' }, us: { 1: 'high E', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'low E' } },
+  ukulele: { eu: { 1: 'La', 2: 'Mi', 3: 'Do', 4: 'Sol agudo' }, us: { 1: 'A', 2: 'E', 3: 'C', 4: 'high G' } },
+};
+export const stringName = (instId, n, nom) => ((STRING_NAMES[instId] || STRING_NAMES.guitar)[nom === 'us' ? 'us' : 'eu'])[n];
 export function guitarPosition(writtenMidi) {
   const sounding = writtenMidi - 12;
   const options = GUITAR_STRINGS.map((open, i) => ({ string: 6 - i, fret: sounding - open })).filter(o => o.fret >= 0 && o.fret <= GUITAR_MAX_FRET);
@@ -146,7 +151,7 @@ export function fingeringText(instId, midi, nom) {
   if (instId === 'violin' || instId === 'cello') return violinText(midi, nom, instId);
   const f = fingeringFor(instId, midi);
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
-  if (f.type === 'fret') return `Cuerda ${f.string} (${GUITAR_STRING_EU[6 - f.string]}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
+  if (f.type === 'fret') return `Cuerda ${f.string} (${stringName(instId, f.string, nom)}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
   if (f.type === 'key') return midi === 60 ? 'El Do central' : `Tecla ${PIANO_OCTAVE[Math.floor(midi / 12) - 1] || ''}`.trim();
   if (f.type === 'recorder') {
     const thumb = f.thumb === 'closed' ? 'pulgar' : f.thumb === 'half' ? 'medio pulgar' : 'sin pulgar';
