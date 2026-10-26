@@ -47,3 +47,12 @@ test('deduce la tonalidad de un ejercicio sin tonalidad escrita', () => {
   assert.equal(inferKey(parseScore('| D4q E4q F#4q G4q | A4q G4q F#4q E4q | D4w |').notes), 'D');
   assert.equal(inferKey(parseScore('| C4q D4q E4q F4q | G4q F4q E4q D4q | C4w |').notes), 'C');
 });
+
+test('la base de un instrumento transpositor suena en la misma tonalidad que su melodía', () => {
+  // Do mayor escrito en saxo alto (transpose -9) suena en Mi♭ mayor: bajo Mi♭ y acorde Mi♭-Sol-Si♭
+  const notes = accompanimentNotes([{ start: 0, beats: 2, root: 0, minor: false }], { time: 4, transpose: -9 });
+  const sounding = notes.map(n => (n.midi - 9 + 120) % 12);
+  assert.equal(sounding[0], 3);
+  assert.deepEqual([...new Set(sounding.slice(1))].sort((a, b) => a - b), [3, 7, 10]);
+  assert.ok(notes.every(n => n.midi - 9 >= 37 && n.midi - 9 <= 62));
+});

@@ -79,12 +79,15 @@ const near = (pc, center) => center + ((pc - center) % 12 + 18) % 12 - 6;
 // Acompañamiento en notas ESCRITAS para el instrumento (transpose: escrita → real)
 export function accompanimentNotes(chords, { time = 4, transpose = 0 } = {}) {
   const out = [];
+  // los acordes salen de la melodía ESCRITA: para que suenen con ella se colocan en sonido real y se devuelven escritos
+  const real = pc => (pc + transpose + 120) % 12;
   chords.forEach(c => {
-    const pcs = triad(c.root, c.minor);
+    const pcs = triad(c.root, c.minor).map(real);
+    const root = real(c.root);
     for (let b = 0; b < c.beats - 1e-6; b += 1) {
       const start = c.start + b;
       const beats = Math.min(1, c.beats - b) * 0.9;
-      if (b === 0) out.push({ midi: near(c.root, BASS_REAL) - transpose, start, beats, rest: false });
+      if (b === 0) out.push({ midi: near(root, BASS_REAL) - transpose, start, beats, rest: false });
       else pcs.forEach(pc => out.push({ midi: near(pc, CHORD_REAL) - transpose, start, beats, rest: false }));
     }
     if (time === 2 || c.beats === 1) pcs.forEach(pc => out.push({ midi: near(pc, CHORD_REAL) - transpose, start: c.start, beats: c.beats * 0.9, rest: false }));
