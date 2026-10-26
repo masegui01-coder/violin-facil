@@ -126,13 +126,27 @@ export function reedArt(reedLip) {
     // ---- Clarinete: embocadura ----
     'clar-embouchure': [
       reedLip[1],
-      panel(`${[[70, false], [200, true]].map(([cx, bunched]) => `
-        <path d="M${cx - 40} 40 C${cx + 10} 34 ${cx + 40} 70 ${cx + 40} 100 L${cx + 44} 120 C${cx + 40} 160 ${cx + 20} 190 ${cx - 10} 200 L${cx - 40} 200 Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="2.5"/>
-        <path d="M${cx + 36} 112 C${cx + 46} 112 ${cx + 50} 116 ${cx + 52} 120" stroke="${C.lip}" stroke-width="7" stroke-linecap="round" fill="none"/>
-        <path d="M${cx + 52} 116 L${cx + 70} 112 L${cx + 70} 124 L${cx + 50} 124 Z" fill="${B.black}"/>
-        ${bunched ? [0, 1, 2].map(i => `<circle cx="${cx + 18 + i * 6}" cy="${150 + i * 9}" r="5" fill="none" stroke="${SKIN_LINE}" stroke-width="2"/>`).join('') : `<path d="M${cx + 30} 140 C${cx + 26} 160 ${cx + 16} 178 ${cx} 190" fill="none" stroke="${C.green}" stroke-width="3" stroke-dasharray="5 4"/>`}
-        ${bunched ? bad(cx, 212) : ok(cx, 212)}`).join('')}
-        ${label(70, 30, L('barbilla plana', 'flat chin'), { anchor: 'middle', size: 13 })}${label(200, 30, L('con bolitas', 'bunched'), { color: C.red, anchor: 'middle', size: 13 })}`),
+      // Barbilla: de perfil y con la boquilla puesta. Bien: estirada hacia abajo, lisa y en punta.
+      // Mal: subida y arrugada, con bultos (la «barbilla de bolitas»).
+      panel(`${[[4, false], [138, true]].map(([ox, bunched]) => {
+        const chin = bunched
+          ? 'C96 104 100 114 94 122 C88 130 78 134 62 134 L40 132 L0 130'
+          : 'C86 112 84 128 80 150 C78 160 72 166 62 168 L40 162 L0 152';
+        const wrinkles = bunched ? [[88, 106], [94, 114], [86, 118], [92, 124], [82, 126]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.2" fill="${SKIN_LINE}"/>`).join('')
+          + '<path d="M80 110 q6 -4 12 0 M78 120 q6 -4 12 0" fill="none" stroke="' + SKIN_LINE + '" stroke-width="1.6"/>' : '';
+        return `<g transform="translate(${ox} 18)">
+          <path d="M0 20 L62 20 C70 20 74 26 78 34 L100 60 L86 66 C92 70 94 76 90 80 L88 84 C94 88 94 96 88 100 ${chin} Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="2.5"/>
+          <path d="M0 20 L62 20 C66 20 70 22 72 26 L0 30 Z" fill="#6B4A2E"/>
+          <circle cx="66" cy="42" r="2.8" fill="${C.ink}"/><path d="M60 34 L72 33" stroke="#6B4A2E" stroke-width="2"/>
+          <path d="M84 79 L132 106 L126 117 L80 89 Z" fill="${B.black}"/><path d="M82 90 L126 117" stroke="${B.reed}" stroke-width="3"/>
+          <path d="M88 79 C94 80 96 82 96 86" stroke="${C.lip}" stroke-width="5" fill="none" stroke-linecap="round"/>
+          ${wrinkles}
+          ${bunched ? arrow('M112 150 L100 128', C.red) : arrow('M104 112 L96 160')}
+        </g>`;
+      }).join('')}
+        ${ok(50, 22)}${label(66, 27, L('estirada', 'stretched'), { size: 13 })}${bad(170, 22)}${label(186, 27, L('arrugada', 'bunched'), { color: C.red, size: 13 })}
+        ${label(66, 210, L('lisa y en punta,', 'smooth and pointed,'), { anchor: 'middle', size: 11 })}${label(66, 223, L('hacia abajo', 'pulled down'), { anchor: 'middle', size: 11 })}
+        ${label(200, 210, L('sube y hace bultos', 'pushed up, lumpy'), { color: C.red, anchor: 'middle', size: 11 })}`),
       panel(`${profileHead(-20, 6, 0.9)}<line x1="80" y1="96" x2="80" y2="226" stroke="${C.muted}" stroke-width="2" stroke-dasharray="6 6"/>
         ${clarinet(112, 84, 58, 150)}
         <path d="M80 160 A76 76 0 0 0 144 128" fill="none" stroke="${C.green}" stroke-width="3"/>${label(20, 200, '30–40°', { size: 18 })}${arrow('M48 192 L96 166')}`),

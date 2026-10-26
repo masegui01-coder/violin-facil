@@ -108,11 +108,11 @@ const CLARINET = [
     intro: L('Como en el saxo, el labio de abajo cubre los dientes, pero en el clarinete la barbilla va estirada hacia abajo y la boquilla entra con más ángulo.', 'As on the sax, the lower lip covers the teeth, but on the clarinet the chin is stretched down and the mouthpiece goes in at a steeper angle.'),
     steps: [
       { t: L('Dobla el labio', 'Roll the lip'), d: L('Labio de abajo sobre los dientes, un poco menos que en el saxo.', 'Lower lip over the teeth, slightly less than on the sax.') },
-      { t: L('Barbilla plana', 'Flat chin'), d: L('Estira la barbilla hacia abajo, como al decir «iu»: sin arrugas ni bolitas.', 'Stretch the chin down, as when saying "ee-oo": no wrinkles or bumps.') },
+      { t: L('Barbilla estirada', 'Stretched chin'), d: L('Estira la barbilla hacia abajo, como al decir «iu»: lisa y en punta, sin arrugas ni bultos.', 'Stretch the chin down, as when saying "ee-oo": smooth and pointed, with no wrinkles or lumps.') },
       { t: L('El ángulo', 'The angle'), d: L('El clarinete forma unos 30-40 grados con el cuerpo. Dientes de arriba sobre la boquilla y comisuras firmes hacia el centro.', 'The clarinet sits at about 30-40 degrees to the body. Upper teeth on the mouthpiece and firm corners pulling to the centre.') },
     ],
     check: L('Mírate en el espejo: barbilla lisa y en punta, mofletes sin hinchar.', 'Look in a mirror: smooth, pointed chin and no puffed cheeks.'),
-    avoid: [L('Barbilla arrugada (bolita)', 'Bunched-up chin'), L('Clarinete muy pegado al cuerpo', 'Clarinet held too close to the body'), L('Morder: chirridos y sonido fino', 'Biting: squeaks and a thin sound')],
+    avoid: [L('Barbilla arrugada, con bultos', 'A bunched-up, lumpy chin'), L('Clarinete muy pegado al cuerpo', 'Clarinet held too close to the body'), L('Morder: chirridos y sonido fino', 'Biting: squeaks and a thin sound')],
   },
   {
     kind: 'posture', art: 'woodwind-hold', sources: ['klose', 'conable'],
