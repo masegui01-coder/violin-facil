@@ -21,7 +21,6 @@ const HERO = `<div class="ob-hero">
   <h1>Band Flow</h1>
   <p class="muted">La app te escucha por el micrófono, te dice si vas afinado y te lleva paso a paso desde las primeras notas hasta las obras de tu banda.</p>
   <p class="ob-note"><b>Tu progreso queda guardado en tu cuenta.</b> Elige tu instrumento y empieza en un minuto.</p>
-  <div class="seg ob-lang" role="group" aria-label="Idioma / Language"><button type="button" data-ob-lang="es">Español</button><button type="button" data-ob-lang="en">English</button></div>
 </div>`;
 
 let step = 0;
@@ -29,6 +28,17 @@ let draft = null;
 
 const STEPS = [
   { render: () => HERO, valid: () => true },
+  // Lo primero: idioma y cómo se llaman las notas (se puede cambiar después en Perfil → Ajustes)
+  {
+    render: () => `<h1>Idioma y notas</h1><p class="muted">Language and note names. Puedes cambiarlo cuando quieras en Perfil → Ajustes.</p>
+      <h2 class="ob-sub">Idioma / Language</h2>
+      <div class="choice two"><button type="button" data-ob-lang="es" aria-pressed="${(getState().lang || 'es') === 'es'}"><b>Español</b><small>La app en español</small></button>
+        <button type="button" data-ob-lang="en" aria-pressed="${getState().lang === 'en'}"><b>English</b><small>The app in English</small></button></div>
+      <h2 class="ob-sub">¿Cómo nombras las notas?</h2>
+      <div class="choice two"><button type="button" data-nom="eu" aria-pressed="${draft.nom === 'eu'}"><b>Do · Re · Mi</b><small>Como en España y Latinoamérica</small></button>
+        <button type="button" data-nom="us" aria-pressed="${draft.nom === 'us'}"><b>C · D · E</b><small>Con letras, como en inglés (C4, A4)</small></button></div>`,
+    valid: () => true,
+  },
   {
     render: () => `<h1>¿Qué instrumento quieres aprender o practicar?</h1><p class="muted">Toca uno para elegirlo. Podrás cambiarlo cuando quieras con el botón del instrumento, arriba.</p><div class="inst-grid">${instrumentGridHtml(draft.instrument)}</div>`,
     valid: () => !!draft.instrument,
@@ -55,7 +65,7 @@ function render() {
   document.querySelectorAll('[data-ob-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.obLang === (getState().lang || 'es'))));
   $('obBack').hidden = step === 0;
   const name = draft.instrument ? instrumentById(draft.instrument).name : '';
-  $('obNext').textContent = step === 0 ? 'Empezar' : step === 1 ? (name ? `Continuar con ${name}` : 'Elige un instrumento') : step === STEPS.length - 1 ? `Empezar a tocar` : 'Continuar';
+  $('obNext').textContent = step === 0 ? 'Empezar' : step === 2 ? (name ? `Continuar con ${name}` : 'Elige un instrumento') : step === STEPS.length - 1 ? `Empezar a tocar` : 'Continuar';
   $('obNext').disabled = !STEPS[step].valid();
 }
 

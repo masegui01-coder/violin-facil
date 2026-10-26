@@ -7,7 +7,7 @@ export const EXACT = {
   'Cambiar de instrumento': 'Change instrument', 'Puntos': 'Points', 'pts': 'pts', 'Días seguidos practicando': 'Days in a row practising',
   // ---------- Aprender ----------
   'Cómo quieres aprender': 'How do you want to learn', 'Casual': 'Casual', 'Libro': 'Book',
-  'Continuar': 'Continue', 'Curso completado': 'Course completed', '¡Has terminado todas las lecciones!': 'You have finished every lesson!',
+  'Curso completado': 'Course completed', '¡Has terminado todas las lecciones!': 'You have finished every lesson!',
   'Sigue con la biblioteca de canciones o sube la exigencia de afinación en tu perfil.': 'Carry on with the song library or raise the tuning strictness in your profile.',
   'Ir a ensayarla': 'Go and rehearse it', 'Tu siguiente paso · Tarea de tu banda': 'Your next step · Band task',
   'Vence hoy': 'Due today', 'Vence mañana': 'Due tomorrow', 'Teoría': 'Theory', 'Notas': 'Notes', 'Canción': 'Song',
@@ -181,6 +181,10 @@ export const EXACT = {
   'Ver mi nivel': 'See my level', 'Mejor desde el principio': 'Better from the start', 'A tocar': "Let's play", 'Vamos': "Let's go",
   'Teoría repasada': 'Theory reviewed', '¡Todas las preguntas bien!': 'Every question right!', '¡Correcto! ': 'Correct! ', 'No exactamente. ': 'Not quite. ',
   'Respuestas': 'Answers', 'Terminar': 'Finish',
+  'Idioma y notas': 'Language and notes', 'Language and note names. Puedes cambiarlo cuando quieras en Perfil → Ajustes.': 'You can change it any time in Profile → Settings.',
+  'Idioma / Language': 'Language', 'La app en español': 'The app in Spanish', '¿Cómo nombras las notas?': 'How do you name the notes?',
+  'Como en España y Latinoamérica': 'As in Spain and Latin America', 'Con letras, como en inglés (C4, A4)': 'With letters, as in English (C4, A4)',
+  'Continuar': 'Continue', 'Empezar a tocar': 'Start playing',
   'Probado': 'Tested', 'Poco probado': 'Barely tested', 'Falta por probar': 'Not tested yet', 'Nadie todavía': 'Nobody yet',
   // ---------- Instrumentos, estilos e insignias ----------
   'Cuerda frotada, cuatro cuerdas': 'Bowed strings, four strings', 'En Si♭, tres pistones': 'In B♭, three valves', 'En Si♭, caña simple': 'In B♭, single reed',
@@ -290,6 +294,7 @@ export const PATTERNS = [
   [/^Las bandas afinan y calientan en Si♭ mayor de concierto\. Tu (.+) está en (.+): para ti esa escala se escribe empezando en (.+)\.$/, (m, i, k, n) => `Bands tune and warm up in concert B♭ major. Your ${tr(i).toLowerCase()} is in ${notesEn(k)}: for you that scale is written starting on ${notesEn(n)}.`],
   [/^Muchas obras de banda están en Mi♭ y Fa de concierto\. Practicamos la escala de (.+) escrita y su arpegio\.$/, (m, n) => `Many band pieces are in concert E♭ and F. We practise the written ${notesEn(n)} scale and its arpeggio.`],
   [/^Escala de ([A-G][#b♯♭]?)$/, (m, n) => `${n} scale`],
+  [/^Continuar con (.+)$/, (m, i) => `Continue with ${tr(i)}`],
   [/^Pregunta (\d+) de (\d+)$/, (m, a, b) => `Question ${a} of ${b}`],
   [/^Repaso · (.+)$/, (m, x) => `Review · ${tr(x)}`],
   [/^¡Aprobado! (\d+) de (\d+) bien$/, (m, a, b) => `Passed! ${a} of ${b} correct`],

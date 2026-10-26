@@ -932,3 +932,5 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .rb-export { flex-wrap: wrap; gap: 6px; }
 .rb-wa { border-color: #25D366; color: #128C7E; }
 .ob-lang { max-width: 260px; margin: 14px auto 0; }
+.ob-sub { font-family: var(--f-body); font-size: .85rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.choice.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
