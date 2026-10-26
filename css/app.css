@@ -922,3 +922,9 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
   .bp-print-page { break-after: page; padding: 8mm 4mm; display: flex; flex-direction: column; gap: 10px; }
   .bp-print-page .staff { width: 100%; height: auto; }
 }
+
+/* ---------- Lecturas rítmicas ---------- */
+.rb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 700; }
+.rb-label { font-weight: 700; font-size: .9rem; }
+.rb-preview { margin-top: 12px; }

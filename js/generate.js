@@ -89,6 +89,17 @@ export function technique(kind, key, inst, bpm) {
   };
 }
 
+// Notas de una escala (una octava, en el registro del instrumento) para las lecturas rítmicas:
+// mayor, menor natural, pentatónica mayor o una sola nota
+const PENTA = [0, 1, 2, 4, 5, 7];
+export function scaleNotes(tonic, kind, inst) {
+  const steps = kind === 'minor' ? MINOR : MAJOR;
+  const names = fit(tonic, steps, [0, 1, 2, 3, 4, 5, 6, 7], inst);
+  if (!names) return null;
+  if (kind === 'single') return [names[0]];
+  return kind === 'pentatonic' ? PENTA.map(i => names[i]) : names;
+}
+
 // ---------- Lectura a primera vista ----------
 // Generador pseudoaleatorio con semilla (mismo número, misma partitura)
 export function rng(seed) {

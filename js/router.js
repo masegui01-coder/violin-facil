@@ -2,13 +2,13 @@
 import { $ } from './ui.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';
 
 // De dónde se lanzó una lección: al salir se vuelve a esa pestaña
-export const ORIGIN_TAB = { course: 'learn', book: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
+export const ORIGIN_TAB = { course: 'learn', book: 'learn', rhythmbook: 'rhythmbook', songs: 'songs', practice: 'practice', band: 'band' };
 export const originTab = from => ORIGIN_TAB[from] || 'learn';
 
 // Botón atrás del móvil: cierra la ventana abierta, sale de la lección o vuelve a Aprender.

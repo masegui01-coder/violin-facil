@@ -97,6 +97,7 @@
         <button class="tool" type="button" id="toolCalibrate" data-family="perc"><span class="tool-ic" data-icon="audition"></span><span><b>Calibrar el micrófono</b><small>Mide el retraso de tu móvil para que los golpes cuadren al milisegundo</small></span></button>
         <button class="tool" type="button" data-go="chord" data-family="pitch" data-melodic><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
         <button class="tool" type="button" id="toolSight"><span class="tool-ic" data-icon="sight"></span><span><b>Lectura a primera vista</b><small>Partituras nuevas cada vez, en tres niveles</small></span></button>
+        <button class="tool" type="button" id="toolRhythmBook" hidden><span class="tool-ic" data-icon="sight"></span><span><b>Libro de lecturas rítmicas <span class="beta-pill">Beta</span></b><small>Elige figuras, dificultad y escala y genera tus lecturas</small></span></button>
         <button class="tool" type="button" id="toolAudition"><span class="tool-ic" data-icon="audition"></span><span><b>Modo audición</b><small>Una obra al azar, una sola toma, sin ayudas</small></span></button>
       </div>
     </section>
@@ -108,6 +109,12 @@
       <div id="bandBody" class="band"></div>
       <div id="groupBody" class="band" hidden></div>
       <div id="schoolBody" class="band" hidden></div>
+    </section>
+
+    <!-- Libro de lecturas rítmicas (beta para testers pro) -->
+    <section id="rhythmbook" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Lecturas rítmicas</h2></div>
+      <div id="rbBody" class="band"></div>
     </section>
 
     <!-- Página del libro -->

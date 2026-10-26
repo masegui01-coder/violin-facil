@@ -34,7 +34,8 @@ import './screens/friends.js';
 import './screens/group-song.js';
 import './screens/metrics.js';
 import { onAccount, currentAccount } from './account.js';
-import { isProTesterEmail } from './metrics.js';
+import { isProTesterEmail, isAdminEmail } from './metrics.js';
+import { refreshRhythmBookTool } from './screens/rhythm-book.js';
 import './screens/book-page.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
@@ -63,7 +64,13 @@ function renderTopbar(s) {
 
 hydrateIcons();
 // Tester pro: todo el contenido abierto mientras esté su cuenta en este móvil
-const applyRole = acc => { const pro = isProTesterEmail(acc && acc.email); if (pro !== !!getState().proTester) update({ proTester: pro }); };
+const applyRole = acc => {
+  const email = acc && acc.email;
+  const pro = isProTesterEmail(email);
+  const admin = isAdminEmail(email);
+  if (pro !== !!getState().proTester || admin !== !!getState().adminUser) update({ proTester: pro, adminUser: admin });
+  refreshRhythmBookTool();
+};
 onAccount(applyRole);
 applyRole(currentAccount());
 
