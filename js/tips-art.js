@@ -2,24 +2,8 @@
 // así los rótulos se traducen como el resto del texto. Colores fijos de ilustración (sobre fondo claro siempre).
 import { L } from './tips-l10n.js';
 
-const C = {
-  skin: '#F1DCC6', skinLine: '#C9A985', gum: '#F4E3D3', lip: '#D9827A', tooth: '#FFFFFF', toothLine: '#9AA3B2',
-  mp: '#1E2430', reed: '#D9B26A', brass: '#D7A63A', brassDark: '#A87A1F', green: '#2B7A4B', red: '#C2372F', accent: '#B4461F',
-  ink: '#141B26', muted: '#5A6678', wood: '#A0632B', woodLight: '#D9A066', shirt: '#B4461F', pants: '#2F55A4', silver: '#B8C0CC',
-  floor: '#E2D7CB', paper: '#F7F3EE',
-};
-
-const DEFS = `<defs><marker id="tipArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="${C.green}"/></marker>
-<marker id="tipArrowRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="${C.red}"/></marker></defs>`;
-
-const panel = inner => `<svg viewBox="0 0 270 230" class="tip-art" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${DEFS}${inner}</svg>`;
-const arrow = (d, color = C.green, w = 3) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" marker-end="url(#${color === C.red ? 'tipArrowRed' : 'tipArrow'})"/>`;
-const label = (x, y, text, { color = C.green, anchor = 'start', size = 14, weight = 800 } = {}) =>
-  `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${color}" text-anchor="${anchor}" font-family="Figtree, Segoe UI, Roboto, sans-serif">${text}</text>`;
-const ok = (x, y) => `<circle cx="${x}" cy="${y}" r="13" fill="${C.green}"/><path d="M${x - 6} ${y} l4 5 l8 -10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
-const bad = (x, y) => `<circle cx="${x}" cy="${y}" r="13" fill="${C.red}"/><path d="M${x - 5} ${y - 5} l10 10 M${x + 5} ${y - 5} l-10 10" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
-const dashed = (d, color = C.green) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="6 6"/>`;
-const floor = (x1, x2, y) => `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="${C.floor}" stroke-width="4" stroke-linecap="round"/>`;
+import { C, panel, arrow, label, ok, bad, dashed, floor } from './tips-art-kit.js';
+import { VIOLIN_ART } from './tips-art-violin.js';
 
 // ---------- Boca de perfil (mirando a la derecha), en grande ----------
 const jaw = `<rect x="40" y="22" width="70" height="210" rx="10" fill="${C.gum}"/>`;
@@ -186,25 +170,7 @@ const ART = {
   ],
 
   // ---- Violín ----
-  'violin-hold': [
-    panel(`<path d="M40 60 C80 40 140 40 200 70 L200 220 L40 220 Z" fill="${C.shirt}"/><path d="M70 92 C110 84 160 86 210 104" stroke="${C.skinLine}" stroke-width="5" fill="none"/>
-      <ellipse cx="160" cy="96" rx="80" ry="20" fill="${C.wood}" transform="rotate(10 160 96)"/>${arrow('M230 170 L130 100')}${label(230, 196, L('clavícula', 'collarbone'), { anchor: 'end', size: 13 })}`),
-    panel(`<circle cx="110" cy="80" r="42" fill="${C.skin}" stroke="${C.skinLine}" stroke-width="3"/><ellipse cx="150" cy="134" rx="90" ry="18" fill="${C.wood}" transform="rotate(8 150 134)"/>${arrow('M110 20 L110 34')}${arrow('M110 128 L118 116', C.green)}${ok(236, 40)}`),
-    panel(`<circle cx="70" cy="110" r="34" fill="${C.skin}" stroke="${C.skinLine}" stroke-width="3"/><path d="M90 120 L240 70" stroke="${C.wood}" stroke-width="14" stroke-linecap="round"/><circle cx="244" cy="68" r="10" fill="${C.wood}"/>${dashed('M100 106 L250 66')}${label(200, 120, L('nariz', 'nose'), { size: 13 })}`),
-  ],
-  'violin-bow': [
-    panel(`<line x1="10" y1="96" x2="260" y2="96" stroke="#7A4A1A" stroke-width="6"/><rect x="40" y="96" width="44" height="18" fill="${C.mp}"/>
-      <path d="M70 140 C72 120 80 108 92 104" stroke="${C.skin}" stroke-width="12" stroke-linecap="round" fill="none"/>${[0, 1, 2, 3].map(i => `<path d="M${100 + i * 22} 80 C${104 + i * 22} 96 ${100 + i * 22} 112 ${96 + i * 22} 130" stroke="${C.skin}" stroke-width="11" stroke-linecap="round" fill="none"/>`).join('')}
-      ${label(70, 170, L('pulgar doblado', 'bent thumb'), { size: 12, anchor: 'middle' })}${label(170, 66, L('meñique curvo', 'curved pinky'), { size: 12, anchor: 'middle' })}`),
-    panel(`<rect x="90" y="20" width="90" height="200" rx="40" fill="${C.wood}"/><rect x="118" y="20" width="34" height="80" fill="${C.ink}"/><rect x="112" y="160" width="46" height="8" fill="#F1E2C6"/>${[124, 132, 140, 148].map(x => `<line x1="${x}" x2="${x}" y1="20" y2="210" stroke="#ddd" stroke-width="1"/>`).join('')}
-      <line x1="30" y1="130" x2="240" y2="130" stroke="#7A4A1A" stroke-width="5"/>${ok(230, 40)}`),
-    panel(`${[[L('Sol', 'G'), 70], [L('Re', 'D'), 100], [L('La', 'A'), 130], [L('Mi', 'E'), 160]].map(([t, yy], i) => `<line x1="40" y1="${yy}" x2="200" y2="${60 + i * 34}" stroke="#7A4A1A" stroke-width="4" opacity="${i === 1 ? 1 : 0.35}"/>${label(220, 66 + i * 34, t, { color: C.ink, size: 14 })}`).join('')}${arrow('M30 60 L30 170')}${label(30, 200, L('codo', 'elbow'), { anchor: 'middle', size: 13 })}`),
-  ],
-  'violin-left': [
-    panel(`<rect x="20" y="100" width="240" height="24" rx="6" fill="${C.ink}"/><path d="M40 210 C80 190 120 160 150 130" stroke="${C.skin}" stroke-width="30" stroke-linecap="round" fill="none"/>${dashed('M30 230 L170 110')}`),
-    panel(`<rect x="20" y="100" width="240" height="24" rx="6" fill="${C.ink}"/><ellipse cx="110" cy="140" rx="12" ry="18" fill="${C.skin}" stroke="${C.skinLine}" stroke-width="3"/>${[100, 140, 180].map(x => `<circle cx="${x}" cy="94" r="8" fill="${C.skin}" stroke="${C.skinLine}" stroke-width="3"/>`).join('')}${label(110, 190, L('pulgar', 'thumb'), { size: 13, anchor: 'middle' })}`),
-    panel(`<rect x="20" y="150" width="240" height="20" rx="6" fill="${C.ink}"/><path d="M80 40 C80 90 110 130 140 150" stroke="${C.skin}" stroke-width="16" stroke-linecap="round" fill="none"/>${arrow('M190 60 L150 130')}${ok(230, 40)}`),
-  ],
+  ...VIOLIN_ART,
 
   // ---- Guitarra y ukelele ----
   'guitar-posture': [
