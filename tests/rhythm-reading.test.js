@@ -146,3 +146,11 @@ test('el último compás de los compases compuestos y de amalgama respeta los pu
 test('las lecturas no llevan base automática (cambian de armadura y de compás)', () => {
   assert.equal(generateReading({ inst: instrumentById('sax'), level: 9, seed: 1 }).noAutoBase, true);
 });
+
+test('lecturas largas: 48, 64 y 96 compases completos', () => {
+  const inst = instrumentById('sax');
+  [48, 64, 96].forEach(bars => {
+    const song = generateReading({ inst, level: 9, bars, seed: bars, key: 'random', clefs: 'all' });
+    assert.equal(check(song, inst).bars.length, bars);
+  });
+});

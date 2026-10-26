@@ -76,7 +76,7 @@ const EXPORT_BUTTONS = scope => `<div class="row rb-export"><button type="button
   <button type="button" class="btn ghost small" data-pdf="${scope}" data-how="download">Descargar PDF</button>
   <button type="button" class="btn ghost small rb-wa" data-pdf="${scope}" data-how="share">Enviar por WhatsApp</button></div>`;
 
-const BARS = [8, 12, 16, 24, 32];
+const BARS = [8, 12, 16, 24, 32, 48, 64, 96];
 const BOOK_SIZES = [6, 12, 20];
 const TOGGLES = [['dynamics', 'Matices y reguladores'], ['articulation', 'Articulaciones y ligaduras'], ['agogic', 'Agógica (rit., accel., calderones)'],
   ['chromatic', 'Alteraciones accidentales'], ['extended', 'Técnicas extendidas (slap, frulato…)']];
@@ -230,7 +230,7 @@ $('rbBody').addEventListener('change', e => {
   const el = e.target.closest('[data-opt]');
   if (!el) return;
   const key = el.dataset.opt;
-  const numeric = { bars: [4, 64], bpm: [30, 200], count: [1, 40] };
+  const numeric = { bars: [4, 96], bpm: [30, 200], count: [1, 40] };
   const value = numeric[key] ? Math.min(numeric[key][1], Math.max(numeric[key][0], Number(el.value) || DEFAULTS[key])) : el.value;
   setOpts({ [key]: value });
 });
