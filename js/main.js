@@ -31,6 +31,7 @@ import './growth.js';
 import { accountGate } from './screens/account.js';
 import './screens/friends.js';
 import './screens/group-song.js';
+import './screens/metrics.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
 

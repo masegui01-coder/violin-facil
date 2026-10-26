@@ -7,6 +7,7 @@ import { flushPush, stopSync, deleteCloudData, isAdmin, listTesters } from '../s
 import { analyticsAvailable, setAnalyticsConsent } from '../analytics.js';
 import { getState, replaceState } from '../store.js';
 import { openAccountReminder } from './account.js';
+import { isAdminEmail } from '../metrics.js';
 
 const DAY_MS = 86400000;
 let confirmDelete = false;
@@ -30,8 +31,9 @@ export async function renderAccountPanel() {
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
     $('accSignOut').addEventListener('click', signOut);
     $('accDelete').addEventListener('click', removeAccount);
-    if (await isAdmin(acc.uid)) {
-      $('accAdmin').innerHTML = '<button type="button" class="btn small" id="accTesters">Panel de testers</button>';
+    if (isAdminEmail(acc.email) || await isAdmin(acc.uid)) {
+      $('accAdmin').innerHTML = '<div class="row"><button type="button" class="btn small" id="accMetrics">Métricas de la app</button><button type="button" class="btn ghost small" id="accTesters">Panel de testers</button></div>';
+      $('accMetrics').addEventListener('click', () => go('metrics'));
       $('accTesters').addEventListener('click', openTesters);
     }
   }
@@ -70,7 +72,7 @@ function testersCsv(list) {
   return [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
 }
 
-async function openTesters() {
+export async function openTesters() {
   $('sheetBody').innerHTML = '<div class="sheet-body"><h2>Testers</h2><p class="empty">Cargando…</p></div>';
   $('sheet').showModal();
   let list = [];

@@ -17,7 +17,11 @@ service cloud.firestore {
     function isMember(bandId) { return signedIn() && exists(/databases/$(db)/documents/bands/$(bandId)/members/$(request.auth.uid)); }
 
     // Cuentas: el progreso de cada usuario solo lo lee y escribe él mismo
-    function isAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }
+    // Administrador: dado de alta en admins/{uid} o con este correo verificado (también en js/metrics.js)
+    function isAdmin() {
+      return signedIn() && (exists(/databases/$(db)/documents/admins/$(request.auth.uid))
+        || (request.auth.token.email == 'masegui01@gmail.com' && request.auth.token.email_verified == true));
+    }
     match /users/{uid} {
       allow read, write: if signedIn() && uid == request.auth.uid;
     }
@@ -129,7 +133,7 @@ service cloud.firestore {
     }
 
     match /bands/{bandId} {
-      allow read: if isMember(bandId) || isDirector(bandId);
+      allow read: if isMember(bandId) || isDirector(bandId) || isAdmin();
       allow create: if signedIn() && request.resource.data.directorUid == request.auth.uid;
       allow update: if isDirector(bandId) && request.resource.data.directorUid == resource.data.directorUid;
       allow delete: if isDirector(bandId);
@@ -141,7 +145,7 @@ service cloud.firestore {
           && optNumber(d, 'points') && optNumber(d, 'streak') && optNumber(d, 'xp');
       }
       match /members/{uid} {
-        allow read: if isMember(bandId) || isDirector(bandId);
+        allow read: if isMember(bandId) || isDirector(bandId) || isAdmin();
         allow create: if signedIn() && uid == request.auth.uid && (
           (request.resource.data.role == 'director' && isDirectorAfter(bandId)) ||
           (request.resource.data.role == 'member'
@@ -203,21 +207,22 @@ service cloud.firestore {
       allow delete: if groupOwner(resource.data.groupId);
     }
     match /groups/{gid} {
-      allow get: if inGroup(gid);
-      allow list: if false;
+      allow get: if inGroup(gid) || isAdmin();
+      allow list: if isAdmin(); // métricas del administrador
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
         && shortText(request.resource.data.name, 60) && validCode(request.resource.data.code);
       allow update: if groupOwner(gid) && request.resource.data.ownerUid == resource.data.ownerUid && shortText(request.resource.data.name, 60);
       allow delete: if groupOwner(gid);
       match /members/{uid} {
-        allow read: if inGroup(gid);
+        allow read: if inGroup(gid) || isAdmin();
         // Para entrar hace falta el código del grupo (el del documento de códigos debe apuntar a este grupo)
         allow create, update: if signedIn() && uid == request.auth.uid && validGroupMember(request.resource.data)
           && getAfter(/databases/$(db)/documents/groupCodes/$(request.resource.data.code)).data.groupId == gid;
         allow delete: if (signedIn() && uid == request.auth.uid) || groupOwner(gid);
       }
       match /songs/{sid} {
-        allow read, delete: if inGroup(gid);
+        allow read: if inGroup(gid) || isAdmin();
+        allow delete: if inGroup(gid);
         allow create: if inGroup(gid) && request.resource.data.createdBy == request.auth.uid && validGroupSong(request.resource.data);
         allow update: if inGroup(gid) && validGroupSong(request.resource.data) && request.resource.data.createdBy == resource.data.createdBy;
         match /tracks/{tid} {
