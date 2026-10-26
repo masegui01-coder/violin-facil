@@ -928,3 +928,6 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .rb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 700; }
 .rb-label { font-weight: 700; font-size: .9rem; }
 .rb-preview { margin-top: 12px; }
+.rb-offscreen { position: absolute; left: -10000px; top: 0; width: 900px; }
+.rb-export { flex-wrap: wrap; gap: 6px; }
+.rb-wa { border-color: #25D366; color: #128C7E; }

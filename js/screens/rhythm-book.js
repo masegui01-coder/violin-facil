@@ -12,6 +12,12 @@ import { MAJOR_KEYS, keyLabel } from '../generate.js';
 import { sliceScore } from '../book.js';
 import { VALUES, SCALE_KINDS, MAX_DIFFICULTY, generateReading, generateBook } from '../rhythm-reading.js';
 import * as audio from '../audio.js';
+import { scoresPdf, sharePdf, downloadPdf, openPdf } from '../pdf-export.js';
+
+const SHARE_TEXT = 'Lectura rítmica de Band Flow para practicar: https://masegui01-coder.github.io/violin-facil/';
+const EXPORT_BUTTONS = scope => `<div class="row rb-export"><button type="button" class="btn ghost small" data-pdf="${scope}" data-how="print">Imprimir</button>
+  <button type="button" class="btn ghost small" data-pdf="${scope}" data-how="download">Descargar PDF</button>
+  <button type="button" class="btn ghost small rb-wa" data-pdf="${scope}" data-how="share">Enviar por WhatsApp</button></div>`;
 
 const BARS = [4, 8, 12, 16, 24, 32];
 const BOOK_SIZES = [6, 12, 20];
@@ -60,7 +66,8 @@ function previewHtml() {
   const { lines } = staffLines(preview.song);
   return `<div class="book-sheet rb-preview"><header class="bp-head"><div><p class="eyebrow">Lectura generada</p><h2>${esc(preview.song.title)}</h2><p class="muted">${esc(preview.song.by)}</p></div></header>
     ${Array.from({ length: lines }, (_, i) => `<div class="bp-system"><svg class="staff" id="rbs-${i}" role="img" aria-label="Lectura, renglón ${i + 1}"></svg></div>`).join('')}
-    <div class="row"><button type="button" class="btn" id="rbPlay">Tocar a tempo</button><button type="button" class="btn ghost small" id="rbListen">Escuchar</button><button type="button" class="btn ghost small" id="rbAgain">Otra</button></div></div>`;
+    <div class="row"><button type="button" class="btn" id="rbPlay">Tocar a tempo</button><button type="button" class="btn ghost small" id="rbListen">Escuchar</button><button type="button" class="btn ghost small" id="rbAgain">Otra</button></div>
+    ${EXPORT_BUTTONS('one')}</div>`;
 }
 
 function bookHtml() {
@@ -69,6 +76,7 @@ function bookHtml() {
   const book = generateBook({ ...saved.opts, inst: inst(), seed: saved.seed }, saved.opts.count);
   const progress = instrumentProgress();
   return `<h2>Tu libro de lecturas rítmicas</h2><p class="muted small">${book.length} lecturas · de las figuras largas a todas las elegidas, subiendo la dificultad poco a poco.</p>
+    ${EXPORT_BUTTONS('book')}
     <div class="book-pages">${book.map(x => {
       const stars = progress[lessonKey({ id: x.id })] || 0;
       return `<button type="button" class="book-page${stars ? ' bronze' : ''}" data-reading="${x.number}"><span class="book-num">${x.number}</span>
@@ -108,6 +116,56 @@ function play(song, id) {
 }
 
 register('rhythmbook', { enter: render, leave: stopAudio });
+
+// Renglones de una lectura dibujados fuera de la pantalla (para el PDF del libro entero)
+function offscreenSystems(host, song) {
+  const { score, lines } = staffLines(song);
+  return Array.from({ length: lines }, (_, i) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'staff');
+    host.appendChild(svg);
+    createStaff(svg).render(sliceScore(score, i * BARS_PER_LINE, BARS_PER_LINE), { key: song.key, time: song.time, mode: 'review', clef: inst().clef || 'treble' });
+    return svg;
+  });
+}
+
+async function exportPdf(scope, how, btn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Preparando…';
+  const host = document.createElement('div');
+  host.className = 'rb-offscreen';
+  document.body.appendChild(host);
+  try {
+    let items;
+    let name;
+    if (scope === 'one') {
+      items = [{ title: preview.song.title, sub: `${preview.song.by} · tempo ${preview.song.bpm}`, svgs: [...document.querySelectorAll('.rb-preview svg.staff')] }];
+      name = `lectura-ritmica-${preview.seed % 1000}.pdf`;
+    } else {
+      const saved = getState().rhythmBook;
+      const book = generateBook({ ...saved.opts, inst: inst(), seed: saved.seed }, saved.opts.count);
+      items = book.map(x => ({ title: x.song.title, sub: `${x.song.by} · tempo ${x.song.bpm}`, svgs: offscreenSystems(host, x.song) }));
+      name = `libro-lecturas-ritmicas-${inst().id}.pdf`;
+    }
+    const blob = await scoresPdf(items, { footer: `Band Flow · lecturas rítmicas · ${inst().name}` });
+    if (how === 'print') openPdf(blob);
+    else if (how === 'download') downloadPdf(blob, name);
+    else {
+      const result = await sharePdf(blob, name, SHARE_TEXT);
+      if (result === 'downloaded') {
+        toast('PDF descargado: adjúntalo en WhatsApp');
+        window.open(`https://wa.me/?text=${encodeURIComponent(SHARE_TEXT)}`, '_blank');
+      }
+    }
+  } catch (err) {
+    toast('No he podido crear el PDF. Comprueba la conexión e inténtalo de nuevo.');
+  } finally {
+    host.remove();
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
 
 $('rbBody').addEventListener('change', e => {
   const el = e.target.closest('[data-opt]');
@@ -150,6 +208,8 @@ $('rbBody').addEventListener('click', e => {
     render();
     return;
   }
+  const pdf = t.closest('[data-pdf]');
+  if (pdf) { exportPdf(pdf.dataset.pdf, pdf.dataset.how, pdf); return; }
   if (t.id === 'rbPlay' && preview) { play(preview.song, `rl-p-${preview.seed}`); return; }
   if (t.id === 'rbListen' && preview) {
     if (stopListen) { stopAudio(); t.textContent = 'Escuchar'; return; }
