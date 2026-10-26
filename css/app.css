@@ -842,3 +842,35 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .note-fill i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .08s linear; }
 .next-note { font-size: .85rem; color: var(--muted); }
 .mix-row { gap: 8px; }
+
+/* ---------- Modo libro ---------- */
+.learn-mode { margin-bottom: 14px; }
+.book { display: flex; flex-direction: column; gap: 12px; }
+.book-head h1 { margin: 2px 0 6px; }
+.book-tally { display: flex; gap: 12px; align-items: center; font-weight: 800; flex-wrap: wrap; }
+.book-review { display: flex; gap: 12px; align-items: center; text-align: left; border: 2px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: var(--r); padding: 12px 14px; font: inherit; }
+.book-review .ic { font-size: 1.6rem; color: var(--accent); }
+.book-review div { display: flex; flex-direction: column; }
+.book-review small { color: var(--muted); }
+.book-chapter { background: var(--surface); border: 1.5px solid var(--line); border-left: 6px solid var(--unit); border-radius: var(--r); }
+.book-chapter summary { display: flex; gap: 12px; align-items: center; padding: 12px 14px; cursor: pointer; list-style: none; min-height: 44px; }
+.book-chapter summary::-webkit-details-marker { display: none; }
+.book-chap-num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--unit); color: #fff; font-weight: 800; }
+.book-chap-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.book-chap-text small { color: var(--muted); }
+.book-stamp { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 2px dashed var(--ok); color: var(--ok); font-weight: 900; transform: rotate(-12deg); }
+.book-stamp.gold { border-color: var(--gold); color: var(--gold); }
+.book-pages { display: flex; flex-direction: column; gap: 6px; padding: 0 10px 12px; }
+.book-page { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; text-align: left; background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font: inherit; color: var(--ink); min-height: 44px; }
+.book-page.locked { opacity: .7; }
+.book-page.gold { border-color: var(--gold); }
+.book-num { font-family: var(--f-display); font-size: 1.15rem; color: var(--unit); text-align: center; }
+.book-text { display: flex; flex-direction: column; min-width: 0; }
+.book-text small { color: var(--muted); font-size: .8rem; }
+.book-text .tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 999px; background: var(--unit); color: #fff; font-size: .68rem; vertical-align: middle; }
+.book-text .tag.review { background: var(--accent); }
+.book-medal { font-size: 1.3rem; }
+.book-medals { display: flex; gap: 14px; justify-content: center; }
+.book-medals span { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; opacity: .3; filter: grayscale(1); }
+.book-medals span.on { opacity: 1; filter: none; }
+.book-medals small { font-size: .75rem; font-weight: 700; }

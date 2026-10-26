@@ -8,7 +8,7 @@ let current = null;
 let lastTab = 'learn';
 
 // De dónde se lanzó una lección: al salir se vuelve a esa pestaña
-export const ORIGIN_TAB = { course: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
+export const ORIGIN_TAB = { course: 'learn', book: 'learn', songs: 'songs', practice: 'practice', band: 'band' };
 export const originTab = from => ORIGIN_TAB[from] || 'learn';
 
 // Botón atrás del móvil: cierra la ventana abierta, sale de la lección o vuelve a Aprender.

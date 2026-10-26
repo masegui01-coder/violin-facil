@@ -46,11 +46,15 @@
 
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
-      <div id="continueCard"></div>
-      <div id="placementCard"></div>
-      <div id="todayCard"></div>
-      <div id="friendsCard"></div>
-      <div id="courseMap" class="course"></div>
+      <div class="seg learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button></div>
+      <div id="casualView">
+        <div id="continueCard"></div>
+        <div id="placementCard"></div>
+        <div id="todayCard"></div>
+        <div id="friendsCard"></div>
+        <div id="courseMap" class="course"></div>
+      </div>
+      <div id="bookView" class="book" hidden></div>
     </section>
 
     <!-- Pestaña Canciones -->

@@ -3,12 +3,13 @@ import { $, esc, icon, starsHtml } from '../ui.js';
 import { register, go } from '../router.js';
 import { lessonKey, lessonTitle, lessonSong, chordText } from '../course.js';
 import { styleById } from '../songs.js';
-import { getState, instrumentProgress, today } from '../store.js';
+import { getState, instrumentProgress, today, update } from '../store.js';
 import { soonBandTask } from '../next-step.js';
 import { placementCardHtml, bindPlacementCard } from './placement-ui.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
+import { renderBook } from './book.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -67,7 +68,13 @@ function unitHtml(unit, ui) {
   </section>`;
 }
 
+// Casual: siguiente paso, retos y mapa. Libro: el método página a página con medallas.
 function render() {
+  const view = getState().learnView || 'casual';
+  document.querySelectorAll('[data-learn-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.learnView === view)));
+  $('casualView').hidden = view !== 'casual';
+  $('bookView').hidden = view !== 'book';
+  if (view === 'book') { renderBook(); return; }
   course = currentCourse();
   states = currentStates(course);
   const next = nextLesson(null, course);
@@ -84,6 +91,7 @@ function render() {
 }
 
 register('learn', { enter: render });
+document.querySelectorAll('[data-learn-view]').forEach(b => b.addEventListener('click', () => { update({ learnView: b.dataset.learnView }); render(); }));
 
 $('courseMap').addEventListener('click', e => {
   const node = e.target.closest('[data-lesson]');

@@ -6,6 +6,7 @@ import { createStaff } from '../staff.js';
 import { getState, recordResult, update } from '../store.js';
 import { launch, nextLesson } from '../launch.js';
 import { saveTake } from '../takes.js';
+import { nextBookPage, openPage } from './book.js';
 
 const FIRST_TAKE_MIN_DAYS = 7;
 
@@ -30,6 +31,10 @@ function primaryAction() {
     return { label: 'Ahora a tempo', run: () => launch(lesson, { mode: 'tempo', from }) };
   }
   if (stars === 0) return { label: 'Intentarlo otra vez', run: () => launch(lesson, { mode, from }) };
+  if (from === 'book') {
+    const next = nextBookPage(lesson.id);
+    if (next) return { label: `Siguiente página (${next.page.number})`, run: () => openPage(next.page.lesson.id) };
+  }
   if (from === 'course' && mode !== 'memory') {
     const next = nextLesson(lesson.id) || nextLesson();
     if (next) return { label: 'Siguiente lección', run: () => launch(next, { from: 'course' }) };
