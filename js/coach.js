@@ -184,7 +184,7 @@ const RULES = [
     tip: () => 'left-hand',
     title: L('Los dedos caen fuera de su sitio', 'Your fingers land out of place'),
     why: () => L('Muchas notas salen a un semitono de la buena, o las agudas se desafinan: la mano izquierda no mantiene el marco entre los dedos.', 'Many notes come out a semitone away, or the high notes go out of tune: the left hand is not keeping its frame between the fingers.'),
-    action: () => L('Coloca los dedos como un bloque (el pulgar enfrente del primero) y comprueba con las cuerdas al aire: el 3.º dedo en La suena igual que el Re al aire.', 'Place the fingers as a block (thumb opposite the first finger) and check against the open strings: 3rd finger on A sounds like open D.'),
+    action: () => L('Coloca los dedos como un bloque (el pulgar enfrente del primero) y comprueba con las cuerdas al aire: el 3.º dedo en La es el Re de una octava más arriba, y si está afinado la cuerda Re vibra sola.', 'Place the fingers as a block (thumb opposite the first finger) and check against the open strings: 3rd finger on A is the D an octave higher, and when in tune the D string rings in sympathy.'),
     evidence: s => [ev(L('Notas a 1-2 semitonos', 'Notes 1-2 semitones off'), String(RULES_BY_ID['finger-place'].count(s))), ev(REG.high, cents(s.reg.high.mean))],
   },
   {

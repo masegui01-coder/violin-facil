@@ -48,6 +48,17 @@ export function beatGroups(meter) {
 
 const keyCountOf = key => { const sig = keySignature(key); const n = Object.keys(sig).length; return n && Object.values(sig)[0] < 0 ? -n : n; };
 
+// Becuadros de cancelación: las alteraciones de la armadura anterior que ya no están (o cambian de signo)
+function cancelSvg(x, oldKey, newKey, clef) {
+  const oldN = keyCountOf(oldKey);
+  const newSig = keySignature(newKey);
+  const table = KEY_STEPS[clef] || KEY_STEPS.treble;
+  const order = oldN >= 0 ? SHARP_ORDER : FLAT_ORDER;
+  const steps = (oldN >= 0 ? table.sharp : table.flat).slice(0, Math.abs(oldN)).filter((st, i) => newSig[order[i]] !== (oldN >= 0 ? 1 : -1));
+  const base = CLEF_BASE[clef] ?? 30;
+  return { svg: steps.map((st, i) => txt(x + i * 8, BOTTOM - (st - base) * H + 5, '♮', { size: 18, font: MUSIC_FONT })).join(''), width: steps.length ? steps.length * 8 + 4 : 0 };
+}
+
 function keySigSvg(x, key, clef) {
   const n = keyCountOf(key);
   const table = KEY_STEPS[clef] || KEY_STEPS.treble;
@@ -81,6 +92,7 @@ function barInfo(score, opts) {
     const notes = score.notes.filter(n => n.bar === i);
     const first = notes[0] || {};
     const m = first.marks || {};
+    const prevKey = key;
     const changes = {
       meter: m.meter && i > 0 ? m.meter[m.meter.length - 1] : null,
       clef: m.clef && i > 0 && m.clef[m.clef.length - 1] !== clef ? m.clef[m.clef.length - 1] : null,
@@ -92,9 +104,9 @@ function barInfo(score, opts) {
     if (changes.meter) meter = changes.meter;
     if (changes.clef) clef = changes.clef;
     if (changes.key) key = changes.key;
-    const extra = (changes.clef ? 26 : 0) + (changes.key ? Math.abs(keyCountOf(changes.key)) * 9 + 14 : 0) + (changes.meter ? 26 : 0);
+    const extra = (changes.clef ? 26 : 0) + (changes.key ? (Math.abs(keyCountOf(changes.key)) + Math.abs(keyCountOf(prevKey))) * 9 + 18 : 0) + (changes.meter ? 26 : 0);
     const natural = notes.reduce((s, n) => s + noteWidth(n), 0) + 18 + extra;
-    return { index: i, bar: b, notes, meter, clef, key, changes, extra, natural };
+    return { index: i, bar: b, notes, meter, clef, key, prevKey, changes, extra, natural };
   });
 }
 
@@ -129,9 +141,11 @@ function drawSystem(score, sys, k, last, opts, state) {
   for (let i = 0; i < 5; i++) out.push(line(0, TOP + i * SP, W, TOP + i * SP, 1));
   // prefijo: clave, armadura y compás (el compás solo al principio o si cambia aquí)
   out.push(clefSvg(4, first.clef));
-  const ks = keySigSvg(42, first.key, first.clef);
+  let x = 42;
+  if (first.changes.key && first.prevKey) { const c = cancelSvg(x, first.prevKey, first.key, first.clef); out.push(c.svg); x += c.width; }
+  const ks = keySigSvg(x, first.key, first.clef);
   out.push(ks.svg);
-  let x = 42 + ks.width + 8;
+  x += ks.width + 8;
   if (k === 0 || first.changes.meter) { out.push(timeSigSvg(x + 10, first.meter)); x += 26; }
   out.push(txt(2, TOP - 12, String(first.index + 1), { size: 11, italic: true }));
   if (k === 0 && opts.tempo) out.push(txt(44, TEXT_Y - 4, `${opts.tempo.label ? opts.tempo.label + ' ' : ''}${UNIT_GLYPH[opts.tempo.unit] || '♩'} = ${opts.tempo.bpm}`, { size: 14, bold: true }));
@@ -144,7 +158,14 @@ function drawSystem(score, sys, k, last, opts, state) {
     if (bi > 0 || first.changes.meter || first.changes.clef || first.changes.key) {
       if (bi > 0 && b.changes.key) { out.push(line(x - 3, TOP, x - 3, BOTTOM, 1)); }
       if (bi > 0 && b.changes.clef) { out.push(clefSvg(cx - 4, b.changes.clef, true)); cx += 26; }
-      if (bi > 0 && b.changes.key) { const s = keySigSvg(cx, b.changes.key, b.clef); out.push(s.svg); cx += s.width + 14; }
+      if (bi > 0 && b.changes.key) {
+        const c = cancelSvg(cx, sys[bi - 1].key, b.changes.key, b.clef);
+        out.push(c.svg);
+        cx += c.width;
+        const s = keySigSvg(cx, b.changes.key, b.clef);
+        out.push(s.svg);
+        cx += s.width + 14;
+      }
       if (bi > 0 && b.changes.meter) { out.push(timeSigSvg(cx + 6, b.changes.meter)); cx += 26; }
     }
     const scale = (b.natural * stretch - (cx - x) - 8) / Math.max(1, b.natural - b.extra - 18);

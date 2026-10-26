@@ -67,6 +67,7 @@ import { L } from '../tips-l10n.js';
   ['Negra con doble puntillo', 'Double-dotted quarter note'],
   ['Corchea con doble puntillo', 'Double-dotted eighth note'],
   ['Semicorchea con puntillo', 'Dotted sixteenth note'],
+  ['Redonda con puntillo', 'Dotted whole note'],
   ['Fusa', 'Thirty-second note'],
 ].forEach(([es, en]) => L(es, en));
 

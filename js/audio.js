@@ -127,7 +127,15 @@ export function playScore(notes, bpm, onNote, { at = null, silent = false } = {}
   const c = ctx();
   const spb = 60 / bpm;
   const t0 = at ?? c.currentTime + 0.15;
-  const oscs = silent ? [] : notes.filter(n => !n.rest).map(n => voice(c, n.midi, t0 + n.start * spb, Math.max(0.12, n.beats * spb * 0.92)));
+  // las notas ligadas suenan como una sola, sin volver a atacar
+  const sounding = [];
+  notes.forEach((n, i) => {
+    if (n.rest) return;
+    const prev = notes[i - 1];
+    if (prev && prev.tie && !prev.rest && prev.midi === n.midi && sounding.length) { sounding[sounding.length - 1].beats += n.beats; return; }
+    sounding.push({ midi: n.midi, start: n.start, beats: n.beats });
+  });
+  const oscs = silent ? [] : sounding.map(n => voice(c, n.midi, t0 + n.start * spb, Math.max(0.12, n.beats * spb * 0.92)));
   const total = notes.length ? (notes[notes.length - 1].start + notes[notes.length - 1].beats) * spb : 0;
   state.muteUntil = performance.now() + (total + 0.5) * 1000;
   const timer = setInterval(() => {

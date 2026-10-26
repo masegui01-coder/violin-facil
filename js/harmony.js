@@ -96,7 +96,7 @@ export function accompanimentNotes(chords, { time = 4, transpose = 0 } = {}) {
 }
 
 // Nombre del valor de una nota (en negras): «blanca», «negra con puntillo», «corchea de tresillo»…
-const VALUES = [[4, 'Redonda'], [3.5, 'Blanca con doble puntillo'], [3, 'Blanca con puntillo'], [2, 'Blanca'], [1.75, 'Negra con doble puntillo'], [1.5, 'Negra con puntillo'],
+const VALUES = [[6, 'Redonda con puntillo'], [4, 'Redonda'], [3.5, 'Blanca con doble puntillo'], [3, 'Blanca con puntillo'], [2, 'Blanca'], [1.75, 'Negra con doble puntillo'], [1.5, 'Negra con puntillo'],
   [1, 'Negra'], [0.875, 'Corchea con doble puntillo'], [0.75, 'Corchea con puntillo'], [0.5, 'Corchea'], [0.375, 'Semicorchea con puntillo'], [0.25, 'Semicorchea'], [0.125, 'Fusa']];
 const FIGURE = { w: 'Redonda', h: 'Blanca', q: 'Negra', e: 'Corchea', s: 'Semicorchea', t: 'Fusa' };
 const GROUP = { 3: 'tresillo', 5: 'quintillo', 6: 'seisillo', 7: 'septillo' };

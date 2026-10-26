@@ -78,11 +78,11 @@ function drawRest(g, x, note) {
   }
 }
 
-function drawNote(g, x, note, sig) {
+function drawNote(g, x, note, sig, shownAcc) {
   const step = diatonicStep(note);
   const ny = y(step);
   ledgerSteps(step).forEach(s => el('line', { x1: x - 13, x2: x + 13, y1: y(s), y2: y(s), class: 'st-line' }, g));
-  const acc = accidentalToShow(note, sig);
+  const acc = shownAcc !== undefined ? shownAcc : accidentalToShow(note, sig);
   if (acc) text(g, x - 23, ny + 5, ACC_GLYPH[acc], { class: 'st-acc-note' });
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: HEAD_RX, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
@@ -152,7 +152,11 @@ export function createStaff(svg) {
     let shownClef = clef;
     let shownMeter = null;
     const firstOf = new Set();
+    // las alteraciones valen hasta el final del compás (y la nota ligada no la repite)
+    let barMem = {};
+    let memBar = -1;
     noteGroups = notes.map((n, i) => {
+      if (n.bar !== memBar) { memBar = n.bar; barMem = {}; }
       // cambios de clave, compás y armadura dentro de la partitura (libro de lecturas)
       base = BASE[n.clef || clef] || E4;
       if (n.clef && n.clef !== shownClef && CLEF_MARK[n.clef]) { text(scroller, xOfBeat(n.start) - 30, BOTTOM_Y - HALF * 9, CLEF_MARK[n.clef], { class: 'st-tuplet' }); shownClef = n.clef; }
@@ -167,7 +171,22 @@ export function createStaff(svg) {
         el('rect', { x: xOfBeat(n.start), y: y(diatonicStep(n)) - 4, width: Math.max(4, n.beats * beatPx - 10), height: 8, rx: 4, class: 'st-tail' }, g);
       }
       if (n.rest) drawRest(g, xOfBeat(n.start), n);
-      else drawNote(g, xOfBeat(n.start), n, sigHere);
+      else {
+        const id = n.letter + n.oct;
+        const expected = id in barMem ? barMem[id] : (sigHere[n.letter] || 0);
+        const tiedIn = i > 0 && notes[i - 1].tie && !notes[i - 1].rest;
+        const shown = n.acc === expected || tiedIn ? null : n.acc === 0 ? 'natural' : n.acc > 0 ? 'sharp' : 'flat';
+        barMem[id] = n.acc;
+        drawNote(g, xOfBeat(n.start), n, sigHere, shown);
+        // ligadura de prolongación hacia la nota siguiente
+        const next = notes[i + 1];
+        if (n.tie && next && !next.rest) {
+          const ny = y(diatonicStep(n)) + 9;
+          const x1 = xOfBeat(n.start) + 8;
+          const x2 = xOfBeat(next.start) - 8;
+          el('path', { d: `M${x1} ${ny} Q${(x1 + x2) / 2} ${ny + 9} ${x2} ${ny} Q${(x1 + x2) / 2} ${ny + 6} ${x1} ${ny}Z`, class: 'st-fill' }, g);
+        }
+      }
       if (!n.rest && sticking) {
         const hand = sticking[playIndex++];
         if (hand) text(g, xOfBeat(n.start) - 5, BOTTOM_Y + 34, hand, { class: 'st-stick' });

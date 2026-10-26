@@ -229,7 +229,7 @@ const ART = {
   'uke-hold': [
     panel(`<rect x="60" y="40" width="110" height="180" rx="40" fill="${C.shirt}"/><ellipse cx="140" cy="140" rx="50" ry="40" fill="${C.woodLight}" transform="rotate(-20 140 140)"/><path d="M170 120 L250 70" stroke="${C.wood}" stroke-width="10"/>${ok(230, 190)}`),
     panel(`<ellipse cx="120" cy="130" rx="60" ry="46" fill="${C.woodLight}" transform="rotate(-20 120 130)"/><path d="M160 108 L250 60" stroke="${C.wood}" stroke-width="10"/><path d="M20 190 C70 170 110 150 140 120" stroke="${C.skin}" stroke-width="24" stroke-linecap="round" fill="none"/>${arrow('M60 120 L90 140')}`),
-    panel(`<ellipse cx="110" cy="130" rx="80" ry="60" fill="${C.woodLight}"/><circle cx="110" cy="120" r="18" fill="#5A3A1A"/><path d="M190 120 L260 120" stroke="${C.wood}" stroke-width="18"/><line x1="180" x2="180" y1="100" y2="140" stroke="${C.green}" stroke-width="4"/>${arrow('M220 60 L220 100')}${arrow('M240 180 L240 140')}${label(190, 210, L('traste 14', '14th fret'), { anchor: 'middle', size: 13 })}`),
+    panel(`<ellipse cx="110" cy="130" rx="80" ry="60" fill="${C.woodLight}"/><circle cx="110" cy="120" r="18" fill="#5A3A1A"/><path d="M190 120 L260 120" stroke="${C.wood}" stroke-width="18"/><line x1="180" x2="180" y1="100" y2="140" stroke="${C.green}" stroke-width="4"/>${arrow('M220 60 L220 100')}${arrow('M240 180 L240 140')}${label(190, 210, L('traste 12', '12th fret'), { anchor: 'middle', size: 13 })}`),
   ],
 
   // ---- Piano ----

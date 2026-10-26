@@ -337,7 +337,7 @@ const VIOLIN = [
       { t: L('Pulgar enfrente', 'Thumb opposite'), d: L('El pulgar, suelto, frente al primer o segundo dedo; deja un hueco entre el mástil y la palma.', 'The thumb, loose, opposite the first or second finger; leave a gap between the neck and the palm.') },
       { t: L('Dedos de martillo', 'Hammer fingers'), d: L('Los dedos caen desde arriba con la yema, curvados, y vuelven a su sitio cada vez.', 'The fingers drop from above on the pad, curved, and return to the same spot each time.') },
     ],
-    check: L('Comprueba con las cuerdas al aire: el 3.er dedo en la cuerda La tiene que sonar igual que el Re al aire.', 'Check against the open strings: 3rd finger on the A string should sound the same as open D.'),
+    check: L('Comprueba con las cuerdas al aire: el 3.er dedo en la cuerda La es un Re, una octava por encima del Re al aire; si está afinado, la cuerda Re vibra sola.', 'Check against the open strings: 3rd finger on the A string is a D, an octave above open D; when it is in tune, the D string rings in sympathy.'),
     avoid: [L('Palma pegada al mástil', 'Palm stuck to the neck'), L('Dedos planos que tocan otra cuerda', 'Flat fingers touching another string'), L('Pulgar apretando', 'A squeezing thumb')],
   },
 ];
@@ -378,7 +378,7 @@ const UKULELE = [
     steps: [
       { t: L('Contra el pecho', 'Against the chest'), d: L('Apoya el cuerpo del ukelele en el pecho, un poco por debajo del corazón.', 'Rest the body of the ukulele against your chest, a little below the heart.') },
       { t: L('El antebrazo sujeta', 'The forearm holds it'), d: L('El antebrazo derecho lo aprieta suavemente contra ti. El mástil apunta un poco hacia arriba.', 'The right forearm presses it gently against you. The neck points slightly upward.') },
-      { t: L('Rasguea en el traste 14', 'Strum at the 14th fret'), d: L('Rasguea donde el mástil se une al cuerpo: abajo con la uña del índice y arriba con la yema.', 'Strum where the neck joins the body: down with the index fingernail and up with the pad.') },
+      { t: L('Rasguea donde acaba el mástil', 'Strum where the neck ends'), d: L('Rasguea donde el mástil se une al cuerpo (hacia el traste 12 en el soprano y el concierto): abajo con la uña del índice y arriba con la yema.', 'Strum where the neck joins the body (around the 12th fret on soprano and concert ukuleles): down with the index fingernail and up with the pad.') },
     ],
     check: L('Suelta la mano izquierda: el ukelele no debe caerse.', 'Let go with your left hand: the ukulele should not fall.'),
     avoid: [L('Sujetar el mástil con la mano izquierda', 'Holding the neck up with the left hand'), L('Rasguear sobre la boca con fuerza', 'Strumming hard over the soundhole'), L('Muñeca rígida', 'A stiff wrist')],

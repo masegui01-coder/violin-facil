@@ -109,17 +109,17 @@ function fillBar(r, meter, level, families) {
   return out;
 }
 
-// El último compás: una nota larga y, si no cabe en una figura, silencios hasta completarlo
+// El último compás: una sola nota que lo llena; si no cabe en una figura, ligada respetando los pulsos (9/8 = h. + q.)
+const FINAL_BAR = { '2/4': ['h'], '3/4': ['h.'], '4/4': ['w'], '2/2': ['w'], '5/4': ['h.', 'h'], '2/8': ['q'], '3/8': ['q.'], '4/8': ['h'],
+  '5/8': ['q', 'q.'], '6/8': ['h.'], '7/8': ['h', 'q.'], '9/8': ['h.', 'q.'], '12/8': ['w.'] };
 function finalBar(meter) {
-  const FIGS = [[4, 'w', ''], [3, 'h', '.'], [2, 'h', ''], [1.5, 'q', '.'], [1, 'q', ''], [0.5, 'e', '']];
-  const out = [];
-  let left = meterBeats(meter);
-  while (left > 1e-6) {
-    const f = FIGS.find(([b]) => b <= left + 1e-6);
-    out.push({ rest: out.length > 0, dur: f[1], dots: f[2], tup: '' });
-    left -= f[0];
+  const figs = [...(FINAL_BAR[meter.join('/')] || [])];
+  if (!figs.length) {
+    const FIGS = [[4, 'w'], [3, 'h.'], [2, 'h'], [1.5, 'q.'], [1, 'q'], [0.5, 'e']];
+    let left = meterBeats(meter);
+    while (left > 1e-6) { const f = FIGS.find(([b]) => b <= left + 1e-6); figs.push(f[1]); left -= f[0]; }
   }
-  return out;
+  return figs.map((f, i) => ({ rest: false, dur: f[0], dots: f.slice(1), tup: '', tie: i < figs.length - 1 }));
 }
 
 // ---------- Alturas ----------
@@ -131,13 +131,24 @@ function spellDiatonic(midi, sig) {
   return { letter, acc, oct: Math.round((midi - acc - LETTER_PC[letter]) / 12) - 1, midi };
 }
 
-// Nota cromática: subiendo con sostenido (o becuadro), bajando con bemol; sin dobles alteraciones
-function spellChromatic(midi, sig, up) {
-  const pc = ((midi % 12) + 12) % 12;
-  const options = LETTERS.flatMap(l => [-1, 0, 1].map(acc => ({ letter: l, acc })))
-    .filter(o => (LETTER_PC[o.letter] + o.acc + 12) % 12 === pc && o.acc !== (sig[o.letter] || 0));
-  const best = options.sort((a, b) => (up ? b.acc - a.acc : a.acc - b.acc))[0];
-  return best ? { ...best, oct: Math.round((midi - best.acc - LETTER_PC[best.letter]) / 12) - 1, midi } : null;
+// Nota cromática que se acerca a una nota de la escala (target) por semitono:
+// subiendo, la letra de abajo alterada (Fa → Fa♯ → Sol) salvo que salga Mi♯ o Si♯ (entonces la propia letra: Fa♮ → Fa♯);
+// bajando, la letra de arriba rebajada (Si♭ → La) salvo que salga Fa♭ o Do♭. Nunca dobles alteraciones.
+const LETTER_NEAR = (letter, d) => LETTERS[(LETTERS.indexOf(letter) + d + 7) % 7];
+function spelled(letter, midi) {
+  let acc = ((midi - LETTER_PC[letter]) % 12 + 12) % 12;
+  if (acc > 6) acc -= 12;
+  return Math.abs(acc) <= 1 ? { letter, acc, oct: Math.round((midi - acc - LETTER_PC[letter]) / 12) - 1, midi } : null;
+}
+function spellApproach(midi, sig, target) {
+  const goal = spellDiatonic(target, sig);
+  if (!goal) return null;
+  const up = midi < target;
+  const neighbour = spelled(LETTER_NEAR(goal.letter, up ? -1 : 1), midi);
+  const odd = n => !n || (up && n.acc === 1 && ['E', 'B'].includes(n.letter)) || (!up && n.acc === -1 && ['F', 'C'].includes(n.letter));
+  const own = spelled(goal.letter, midi);
+  const chosen = !odd(neighbour) ? neighbour : own;
+  return chosen && chosen.acc !== (sig[chosen.letter] || 0) ? chosen : null;
 }
 
 const nameOf = n => `${n.letter}${ACC_TXT[n.acc]}${n.oct}`;
@@ -215,19 +226,19 @@ export function generateReading(opts) {
   families.add('q');
   if (opts.rests === false) families.delete('rest');
   const r = rng(seed);
-  let key = chooseKey(r, opts, level);
+  let key = inst.rhythmOnly ? 'C' : chooseKey(r, opts, level);
   const startKey = key;
   const meters = meterList(r, opts, level, bars);
   const clefs = clefPlan(r, opts, level, bars, inst);
   const wantDyn = opts.dynamics !== false;
   const wantArt = opts.articulation !== false && level >= 3;
   const wantAgogic = opts.agogic !== false && level >= 4;
-  const chromatic = opts.chromatic === false ? 0 : CHROMATIC[level];
+  const chromatic = opts.chromatic === false || inst.rhythmOnly ? 0 : CHROMATIC[level];
   const ext = !!opts.extended && level >= 8 && ['madera', 'metal'].includes(inst.family);
 
   // cambio de carácter (tempo y, si la tonalidad es libre, armadura) hacia el 60 % en los niveles altos
   const sectionBar = level >= 8 && wantAgogic && bars >= 8 ? Math.round(bars * 0.6) : -1;
-  const sectionKey = sectionBar > 0 && (!opts.key || opts.key === 'random') ? chooseKey(r, { ...opts, key: 'random' }, level) : null;
+  const sectionKey = sectionBar > 0 && !inst.rhythmOnly && (!opts.key || opts.key === 'random') ? chooseKey(r, { ...opts, key: 'random' }, level) : null;
   const sectionTempo = sectionBar > 0 ? pick(r, TEMPO_WORDS.filter(([, b]) => Math.abs(b - bpm) > 20)) : null;
 
   const barsOut = [];
@@ -236,6 +247,9 @@ export function generateReading(opts) {
   let hairpinEnd = -1;
   let midi = null;
   let prevTied = false;
+  let prevNote = null;
+  let lastNoteAt = null; // { out, idx } de la última nota escrita, por si hay que quitarle la ligadura
+  let pendingTarget = null; // tras una nota cromática, la nota de la escala a la que resuelve
   let slurLeft = 0;
   let prevText = '';
   let prevToks = null;
@@ -286,12 +300,17 @@ export function generateReading(opts) {
       ? pick(r, inst.id.startsWith('sax') || inst.id.includes('clarinet') ? ['Slap', 'Flatt.', 'Growl'] : ['Flatt.', 'Growl']) : null;
     if (tech) first.push(`@tech:${tech}`);
 
+    // una ligadura no puede llegar a un silencio, a otra altura (cambio de clave) ni a otra armadura
+    const untie = () => { if (prevTied && lastNoteAt) lastNoteAt.out[lastNoteAt.idx] = lastNoteAt.out[lastNoteAt.idx].replace('~', ''); prevTied = false; };
+    if (prevTied && (b === sectionBar || midi < lo || midi > hi)) untie();
+    if (b === sectionBar) pendingTarget = null;
     toks.forEach((t, i) => {
       const lastNote = lastBar && i === 0;
+      const isFinal = lastBar && i === toks.length - 1;
       const marks = i === 0 ? first : [];
       if (t.rest && !lastNote && !(b === 0 && i === 0)) {
+        untie();
         out.push(...marks, `R${t.dur}${t.dots}${t.tup ? ':' + t.tup : ''}`);
-        prevTied = false;
         return;
       }
       // altura: final en la tónica; si no, paso, salto o cromatismo
@@ -299,9 +318,13 @@ export function generateReading(opts) {
       if (lastNote) {
         const tonics = scale.filter(m => ((m % 12) + 12) % 12 === tonicPc);
         midi = tonics.length ? tonics.reduce((a, m) => (Math.abs(m - midi) < Math.abs(a - midi) ? m : a), tonics[0]) : midi;
-        note = spellDiatonic(midi, sig) || spellChromatic(midi, sig, true);
-      } else if (prevTied) {
-        note = spellDiatonic(midi, sig) || spellChromatic(midi, sig, true);
+        note = spellDiatonic(midi, sig);
+      } else if (prevTied && prevNote) {
+        note = prevNote;
+        midi = note.midi;
+      } else if (pendingTarget !== null && pendingTarget >= lo && pendingTarget <= hi) {
+        midi = pendingTarget;
+        note = spellDiatonic(midi, sig);
       } else if (sequence !== null && prevDegrees[degrees.length] !== undefined && scale[prevDegrees[degrees.length] + sequence] !== undefined) {
         midi = scale[prevDegrees[degrees.length] + sequence];
         note = spellDiatonic(midi, sig);
@@ -312,14 +335,22 @@ export function generateReading(opts) {
         const dir = idx <= 1 ? 1 : idx >= scale.length - 2 ? -1 : (r() < 0.5 ? -1 : 1);
         const target = scale[Math.max(0, Math.min(scale.length - 1, idx + dir * leap))];
         const degree = ((target - tonicPc) % 12 + 12) % 12;
-        if (r() < chromatic && target - 1 >= lo && target + 1 <= hi) {
+        const seventh = spellDiatonic(target, sig);
+        if (r() < chromatic && target - 1 >= lo && target + 1 <= hi && !spellDiatonic(target + (dir > 0 ? -1 : 1), sig)) {
           midi = target + (dir > 0 ? -1 : 1);
-          note = spellDiatonic(midi, sig) || spellChromatic(midi, sig, dir > 0);
-        } else if (minor && level >= 2 && degree === 10 && target + 1 <= hi && r() < 0.6) {
-          midi = target + 1; // sensible de la menor armónica
-          note = spellChromatic(midi, sig, true);
+          note = spellApproach(midi, sig, target);
+          if (note) pendingTarget = target;
+        } else if (minor && level >= 4 && degree === 10 && target + 1 <= hi && seventh && seventh.acc < 1 && r() < 0.6) {
+          midi = target + 1; // sensible de la menor armónica (sin dobles sostenidos: no en Sol♯ ni Re♯ menor)
+          note = { ...seventh, acc: seventh.acc + 1, midi };
         } else { midi = target; note = spellDiatonic(midi, sig); }
         if (!note) { midi = target; note = spellDiatonic(midi, sig); }
+      }
+      // red de seguridad: si algo no tiene nombre en esta armadura, la nota de la escala más cercana
+      if (!note) {
+        midi = scale.reduce((a, m) => (Math.abs(m - midi) < Math.abs(a - midi) ? m : a), scale[0]);
+        note = spellDiatonic(midi, sig);
+        pendingTarget = null;
       }
       const art = [];
       let open = '';
@@ -337,17 +368,20 @@ export function generateReading(opts) {
       if (wantArt && level >= 8 && r() < 0.02) art.push('^');
       if (tech === 'Slap' && ['e', 'q', 's'].includes(t.dur)) art.push('x');
       if (level >= 8 && ['q', 'h', 'w'].includes(t.dur) && !t.dots && !lastNote && r() < 0.08) art.push('T');
-      if (lastNote && wantAgogic) art.push('U');
+      if (isFinal && wantAgogic) art.push('U');
       const nextTok = toks[i + 1];
-      const tie = families.has('tie') && level >= 3 && !lastNote && !t.tup && !open && !slurLeft && !close
-        && (nextTok ? !nextTok.rest && !nextTok.tup : b < bars - 2) && r() < 0.06 + level * 0.008;
+      const tie = t.tie || (families.has('tie') && level >= 3 && !lastBar && !t.tup && !open && !slurLeft && !close
+        && (nextTok ? !nextTok.rest && !nextTok.tup : b < bars - 2) && pendingTarget === null && r() < 0.06 + level * 0.008);
       if (tie) art.push('~');
-      const graceNote = level >= 8 && !prevTied && !open && !lastNote && r() < 0.04 ? (spellChromatic(midi - 1, sig, true) || spellDiatonic(midi - 2, sig)) : null;
+      const graceNote = level >= 8 && !prevTied && !open && !lastNote && note.midi > lo + 1 && r() < 0.04 ? (spellApproach(note.midi - 1, sig, note.midi) || spellDiatonic(note.midi - 2, sig) || spellDiatonic(note.midi - 1, sig)) : null;
       out.push(...marks);
       if (graceNote) out.push(`g:${nameOf(graceNote)}`);
       out.push(`${open}${nameOf(note)}${t.dur}${t.dots}${t.tup ? ':' + t.tup : ''}${art.join('')}${close}`);
+      lastNoteAt = { out, idx: out.length - 1 };
       degrees.push(scale.indexOf(note.midi));
+      if (pendingTarget !== null && note.midi === pendingTarget) pendingTarget = null;
       prevTied = tie;
+      prevNote = note;
     });
     // una ligadura de expresión no pasa de un compás a otro
     if (slurLeft > 0) { const k = out.map((x, j) => (/^[(A-G]/.test(x) ? j : -1)).filter(j => j >= 0).pop(); if (k !== undefined) out[k] += ')'; slurLeft = 0; }
@@ -358,7 +392,7 @@ export function generateReading(opts) {
   const firstMeter = meters[0];
   const variable = meters.some(m => m.join('/') !== firstMeter.join('/'));
   return {
-    title, key: startKey, time: Math.max(1, Math.ceil(meterBeats(firstMeter))), meter: firstMeter, bpm, level,
+    title, key: startKey, time: Math.max(1, Math.ceil(meterBeats(firstMeter))), meter: firstMeter, bpm, level, noAutoBase: true,
     by: `${variable ? 'Compases variables' : firstMeter.join('/')} · nivel ${level}`,
     score: '| ' + barsOut.map(t => t.join(' ')).join(' | ') + ' |',
   };

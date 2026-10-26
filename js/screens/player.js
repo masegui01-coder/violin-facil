@@ -130,7 +130,7 @@ function learnAdvance(skipped) {
   run.pos++;
   run.hold = 0; run.wrong = 0; run.wrongCounted = false; run.peak = 0; run.releaseWait = 0;
   const next = run.notes[run.pos];
-  run.needRelease = !skipped && next && !next.rest && next.midi === prev.midi;
+  run.needRelease = !skipped && next && !next.rest && next.midi === prev.midi && !prev.tie; // ligada: sin volver a atacar
   learnFocus();
 }
 
@@ -386,7 +386,7 @@ function enter({ lesson, mode, from, eyebrow }) {
   };
   // Sin otras voces: armonización automática de la melodía (la crea la app, sin arreglos de terceros)
   run.bandVoices = run.accompaniment.length > 0;
-  if (!run.bandVoices && score.bars && score.bars.length) {
+  if (!run.bandVoices && !meta.noAutoBase && score.bars && score.bars.length) {
     const chords = harmonize(notes, score.bars, { key: lesson.kind === 'notes' ? inferKey(notes) : meta.key, time: meta.time });
     run.accompaniment = [{ notes: accompanimentNotes(chords, { time: meta.time, transpose: instrumentById(getState().instrument).transpose }), transpose: instrumentById(getState().instrument).transpose }];
   }

@@ -71,3 +71,78 @@ test('cada célula rítmica dura exactamente lo que dice', () => {
     assert.ok(near(s.totalBeats, c.beats), `${c.pat}: ${s.totalBeats} en vez de ${c.beats}`);
   });
 });
+
+// Hallazgos del revisor musical (no deben volver)
+const many = (instId, opts = {}) => {
+  const inst = instrumentById(instId);
+  const out = [];
+  for (let level = 1; level <= MAX_LEVEL; level++) for (let seed = 1; seed <= 25; seed++) out.push({ inst, level, song: generateReading({ inst, level, bars: 16, seed, key: 'random', clefs: 'all', ...opts }) });
+  return out;
+};
+
+test('la percusión y el cajón generan lecturas sin altura en cualquier nivel y tonalidad pedida', () => {
+  ['percussion', 'cajon'].forEach(id => {
+    many(id, { key: 'D' }).forEach(({ song, inst }) => {
+      const s = check(song, inst);
+      assert.equal(song.key, 'C');
+      assert.ok(s.notes.every(n => n.rest || n.acc === 0));
+    });
+  });
+});
+
+test('una ligadura de prolongación siempre une dos notas iguales, nunca un silencio', () => {
+  ['violin', 'sax', 'clarinet'].forEach(id => many(id).forEach(({ song }) => {
+    const notes = parseScore(song.score).notes;
+    notes.forEach((n, i) => {
+      if (!n.tie) return;
+      const next = notes[i + 1];
+      assert.ok(next && !next.rest, `ligadura hacia un silencio: ${song.score.slice(0, 80)}`);
+      assert.equal(next.midi, n.midi, 'ligadura entre alturas distintas');
+      assert.ok(next.letter === n.letter && next.acc === n.acc, 'la nota ligada cambia de ortografía');
+    });
+  }));
+});
+
+test('los cromatismos se escriben con la letra natural para su resolución (sin Mi♯, Si♯, Fa♭ ni Do♭ en tonalidades sencillas)', () => {
+  ['violin', 'sax', 'flute'].forEach(id => many(id).forEach(({ song }) => {
+    // la tonalidad de cada nota (puede cambiar a mitad) y la sensible de la menor armónica (Mi♯ en Fa♯ menor) son correctas
+    const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    parseScore(song.score).notes.filter(n => !n.rest).forEach(n => {
+      const key = n.key || song.key;
+      if (Math.abs(keyCount(key)) > 3) return;
+      if (key.endsWith('m') && n.letter === L[(L.indexOf(key[0]) + 6) % 7]) return;
+      const odd = (n.acc === 1 && ['E', 'B'].includes(n.letter)) || (n.acc === -1 && ['F', 'C'].includes(n.letter));
+      assert.ok(!odd, `${n.letter}${n.acc > 0 ? '#' : 'b'}${n.oct} en ${key}`);
+    });
+  }));
+});
+
+test('la sensible de la menor armónica lleva la letra del 7.º grado (nunca Sol♮ en Sol♯ menor)', () => {
+  const inst = instrumentById('violin');
+  ['G#m', 'D#m', 'Am', 'Bbm'].forEach(key => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const song = generateReading({ inst, level: 6, bars: 16, seed, key, scale: 'minor', chromatic: false });
+      const s = parseScore(song.score);
+      const tonicLetter = key[0];
+      const seventhLetter = ['C', 'D', 'E', 'F', 'G', 'A', 'B'][(['C', 'D', 'E', 'F', 'G', 'A', 'B'].indexOf(tonicLetter) + 6) % 7];
+      s.notes.filter(n => !n.rest).forEach(n => assert.ok(Math.abs(n.acc) <= 1));
+      // en Sol♯ y Re♯ menor no se sube el 7.º (haría falta un doble sostenido): la letra del 7.º grado no aparece natural
+      if (key === 'G#m' || key === 'D#m') s.notes.filter(n => !n.rest && n.letter === seventhLetter).forEach(n => assert.equal(n.acc, 1, `${seventhLetter}${n.acc} en ${key}`));
+    }
+  });
+});
+
+test('el último compás de los compases compuestos y de amalgama respeta los pulsos', () => {
+  const inst = instrumentById('sax');
+  [['9/8', ['h', 'q']], ['12/8', ['w']], ['5/8', ['q', 'q']], ['7/8', ['h', 'q']], ['6/8', ['h']]].forEach(([meter, durs]) => {
+    const s = parseScore(generateReading({ inst, level: 5, bars: 4, seed: 2, meter }).score);
+    const last = s.notes.filter(n => n.bar === s.bars.length - 1);
+    assert.deepEqual(last.map(n => n.dur), durs, meter);
+    assert.ok(last.every(n => !n.rest));
+    last.slice(0, -1).forEach(n => assert.ok(n.tie, `${meter}: falta la ligadura`));
+  });
+});
+
+test('las lecturas no llevan base automática (cambian de armadura y de compás)', () => {
+  assert.equal(generateReading({ inst: instrumentById('sax'), level: 9, seed: 1 }).noAutoBase, true);
+});
