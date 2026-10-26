@@ -14,7 +14,7 @@ import { drawChord } from '../boards.js';
 import { harmonize, accompanimentNotes, inferKey } from '../harmony.js';
 import * as audio from '../audio.js';
 import { pageScore, sliceScore, medalOf, nextGoal, MEDAL_NAME } from '../book.js';
-import { fullBook, bookPlays, pageState, playPage, isConcert } from './book.js';
+import { findInLibrary, bookPlays, pageState, playPage, isConcert } from './book.js';
 
 const BARS_PER_LINE = 4;
 const MAX_NOTE_DIAGRAMS = 6;
@@ -123,10 +123,8 @@ export function drawPage(root, page) {
 
 // ---------- Pantalla ----------
 function find() {
-  const book = fullBook();
-  const flat = book.flatMap(chapter => chapter.pages.map(page => ({ chapter, page })));
-  const i = flat.findIndex(x => x.page.lesson.id === ctx.lessonId);
-  return { book, flat, i, hit: flat[i] };
+  const hit = findInLibrary(ctx.lessonId);
+  return hit ? { hit, flat: hit.flat, i: hit.index } : { hit: null, flat: [], i: -1 };
 }
 
 function stopAudio() {
@@ -142,11 +140,11 @@ function render() {
   const { chapter, page } = hit;
   const p = bookPlays()[page.lesson.id];
   const medal = medalOf(p, page.lesson.kind);
-  const state = pageState(chapter, page);
-  $('bpWhere').textContent = `Capítulo ${chapter.number} · página ${page.number} de ${flat.length}`;
+  const state = pageState(hit);
+  $('bpWhere').textContent = `Libro ${hit.book.n} · cap. ${chapter.number} · pág. ${page.number} de ${flat.length}`;
   $('bpMedal').textContent = MEDAL_ICON[medal] || '';
   $('bpBody').innerHTML = pageHtml(chapter, page) + `<div class="bp-medals"><div class="book-medals">${['bronze', 'silver', 'gold'].map((m, k) => `<span class="${k < ['none', 'bronze', 'silver', 'gold'].indexOf(medal) ? 'on' : ''}">${MEDAL_ICON[m]}<small>${MEDAL_NAME[m]}</small></span>`).join('')}</div>
-    <p class="small">${state === 'locked' ? 'Se abre al pasar la página anterior.' : esc(nextGoal(p, page.lesson.kind))}</p>${p && p.plays ? `<p class="muted small">Tocada ${p.plays} ${p.plays === 1 ? 'vez' : 'veces'} · mejor: ${p.best} ★</p>` : ''}</div>`;
+    <p class="small">${state === 'locked' ? (hit.book.n > 1 && i === 0 ? `Se abre al aprobar el examen del Libro ${hit.book.n - 1}.` : 'Se abre al pasar la página anterior.') : page.lesson.exam ? 'Apruebas con el 70 % de aciertos.' : esc(nextGoal(p, page.lesson.kind))}</p>${p && p.plays ? `<p class="muted small">Tocada ${p.plays} ${p.plays === 1 ? 'vez' : 'veces'} · mejor: ${p.best} ★</p>` : ''}</div>`;
   drawPage($('bpBody'), page);
   $('bpPlay').textContent = page.lesson.kind === 'theory' ? 'Leer y responder' : 'Tocar';
   $('bpPlay').disabled = state === 'locked';
@@ -179,11 +177,11 @@ $('bpPlay').addEventListener('click', () => { stopAudio(); const { hit } = find(
 $('bpListen').addEventListener('click', listen);
 
 // ---------- Libro impreso (o PDF) ----------
-export function printBook() {
-  const book = fullBook();
+export function printBook(volume) {
+  const book = volume.chapters;
   const name = inst().name.toLowerCase();
   const box = $('bookPrint');
-  box.innerHTML = `<section class="bp-print-page bp-cover"><p class="eyebrow">Band Flow</p><h1>El libro de ${esc(name)}</h1><p>Método paso a paso con ${book.reduce((s, c) => s + c.pages.length, 0)} páginas</p>
+  box.innerHTML = `<section class="bp-print-page bp-cover"><p class="eyebrow">Band Flow · ${esc(name)}</p><h1>${esc(volume.title)}</h1><p>${esc(volume.sub)} · ${book.reduce((s, c) => s + c.pages.length, 0)} páginas</p>
       <h2>Índice</h2><ol class="bp-index">${book.map(c => `<li><span>Capítulo ${c.number}: ${esc(c.title)}</span><span>pág. ${c.pages[0].number}</span></li>`).join('')}</ol></section>
     ${book.map(chapter => chapter.pages.map(page => `<section class="bp-print-page" data-print="${esc(page.lesson.id)}">${pageHtml(chapter, page, { print: true })}</section>`).join('')).join('')}`;
   book.forEach(chapter => chapter.pages.forEach(page => drawPage(box.querySelector(`[data-print="${CSS.escape(page.lesson.id)}"]`), page)));

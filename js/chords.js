@@ -33,6 +33,17 @@ const GUITAR = {
   D5: { frets: [-1, -1, 0, 2, 3, -1], fingers: [0, 0, 0, 1, 2, 0] },
   G5: { frets: [3, 5, 5, -1, -1, -1], fingers: [1, 3, 4, 0, 0, 0] },
   C5: { frets: [-1, 3, 5, 5, -1, -1], fingers: [0, 1, 3, 4, 0, 0] },
+  // Libros 2 y 3: menores con cejilla, cuatriadas y suspendidos
+  'F#m': { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], barre: 2 },
+  Gm: { frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1], barre: 3 },
+  Cm: { frets: [-1, 3, 5, 5, 4, 3], fingers: [0, 1, 3, 4, 2, 1], barre: 3 },
+  Fm: { frets: [1, 3, 3, 1, 1, 1], fingers: [1, 3, 4, 1, 1, 1], barre: 1 },
+  'C#m': { frets: [-1, 4, 6, 6, 5, 4], fingers: [0, 1, 3, 4, 2, 1], barre: 4 },
+  Dm7: { frets: [-1, -1, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
+  Cmaj7: { frets: [-1, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+  Gmaj7: { frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, 0, 0, 0, 1] },
+  Dsus4: { frets: [-1, -1, 0, 2, 3, 3], fingers: [0, 0, 0, 1, 2, 3] },
+  Asus4: { frets: [-1, 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 3, 0] },
 };
 export const GUITAR_OPEN = [40, 45, 50, 55, 59, 64]; // sonido real de las cuerdas al aire: Mi2 La2 Re3 Sol3 Si3 Mi4
 
@@ -58,6 +69,16 @@ const UKULELE = {
   Bb: { frets: [3, 2, 1, 1], fingers: [3, 2, 1, 1], barre: 1 },
   Bm: { frets: [4, 2, 2, 2], fingers: [3, 1, 1, 1], barre: 2 },
   B7: { frets: [2, 3, 2, 2], fingers: [1, 2, 1, 1], barre: 2 },
+  'F#m': { frets: [2, 1, 2, 0], fingers: [2, 1, 3, 0] },
+  Gm: { frets: [0, 2, 3, 1], fingers: [0, 2, 3, 1] },
+  Cm: { frets: [0, 3, 3, 3], fingers: [0, 1, 1, 1], barre: 3 },
+  Fm: { frets: [1, 0, 1, 3], fingers: [1, 0, 2, 4] },
+  'C#m': { frets: [1, 1, 0, 4], fingers: [1, 1, 0, 4] },
+  Dm7: { frets: [2, 2, 1, 3], fingers: [2, 3, 1, 4] },
+  Cmaj7: { frets: [0, 0, 0, 2], fingers: [0, 0, 0, 2] },
+  Gmaj7: { frets: [0, 2, 2, 2], fingers: [0, 1, 2, 3] },
+  Dsus4: { frets: [0, 2, 3, 0], fingers: [0, 1, 2, 0] },
+  Asus4: { frets: [2, 2, 0, 0], fingers: [1, 2, 0, 0] },
 };
 export const UKULELE_OPEN = [67, 60, 64, 69]; // Sol4 Do4 Mi4 La4
 

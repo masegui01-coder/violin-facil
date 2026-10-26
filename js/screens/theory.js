@@ -72,10 +72,21 @@ function render() {
   $('theoryNext').textContent = page === total() - 1 ? 'Terminar' : 'Siguiente';
 }
 
+const EXAM_PASS = 0.7;
+const EXAM_TOP = 0.9;
+
 // Todas bien a la primera: 3 estrellas. Si fallas alguna, 2 (y esa pregunta vuelve antes en el repaso)
 function finish() {
   const right = answers.filter(a => a.right).length;
   const allRight = right === questions.length;
+  if (ctx.lesson.exam) {
+    // Examen del libro: se aprueba con el 70 % (2 estrellas) y el 90 % da las 3
+    const ratio = questions.length ? right / questions.length : 1;
+    const stars = ratio >= EXAM_TOP ? 3 : ratio >= EXAM_PASS ? 2 : 0;
+    const text = stars ? `¡Aprobado! ${right} de ${questions.length} bien` : `${right} de ${questions.length} bien: necesitas el 70 % para aprobar`;
+    finishLesson({ lesson: ctx.lesson, mode: 'learn', from: ctx.from, stars, text, title: lessonTitle(ctx.lesson) });
+    return;
+  }
   const text = !questions.length ? 'Teoría repasada' : allRight ? '¡Todas las preguntas bien!' : `${right} de ${questions.length} bien: la repasaremos en tu rutina`;
   finishLesson({ lesson: ctx.lesson, mode: 'learn', from: ctx.from, stars: allRight ? 3 : 2, text, title: lessonTitle(ctx.lesson) });
 }

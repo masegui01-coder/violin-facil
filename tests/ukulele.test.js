@@ -17,7 +17,7 @@ test('cada acorde del curso de ukelele tiene su forma de 4 cuerdas', () => {
 });
 
 test('las formas de ukelele suenan las notas del acorde', () => {
-  ['C', 'Am', 'F', 'G', 'G7', 'C7', 'Em', 'Dm', 'D', 'A', 'A7', 'D7', 'E7', 'E', 'Em7', 'Am7', 'Fmaj7', 'Bb', 'Bm', 'B7'].forEach(name => {
+  ['C', 'Am', 'F', 'G', 'G7', 'C7', 'Em', 'Dm', 'D', 'A', 'A7', 'D7', 'E7', 'E', 'Em7', 'Am7', 'Fmaj7', 'Bb', 'Bm', 'B7', 'F#m', 'Gm', 'Cm', 'Fm', 'C#m', 'Dm7', 'Cmaj7', 'Gmaj7', 'Dsus4', 'Asus4'].forEach(name => {
     const pcs = new Set(parseChord(name).pcs);
     chordMidis(name, 'ukulele').forEach(m => assert.ok(pcs.has(m % 12), `${name}: ${m}`));
   });
@@ -26,4 +26,11 @@ test('las formas de ukelele suenan las notas del acorde', () => {
 test('las notas del punteo tienen cuerda y traste', () => {
   assert.deepEqual(fingeringFor('ukulele', 72), { type: 'fret', string: 1, fret: 3 });
   assert.deepEqual(fingeringFor('ukulele', 62), { type: 'fret', string: 3, fret: 2 });
+});
+
+test('las formas nuevas de guitarra suenan las notas del acorde', () => {
+  ['F#m', 'Gm', 'Cm', 'Fm', 'C#m', 'Dm7', 'Cmaj7', 'Gmaj7', 'Dsus4', 'Asus4'].forEach(name => {
+    const pcs = new Set(parseChord(name).pcs);
+    chordMidis(name, 'guitar').forEach(m => assert.ok(pcs.has(m % 12), `${name}: ${m}`));
+  });
 });

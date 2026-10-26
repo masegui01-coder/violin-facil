@@ -875,6 +875,13 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .book-medals span.on { opacity: 1; filter: none; }
 .book-medals small { font-size: .75rem; font-weight: 700; }
 
+/* ---------- Estantería de libros ---------- */
+.book-shelf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.book-spine { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font: inherit; color: var(--ink); min-height: 64px; }
+.book-spine small { color: var(--muted); font-size: .75rem; }
+.book-spine.on { border-color: var(--accent); background: var(--accent-soft); }
+.book-locked { gap: 6px; border-color: var(--warn); }
+
 /* ---------- Página del libro ---------- */
 .bp-where { flex: 1; font-weight: 700; font-size: .9rem; color: var(--muted); }
 .bp-medal { font-size: 1.4rem; }
