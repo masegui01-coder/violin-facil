@@ -156,7 +156,7 @@ function advancedBook(level, inst, usedSongs, usedSongbook) {
   const kind = kindOfInstrument(inst);
   const fam = familyOf(inst);
   const topics = LANGUAGE[level];
-  const techs = TECHNIQUE[fam][level];
+  const techs = (TECHNIQUE[inst.id] || TECHNIQUE[fam])[level];
   const songs = repertoire(level, inst, usedSongs);
   const sbs = SONGBOOK.filter(e => !usedSongbook.has(e.id) && chordsOf(e).every(c => !isChordInstrument(inst) || chordShape(c, inst.id)));
   const keys = KEYS[level].map(k => (technique('scale', k, inst, BPM[level]) ? k : null));

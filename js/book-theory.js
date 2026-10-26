@@ -207,6 +207,30 @@ export const FAMILY_OF = {
 };
 
 export const TECHNIQUE = {
+  // El violonchelo tiene sus propias posiciones y estudios (Dotzauer, Lee), distintos de los del violín
+  cello: {
+    2: [
+      ['Arco recto', 'El arco paralelo al puente y a medio camino entre el puente y el diapasón. Míralo en un espejo: un arco recto suena limpio.'],
+      ['El peso del brazo', 'El sonido sale del peso del brazo que cae en la cuerda a través del índice y el medio, no de apretar con la mano.'],
+      ['Detaché y legato', 'Detaché: una nota por arco, sin cortes. Legato: varias notas en el mismo arco, cambiando los dedos justo a tiempo.'],
+      ['El dedo 2 y el dedo 3', 'En el chelo cada dedo es medio tono: el 2 da la tercera menor y el 3 la mayor. Escucha la diferencia entre Do natural (dedo 2) y Do♯ (dedo 3) en la cuerda La.'],
+      ['Las extensiones', 'Hacia atrás, el 1 se abre medio tono hacia la cejuela (Si♭ en la cuerda La); hacia delante, el 4 se estira medio tono (Do♯ en la cuerda Sol). La mano no se mueve: se abre.'],
+      ['Cambios de cuerda', 'Cada cuerda tiene su altura de brazo: Do con el codo alto, La con el codo bajo. Prepara el brazo antes de cambiar.'],
+      ['La afinación', 'Compara con las cuerdas al aire: el Re con el dedo 4 en la cuerda La debe «hacer vibrar» la cuerda Re al aire.'],
+      ['Escalas de dos octavas', 'Do, Re y Sol mayor en primera posición, de memoria y lentas, con la afinación vigilada nota a nota.'],
+    ],
+    3: [
+      ['La cuarta posición', 'Desliza la mano hasta que el dedo 1 dé el Mi en la cuerda La (donde el pulgar toca el talón del mástil). Practica el cambio con un dedo guía y sin prisa.'],
+      ['El vibrato', 'Un balanceo del brazo entero que mueve el dedo sobre la cuerda. Empieza lento, con el metrónomo, sobre notas largas.'],
+      ['Staccato y spiccato', 'Staccato: notas cortas con el arco en la cuerda. Spiccato: el arco rebota cerca del punto de equilibrio. Empieza lento.'],
+      ['Dobles cuerdas', 'Dos cuerdas a la vez con el mismo peso. Empieza con una cuerda al aire y escucha que el intervalo esté afinado.'],
+      ['Estudios técnicos', 'Los estudios de Dotzauer y de Lee trabajan arco y mano izquierda. Uno por semana, lento y perfecto.'],
+      ['La clave de do en 4.ª', 'Para las notas agudas el chelo lee en clave de do en 4.ª: el Do central está en la 4.ª línea. Lee despacio las primeras veces.'],
+      ['Tocar en sección', 'Copia los arcos del solista de chelos y escucha a tu atril: misma parte del arco y mismo carácter.'],
+      ['Preparar un solo', 'Decide los arcos y las digitaciones, márcalos y grábate. La interpretación se construye antes del concierto.'],
+    ],
+  },
+
   madera: {
     2: [
       ['La respiración', 'Toma aire por la boca, abajo, como si llenaras la tripa, sin subir los hombros. Una columna de aire firme y constante es la base de un buen sonido.'],

@@ -1,5 +1,6 @@
-// Diapasón en primera posición visto desde el violinista: cuerdas Sol, Re, La, Mi de izquierda a derecha.
-import { STRINGS, fingering } from './music.js';
+// Diapasón en primera posición visto desde quien toca: de la cuerda más grave (izquierda) a la más aguda.
+// Violín: Sol, Re, La, Mi. Violonchelo: Do, Sol, Re, La. Las cintas marcan los dedos 1, 3 y 4 (2 alto y 3 en el violín).
+import { stringsOf, fingering } from './music.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 150;
@@ -16,7 +17,8 @@ function el(tag, attrs, parent) {
   return node;
 }
 
-export function renderFingerboard(svg, midis, nom) {
+export function renderFingerboard(svg, midis, nom, instId = 'violin') {
+  const STRINGS = stringsOf(instId);
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.replaceChildren();
   el('path', { d: `M14 ${NUT_Y} L136 ${NUT_Y} L130 ${H - 4} L20 ${H - 4} Z`, class: 'fb-wood' }, svg);
@@ -25,7 +27,7 @@ export function renderFingerboard(svg, midis, nom) {
     const ty = NUT_Y + t * STEP_Y - STEP_Y / 2;
     el('line', { x1: 18, x2: 132, y1: ty, y2: ty, class: 'fb-tape' }, svg);
   });
-  const targets = midis.map(fingering).filter(Boolean);
+  const targets = midis.map(m => fingering(m, instId)).filter(Boolean);
   STRINGS.forEach((s, i) => {
     const active = targets.some(t => t.string === s.id);
     el('line', { x1: stringX(i), x2: stringX(i), y1: NUT_Y - 2, y2: H - 4, class: active ? 'fb-string on' : 'fb-string', 'stroke-width': 3.2 - i * 0.6 }, svg);

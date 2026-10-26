@@ -2,7 +2,7 @@
 import { harmonize, accompanimentNotes, noteValueName, inferKey } from '../harmony.js';
 import { $, toast } from '../ui.js';
 import { register, go, originTab } from '../router.js';
-import { parseScore, noteLabel } from '../music.js';
+import { parseScore, noteLabel, isBowed } from '../music.js';
 import { lessonMeta, lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
 import { renderDiagram } from '../keydiagram.js';
@@ -94,7 +94,7 @@ function showHeard(p, target) {
   if (!p || p.freq === null) { $('heard').innerHTML = '&nbsp;'; setMeter(null); return null; }
   const detected = p.midi;
   const cents = target ? (detected - target.midi) * 100 : 0;
-  $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom, getState().instrument !== 'violin') + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
+  $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom, !isBowed(getState().instrument)) + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
   setMeter(target ? (Math.abs(cents) <= 100 ? cents : Math.sign(cents) * 50) : null);
   return cents;
 }

@@ -9,6 +9,11 @@ export const INSTRUMENTS = [
     blurb: 'Cuerda frotada, cuatro cuerdas',
   },
   {
+    id: 'cello', name: 'Violonchelo', family: 'cuerda', transpose: 0, clef: 'bass', written: [36, 76], comfort: [36, 63], minHz: 55, maxHz: 900,
+    board: 'cello', firstNotes: ['A3', 'D3', 'G2', 'C2'], bandKey: 'D',
+    blurb: 'Cuerda frotada, sentado y en clave de fa',
+  },
+  {
     id: 'trumpet', name: 'Trompeta', family: 'metal', transpose: -2, written: [54, 84], minHz: 150, maxHz: 1250,
     board: 'valves', firstNotes: ['C4', 'D4', 'E4', 'F4', 'G4'], bandKey: 'C', inKey: 'Si♭',
     blurb: 'En Si♭, tres pistones',

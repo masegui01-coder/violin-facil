@@ -126,27 +126,46 @@ function normalizeScore(text) {
 
 const OFFSET_FINGER = [[0, ''], [1, 'bajo'], [1, ''], [2, 'bajo'], [2, 'alto'], [3, ''], [3, 'alto'], [4, ''], [4, 'extendido']];
 
+// Violonchelo: Do, Sol, Re y La (dos octavas por debajo de la viola). En primera posición la mano abarca una
+// tercera menor: dedo 1 a un tono de la cuerda al aire, 2 a una tercera menor, 3 a una mayor y 4 a la cuarta;
+// el 1 «extendido atrás» da el semitono y el 4 «extendido adelante», la cuarta aumentada (Do♯ en la cuerda Sol).
+export const CELLO_STRINGS = [
+  { id: 'C', midi: 36, eu: 'Do', us: 'C' },
+  { id: 'G', midi: 43, eu: 'Sol', us: 'G' },
+  { id: 'D', midi: 50, eu: 'Re', us: 'D' },
+  { id: 'A', midi: 57, eu: 'La', us: 'A' },
+];
+const CELLO_OFFSET_FINGER = [[0, ''], [1, 'extendido atrás'], [1, ''], [2, ''], [3, ''], [4, ''], [4, 'extendido adelante']];
+const BOWED = {
+  violin: { strings: STRINGS, map: OFFSET_FINGER, max: s => (s.id === 'E' ? 8 : 7) },
+  cello: { strings: CELLO_STRINGS, map: CELLO_OFFSET_FINGER, max: () => 6 },
+};
+const bowed = instId => BOWED[instId] || BOWED.violin;
+export const stringsOf = instId => bowed(instId).strings;
+export const isBowed = instId => instId in BOWED;
+
 // Digitación en primera posición: cuerda al aire si se puede; si no, la cuerda con el dedo más cercano a la cejuela.
-export function fingering(midi) {
-  const options = STRINGS
+export function fingering(midi, instId = 'violin') {
+  const { strings, map, max } = bowed(instId);
+  const options = strings
     .map(s => ({ s, offset: midi - s.midi }))
-    .filter(o => o.offset >= 0 && (o.offset <= 7 || (o.s.id === 'E' && o.offset === 8)));
+    .filter(o => o.offset >= 0 && o.offset <= max(o.s));
   if (!options.length) return null;
   const best = options.reduce((a, b) => (b.offset < a.offset ? b : a));
-  const [finger, tag] = OFFSET_FINGER[best.offset];
+  const [finger, tag] = map[best.offset];
   return { string: best.s.id, offset: best.offset, finger, tag };
 }
 
-export function stringLabel(id, nom) {
-  const s = STRINGS.find(x => x.id === id);
+export function stringLabel(id, nom, instId = 'violin') {
+  const s = stringsOf(instId).find(x => x.id === id);
   return nom === 'us' ? s.us : s.eu;
 }
 
-export function fingerText(midi, nom) {
-  const f = fingering(midi);
+export function fingerText(midi, nom, instId = 'violin') {
+  const f = fingering(midi, instId);
   if (!f) return 'Fuera de la primera posición';
   const finger = f.finger === 0 ? 'al aire' : 'dedo ' + f.finger + (f.tag ? ' ' + f.tag : '');
-  return 'Cuerda ' + stringLabel(f.string, nom) + ' · ' + finger;
+  return 'Cuerda ' + stringLabel(f.string, nom, instId) + ' · ' + finger;
 }
 
 export function noteLabel(note, nom, flats = false) {

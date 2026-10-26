@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseNote, parseScore, fingering, noteLabel, keySignature, accidentalToShow, freqToMidi, midiToFreq } from '../js/music.js';
+import { parseNote, parseScore, fingering, fingerText, isBowed, noteLabel, keySignature, accidentalToShow, freqToMidi, midiToFreq } from '../js/music.js';
 
 test('parseNote reads letter, accidental and octave', () => {
   assert.deepEqual(parseNote('A4'), { letter: 'A', acc: 0, oct: 4, midi: 69 });
@@ -109,4 +109,15 @@ test('parseScore entiende grupos irregulares, articulaciones, matices y cambios 
   assert.equal(dd.grace[0].letter, 'B');
   assert.equal(s.notes[s.notes.length - 1].dur, 't');
   assert.deepEqual(s.endMarks.dyn, ['ff']);
+});
+
+test('violonchelo: digitación en primera posición (1-3-4, el 2 para la tercera menor y extensión hacia atrás)', () => {
+  const f = n => fingering(parseNote(n).midi, 'cello');
+  assert.deepEqual([f('C2'), f('G2'), f('D3'), f('A3')].map(x => [x.string, x.finger]), [['C', 0], ['G', 0], ['D', 0], ['A', 0]]);
+  assert.deepEqual(['B3', 'C4', 'C#4', 'D4'].map(n => f(n).finger), [1, 2, 3, 4]);
+  assert.equal(f('Bb3').tag, 'extendido atrás');
+  assert.deepEqual([f('E2').finger, f('F2').finger, f('B2').finger, f('C3').finger], [3, 4, 3, 4]);
+  assert.equal(f('E4'), null);
+  assert.equal(fingerText(parseNote('F#3').midi, 'eu', 'cello'), 'Cuerda Re · dedo 3');
+  assert.ok(isBowed('cello') && isBowed('violin') && !isBowed('sax'));
 });

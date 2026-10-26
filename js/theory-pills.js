@@ -25,6 +25,11 @@ const INSTRUMENT_PILL = {
     { title: 'Clavijas y tensores', text: 'Las clavijas hacen cambios grandes; los tensores finos del cordal, los pequeños. Las cuerdas se destensan con el calor y la humedad: afina cada vez que abras el estuche.' },
     { title: 'Instrumento en Do', text: 'El violín suena exactamente lo que lees. ' + BAND_TUNING_NOTE },
   ], quiz: [{ id: 'orch-a', q: '¿A qué nota afina la orquesta?', options: ['Si♭', 'La', 'Do', 'Mi'], answer: 1, why: 'Al La: todas las cuerdas tienen un La y el oboe lo da con un sonido estable.', play: [69] }] },
+  cello: { cards: [
+    { title: 'Afinas por quintas', text: 'Do, Sol, Re y La: cada cuerda está una quinta por encima de la anterior, una octava por debajo de la viola. Se afina primero el La (220 Hz con el La de 440) y las demás comparándolas con ella.', board: [36, 43, 50, 57] },
+    { title: 'Clavijas y tensores', text: 'Las clavijas hacen cambios grandes; los tensores finos del cordal, los pequeños. Gira las clavijas empujándolas hacia dentro para que no se suelten.' },
+    { title: 'Instrumento en Do', text: 'El chelo suena exactamente lo que lees. Lee en clave de fa y, para las notas agudas, en clave de do en 4.ª y en clave de sol. ' + BAND_TUNING_NOTE },
+  ], quiz: [{ id: 'orch-a', q: '¿A qué nota afina la orquesta?', options: ['Si♭', 'La', 'Do', 'Mi'], answer: 1, why: 'Al La: todas las cuerdas tienen un La y el oboe lo da con un sonido estable.', play: [57] }] },
   trumpet: { cards: [
     { title: 'Trompeta en Si♭', text: 'Cuando lees Do, suena Si♭: un tono más grave. Por eso tu parte está escrita un tono más alta que la de la flauta.' },
     BAND_FAMILIES, WHY_TRANSPOSE,

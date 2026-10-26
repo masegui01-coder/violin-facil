@@ -1,7 +1,7 @@
 // «Toca libre» y modo «De memoria»: escribe en el pentagrama lo que tocas, lo guarda y lo compara con una canción.
 import { $, esc, toast } from '../ui.js';
 import { register } from '../router.js';
-import { noteLabel, parseScore, spell } from '../music.js';
+import { noteLabel, parseScore, spell, isBowed } from '../music.js';
 import { fingeringText } from '../fingerings.js';
 import { renderDiagram } from '../keydiagram.js';
 import { instrumentById } from '../instruments.js';
@@ -23,7 +23,7 @@ let free = { all: [], tracker: null, lesson: null, from: 'practice' };
 let timer = 0;
 
 const tokenOf = midi => {
-  const n = spell(midi, getState().instrument !== 'violin');
+  const n = spell(midi, !isBowed(getState().instrument));
   return `${n.letter}${n.acc > 0 ? '#' : n.acc < 0 ? 'b' : ''}${n.oct}q`;
 };
 
@@ -53,7 +53,7 @@ function freeTick() {
     const near = Math.round(det);
     const cents = (det - near) * 100;
     const nom = getState().nom;
-    $('freeName').textContent = noteLabel({ midi: near }, nom, getState().instrument !== 'violin');
+    $('freeName').textContent = noteLabel({ midi: near }, nom, !isBowed(getState().instrument));
     $('freeHint').textContent = fingeringText(getState().instrument, near, nom);
     $('freeCents').textContent = (cents >= 0 ? '+' : '') + Math.round(cents) + ' cents';
     $('freeDot').style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';

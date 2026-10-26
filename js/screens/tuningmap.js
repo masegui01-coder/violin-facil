@@ -1,7 +1,7 @@
 // Mapa de afinación: media y dispersión de cada nota a partir de todo lo que has tocado con este instrumento.
 import { $, esc } from '../ui.js';
 import { register, go } from '../router.js';
-import { noteLabel } from '../music.js';
+import { noteLabel, isBowed } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { getState } from '../store.js';
 
@@ -23,7 +23,7 @@ function render() {
   const rows = Object.entries(data).map(([midi, e]) => ({ midi: Number(midi), ...tuningStats(e) })).sort((a, b) => b.midi - a.midi);
   const reliable = rows.filter(r => r.n >= MIN_SAMPLES);
   const worst = [...reliable].sort((a, b) => Math.abs(b.mean) - Math.abs(a.mean)).slice(0, 3).filter(r => Math.abs(r.mean) >= 5);
-  const name = r => noteLabel({ midi: r.midi }, s.nom, s.instrument !== 'violin');
+  const name = r => noteLabel({ midi: r.midi }, s.nom, !isBowed(s.instrument));
   $('tmSummary').textContent = !rows.length
     ? `Aún no hay datos de tu ${inst.name.toLowerCase()}. Haz lecciones o notas tenidas y aquí verás qué notas te salen altas o bajas.`
     : worst.length

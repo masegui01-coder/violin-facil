@@ -20,7 +20,7 @@ function guitar(x, y, rot = 0, s = 1, { frets = 12 } = {}) {
 }
 
 // Persona sentada de frente (cabeza en cx, 48). footstool: el pie izquierdo (a la derecha del dibujo) en alto
-function seatedFront(cx, { footstool = false } = {}) {
+export function seatedFront(cx, { footstool = false } = {}) {
   const lift = footstool ? 16 : 0;
   return `<rect x="${cx - 70}" y="146" width="140" height="14" rx="4" fill="${C.muted}"/>
     <path d="M${cx - 44} 150 L${cx - 44} 196" stroke="${PANTS}" stroke-width="26" stroke-linecap="round"/>

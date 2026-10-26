@@ -1,7 +1,7 @@
 // Herramientas de práctica: afinador y metrónomo («Toca libre» está en free.js).
 import { $ } from '../ui.js';
 import { register, back } from '../router.js';
-import { STRINGS, noteLabel, spell } from '../music.js';
+import { STRINGS, CELLO_STRINGS, noteLabel, spell } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
@@ -34,7 +34,7 @@ const GUITAR_STRINGS = [
 const UKULELE_STRINGS = [
   { midi: 67, eu: '4.ª Sol', us: 'G4' }, { midi: 60, eu: '3.ª Do', us: 'C4' }, { midi: 64, eu: '2.ª Mi', us: 'E4' }, { midi: 69, eu: '1.ª La', us: 'A4' },
 ];
-const STRINGS_OF = { violin: STRINGS, guitar: GUITAR_STRINGS, ukulele: UKULELE_STRINGS };
+const STRINGS_OF = { violin: STRINGS, cello: CELLO_STRINGS, guitar: GUITAR_STRINGS, ukulele: UKULELE_STRINGS };
 const openStrings = () => STRINGS_OF[getState().instrument] || null;
 const isViolin = () => !!openStrings();
 

@@ -5,7 +5,7 @@ import { $, toast, icon } from '../ui.js';
 import { go } from '../router.js';
 import { technique, MAJOR_KEYS, keyLabel } from '../generate.js';
 import { instrumentById } from '../instruments.js';
-import { noteLabel, parseNote } from '../music.js';
+import { noteLabel, parseNote, isBowed } from '../music.js';
 import { openChest, CARDS, THEMES } from '../rewards.js';
 import { getState, update, today, knownChords, instrumentProgress } from '../store.js';
 import { chordLabel } from '../chords.js';
@@ -78,7 +78,7 @@ async function buildSteps() {
     steps.push({ title: t.title, lesson: t.lesson, mode: 'tempo' });
   } else {
     const midi = weakNote(inst);
-    steps.push({ title: `Notas tenidas: ${noteLabel({ midi }, getState().nom, inst.id !== 'violin')}`, longtone: midi });
+    steps.push({ title: `Notas tenidas: ${noteLabel({ midi }, getState().nom, !isBowed(inst.id))}`, longtone: midi });
     const t = techniqueLesson(inst);
     steps.push({ title: t.title, lesson: t.lesson, mode: 'tempo' });
   }

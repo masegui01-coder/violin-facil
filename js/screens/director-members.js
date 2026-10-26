@@ -3,7 +3,7 @@ import { esc, num } from '../ui.js';
 import * as api from '../band-api.js';
 import { trafficLight, minutesInLast, practiceDays, dailySeries, FAMILY_NAME } from '../band-stats.js';
 import { instrumentById } from '../instruments.js';
-import { noteLabel } from '../music.js';
+import { noteLabel, isBowed } from '../music.js';
 import { getState } from '../store.js';
 import { columns, sparkbars, statTile } from '../charts.js';
 import { ROLE_NAME, fmtDay, lightDot, seatName, pct } from './band-ui.js';
@@ -69,7 +69,7 @@ export function memberDetail(ctx, m) {
       return `<div class="list-row static"><span><b>${esc(t.title)}</b><small>${!p ? 'Sin empezar' : p.completed ? 'Hecha' : 'En curso'}${p ? ` · mejor ${pct(t.passage ? p.passageBest || 0 : p.bestAccuracy || 0)} · ${num(p.attempts)} intentos · ${num(p.minutes)} min` : ''}</small></span>
         ${p ? `<button type="button" class="btn ghost small" data-act="stamp:${p.id}">${p.stamp || p.comment ? 'Sello ✓' : 'Sellar'}</button>` : ''}</div>`;
     }).join('')}</div>` : '<p class="muted">No tiene tareas asignadas.</p>'}
-    ${worst.length ? `<h3>Notas que más le cuestan afinar</h3><p class="small">${worst.map(w => `<b>${esc(noteLabel({ midi: w.midi }, nom, m.instrument !== 'violin'))}</b> ${w.c > 0 ? '+' : ''}${Math.round(w.c)} ¢`).join(' · ')}</p>` : ''}
+    ${worst.length ? `<h3>Notas que más le cuestan afinar</h3><p class="small">${worst.map(w => `<b>${esc(noteLabel({ midi: w.midi }, nom, !isBowed(m.instrument)))}</b> ${w.c > 0 ? '+' : ''}${Math.round(w.c)} ¢`).join(' · ')}</p>` : ''}
     <h3>Ajustes</h3>
     <div class="row"><label class="sort-pick">Voz <select class="select small" data-change="voice:${m.id}">${['', 1, 2, 3, 4].map(v => `<option value="${v}" ${String(v) === String(m.voice || '') ? 'selected' : ''}>${v ? v + 'º' : '—'}</option>`).join('')}</select></label>
       <label class="sort-pick">Papel <select class="select small" data-change="role:${m.id}">${['member', 'leader'].map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${ROLE_NAME[r]}</option>`).join('')}</select></label></div>

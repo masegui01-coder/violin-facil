@@ -57,6 +57,7 @@ function readPitch(noteEl) {
 // Instrumento probable según el nombre de la parte (para repartir partichelas y para la banda virtual)
 // El orden importa: primero los nombres más concretos (clarinete bajo antes que clarinete, saxo barítono antes que bombardino…)
 const NAME_TO_INSTRUMENT = [
+  [/violon?chelo|violoncello|\bcello|\bvc\.?$/i, 'cello'],
   [/viol[ií]n/i, 'violin'],
   [/clarinete?\s*baj|bass\s*clar|clarinetto\s*basso/i, 'bass-clarinet'],
   [/requinto|clarinet\S*\s*(en\s*)?(mi\s*b|mi♭|e\s*b|e♭)/i, 'eb-clarinet'],

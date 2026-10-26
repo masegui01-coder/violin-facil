@@ -3,7 +3,7 @@ import { esc } from '../ui.js';
 import * as api from '../band-api.js';
 import { eventPrep, daysUntil, sectionTuning, minutesInLast, dailySeries, weekCompare, bandStreak, trafficLight } from '../band-stats.js';
 import { instrumentById } from '../instruments.js';
-import { noteLabel } from '../music.js';
+import { noteLabel, isBowed } from '../music.js';
 import { getState } from '../store.js';
 import { columns } from '../charts.js';
 import { fmtDate, fmtDay, pct, seatName } from './band-ui.js';
@@ -83,7 +83,7 @@ function tuning(ctx, d) {
     <select class="select" data-change="tune">${present.map(id => `<option value="${id}" ${id === tuneInst ? 'selected' : ''}>${esc(instrumentById(id).name)}</option>`).join('')}</select>
     <div class="tm-list">${rows.map(r => {
       const w = Math.min(50, Math.abs(r.mean) / 30 * 50);
-      return `<div class="tm-row"><b>${esc(noteLabel({ midi: r.midi }, nom, tuneInst !== 'violin'))}</b><span class="tm-bar"><i style="left:${r.mean >= 0 ? 50 : 50 - w}%;width:${w}%;background:${color(r.mean)}"></i></span>
+      return `<div class="tm-row"><b>${esc(noteLabel({ midi: r.midi }, nom, !isBowed(tuneInst)))}</b><span class="tm-bar"><i style="left:${r.mean >= 0 ? 50 : 50 - w}%;width:${w}%;background:${color(r.mean)}"></i></span>
         <small>${r.mean > 0 ? '+' : ''}${Math.round(r.mean)} ¢ · ${r.musicians} ${r.musicians === 1 ? 'músico' : 'músicos'}</small></div>`;
     }).join('')}</div>`);
 }

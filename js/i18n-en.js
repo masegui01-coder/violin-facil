@@ -187,7 +187,7 @@ export const EXACT = {
   'Continuar': 'Continue', 'Empezar a tocar': 'Start playing',
   'Probado': 'Tested', 'Poco probado': 'Barely tested', 'Falta por probar': 'Not tested yet', 'Nadie todavía': 'Nobody yet',
   // ---------- Instrumentos, estilos e insignias ----------
-  'Cuerda frotada, cuatro cuerdas': 'Bowed strings, four strings', 'En Si♭, tres pistones': 'In B♭, three valves', 'En Si♭, caña simple': 'In B♭, single reed',
+  'Cuerda frotada, cuatro cuerdas': 'Bowed strings, four strings', 'Cuerda frotada, sentado y en clave de fa': 'Bowed strings, seated, bass clef', 'En Si♭, tres pistones': 'In B♭, three valves', 'En Si♭, caña simple': 'In B♭, single reed',
   'En Mi♭, caña simple': 'In E♭, single reed', 'En Si♭, una octava más grave': 'In B♭, an octave lower', 'En Mi♭, el más grave': 'In E♭, the lowest',
   'Flauta travesera en Do': 'Concert flute in C', 'Doble caña, en Do': 'Double reed, in C', 'Clarinete pequeño en Mi♭': 'Small clarinet in E♭',
   'Suena una octava más aguda': 'Sounds an octave higher', 'En Si♭, recto y agudo': 'In B♭, straight and high', 'En Si♭, sonido más dulce que la trompeta': 'In B♭, sweeter than the trumpet',
@@ -224,7 +224,7 @@ export const EXACT = {
 
 // Instrumentos (también dentro de frases como «El libro de saxofón alto»)
 export const INSTRUMENT_NAMES = {
-  'Violín': 'Violin', 'Trompeta': 'Trumpet', 'Clarinete': 'Clarinet', 'Saxofón alto': 'Alto sax', 'Saxofón tenor': 'Tenor sax',
+  'Violín': 'Violin', 'Violonchelo': 'Cello', 'Trompeta': 'Trumpet', 'Clarinete': 'Clarinet', 'Saxofón alto': 'Alto sax', 'Saxofón tenor': 'Tenor sax',
   'Saxofón barítono': 'Baritone sax', 'Flauta': 'Flute', 'Oboe': 'Oboe', 'Requinto': 'E♭ clarinet', 'Clarinete bajo': 'Bass clarinet',
   'Flautín': 'Piccolo', 'Saxofón soprano': 'Soprano sax', 'Fliscorno': 'Flugelhorn', 'Trompa': 'French horn', 'Trombón': 'Trombone',
   'Bombardino': 'Euphonium', 'Tuba': 'Tuba', 'Flauta dulce': 'Recorder', 'Guitarra': 'Guitar', 'Ukelele': 'Ukulele', 'Piano': 'Piano',

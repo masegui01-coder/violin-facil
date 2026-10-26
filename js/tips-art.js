@@ -10,6 +10,7 @@ import { BRASS_ART } from './tips-art-brass.js';
 import { STRING_ART } from './tips-art-strings.js';
 import { KEYS_ART } from './tips-art-keys.js';
 import { HAND_PANELS } from './tips-art-hands-panels.js';
+import { CELLO_ART } from './tips-art-cello.js';
 
 // ---------- Boca de perfil (mirando a la derecha), en grande ----------
 const jaw = `<rect x="40" y="22" width="70" height="210" rx="10" fill="${C.gum}"/>`;
@@ -35,7 +36,7 @@ const ART = {
 };
 
 // El resto de instrumentos, por familias
-Object.assign(ART, reedArt(ART['reed-lip']), FLUTE_ART, BRASS_ART, STRING_ART, KEYS_ART);
+Object.assign(ART, reedArt(ART['reed-lip']), FLUTE_ART, BRASS_ART, STRING_ART, KEYS_ART, CELLO_ART);
 
 // Viñetas de manos redibujadas (sustituyen a la del mismo número)
 Object.entries(HAND_PANELS).forEach(([id, panels]) => {

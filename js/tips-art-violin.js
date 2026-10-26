@@ -8,7 +8,7 @@ const SKIN = C.skin;
 const SKIN_LINE = C.skinLine;
 
 // Violín visto desde arriba, en vertical (voluta arriba), centrado en el cuerpo. Unidades: el cuerpo mide ~146.
-function violinTop() {
+export function violinTop() {
   const body = 'M0 -72 C20 -72 34 -62 34 -44 C34 -28 22 -22 20 -12 C18 -2 20 6 24 12 C38 22 40 40 38 52 C36 66 22 74 0 74 C-22 74 -36 66 -38 52 C-40 40 -38 22 -24 12 C-20 6 -18 -2 -20 -12 C-22 -22 -34 -28 -34 -44 C-34 -62 -20 -72 0 -72 Z';
   const fHole = side => `<path d="M${side * 15} 6 c${side * -5} 4 ${side * 5} 10 0 14 c${side * -5} 4 ${side * 5} 10 0 14" fill="none" stroke="${V.edge}" stroke-width="2.4" stroke-linecap="round"/>`;
   return `<path d="${body}" fill="${V.body}" stroke="${V.edge}" stroke-width="2.5"/>
@@ -68,6 +68,30 @@ function profileHead(dx = 0, dy = 0) {
     <path d="M136 86 L144 86" stroke="${C.lip}" stroke-width="2.4" stroke-linecap="round"/></g>`;
 }
 
+// Una viñeta por cuerda: el arco toca solo la cuerda marcada y la barra verde indica la altura del codo
+export function bowLevels(names) {
+  const angles = [-114, -100, -80, -66];
+  const strings = names.map((n, i) => [n, angles[i]]);
+  return strings.map(([name, deg], k) => {
+    const ox = 8 + (k % 2) * 132;
+    const oy = 30 + Math.floor(k / 2) * 100;
+    const cx = ox + 58, cy = oy + 128, R = 70;
+    const at = d => { const r = d * Math.PI / 180; return [cx + R * Math.cos(r), cy + R * Math.sin(r)]; };
+    const [lx, ly] = at(-124);
+    const [rx, ry] = at(-56);
+    const bridge = `<path d="M${lx.toFixed(1)} ${oy + 94} L${lx.toFixed(1)} ${ly.toFixed(1)} A${R} ${R} 0 0 1 ${rx.toFixed(1)} ${ry.toFixed(1)} L${rx.toFixed(1)} ${oy + 94} Z" fill="${V.bridge}" stroke="#A9926A" stroke-width="1.5"/>`;
+    const dots = strings.map(([, d], i) => { const [x, y] = at(d); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i === k ? 5 : 3.2}" fill="${i === k ? C.green : '#777'}"/>`; }).join('');
+    const r = deg * Math.PI / 180;
+    const [px, py] = at(deg);
+    const nx = Math.cos(r), ny = Math.sin(r); // hacia fuera del puente
+    const tx = -ny, ty = nx;                  // tangente: la dirección del arco
+    const bx = px + nx * 5, by = py + ny * 5;
+    const bow = `<line x1="${(bx - tx * 54).toFixed(1)}" y1="${(by - ty * 54).toFixed(1)}" x2="${(bx + tx * 54).toFixed(1)}" y2="${(by + ty * 54).toFixed(1)}" stroke="${V.stick}" stroke-width="4" stroke-linecap="round"/>`;
+    const meter = `<rect x="${ox + 112}" y="${oy + 10}" width="6" height="74" rx="3" fill="#E9E2D8"/><rect x="${ox + 109}" y="${oy + 12 + k * 18}" width="12" height="10" rx="3" fill="${C.green}"/>`;
+    return `<rect x="${ox}" y="${oy}" width="126" height="94" rx="10" fill="#FBF8F4" stroke="#E2D7CB"/>${bridge}${dots}${bow}${meter}${label(ox + 8, oy + 18, name, { color: C.ink, size: 14 })}`;
+  }).join('');
+}
+
 export const VIOLIN_ART = {
   'violin-hold': [
     // 1. El violín apoyado en la clavícula izquierda (a la derecha del dibujo: la persona nos mira)
@@ -112,27 +136,7 @@ export const VIOLIN_ART = {
       ${ok(238, 196)}`),
     // 3. Cada cuerda, una altura del brazo: el puente es curvo y el arco toca solo la cuerda marcada.
     //    Sol pide el codo alto y Mi el codo bajo (la barra verde de cada viñeta).
-    panel(`${(() => {
-      const strings = [[L('Sol', 'G'), -114], [L('Re', 'D'), -100], [L('La', 'A'), -80], [L('Mi', 'E'), -66]];
-      return strings.map(([name, deg], k) => {
-        const ox = 8 + (k % 2) * 132;
-        const oy = 30 + Math.floor(k / 2) * 100;
-        const cx = ox + 58, cy = oy + 128, R = 70;
-        const at = d => { const r = d * Math.PI / 180; return [cx + R * Math.cos(r), cy + R * Math.sin(r)]; };
-        const [lx, ly] = at(-124);
-        const [rx, ry] = at(-56);
-        const bridge = `<path d="M${lx.toFixed(1)} ${oy + 94} L${lx.toFixed(1)} ${ly.toFixed(1)} A${R} ${R} 0 0 1 ${rx.toFixed(1)} ${ry.toFixed(1)} L${rx.toFixed(1)} ${oy + 94} Z" fill="${V.bridge}" stroke="#A9926A" stroke-width="1.5"/>`;
-        const dots = strings.map(([, d], i) => { const [x, y] = at(d); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i === k ? 5 : 3.2}" fill="${i === k ? C.green : '#777'}"/>`; }).join('');
-        const r = deg * Math.PI / 180;
-        const [px, py] = at(deg);
-        const nx = Math.cos(r), ny = Math.sin(r); // hacia fuera del puente
-        const tx = -ny, ty = nx;                  // tangente: la dirección del arco
-        const bx = px + nx * 5, by = py + ny * 5;
-        const bow = `<line x1="${(bx - tx * 54).toFixed(1)}" y1="${(by - ty * 54).toFixed(1)}" x2="${(bx + tx * 54).toFixed(1)}" y2="${(by + ty * 54).toFixed(1)}" stroke="${V.stick}" stroke-width="4" stroke-linecap="round"/>`;
-        const meter = `<rect x="${ox + 112}" y="${oy + 10}" width="6" height="74" rx="3" fill="#E9E2D8"/><rect x="${ox + 109}" y="${oy + 12 + k * 18}" width="12" height="10" rx="3" fill="${C.green}"/>`;
-        return `<rect x="${ox}" y="${oy}" width="126" height="94" rx="10" fill="#FBF8F4" stroke="#E2D7CB"/>${bridge}${dots}${bow}${meter}${label(ox + 8, oy + 18, name, { color: C.ink, size: 14 })}`;
-      }).join('');
-    })()}
+    panel(`${bowLevels([L('Sol', 'G'), L('Re', 'D'), L('La', 'A'), L('Mi', 'E')])}
       ${label(262, 20, L('verde = altura del codo', 'green = elbow height'), { size: 11, anchor: 'end' })}`),
   ],
 

@@ -126,8 +126,8 @@ export function fingeringFor(rawId, midi) {
     const drop = brassDrop(instId, midi);
     return drop === null ? null : { type: 'valves', valves: VALVES_BY_DROP[drop].split('').filter(Boolean).map(Number), slide: false };
   }
-  if (instId === 'violin') {
-    const f = violinFingering(midi);
+  if (instId === 'violin' || instId === 'cello') {
+    const f = violinFingering(midi, instId);
     return f ? { type: 'violin', ...f } : null;
   }
   if (instId === 'trumpet') {
@@ -137,13 +137,13 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => ['recorder', 'violin', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'ukulele', 'piano'].includes(instId);
+export const fingeringsReviewed = instId => ['recorder', 'violin', 'cello', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'ukulele', 'piano'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };
 
 export function fingeringText(instId, midi, nom) {
-  if (instId === 'violin') return violinText(midi, nom);
+  if (instId === 'violin' || instId === 'cello') return violinText(midi, nom, instId);
   const f = fingeringFor(instId, midi);
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
   if (f.type === 'fret') return `Cuerda ${f.string} (${GUITAR_STRING_EU[6 - f.string]}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;

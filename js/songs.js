@@ -112,12 +112,15 @@ export function styleById(id) {
   return id === MY_STYLE.id ? MY_STYLE : STYLES.find(s => s.id === id) || null;
 }
 
-// Desplazamiento de octava (0, ±12, +24) para que toda la canción quepa en el registro escrito del instrumento; null si no cabe
+// Desplazamiento de octava (0, ±12, ±24) para que toda la canción quepa en el registro escrito del instrumento; null si no cabe.
+// Si el instrumento tiene un registro cómodo (comfort: el violonchelo en primera posición), se prueba antes ese.
+const SHIFTS = [0, 12, -12, 24, -24];
 export function octaveShiftFor(song, inst) {
   if (inst.rhythmOnly) return 0; // en percusión solo cuenta el ritmo
   const midis = songScore(song).notes.filter(n => !n.rest).map(n => n.midi);
   const lo = Math.min(...midis), hi = Math.max(...midis);
-  return [0, 12, -12, 24, -24].find(k => lo + k >= inst.written[0] && hi + k <= inst.written[1]) ?? null;
+  const fitsIn = ([a, b]) => SHIFTS.find(k => lo + k >= a && hi + k <= b);
+  return (inst.comfort && fitsIn(inst.comfort)) ?? fitsIn(inst.written) ?? null;
 }
 
 // Partitura ya analizada: las importadas la guardan hecha; las del repertorio se leen del texto

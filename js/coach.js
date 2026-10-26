@@ -15,7 +15,7 @@ const KIND_BY_ID = {
   clarinet: 'clarinet', 'eb-clarinet': 'clarinet', 'bass-clarinet': 'clarinet', oboe: 'reed',
   flute: 'flute', piccolo: 'flute', recorder: 'recorder',
   trumpet: 'brass', flugelhorn: 'brass', horn: 'brass', euphonium: 'brass', tuba: 'brass', trombone: 'trombone',
-  violin: 'bowed', guitar: 'fretted', ukulele: 'fretted', piano: 'keys', cajon: 'perc', percussion: 'perc',
+  violin: 'bowed', cello: 'bowed', guitar: 'fretted', ukulele: 'fretted', piano: 'keys', cajon: 'perc', percussion: 'perc',
 };
 export const techniqueKind = inst => KIND_BY_ID[inst.id] || 'reed';
 const WINDS = ['reed', 'clarinet', 'flute', 'recorder', 'brass', 'trombone'];
@@ -184,7 +184,7 @@ const RULES = [
     tip: () => 'left-hand',
     title: L('Los dedos caen fuera de su sitio', 'Your fingers land out of place'),
     why: () => L('Muchas notas salen a un semitono de la buena, o las agudas se desafinan: la mano izquierda no mantiene el marco entre los dedos.', 'Many notes come out a semitone away, or the high notes go out of tune: the left hand is not keeping its frame between the fingers.'),
-    action: () => L('Coloca los dedos como un bloque (el pulgar enfrente del primero) y comprueba con las cuerdas al aire: el 3.º dedo en La es el Re de una octava más arriba, y si está afinado la cuerda Re vibra sola.', 'Place the fingers as a block (thumb opposite the first finger) and check against the open strings: 3rd finger on A is the D an octave higher, and when in tune the D string rings in sympathy.'),
+    action: () => L('Coloca los dedos como un bloque, con el pulgar detrás y suelto, y compara con las cuerdas al aire: la nota pisada que coincide con otra cuerda al aire (por ejemplo, el Re en la cuerda La) la hace vibrar sola si está afinada.', 'Place the fingers as a block, with the thumb loose behind, and check against the open strings: a stopped note that matches another open string (for example the D on the A string) makes it ring in sympathy when it is in tune.'),
     evidence: s => [ev(L('Notas a 1-2 semitonos', 'Notes 1-2 semitones off'), String(RULES_BY_ID['finger-place'].count(s))), ev(REG.high, cents(s.reg.high.mean))],
   },
   {

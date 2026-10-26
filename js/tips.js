@@ -23,6 +23,9 @@ export const SOURCES = {
   galamian: 'Ivan Galamian, Principles of Violin Playing and Teaching (Prentice-Hall, 1962)',
   suzuki: 'Shinichi Suzuki, Suzuki Violin School, vol. 1 (Summy-Birchard)',
   flesch: 'Carl Flesch, The Art of Violin Playing (Carl Fischer, 1924)',
+  mantel: 'Gerhard Mantel, Cello Technique (Indiana University Press, 1995)',
+  tortelier: 'Paul Tortelier, How I Play, How I Teach (Chester Music, 1975)',
+  suzukiCello: 'Shinichi Suzuki, Suzuki Cello School, vol. 1 (Summy-Birchard)',
   carlevaro: 'Abel Carlevaro, Escuela de la guitarra (Barry, 1979)',
   shearer: 'Aaron Shearer, Classic Guitar Technique (Franco Colombo, 1959)',
   pujol: 'Emilio Pujol, Escuela razonada de la guitarra (Ricordi Americana, 1934)',
@@ -342,6 +345,45 @@ const VIOLIN = [
   },
 ];
 
+const CELLO = [
+  {
+    kind: 'posture', art: 'cello-hold', sources: ['tortelier', 'suzukiCello'],
+    title: L('Cómo sentarte con el chelo', 'How to sit with the cello'),
+    intro: L('El chelo se apoya en ti en cuatro puntos y la pica en el suelo: así no hay que sujetarlo y las dos manos quedan libres.', 'The cello rests against you at four points with the endpin on the floor: you do not have to hold it up, and both hands stay free.'),
+    steps: [
+      { t: L('En el borde de la silla', 'On the edge of the chair'), d: L('Siéntate en la mitad delantera, con la espalda recta, los pies apoyados y las rodillas abiertas.', 'Sit on the front half, back straight, feet flat and knees apart.') },
+      { t: L('Ajusta la pica', 'Set the endpin'), d: L('Sácala hasta que la clavija de Do quede junto a tu oreja izquierda y el borde de arriba del chelo, a la altura del esternón. Usa un tope para que no resbale.', 'Pull it out until the C peg is near your left ear and the top edge of the cello reaches your breastbone. Use a stopper so it does not slip.') },
+      { t: L('Cuatro apoyos', 'Four contact points'), d: L('El pecho, la cara interior de las dos rodillas y la pica en el suelo. El chelo va un poco inclinado hacia tu derecha.', 'Your chest, the inside of both knees and the endpin on the floor. The cello leans slightly to your right.') },
+    ],
+    check: L('Suelta las dos manos unos segundos: el chelo debe quedarse quieto, apoyado en ti.', 'Let go with both hands for a few seconds: the cello should stay still, resting against you.'),
+    avoid: [L('Sentarse al fondo de la silla', 'Sitting at the back of the chair'), L('Pica demasiado corta: te encorvas', 'Endpin too short: you hunch over'), L('Sujetar el mástil con la mano izquierda', 'Holding the neck up with the left hand')],
+  },
+  {
+    kind: 'bow', art: 'cello-bow', sources: ['mantel', 'tortelier'],
+    title: L('El arco', 'The bow'),
+    intro: L('En el chelo el arco «cuelga» de la mano y el peso del brazo pasa a la cuerda: la mano no aprieta, transmite.', 'On the cello the bow "hangs" from the hand and the arm weight passes into the string: the hand does not squeeze, it transmits.'),
+    steps: [
+      { t: L('Agarre suelto', 'Loose bow hold'), d: L('Pulgar doblado frente al dedo medio, entre la nuez y el cuero, y los cuatro dedos dejados caer sobre la vara, separados.', 'Bent thumb opposite the middle finger, between the frog and the grip, and all four fingers draped over the stick, slightly apart.') },
+      { t: L('Paralelo al puente', 'Parallel to the bridge'), d: L('El arco cruza la cuerda recto, a medio camino entre el puente y el diapasón.', 'The bow crosses the string straight, halfway between the bridge and the fingerboard.') },
+      { t: L('Una altura por cuerda', 'One level per string'), d: L('Cada cuerda tiene su altura de brazo: Do con el codo alto, La con el codo bajo. Cambia de cuerda moviendo el brazo entero.', 'Each string has its own arm level: C with the elbow high, A with it low. Change string by moving the whole arm.') },
+    ],
+    check: L('Toca notas largas con un espejo delante: el arco no debe resbalar hacia el diapasón.', 'Play long notes in front of a mirror: the bow should not slide towards the fingerboard.'),
+    avoid: [L('Pulgar rígido y recto', 'A stiff, straight thumb'), L('Apretar con los dedos en vez de dejar caer el brazo', 'Pressing with the fingers instead of letting the arm weight fall'), L('Arco torcido', 'A crooked bow')],
+  },
+  {
+    kind: 'left-hand', art: 'cello-left', sources: ['mantel', 'suzukiCello'],
+    title: L('La mano izquierda', 'The left hand'),
+    intro: L('En primera posición la mano abarca una tercera menor: cada dedo, medio tono. Si el marco de la mano no cambia, las notas salen afinadas.', 'In first position the hand spans a minor third: each finger a semitone. If the hand frame does not change, the notes come out in tune.'),
+    steps: [
+      { t: L('El marco de la mano', 'The hand frame'), d: L('Dedos redondos y separados, como si sujetaras una lata: el 1, el 2, el 3 y el 4, cada uno a medio tono del anterior.', 'Round, spread fingers, as if holding a can: 1, 2, 3 and 4, each a semitone from the last.') },
+      { t: L('Pulgar detrás', 'Thumb behind'), d: L('El pulgar, suelto, detrás del mástil y frente al dedo 2. No aprieta: solo acompaña.', 'The thumb, loose, behind the neck and opposite finger 2. It does not squeeze: it just follows.') },
+      { t: L('Codo alto', 'Elbow up'), d: L('El codo, a la altura de la mano y alejado del cuerpo, para que el peso del brazo caiga en los dedos.', 'The elbow at hand height and away from the body, so the arm weight falls into the fingers.') },
+    ],
+    check: L('Compara con las cuerdas al aire: el dedo 4 en la cuerda La es un Re; si está afinado, la cuerda Re vibra sola.', 'Check against the open strings: finger 4 on the A string is a D; when it is in tune, the D string rings in sympathy.'),
+    avoid: [L('Dedos juntos o planos', 'Fingers bunched or flat'), L('Codo caído, pegado al cuerpo', 'A dropped elbow, close to the body'), L('Pulgar apretando el mástil', 'A thumb squeezing the neck')],
+  },
+];
+
 const GUITAR = [
   {
     kind: 'posture', art: 'guitar-posture', sources: ['carlevaro', 'pujol'],
@@ -451,7 +493,7 @@ const GROUPS = {
   oboe: OBOE, flute: FLUTE, piccolo: FLUTE, recorder: RECORDER,
   trumpet: BRASS, flugelhorn: BRASS, euphonium: BRASS, tuba: BRASS,
   horn: [...BRASS.slice(0, 3), HORN_HAND, BREATH], trombone: [BRASS[0], BRASS[1], SLIDE, BRASS[2], BREATH],
-  violin: VIOLIN, guitar: GUITAR, ukulele: UKULELE, piano: PIANO, cajon: CAJON, percussion: PERCUSSION,
+  violin: VIOLIN, cello: CELLO, guitar: GUITAR, ukulele: UKULELE, piano: PIANO, cajon: CAJON, percussion: PERCUSSION,
 };
 
 export const tipsFor = instId => GROUPS[instId] || [];
