@@ -86,3 +86,27 @@ test('transposes scores keeping the right spelling', () => {
   assert.deepEqual(sax.score.notes.map(n => n.letter + n.oct), ['D5', 'F5', 'A5']);
   assert.deepEqual(sax.score.notes.map(n => n.acc), [0, 1, 0]);
 });
+
+test('parseScore entiende grupos irregulares, articulaciones, matices y cambios de compás y clave', () => {
+  const s = parseScore('@time:6/8 @mf (C5e\' D5e E5e) | @< F5e:3 G5e:3 A5e:3 @| B5q>U~ | @time:2/4 @clef:bass @rit C3s:6 D3s:6 E3s:6 F3s:6 G3s:6 A3s:6 g:B3 C4q.. | R t @ff');
+  const [a, , c, d] = s.notes;
+  assert.deepEqual(s.bars[0].meter, [6, 8]);
+  assert.equal(s.bars[0].beats, 1.5);
+  assert.ok(a.slurStart && a.staccato && a.marks.dyn[0] === 'mf' && a.marks.meter);
+  assert.ok(c.slurEnd);
+  assert.equal(d.tuplet, 3);
+  assert.ok(Math.abs(d.beats - 1 / 3) < 1e-9);
+  const trip = s.notes.filter(n => n.tuplet === 3);
+  assert.equal(new Set(trip.map(n => n.tupletId)).size, 1);
+  const b = s.notes[6];
+  assert.ok(b.accent && b.fermata && b.tie && b.marks.hairpin[0] === 'end');
+  const sext = s.notes.filter(n => n.tuplet === 6);
+  assert.equal(sext.length, 6);
+  assert.equal(sext[0].clef, 'bass');
+  assert.equal(sext[0].marks.text[0], 'rit.');
+  const dd = s.notes.find(n => n.dots === 2);
+  assert.equal(dd.beats, 1.75);
+  assert.equal(dd.grace[0].letter, 'B');
+  assert.equal(s.notes[s.notes.length - 1].dur, 't');
+  assert.deepEqual(s.endMarks.dyn, ['ff']);
+});

@@ -245,6 +245,11 @@ const tr = text => (deep ? deep(text) : text);
 
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
+  [/^(Compases variables|\d+\/\d+) · nivel (\d+)$/, (m, meter, l) => `${meter === 'Compases variables' ? 'Changing meters' : meter} · level ${l}`],
+  [/^(\d+) lecturas, del nivel (\d+) al (\d+)\.$/, (m, n, a, b) => `${n} readings, from level ${a} to ${b}.`],
+  [/^Lectura (n\.º )?(\d+)$/, (m, nn, n) => `Reading ${nn ? 'no. ' : ''}${n}`],
+  [/^Unos ([\d.,]+) min por lectura\. (.*)$/, (m, n) => `About ${n} min per reading. With "Variable" the time signature changes every few bars (almost every bar at high levels). Clef changes start at level 6.`],
+  [/^(Redonda|Blanca|Negra|Corchea|Semicorchea|Fusa) de (tresillo|quintillo|seisillo|septillo)$/, (m, f, g) => `${({ Redonda: 'Whole', Blanca: 'Half', Negra: 'Quarter', Corchea: 'Eighth', Semicorchea: 'Sixteenth', Fusa: 'Thirty-second' })[f]}-note ${({ tresillo: 'triplet', quintillo: 'quintuplet', seisillo: 'sextuplet', septillo: 'septuplet' })[g]}`],
   [new RegExp(`^${NOTE}(?:(?:, | y | ·? ?)${NOTE})*$`), m => notesEn(m)],
   [new RegExp(`^${KEY_RE}$`), (m, n, mode) => keyEn(n, mode)],
   [new RegExp(`^(Escala|Arpegio|Terceras) (?:de|en) ${KEY_RE}$`, 'i'), (m, kind, n, mode) => `${keyEn(n, mode)} ${({ escala: 'scale', arpegio: 'arpeggio', terceras: 'thirds' })[kind.toLowerCase()]}`],

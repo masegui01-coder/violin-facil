@@ -95,9 +95,13 @@ export function accompanimentNotes(chords, { time = 4, transpose = 0 } = {}) {
   return out;
 }
 
-// Nombre del valor de una nota (en negras): «blanca», «negra con puntillo»…
-const VALUES = [[4, 'Redonda'], [3, 'Blanca con puntillo'], [2, 'Blanca'], [1.5, 'Negra con puntillo'], [1, 'Negra'], [0.75, 'Corchea con puntillo'], [0.5, 'Corchea'], [0.25, 'Semicorchea']];
-export function noteValueName(beats) {
+// Nombre del valor de una nota (en negras): «blanca», «negra con puntillo», «corchea de tresillo»…
+const VALUES = [[4, 'Redonda'], [3.5, 'Blanca con doble puntillo'], [3, 'Blanca con puntillo'], [2, 'Blanca'], [1.75, 'Negra con doble puntillo'], [1.5, 'Negra con puntillo'],
+  [1, 'Negra'], [0.875, 'Corchea con doble puntillo'], [0.75, 'Corchea con puntillo'], [0.5, 'Corchea'], [0.375, 'Semicorchea con puntillo'], [0.25, 'Semicorchea'], [0.125, 'Fusa']];
+const FIGURE = { w: 'Redonda', h: 'Blanca', q: 'Negra', e: 'Corchea', s: 'Semicorchea', t: 'Fusa' };
+const GROUP = { 3: 'tresillo', 5: 'quintillo', 6: 'seisillo', 7: 'septillo' };
+export function noteValueName(beats, note = null) {
+  if (note && note.tuplet && FIGURE[note.dur]) return `${FIGURE[note.dur]} de ${GROUP[note.tuplet] || 'grupo irregular'}`;
   const hit = VALUES.find(([b]) => Math.abs(b - beats) < 1e-6);
   const name = hit ? hit[1] : 'Nota';
   const count = beats >= 1 ? `${Number.isInteger(beats) ? beats : beats.toLocaleString('es-ES')} ${beats === 1 ? 'tiempo' : 'tiempos'}` : `${beats === 0.5 ? 'medio' : beats.toLocaleString('es-ES')} tiempo`;

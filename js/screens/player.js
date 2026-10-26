@@ -66,7 +66,7 @@ function showTarget(index) {
   $('tName').className = 'name';
   $('tHint').textContent = fingeringText(getState().instrument, note.midi, nom);
   // como el indicador de marchas del coche: la nota que tocas en grande, su valor, y la que viene en pequeño
-  $('tValue').textContent = noteValueName(note.beats);
+  $('tValue').textContent = noteValueName(note.beats, note);
   setFill(0);
   const next = run.playable.find(i => i > index);
   $('tNext').textContent = next !== undefined ? `Después: ${noteLabel(run.notes[next], nom)}` : 'Última nota';

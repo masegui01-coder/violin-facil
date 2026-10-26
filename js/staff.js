@@ -8,7 +8,8 @@ const BOTTOM_Y = 130;          // línea inferior (Mi4 en clave de sol, Sol2 en 
 const HALF = 7;                // medio espacio entre líneas
 const E4 = 4 * 7 + 2;
 const G2 = 2 * 7 + 4;
-const BASE = { treble: E4, perc: E4, bass: G2 };
+const BASE = { treble: E4, perc: E4, bass: G2, alto: 3 * 7 + 3, tenor: 3 * 7 + 1 };
+const CLEF_MARK = { treble: '𝄞', bass: '𝄢', alto: '𝄡', tenor: '𝄡' };
 const BASS_SIG_SHIFT = 14;     // en clave de fa las alteraciones de la armadura van dos octavas más abajo
 const FOCUS_X = 190;           // donde queda la nota actual (deja ver las siguientes y la que suena)
 const NOTE_PAD = 26;
@@ -86,13 +87,14 @@ function drawNote(g, x, note, sig) {
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: HEAD_RX, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
   if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
-  if (note.dotted) el('circle', { cx: x + 13, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
+  for (let d = 0; d < (note.dots || (note.dotted ? 1 : 0)); d++) el('circle', { cx: x + 13 + d * 6, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
+  if (note.tuplet && note.tupletFirst) text(g, x - 4, BOTTOM_Y - HALF * 12, String(note.tuplet), { class: 'st-tuplet' });
   if (note.dur === 'w') return;
   const up = step < base + 4; // a partir de la línea central la plica va hacia abajo
   const sx = up ? x + 7.3 : x - 7.3;
   const tip = up ? ny - 42 : ny + 42;
   el('line', { x1: sx, x2: sx, y1: ny, y2: tip, class: 'st-stroke', 'stroke-width': 1.7 }, g);
-  const flags = note.dur === 'e' ? 1 : note.dur === 's' ? 2 : 0;
+  const flags = note.dur === 'e' ? 1 : note.dur === 's' ? 2 : note.dur === 't' ? 3 : 0;
   for (let i = 0; i < flags; i++) {
     const fy = tip + (up ? i * 8 : -i * 8);
     const d = up ? `M${sx} ${fy} q2 10 10 16 q-4 -8 -10 -10` : `M${sx} ${fy} q2 -10 10 -16 q-4 8 -10 10`;
@@ -147,20 +149,32 @@ export function createStaff(svg) {
     el('line', { x1: endX, x2: endX, y1: BOTTOM_Y - HALF * 8, y2: BOTTOM_Y, class: 'st-line' }, scroller);
     el('rect', { x: endX + 3, y: BOTTOM_Y - HALF * 8, width: 4, height: HALF * 8, class: 'st-fill' }, scroller);
     let playIndex = 0;
-    noteGroups = notes.map(n => {
+    let shownClef = clef;
+    let shownMeter = null;
+    const firstOf = new Set();
+    noteGroups = notes.map((n, i) => {
+      // cambios de clave, compás y armadura dentro de la partitura (libro de lecturas)
+      base = BASE[n.clef || clef] || E4;
+      if (n.clef && n.clef !== shownClef && CLEF_MARK[n.clef]) { text(scroller, xOfBeat(n.start) - 30, BOTTOM_Y - HALF * 9, CLEF_MARK[n.clef], { class: 'st-tuplet' }); shownClef = n.clef; }
+      const meter = n.marks && n.marks.meter && n.marks.meter[0];
+      if (meter && i > 0 && meter.join('/') !== shownMeter) text(scroller, xOfBeat(n.start) - 30, BOTTOM_Y - HALF * 11, meter.join('/'), { class: 'st-tuplet' });
+      if (meter) shownMeter = meter.join('/');
+      if (n.tupletId && !firstOf.has(n.tupletId)) { firstOf.add(n.tupletId); n = { ...n, tupletFirst: true }; }
+      const sigHere = n.key ? keySignature(n.key) : sig;
       const g = el('g', { class: 'st-note future' }, scroller);
       if (mode === 'tempo' && !n.rest) {
         // cola con la duración: la nota sigue visible bajo la línea mientras dura
         el('rect', { x: xOfBeat(n.start), y: y(diatonicStep(n)) - 4, width: Math.max(4, n.beats * beatPx - 10), height: 8, rx: 4, class: 'st-tail' }, g);
       }
       if (n.rest) drawRest(g, xOfBeat(n.start), n);
-      else drawNote(g, xOfBeat(n.start), n, sig);
+      else drawNote(g, xOfBeat(n.start), n, sigHere);
       if (!n.rest && sticking) {
         const hand = sticking[playIndex++];
         if (hand) text(g, xOfBeat(n.start) - 5, BOTTOM_Y + 34, hand, { class: 'st-stick' });
       }
       return g;
     });
+    base = BASE[clef] || E4;
     // A tempo la línea de lectura queda fija justo después de la clave y la partitura pasa por debajo:
     // cada nota suena cuando el borde izquierdo de su cabeza toca la línea
     tempoMode = mode === 'tempo';
