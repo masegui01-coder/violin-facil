@@ -845,7 +845,20 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .note-value { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .85rem; font-weight: 700; color: var(--muted); }
 .note-fill { display: block; width: 120px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .note-fill i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .08s linear; }
-.next-note { font-size: .85rem; color: var(--muted); }
+/* «Ahora» en grande y, a su lado, la tarjeta «Siguiente» con flecha */
+.now-next { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
+.now { display: flex; flex-direction: column; align-items: center; }
+.nn-label { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.next-card { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label label" "arrow name" "hint hint";
+  align-items: center; column-gap: 6px; min-width: 104px; max-width: 46%; padding: 8px 12px; border-radius: 16px;
+  border: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); text-align: left; }
+.next-card .nn-label { grid-area: label; color: var(--accent); }
+.next-card .nn-arrow { grid-area: arrow; font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1; }
+.next-card b { grid-area: name; font-family: var(--f-display); font-size: 1.9rem; line-height: 1.05; }
+.next-card small { grid-area: hint; font-size: .75rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
+.next-card.last { border-style: solid; }
+.next-card.last b { font-size: 1.3rem; }
+.st-note.next { color: var(--accent); opacity: .5; }
 .mix-row { gap: 8px; }
 
 /* ---------- Modo libro ---------- */

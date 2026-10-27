@@ -177,7 +177,7 @@ export const EXACT = {
   'Sin parar, siguiendo el pulso': 'Without stopping, following the beat', 'Acorde nuevo': 'New chord', 'Cambio lento': 'Slow change',
   'Los acordes de la canción': "The song's chords", 'Los acordes de la unidad': 'The chords of this unit', 'Primera mitad': 'First half',
   'Segunda mitad': 'Second half', 'Un compás de cada ejercicio': 'One bar from each exercise', 'Reto: más rápido': 'Challenge: faster',
-  'Intentarlo en modo tester': 'Try it in tester mode',
+  'Intentarlo en modo tester': 'Try it in tester mode', 'Ahora': 'Now', '¡Última!': 'Last one!', 'Termina con esta': 'Finish with this one', 'La misma otra vez': 'Same again',
   "La parte grave": "The low part",
   "La parte aguda": "The high part",
   "Campanas": "Bells",

@@ -70,9 +70,26 @@ function showTarget(index) {
   // como el indicador de marchas del coche: la nota que tocas en grande, su valor, y la que viene en pequeño
   $('tValue').textContent = noteValueName(note.beats, note);
   setFill(0);
-  const next = run.playable.find(i => i > index);
-  $('tNext').textContent = next !== undefined ? `Después: ${noteLabel(run.notes[next], nom)}` : 'Última nota';
+  showNext(index, nom);
   if (getState().showBoard) renderDiagram($('lessonBoard'), getState().instrument, [note.midi], nom);
+}
+
+// Tarjeta «Siguiente» junto a la nota grande, y la siguiente nota marcada en la partitura
+function showNext(index, nom) {
+  const next = run.playable.find(i => i > index);
+  const card = $('tNext');
+  card.classList.toggle('last', next === undefined);
+  if (run.nextMark !== undefined && run.nextMark > index) staff.setState(run.nextMark, 'future');
+  run.nextMark = next;
+  if (next === undefined) {
+    $('tNextName').textContent = '¡Última!';
+    $('tNextHint').textContent = 'Termina con esta';
+    return;
+  }
+  const n = run.notes[next];
+  $('tNextName').textContent = noteLabel(n, nom);
+  $('tNextHint').textContent = n.midi === run.notes[index].midi ? 'La misma otra vez' : fingeringText(getState().instrument, n.midi, nom);
+  staff.setState(next, 'next');
 }
 
 // Barra bajo la nota: se va llenando mientras dura
