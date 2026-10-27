@@ -340,7 +340,8 @@ function makeSteps(inst) {
       const extra = clef ? { clef } : {};
       const review = reviewWalk(s);
       const tonic = s[0];
-      const seq = challengeWalk(s);
+      const walked = challengeWalk(s);
+      const seq = walked[walked.length - 1] === tonic ? walked.slice(0, -1) : walked; // la tónica final va en la redonda
       const bars = [...challengeBars(seq, index === 0), tonic + 'w'];
       const r = { ...close, id: P + 'r', kind: 'notes', title: 'Repaso', sub: 'Las notas de la unidad', notes: review.join(' '), ...extra };
       const t = { ...close, id: P + 't', kind: 'song', title: 'Reto a tempo', sub: 'Sin parar, siguiendo el pulso', ...extra,

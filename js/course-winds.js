@@ -15,14 +15,14 @@ const SCALES = {
 // Octava de la tónica para que la escala quede en el registro cómodo de cada instrumento
 const SCALE_START = {
   trumpet: ['C', 4], clarinet: ['C', 4], sax: ['G', 4], 'sax-tenor': ['C', 5], 'sax-bari': ['G', 4], flute: ['Bb', 4], oboe: ['Bb', 4],
-  'eb-clarinet': ['G', 4], 'bass-clarinet': ['C', 4], piccolo: ['Bb', 4], 'sax-soprano': ['C', 5], flugelhorn: ['C', 4],
-  horn: ['F', 4], trombone: ['Bb', 2], euphonium: ['C', 4], tuba: ['Bb', 1],
+  'eb-clarinet': ['G', 3], 'bass-clarinet': ['C', 4], piccolo: ['Bb', 4], 'sax-soprano': ['C', 5], flugelhorn: ['C', 4],
+  horn: ['F', 4], trombone: ['Bb', 2], euphonium: ['C', 4], tuba: ['Bb', 2],
 };
 const HIGH_NOTES = {
-  trumpet: 'C5 D5 E5 F5 G5', clarinet: 'B4 C5 D5 E5 F#5 G5', sax: 'D5 E5 F#5 G5 A5', 'sax-tenor': 'D5 E5 F5 G5 A5', 'sax-bari': 'D5 E5 F#5 G5 A5',
-  flute: 'D5 E5 F5 G5 A5 Bb5', oboe: 'E5 G5 A5 B5',
-  'eb-clarinet': 'B4 C5 D5 E5 F#5 G5', 'bass-clarinet': 'B4 C5 D5 E5 F#5 G5', piccolo: 'D5 E5 F5 G5 A5 Bb5', 'sax-soprano': 'D5 E5 F5 G5 A5',
-  flugelhorn: 'C5 D5 E5 F5 G5', horn: 'D5 E5 F5 G5', trombone: 'D4 Eb4 F4 G4', euphonium: 'C5 D5 E5 F5 G5', tuba: 'D3 Eb3 F3 G3',
+  trumpet: 'C5 D5 E5 F5 G5', clarinet: 'B4 C5 D5 E5 F5 G5', sax: 'D5 E5 F#5 G5 A5', 'sax-tenor': 'D5 E5 F5 G5 A5', 'sax-bari': 'D5 E5 F#5 G5 A5',
+  flute: 'C6 D6 Eb6 F6', oboe: 'F5 G5 A5 Bb5',
+  'eb-clarinet': 'A4 B4 C5 D5', 'bass-clarinet': 'B4 C5 D5', piccolo: 'Bb5 C6 D6', 'sax-soprano': 'D5 E5 F5 G5 A5',
+  flugelhorn: 'C5 D5 E5 F5 G5', horn: 'D5 E5 F5', trombone: 'C4 D4 Eb4 F4 G4', euphonium: 'C5 D5 E5 F5 G5', tuba: 'G3 A3 Bb3 C4',
 };
 const SECOND_KEY = {
   trumpet: 'F', clarinet: 'F', sax: 'D', 'sax-tenor': 'F', 'sax-bari': 'D', flute: 'F', oboe: 'F',
@@ -63,6 +63,49 @@ function scaleFrom(key, letter, octave) {
 
 const midis = names => names.map(n => parseNote(n).midi);
 
+// Primera nota que pide otro registro: clarinetes (llave de registro desde el Si4), oboe (llave de octava desde el Fa5)
+// y trompa (parciales muy juntos desde el Re5). En la unidad 3 la escala llega hasta antes; la completa, en la 5.
+const REGISTER_BREAK = { clarinet: 71, 'bass-clarinet': 71, oboe: 77, horn: 74 };
+const avg = list => list.reduce((a, b) => a + b, 0) / list.length;
+
+// Unidad 3: la escala de la banda en dos mitades, cada una con su canción; primero la mitad más cercana a las notas
+// que ya conoces, y al final la escala entera y el Himno de la alegría.
+function scaleUnit(inst, helpers, scale, p) {
+  const { theory, notes, song, exercise, slots } = helpers;
+  const limit = REGISTER_BREAK[inst.id];
+  const below = limit ? scale.filter(n => parseNote(n).midi < limit) : scale;
+  const known = avg(midis(inst.firstNotes));
+  const low = below.slice(0, 5);
+  const high = below.length > 5 ? below.slice(4) : [];
+  const lowFirst = !high.length || Math.abs(avg(midis(low)) - known) <= Math.abs(avg(midis(high)) - known);
+  const key = inst.bandKey;
+  const q = (list, idx) => idx.map(i => list[i] + 'q').join(' ');
+  const top = low[Math.min(4, low.length - 1)]; // con cuatro notas, «María» sube a la cuarta en vez de a la quinta
+  const lowPart = [
+    notes(p + 'u3-low', 'La parte grave', names(low), repeatPattern(low, low.length < 5 ? [0, 1, 2, 3, 2, 1, 0, 2, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 2, 0])),
+    exercise(p + 'u3-mary', 'María tenía un corderito', 'Con la parte grave de la escala', { key, time: 4, bpm: 72,
+      score: `| ${q(low, [2, 1, 0, 1])} | ${low[2]}q ${low[2]}q ${low[2]}h | ${low[1]}q ${low[1]}q ${low[1]}h | ${low[2]}q ${top}q ${top}h | ${q(low, [2, 1, 0, 1])} | ${q(low, [2, 2, 2, 2])} | ${q(low, [1, 1, 2, 1])} | ${low[0]}w |` }),
+  ];
+  const highPart = high.length < 3 ? [] : [
+    notes(p + 'u3-high', 'La parte aguda', names(high), repeatPattern(high, [0, 1, 2, high.length - 1, 2, 1, 0, 2, 0, 1, high.length - 1, 1, 0])),
+    exercise(p + 'u3-bells', 'Campanas', 'Con la parte aguda de la escala', { key, time: 4, bpm: 72,
+      score: `| ${high.at(-1)}h ${high.at(-2)}h | ${high.at(-3)}h ${high[0]}h | ${[...high].map(n => n + 'q').slice(0, 4).join(' ')} | ${high.at(-1)}h ${high[0]}h | ${[...high].reverse().slice(0, 4).map(n => n + 'q').join(' ')} | ${high[0]}w |` }),
+  ];
+  const whole = limit && below.length < scale.length;
+  return { id: p + 'u3', title: 'La escala de la banda', sub: whole ? 'Hasta el paso de registro' : 'Si♭ mayor de concierto, por mitades', color: 'var(--u3)', lessons: [
+    theory(p + 'u3-intro', 'La escala de la banda', [
+      { title: 'Si♭ de concierto', text: inst.inKey ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${names([scale[0]]).replace(/\d/, '')}.` : inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} suena una octava más aguda de lo escrito, pero la escala se escribe igual: Si♭ mayor.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu parte se escribe en sonido real, así que para ti es Si♭ mayor tal cual.' },
+      { title: 'Por mitades', text: whole ? 'Primero aprendes la escala hasta el paso de registro, con una canción. Las notas de arriba llegan en «Registro agudo», cuando sepas usar la llave de registro.' : 'Aprendes la escala en dos mitades, cada una con una canción corta. Cuando tengas las dos, la tocas entera y llega el Himno de la alegría.' },
+    ]),
+    ...(lowFirst ? [...lowPart, ...highPart] : [...highPart, ...lowPart]),
+    notes(p + 'u3-scale', whole ? 'Escala hasta el paso' : 'Escala de la banda', 'Subir y bajar', upDown(below)),
+    // el Himno en la escala que acabas de aprender (sin notas nuevas ni puntillos, que llegan en la unidad 4)
+    ...(low.length < 5 ? [] : [exercise(p + 'u3-oda', 'Himno de la alegría', 'Beethoven, con la escala de la banda', { key, time: 4, bpm: 76,
+      score: `| ${q(low, [2, 2, 3, 4])} | ${q(low, [4, 3, 2, 1])} | ${q(low, [0, 0, 1, 2])} | ${low[2]}q ${low[1]}q ${low[1]}h | ${q(low, [2, 2, 3, 4])} | ${q(low, [4, 3, 2, 1])} | ${q(low, [0, 0, 1, 2])} | ${low[1]}q ${low[0]}q ${low[0]}h |` })]),
+    slots(1, 1),
+  ] };
+}
+
 const upDown = list => [...list, ...list.slice(0, -1).reverse()].join(' ');
 const repeatPattern = (list, pattern) => pattern.map(i => list[i]).join(' ');
 const toScore = (notes, dur) => {
@@ -98,14 +141,7 @@ export function windUnits(inst, helpers) {
       exercise(p + 'u2-melody', 'Primera melodía', 'Con las cinco notas, a tempo', { key: 'C', time: 4, bpm: 66, score: `| ${first[0]}q ${first[1]}q ${first[2]}q ${first[3]}q | ${first[4]}h ${first[4]}h | ${first[3]}q ${first[2]}q ${first[1]}q ${first[0]}q | ${first[0]}w |` }),
       slots(1, 1),
     ] },
-    { id: p + 'u3', title: 'La escala de la banda', sub: 'Si♭ mayor de concierto', color: 'var(--u3)', lessons: [
-      theory(p + 'u3-intro', 'La escala de la banda', [
-        { title: 'Si♭ de concierto', text: inst.inKey ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} está en ${inst.inKey}: para ti esa escala se escribe empezando en ${names([scale[0]]).replace(/\d/, '')}.` : inst.transpose ? `Las bandas afinan y calientan en Si♭ mayor de concierto. Tu ${inst.name.toLowerCase()} suena una octava más aguda de lo escrito, pero la escala se escribe igual: Si♭ mayor.` : 'Las bandas afinan y calientan en Si♭ mayor de concierto. Tu parte se escribe en sonido real, así que para ti es Si♭ mayor tal cual.' },
-      ]),
-      notes(p + 'u3-scale', 'Escala de la banda', 'Subir y bajar', upDown(scale)),
-      song(p + 'u3-oda', 'oda', 'Beethoven'),
-      slots(1, 1),
-    ] },
+    scaleUnit(inst, helpers, scale, p),
     { id: p + 'u4', title: 'Ritmo', sub: 'Corcheas y puntillos', color: 'var(--u4)', lessons: [
       theory(p + 'u4-intro', 'Las figuras', [{ title: 'Cuánto dura cada nota', text: 'Redonda: 4 pulsos. Blanca: 2. Negra: 1. Corchea: medio pulso. Un puntillo suma la mitad. Para las corcheas usa un picado suave con la lengua: «tu-tu».' }]),
       exercise(p + 'u4-eighths', 'Corcheas', 'Picado suave', { key: inst.bandKey, time: 4, bpm: 60, score: `| ${scale[0]}e ${scale[0]}e ${scale[1]}e ${scale[1]}e ${scale[2]}e ${scale[2]}e ${scale[1]}q | ${scale[2]}e ${scale[2]}e ${scale[3]}e ${scale[3]}e ${scale[4]}h | ${scale[4]}e ${scale[3]}e ${scale[2]}e ${scale[1]}e ${scale[0]}h |` }),
@@ -114,8 +150,12 @@ export function windUnits(inst, helpers) {
     ] },
     { id: p + 'u5', title: 'Registro agudo', sub: 'Más arriba sin apretar', color: 'var(--u5)', lessons: [
       theory(p + 'u5-intro', 'Subir de registro', [{ title: 'Aire, no fuerza', text: inst.family === 'metal' ? 'Para subir, acelera el aire y estrecha un poco la apertura de los labios. No aprietes la boquilla contra la boca.' : inst.fingers === 'flute' || inst.id === 'flute' ? 'Para subir a la segunda octava casi no cambian los dedos: sopla más rápido, acerca un poco los labios al bisel y dirige el aire algo más arriba. Sin forzar.' : 'Para subir, usa la llave de octava o registro, acelera el aire y no muerdas. El agudo sale con aire rápido, no con presión.', board: midis([high[0]]) }]),
-      warmup(p + 'u5-warm', 'Escala en terceras', [scale[0], scale[2], scale[1], scale[3], scale[2], scale[4], scale[3], scale[5], scale[4], scale[6], scale[5], scale[7]].join(' ')),
+      ...(REGISTER_BREAK[inst.id] ? [] : [warmup(p + 'u5-warm', 'Escala en terceras', [scale[0], scale[2], scale[1], scale[3], scale[2], scale[4], scale[3], scale[5], scale[4], scale[6], scale[5], scale[7]].join(' '))]),
       notes(p + 'u5-high', 'Notas agudas', names(high), upDown(high)),
+      ...(REGISTER_BREAK[inst.id] ? [
+        notes(p + 'u5-scale', 'Escala de la banda completa', 'Ahora sí, hasta arriba', upDown(scale)),
+        warmup(p + 'u5-warm', 'Escala en terceras', [scale[0], scale[2], scale[1], scale[3], scale[2], scale[4], scale[3], scale[5], scale[4], scale[6], scale[5], scale[7]].join(' ')),
+      ] : []),
       slots(2, 2),
     ] },
     { id: p + 'u6', title: 'Escalas y arpegios', sub: 'Técnica de banda', color: 'var(--u6)', lessons: [
