@@ -35,18 +35,20 @@ test('la digitación del xilófono cuenta las láminas y los avisos hablan de l�
   assert.match(playHints(xyl).repeat, /lámina/);
 });
 
-test('las láminas de metal de juguete (parciales no armónicos) se oyen en su nota', async () => {
-  const { detectPitch, refinePitch } = await import('../js/pitch.js');
+test('las láminas de metal (parciales no armónicos, aunque suenen más que la nota) se oyen en su nota', async () => {
+  const { barPitch } = await import('../js/pitch.js');
   const { midiToFreq, freqToMidi } = await import('../js/music.js');
   const SR = 48000;
-  [72, 76, 79, 84].forEach(written => [12, 24].forEach(up => {
+  const METAL = [[[1, 1, 2], [2.76, 0.9, 3], [5.4, 0.6, 4]], [[1, 0.6, 2], [2.76, 1, 3], [5.4, 0.5, 4]], [[1, 1, 3], [3, 0.3, 9]]];
+  METAL.forEach(parts => [72, 76, 79, 84].forEach(written => [0, 12, 24].forEach(up => {
     const f = midiToFreq(written + up);
     const buf = new Float32Array(2048).map((_, i) => {
-      const t = 0.05 + i / SR;
-      return [[1, 1], [2.76, 0.5], [5.4, 0.3]].reduce((s, [k, a]) => s + a * Math.exp(-3 * k * t) * Math.sin(2 * Math.PI * f * k * t), 0) * 0.3;
+      const t = 0.3 + i / SR;
+      return parts.reduce((s, [k, a, d]) => s + a * Math.exp(-d * t) * Math.sin(2 * Math.PI * f * k * t + k), 0) * 0.05;
     });
-    const got = refinePitch(buf, SR, detectPitch(buf, SR, xyl.minHz, xyl.maxHz));
-    const heard = foldOctave(freqToMidi(got) - xyl.transpose, written, xyl);
-    assert.ok(Math.abs(heard - written) * 100 < 15, `${written}+${up}: ${heard}`);
-  }));
+    const heard = foldOctave(freqToMidi(barPitch(buf, SR, xyl.minHz, xyl.maxHz)) - xyl.transpose, written, xyl);
+    assert.ok(Math.abs(heard - written) * 100 < 10, `${written}+${up}: ${heard}`);
+  })));
+  const noise = new Float32Array(2048).map(() => (Math.random() - 0.5) * 0.01);
+  assert.equal(barPitch(noise, SR, xyl.minHz, xyl.maxHz), null);
 });

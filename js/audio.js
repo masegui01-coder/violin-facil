@@ -1,10 +1,11 @@
 // Audio del navegador: micrófono, notas de referencia y metrónomo.
-import { detectPitch, refinePitch, rms } from './pitch.js';
+import { detectPitch, barPitch, rms } from './pitch.js';
 import { midiToFreq, freqToMidi } from './music.js';
 import { createOnsetDetector } from './onsets.js';
 import { chromaFromSpectrum } from './chroma.js';
 
 const MIN_RMS = 0.01;
+const MIN_RMS_BARS = 0.004; // la lámina se apaga poco a poco: se sigue oyendo más tiempo
 const MEDIAN_FRAMES = 3;
 const CLICK_MASK_BEFORE_S = 0.02;
 const CLICK_MASK_AFTER_S = 0.13;
@@ -76,8 +77,9 @@ export function readPitch() {
   if (performance.now() < state.muteUntil) { state.recent = []; return null; }
   state.analyser.getFloatTimeDomainData(state.buf);
   const level = rms(state.buf);
-  const raw = level < MIN_RMS ? null : detectPitch(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
-  const f = raw && state.timbre === 'mallet' ? refinePitch(state.buf, state.ctx.sampleRate, raw) : raw;
+  const bars = state.timbre === 'mallet';
+  const f = level < (bars ? MIN_RMS_BARS : MIN_RMS) ? null
+    : (bars ? barPitch : detectPitch)(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
   if (!f) { state.recent = []; return { freq: null, midi: null, level }; }
   state.recent = [...state.recent, f].slice(-MEDIAN_FRAMES);
   const sorted = [...state.recent].sort((x, y) => x - y);
