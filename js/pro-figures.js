@@ -125,6 +125,9 @@ const T = {
   keySig: L('Armadura', 'Key signature'), sharp: L('sube ½ tono', 'up ½ step'), flat: L('baja ½ tono', 'down ½ step'), natural: L('anula', 'cancels'),
   piano: L('piano: suave', 'piano: soft'), forte: L('forte: fuerte', 'forte: loud'), cresc: L('crescendo', 'crescendo'), dim: L('diminuendo', 'diminuendo'),
   arp: L('En color, el arpegio: 1, 3, 5 y 8', 'In colour, the arpeggio: 1, 3, 5 and 8'),
+  strG: L('Sol · 4.ª', 'G · 4th'), strD: L('Re · 3.ª', 'D · 3rd'), strA: L('La · 2.ª', 'A · 2nd'), strE: L('Mi · 1.ª', 'E · 1st'),
+  openStrings: L('Las cuatro cuerdas al aire', 'The four open strings'), fingers: L('Dedos sobre la cuerda La', 'Fingers on the A string'),
+  open0: L('al aire', 'open'), high2: L('2 alto: pegado al 3', 'high 2: next to 3'),
   breath: L('Coma de respiración', 'Breath mark'), repeat: L('Barra de repetición', 'Repeat bar'), ask: L('Frase 1: pregunta', 'Phrase 1: question'), answer: L('Frase 2: respuesta', 'Phrase 2: answer'),
 };
 
@@ -141,6 +144,8 @@ const CAPTION = {
   10: L('Los matices y los reguladores: el volumen cambia, la afinación no.', 'Dynamics and hairpins: the volume changes, the pitch does not.'),
   11: L('Tu escala de la banda: 1 es un tono y ½ un semitono.', 'Your band scale: 1 is a whole step and ½ a half step.'),
   12: L('Frases, respiración y repetición en una partitura de verdad.', 'Phrases, breathing and repeats in a real score.'),
+  cuerdas: L('Cada cuerda al aire tiene su sitio en el pentagrama: La y Mi en los espacios 2 y 4.', 'Each open string has its place on the staff: A and E in spaces 2 and 4.'),
+  dedos: L('Cada paso del pentagrama es un dedo: 0 al aire, 1, 2 alto y 3.', 'Each step on the staff is a finger: 0 open, 1, high 2 and 3.'),
 };
 
 const FIGURES = {
@@ -331,19 +336,48 @@ const FIGURES = {
   },
 };
 
+FIGURES.cuerdas = f => {
+  f.staff();
+  const x0 = f.clef(10);
+  const strings = [['G3', T.strG], ['D4', T.strD], ['A4', T.strA], ['E5', T.strE]];
+  strings.forEach(([n, s], i) => {
+    const x = x0 + 40 + i * 72;
+    const st = diatonicStep(parseNote(n));
+    f.note(x, st, 'w', { cls: i >= 2 ? 'fig-hi' : '' });
+    f.text(x, Math.max(f.bottom + 34, f.y(st) + 28), s, 'fig-name');
+  });
+  f.text(180, 22, T.openStrings, 'fig-label');
+  return '| G3w | D4w | A4w | E5w |';
+};
+FIGURES.dedos = f => {
+  f.staff();
+  const x0 = f.clef(10);
+  const notes = ['A4', 'B4', 'C#5', 'D5'];
+  notes.forEach((n, i) => {
+    const x = x0 + 40 + i * 70;
+    f.note(x, diatonicStep(parseNote(n)), 'q');
+    f.text(x, f.bottom - HALF * 11, String(i), 'fig-finger');
+  });
+  f.text(x0 + 40, f.bottom + 26, T.open0, 'fig-name');
+  f.text(x0 + 180, f.bottom + 26, T.high2, 'fig-label');
+  f.text(180, 18, T.fingers, 'fig-label');
+  return '| A4q B4q C#5q D5q | C#5q B4q A4h |';
+};
+
 const HEIGHT = { 4: 230, 11: 230 };
 
 // Ilustración del nivel: { svg, caption, play } (play: partitura en texto con las notas del instrumento)
 export function figureFor(level, inst, nom = 'eu') {
-  const draw = FIGURES[level.nivel];
+  const topic = level.tema ?? level.nivel;
+  const draw = FIGURES[topic];
   if (!draw) return null;
   const clef = level.clef === 'bass' ? 'bass' : 'treble';
   const steps = level.scale.map(n => diatonicStep(parseNote(n)));
   const lowest = Math.min(...steps);
   // Notas muy graves (tuba): se baja el pentagrama para que quepan sus líneas adicionales
   const extra = Math.max(0, (BASE[clef] - 2 - lowest)) * HALF;
-  const f = canvas({ width: 360, height: (HEIGHT[level.nivel] || 200) + extra, clef, bottom: 120 });
+  const f = canvas({ width: 360, height: (HEIGHT[topic] || 200) + extra, clef, bottom: 120 });
   const ctx = { clef, key: level.key, scale: level.scale, steps, nom, names: level.scale.map(n => noteLabel(parseNote(n), nom)) };
   const play = draw(f, ctx);
-  return { svg: f.svg(), caption: CAPTION[level.nivel], play };
+  return { svg: f.svg(), caption: CAPTION[topic], play };
 }

@@ -1,0 +1,1249 @@
+[
+  {
+    "leccion_id": "violin_c1_n1",
+    "titulo_leccion": "Arco recto en La y Mi",
+    "pestana_libro": {
+      "descripcion": "Tu primera lectura en el violín son dos cuerdas al aire, La y Mi, que en el pentagrama ocupan el segundo y el cuarto espacio. Leer una redonda significa mover el arco durante cuatro pulsos sin parar, así que la teoría se convierte enseguida en un gesto: repartir el arco de forma que llegue justo al final de la nota. Aprenderás a sujetar el arco con la mano relajada, a apoyarlo en la cuerda con el peso del brazo y a moverlo paralelo al puente, entre el puente y el diapasón. Si el arco se tuerce o aprieta, aparece el famoso arañazo; si va recto y con peso, la cuerda canta. Leer, contar y mover el brazo a la vez: ese es todo el reto de este primer nivel.",
+      "bloque_teoria_solfeo": "La clave de sol nombra la segunda línea: Sol. La cuerda La se escribe en el segundo espacio y la cuerda Mi en el cuarto. La redonda dura cuatro pulsos y la blanca dos.",
+      "bloque_tecnica_instrumento": "Mano derecha: pulgar doblado entre la nuez y la vara, dedos redondos y meñique curvo encima. Apoya el arco entre el puente y el diapasón y deja que el peso del brazo, no la presión de los dedos, lo hunda en la cuerda. Mueve el antebrazo como una puerta para que el arco siga paralelo al puente.",
+      "consejo_unificado": "Para evitar el arañazo, mírate en un espejo: si el arco forma una cruz perfecta con la cuerda y la velocidad es constante, el sonido sale limpio aunque lleves poco tiempo."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Dónde se escribe la cuerda La?",
+        "opciones": [
+          "En la segunda línea",
+          "En el segundo espacio",
+          "En el cuarto espacio",
+          "Debajo del pentagrama"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Segundo espacio: La.",
+        "mensaje_error": "La segunda línea es Sol; justo encima, en el espacio, está La."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "contacto",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "¿Dónde apoyas el arco para un sonido limpio?",
+        "opciones": [
+          "Sobre el diapasón",
+          "Entre el diapasón y el puente",
+          "Pegado al puente"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Ese es el punto de contacto de partida.",
+        "mensaje_error": "Sobre el diapasón suena apagado y pegado al puente, áspero. Busca el punto intermedio."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "Una redonda en la cuerda Mi se toca apretando el arco con los dedos para que dure cuatro pulsos.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! La duración sale de repartir el arco, y el sonido, del peso del brazo.",
+        "mensaje_error": "Apretar con los dedos produce el arañazo. Peso del brazo y velocidad lenta y constante."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 12,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecta! La cuerda Mi, en el cuarto espacio.",
+        "mensaje_error": "La cuerda Mi va en el cuarto espacio, el más alto.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "E5",
+        "nombre": "Mi"
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "cuerdas",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Toca la cuerda La.",
+        "opciones": [
+          "Sol",
+          "Re",
+          "La",
+          "Mi"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Eso es! La tercera desde la izquierda, mirando desde tu barbilla.",
+        "mensaje_error": "De grave a aguda: Sol, Re, La y Mi."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "La ___ dura cuatro pulsos y el arco va ___ al puente.",
+        "palabras_correctas": [
+          "redonda",
+          "paralelo"
+        ],
+        "palabras_señuelo": [
+          "negra",
+          "torcido",
+          "pegado"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases: redondas y blancas en las cuerdas La y Mi, con una animación del arco.",
+      "bpm_recomendado": 50,
+      "notas_usadas": [
+        "La",
+        "Mi"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con las manos.",
+        "Paso 2: Práctica en el violín usando solo pizzicato (pellizcando) para afianzar el ritmo.",
+        "Paso 3: Ejecución con el arco fijándose en el paralelismo con el puente."
+      ],
+      "criterio_microfono_hz": "Detección de ruido o arañazo para evaluar la presión del arco, y cuerdas al aire a menos de 10 cents (La 440 Hz y Mi 659 Hz)."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n2",
+    "titulo_leccion": "Cuatro cuerdas y dos figuras",
+    "pestana_libro": {
+      "descripcion": "Ahora sumas las cuerdas graves, Re y Sol, y dos figuras: la blanca, que dura dos pulsos, y la negra, que dura uno. En el violín la duración de la nota se lee directamente en el arco: una blanca pide más arco que una negra si la velocidad es la misma. Por eso, antes de tocar, mira el ritmo y decide cuánto arco gastará cada nota. Al cambiar de cuerda no es la mano la que salta, sino el codo y el brazo los que cambian de altura, como si subieran o bajaran escalones: más bajo para Mi, más alto para Sol. En este nivel aprenderás a anticipar ese movimiento para que cada nota empiece limpia, sin tocar la cuerda vecina y sin perder el pulso.",
+      "bloque_teoria_solfeo": "La blanca vale dos pulsos y la negra uno. Las cuerdas graves se leen así: Re justo debajo del pentagrama y Sol más abajo, por debajo de dos líneas adicionales.",
+      "bloque_tecnica_instrumento": "Cada cuerda tiene su altura de brazo. Para pasar de La a Re sube un poco el codo antes de que acabe la nota; el arco se inclina y apoya en la nueva cuerda sin golpear. Reparte: media arcada para la negra y arco entero para la blanca.",
+      "consejo_unificado": "Haz el cambio de cuerda en el aire del último instante de la nota, no después: si el codo llega antes que el arco, la cuerda nueva suena limpia y no se oye la vecina."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas negras caben en una blanca?",
+        "opciones": [
+          "Una",
+          "Dos",
+          "Tres",
+          "Cuatro"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! El pulso se divide así.",
+        "mensaje_error": "Revisa el valor de la figura musical: la blanca dura dos pulsos."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "cuerdas",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "¿Para qué cuerda tienes el codo más alto?",
+        "opciones": [
+          "Sol",
+          "Re",
+          "La",
+          "Mi"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Exacto! La cuerda Sol, la más grave, pide el brazo más alto.",
+        "mensaje_error": "Cuanto más grave es la cuerda, más sube el codo."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 4,
+        "mensaje_acierto": "¡Leída! Es la cuerda Re al aire.",
+        "mensaje_error": "Justo debajo del pentagrama está Re, la tercera cuerda.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Do♯",
+          "Re",
+          "Mi",
+          "Fa♯"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "D4"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "Una blanca en la cuerda Re usa la misma cantidad de arco que una negra si no cambias la velocidad.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Dura el doble, así que gasta el doble de arco.",
+        "mensaje_error": "Con la misma velocidad, la blanca necesita el doble de arco."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "h"
+        ],
+        "figuras": [
+          "q",
+          "h"
+        ],
+        "mensaje_acierto": "¡Compás lleno!",
+        "mensaje_error": "Suma los pulsos: tienen que salir cuatro.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 60,
+        "ritmo": "| h q q | q q h |",
+        "mensaje_acierto": "¡A tempo!",
+        "mensaje_error": "Cuenta «1, 2, 3, 4» y marca cada nota.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases cruzando las cuatro cuerdas con blancas y negras.",
+      "bpm_recomendado": 56,
+      "notas_usadas": [
+        "Sol",
+        "Re",
+        "La",
+        "Mi"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con las manos.",
+        "Paso 2: Toca el ejercicio en pizzicato, nombrando cada cuerda.",
+        "Paso 3: Con el arco, cambia la altura del codo antes de cada cambio de cuerda."
+      ],
+      "criterio_microfono_hz": "Cuerda correcta en cada nota (Sol 196 Hz, Re 294 Hz, La 440 Hz, Mi 659 Hz) sin sonido de la cuerda vecina."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n3",
+    "titulo_leccion": "Ritmo ágil con tu arco",
+    "pestana_libro": {
+      "descripcion": "El compás de cuatro por cuatro agrupa los pulsos de cuatro en cuatro, y en el violín esa organización se refleja en las direcciones del arco. El primer pulso, el fuerte, suele empezar con arco abajo, del talón hacia la punta, que tiene más peso natural; el arco arriba, de la punta al talón, prepara la siguiente nota. Los signos de arco abajo y arco arriba se escriben encima de las notas. En este nivel aprenderás a leer el compás, a contar mientras tocas y a planificar las arcadas para que el ritmo salga ágil y los acentos caigan donde la música los pide. Notarás que, cuando cada compás empieza con arco abajo, tu brazo se sincroniza con el pulso y deja de pelearse con él.",
+      "bloque_teoria_solfeo": "En 4/4 caben cuatro negras por compás y el primer pulso es el fuerte. Las barras separan los compases. El signo de arco abajo parece una mesa y el de arco arriba, una V.",
+      "bloque_tecnica_instrumento": "Arco abajo: el brazo se abre desde el codo y el peso cae solo. Arco arriba: el antebrazo vuelve y el meñique equilibra cerca del talón. Para negras usa el centro del arco, con arcadas cortas y la misma velocidad en las dos direcciones.",
+      "consejo_unificado": "Si una nota suena más fuerte que la otra, iguala la velocidad del arco, no la presión. Arañazo casi siempre significa poco arco y mucha fuerza."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "En un compás de 4/4, ¿qué pulso es el fuerte?",
+        "opciones": [
+          "El primero",
+          "El segundo",
+          "El tercero",
+          "El cuarto"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Correcto! Y suele ir con arco abajo.",
+        "mensaje_error": "El primer pulso de cada compás es el más fuerte."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "arco",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Imagina el arco. ¿Qué parte usas para tocar figuras rápidas (negras y corcheas)?",
+        "opciones": [
+          "El talón (cerca de la mano)",
+          "El centro",
+          "La punta"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! El centro da mejor rebote y control.",
+        "mensaje_error": "En los extremos del arco es muy difícil hacer movimientos rápidos y cortos."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "El primer pulso del compás suele tocarse con arco arriba porque pesa más.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! El arco abajo es el que tiene peso natural.",
+        "mensaje_error": "Cuidado: el peso natural está en el arco abajo, del talón a la punta."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "q",
+          "h"
+        ],
+        "usar": "h",
+        "mensaje_acierto": "¡Compás completo!",
+        "mensaje_error": "Cuatro pulsos y al menos una blanca.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| q q q q | h h | q q h | w |",
+        "mensaje_acierto": "¡Ritmo ágil!",
+        "mensaje_error": "Marca justo cuando suena cada nota.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El primer pulso del ___ suele empezar con arco ___.",
+        "palabras_correctas": [
+          "compás",
+          "abajo"
+        ],
+        "palabras_señuelo": [
+          "pentagrama",
+          "arriba",
+          "lento"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con signos de arco abajo y arriba sobre las cuerdas La y Re.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Re",
+        "La"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con las manos y diciendo «abajo, arriba».",
+        "Paso 2: Pizzicato para afianzar el ritmo y los cambios de cuerda.",
+        "Paso 3: Con el arco en el centro, empezando cada compás con arco abajo."
+      ],
+      "criterio_microfono_hz": "Regularidad del ataque: cada negra empieza a menos de 80 ms del pulso y sin ruido de rasgueo al cambiar de dirección."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n4",
+    "titulo_leccion": "Tus primeros dedos en La",
+    "pestana_libro": {
+      "descripcion": "Las notas siguen el orden de líneas y espacios: después de La viene Si, luego Do sostenido y Re. En el violín cada paso de la escritura se convierte en un dedo de la mano izquierda: el primero da Si, el segundo, pegado al tercero, da Do sostenido, y el tercero da Re. Leer la nota y saber qué dedo pisa es la misma acción vista desde dos lados, y en este nivel aprenderás a hacerlo sin pensar. La mano izquierda va con la muñeca recta, los dedos redondos cayendo sobre la yema y el pulgar suelto frente al primer dedo. La afinación no la da un traste: la da tu oído, así que escucharás cada nota y moverás el dedo milímetros hasta que suene justa.",
+      "bloque_teoria_solfeo": "Sobre la cuerda La: Si en la tercera línea, Do sostenido en el tercer espacio y Re en la cuarta línea. Cada paso hacia arriba en el pentagrama es la nota siguiente.",
+      "bloque_tecnica_instrumento": "Mano izquierda: muñeca recta, sin apoyar la palma en el mástil. Los dedos caen desde arriba sobre la yema, como martillitos, y el codo queda debajo del violín. El dedo 2 alto va pegado al 3; entre el 1 y el 2 queda un hueco.",
+      "consejo_unificado": "Para no desafinar, compara el dedo 3 (Re) con la cuerda Re al aire: deben sonar iguales, una octava aparte. Si vibra raro, mueve el dedo hasta que las dos se fundan."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 9,
+        "mensaje_acierto": "¡Leída! Si, con el primer dedo en La.",
+        "mensaje_error": "Está en la tercera línea, la del centro.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Re",
+          "La",
+          "Si",
+          "Do♯"
+        ],
+        "respuesta_correcta": 2,
+        "pentagrama": "B4"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "El Re de la cuarta línea se toca con el dedo 2 en la cuerda La.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Es el dedo 3.",
+        "mensaje_error": "Cuidado con la posición en el diapasón: Re es el dedo 3."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 10,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecta! Do sostenido, dedo 2 alto.",
+        "mensaje_error": "Do sostenido va en el tercer espacio, encima de Si.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "C#5",
+        "nombre": "Do♯"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "tecnica_instrumento",
+        "pregunta": "¿Cómo cae el dedo sobre la cuerda?",
+        "opciones": [
+          "Plano, con la huella",
+          "Sobre la yema, redondo",
+          "Con la uña",
+          "De lado"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Redondo y sobre la yema, sin tocar la cuerda vecina.",
+        "mensaje_error": "Un dedo plano toca dos cuerdas a la vez y apaga el sonido."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 11,
+        "mensaje_acierto": "¡Gran oído! Re, el dedo 3.",
+        "mensaje_error": "Sube tres notas desde La.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "A4",
+        "nota": "D5"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El ___ alto va pegado al tercero y la muñeca va ___.",
+        "palabras_correctas": [
+          "dedo 2",
+          "recta"
+        ],
+        "palabras_señuelo": [
+          "dedo 1",
+          "doblada",
+          "apoyada"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con La, Si, Do sostenido y Re, y el diapasón con los dedos marcados.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "La",
+        "Si",
+        "Do♯",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Nombra las notas y di el número de dedo de cada una.",
+        "Paso 2: Pizzicato, comprobando cada nota con el afinador.",
+        "Paso 3: Con el arco, dejando los dedos puestos al subir."
+      ],
+      "criterio_microfono_hz": "Tolerancia de afinación estricta de ±15 cents en Si (494 Hz), Do sostenido (554 Hz) y Re (587 Hz)."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n5",
+    "titulo_leccion": "Silencios con el arco en la cuerda",
+    "pestana_libro": {
+      "descripcion": "Los silencios valen lo mismo que sus figuras: el de negra, un pulso; el de blanca, dos; el de redonda, un compás. En el violín un silencio no es soltar el violín: es detener el arco en la cuerda, quieto y apoyado, mientras el pulso sigue avanzando. Esa parada limpia evita que la nota se arrastre y te deja preparado para la siguiente. A veces, en silencios largos, levantarás el arco en círculo para volver a empezar desde el talón. En este nivel aprenderás a cortar el sonido justo donde lo indica la partitura, a contar los pulsos de silencio con la misma atención que las notas y a volver a entrar a tiempo, con un ataque limpio y sin arañazos.",
+      "bloque_teoria_solfeo": "El silencio de redonda cuelga de la cuarta línea y dura un compás; el de blanca se apoya en la tercera y dura dos pulsos; el de negra dura uno. Durante el silencio el pulso continúa.",
+      "bloque_tecnica_instrumento": "Para parar, frena el arco sin levantarlo y quita un poco de peso: la cuerda deja de vibrar sola. Para volver a entrar, vuelve a dar peso antes de mover el arco, así el sonido empieza con la cuerda ya agarrada.",
+      "consejo_unificado": "El arañazo al volver a entrar casi siempre viene de mover el arco antes de apoyarlo. Primero peso, luego movimiento: «agarra y tira»."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuánto dura el silencio de blanca?",
+        "opciones": [
+          "Un pulso",
+          "Dos pulsos",
+          "Tres pulsos",
+          "Cuatro pulsos"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Igual que una blanca.",
+        "mensaje_error": "Revisa el valor de la figura musical: cada silencio dura como su figura."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "En un silencio corto lo mejor es levantar el arco de la cuerda.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! En silencios cortos el arco se queda quieto en la cuerda.",
+        "mensaje_error": "Levantarlo en cada silencio corto hace que vuelvas a entrar con golpe."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q",
+          "Rq"
+        ],
+        "figuras": [
+          "q",
+          "Rq",
+          "h",
+          "Rh"
+        ],
+        "mensaje_acierto": "¡Compás completo!",
+        "mensaje_error": "Los silencios también suman pulsos.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 60,
+        "ritmo": "| q Rq q Rq | h Rh | q q Rq q | w |",
+        "mensaje_acierto": "¡Silencios respetados!",
+        "mensaje_error": "En los silencios no se marca: cuéntalos por dentro.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En el ___ el arco se queda ___ sobre la cuerda.",
+        "palabras_correctas": [
+          "silencio",
+          "quieto"
+        ],
+        "palabras_señuelo": [
+          "compás",
+          "saltando",
+          "levantado"
+        ]
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 10,
+        "mensaje_acierto": "¡Leída sin dudar!",
+        "mensaje_error": "Tercer espacio: Do sostenido, dedo 2 en La.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Do♯",
+          "Re",
+          "Mi",
+          "Si"
+        ],
+        "respuesta_correcta": 0,
+        "pentagrama": "C#5"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con notas en la cuerda La y silencios de negra y blanca.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "La",
+        "Si",
+        "Do♯",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con las manos; en los silencios, manos quietas.",
+        "Paso 2: Pizzicato, apagando la cuerda con la mano en cada silencio.",
+        "Paso 3: Con el arco: «agarra y tira» en cada entrada."
+      ],
+      "criterio_microfono_hz": "Corte limpio: la energía de la nota cae a silencio en menos de 100 ms y la entrada siguiente no tiene ruido de arañazo."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n6",
+    "titulo_leccion": "La cuerda Re y la ligadura",
+    "pestana_libro": {
+      "descripcion": "En la cuerda Re los mismos dedos dan Mi, Fa sostenido y Sol, y con ellos aparece la ligadura de expresión, la curva que une notas distintas. Para el violinista la ligadura es una instrucción del arco: todas las notas que abraza se tocan en la misma arcada, sin cambiar de dirección, mientras la mano izquierda cambia los dedos. No hay que confundirla con la ligadura de prolongación, que une dos notas iguales para sumar su duración. En este nivel aprenderás a repartir el arco entre varias notas, a mover los dedos con precisión mientras el brazo derecho sigue igual y a escuchar que el sonido no se interrumpe. El resultado es una melodía cantada, que es justo lo que hace al violín tan expresivo.",
+      "bloque_teoria_solfeo": "La ligadura de expresión une notas distintas en una sola arcada. La de prolongación une dos notas iguales y suma su duración: una blanca ligada a una negra dura tres pulsos.",
+      "bloque_tecnica_instrumento": "Divide el arco en partes iguales para las notas ligadas: con dos negras, mitad y mitad. La mano izquierda cae con el dedo justo en el momento del cambio, firme pero sin apretar, para que la nota nueva suene sin golpe.",
+      "consejo_unificado": "Si en la ligadura se oye un hueco, el arco ha frenado al caer el dedo. Mantén la velocidad del arco constante y deja que solo cambie la mano izquierda."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "Las notas bajo una ligadura de expresión cambian de dirección de arco en cada nota.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Todas van en la misma arcada.",
+        "mensaje_error": "La ligadura significa una sola dirección de arco para todas las notas."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "Una blanca ligada a una negra de la misma nota, ¿cuánto dura?",
+        "opciones": [
+          "Dos pulsos",
+          "Tres pulsos",
+          "Cuatro pulsos",
+          "Un pulso"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Dos más uno.",
+        "mensaje_error": "La prolongación suma: dos más uno."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 6,
+        "mensaje_acierto": "¡Leída! Fa sostenido, dedo 2 en Re.",
+        "mensaje_error": "Primer espacio: Fa, sostenido por la armadura.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Sol",
+          "La",
+          "Mi",
+          "Fa♯"
+        ],
+        "respuesta_correcta": 3,
+        "pentagrama": "F#4"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 7,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecta! Sol, dedo 3 en Re.",
+        "mensaje_error": "Sol está en la segunda línea, la que nombra la clave.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "G4",
+        "nombre": "Sol"
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "cuerdas",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "¿En qué cuerda pisas el Mi del primer espacio?",
+        "opciones": [
+          "Sol",
+          "Re",
+          "La",
+          "Mi"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Dedo 1 en la cuerda Re.",
+        "mensaje_error": "El Mi grave es el dedo 1 de la cuerda Re; la cuerda Mi suena una octava más aguda."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En la ___ las notas van en una arcada y la velocidad del arco es ___.",
+        "palabras_correctas": [
+          "ligadura",
+          "constante"
+        ],
+        "palabras_señuelo": [
+          "repetición",
+          "frenada",
+          "mayor"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases en la cuerda Re con notas ligadas de dos en dos.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Re",
+        "Mi",
+        "Fa♯",
+        "Sol"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo, con una palmada larga por ligadura.",
+        "Paso 2: Pizzicato solo con la mano izquierda, para ver caer los dedos.",
+        "Paso 3: Con el arco, mitad de arco por nota y sin frenar en el cambio."
+      ],
+      "criterio_microfono_hz": "Continuidad del sonido: sin caída de energía entre notas ligadas y afinación de Mi (330 Hz), Fa sostenido (370 Hz) y Sol (392 Hz) a ±20 cents."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n7",
+    "titulo_leccion": "Corcheas en el centro del arco",
+    "pestana_libro": {
+      "descripcion": "La corchea divide el pulso en dos mitades iguales: se cuenta «uno y dos y». En el violín esa división se traduce en arcadas cortas, una por corchea, en el centro del arco, que es donde el arco responde mejor a los movimientos rápidos. Este golpe se llama detaché: notas separadas, sin silencio entre ellas, con el antebrazo moviéndose poco y la muñeca flexible. Si intentas corcheas en la punta, el arco pesa poco y suena débil; en el talón, pesa demasiado y se vuelve torpe. En este nivel recorrerás la escala de Re mayor en corcheas, coordinando el cambio de arco con el cambio de dedo para que ambos ocurran exactamente a la vez, y así la escala suene regular y brillante.",
+      "bloque_teoria_solfeo": "La corchea vale medio pulso; dos corcheas, una negra. Varias corcheas se unen con una barra. Se cuentan «1 y 2 y 3 y 4 y».",
+      "bloque_tecnica_instrumento": "Detaché en el centro del arco: un palmo de arco por corchea, movido por el antebrazo con la muñeca suelta. Los dedos de la mano izquierda caen justo con el cambio de arco, ni antes ni después.",
+      "consejo_unificado": "Si las corcheas arañan, estás usando poco arco con mucho peso. Usa un poco más de arco y quita presión: suenan más limpias y más rápidas."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "arco",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Imagina el arco. ¿Qué parte usas para tocar corcheas rápidas?",
+        "opciones": [
+          "El talón (cerca de la mano)",
+          "El centro",
+          "La punta"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! El centro da mejor rebote y control.",
+        "mensaje_error": "En los extremos del arco es muy difícil hacer movimientos rápidos y cortos."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas corcheas caben en una blanca?",
+        "opciones": [
+          "Dos",
+          "Tres",
+          "Cuatro",
+          "Ocho"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! El pulso se divide así.",
+        "mensaje_error": "Revisa el valor de la figura musical: dos corcheas por pulso."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "ee",
+          "q",
+          "h"
+        ],
+        "usar": "ee",
+        "mensaje_acierto": "¡Compás con corcheas!",
+        "mensaje_error": "Cuatro pulsos e incluye dos corcheas.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 60,
+        "ritmo": "| q e e q q | e e e e h |",
+        "mensaje_acierto": "¡Corcheas iguales!",
+        "mensaje_error": "Di «1 y 2 y» y marca cada sílaba que suena.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "En las corcheas de la escala el dedo nuevo cae un poco antes del cambio de arco.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Dedo y arco cambian a la vez.",
+        "mensaje_error": "Si el dedo se adelanta, se oye la nota nueva con el arco viejo. Tienen que coincidir."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 10,
+        "mensaje_acierto": "¡Gran oído!",
+        "mensaje_error": "Es el dedo 2 alto en La: Do sostenido.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "A4",
+        "nota": "C#5"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Escala de Re mayor en corcheas y negras, con el centro del arco resaltado en la animación.",
+      "bpm_recomendado": 56,
+      "notas_usadas": [
+        "Re",
+        "Mi",
+        "Fa♯",
+        "Sol",
+        "La",
+        "Si",
+        "Do♯",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo y diciendo «1 y 2 y».",
+        "Paso 2: Pizzicato para afianzar el ritmo de las corcheas.",
+        "Paso 3: Detaché en el centro del arco, primero al 60 %."
+      ],
+      "criterio_microfono_hz": "Corcheas iguales (la diferencia entre mitades del pulso no pasa del 15 %) y afinación de la escala a ±20 cents."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n8",
+    "titulo_leccion": "El puntillo y el arco desigual",
+    "pestana_libro": {
+      "descripcion": "El puntillo suma a la nota la mitad de su valor: una blanca con puntillo dura tres pulsos, que es justo un compás de tres por cuatro, el compás del vals. Para el violín esto plantea un problema de arco: si la nota larga va en una dirección y la corta en la otra, el arco se acaba en un lado. La solución es repartir el arco con intención: arco lento en la nota larga y arco rápido en la corta, o recuperar arco en la nota breve. En este nivel aprenderás a leer los puntillos, a sentir el balanceo del tres con el primer pulso fuerte y a planificar la velocidad del arco para que cada compás empiece otra vez en buen sitio, sin quedarte sin arco a mitad de la frase.",
+      "bloque_teoria_solfeo": "El puntillo suma la mitad: blanca con puntillo, tres pulsos; negra con puntillo, uno y medio. En 3/4 hay tres negras por compás y el primer pulso es el fuerte.",
+      "bloque_tecnica_instrumento": "Nota larga: arco lento y con peso, cerca del puente para que no se apague. Nota corta: arco rápido y ligero, que devuelve el arco a su sitio. Así cada compás de vals empieza de nuevo con arco abajo.",
+      "consejo_unificado": "Cuando el arco va lento, acércalo un poco al puente; si no, la nota pierde cuerpo y aparece un sonido soplado. Lento y cerca, rápido y lejos."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuánto dura una blanca con puntillo?",
+        "opciones": [
+          "Dos pulsos",
+          "Dos y medio",
+          "Tres pulsos",
+          "Cuatro pulsos"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! Dos más la mitad de dos.",
+        "mensaje_error": "Revisa el valor de la figura musical: el puntillo suma la mitad."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "contacto",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Para una nota larga con arco lento, ¿hacia dónde acercas el arco?",
+        "opciones": [
+          "Sobre el diapasón",
+          "Entre el diapasón y el puente",
+          "Pegado al puente"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Arco lento, más cerca del puente.",
+        "mensaje_error": "Con arco lento sobre el diapasón el sonido se apaga. Acércate al puente."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 3,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "h."
+        ],
+        "mensaje_acierto": "¡Compás de vals completo!",
+        "mensaje_error": "En 3/4 caben tres pulsos.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 3,
+        "bpm": 72,
+        "ritmo": "| h q | h. | q q q | h. |",
+        "mensaje_acierto": "¡Balanceo de vals!",
+        "mensaje_error": "Cuenta «UN-dos-tres» y aguanta la nota larga.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "En la blanca con puntillo del vals conviene usar el arco más rápido que en la negra.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Nota larga, arco lento.",
+        "mensaje_error": "Si la nota larga va rápida, te quedas sin arco. Lenta la larga, rápida la corta."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 8,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecta! La, cuerda al aire.",
+        "mensaje_error": "La está en el segundo espacio.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "A4",
+        "nombre": "La"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Vals de cuatro compases en 3/4 en Re mayor, con la velocidad del arco indicada en colores.",
+      "bpm_recomendado": 72,
+      "notas_usadas": [
+        "Re",
+        "Mi",
+        "Fa♯",
+        "Sol",
+        "La"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con el «UN-dos-tres».",
+        "Paso 2: Pizzicato para afianzar el ritmo del vals.",
+        "Paso 3: Con el arco, lento en las notas largas y rápido en las cortas."
+      ],
+      "criterio_microfono_hz": "Nota larga sostenida: la intensidad de la blanca con puntillo no cae más de 6 dB antes del tercer pulso y la afinación se mantiene a ±15 cents."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n9",
+    "titulo_leccion": "Alteraciones: dedo alto y dedo bajo",
+    "pestana_libro": {
+      "descripcion": "Las alteraciones cambian la altura de la nota medio tono: el sostenido la sube, el bemol la baja y el becuadro la devuelve a su estado natural. La armadura de Re mayor tiene dos sostenidos, Fa y Do, que valen para toda la obra. En el violín cada alteración es una distancia física: subir medio tono es acercar el dedo al puente y bajarlo es alejarlo hacia la voluta. Por eso el segundo dedo tiene dos sitios: alto, pegado al tercero, para Do sostenido, y bajo, pegado al primero, para Do natural. En este nivel aprenderás a leer la armadura y las alteraciones accidentales, y a mover el dedo exacto que corresponde, escuchando con atención para que el semitono suene estrecho y afinado.",
+      "bloque_teoria_solfeo": "Sostenido sube medio tono, bemol baja medio tono, becuadro anula. La armadura de Re mayor lleva Fa sostenido y Do sostenido. Una alteración junto a la nota vale hasta la barra de compás.",
+      "bloque_tecnica_instrumento": "Dedo 2 alto: pegado al 3 (Do sostenido en La, Fa sostenido en Re). Dedo 2 bajo: pegado al 1 (Do natural, Fa natural). Mueve solo ese dedo, sin desplazar la mano, y comprueba el semitono con el afinador.",
+      "consejo_unificado": "Los semitonos del violín son más estrechos de lo que parece: si el dedo 2 bajo no toca casi al 1, el Do natural sale alto. Escucha, ajusta y memoriza la sensación."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué hace el becuadro?",
+        "opciones": [
+          "Sube un semitono",
+          "Baja un semitono",
+          "Anula la alteración",
+          "Alarga la nota"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! Devuelve la nota natural.",
+        "mensaje_error": "El sostenido sube, el bemol baja y el becuadro anula."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "El Do natural en la cuerda La se toca con el dedo 2 pegado al 3.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Do natural es el dedo 2 bajo, pegado al 1.",
+        "mensaje_error": "Cuidado con la posición en el diapasón: pegado al 3 es Do sostenido."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué sostenidos lleva la armadura de Re mayor?",
+        "opciones": [
+          "Fa y Do",
+          "Do y Sol",
+          "Solo Fa",
+          "Ninguno"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Correcto! Fa sostenido y Do sostenido.",
+        "mensaje_error": "Re mayor tiene dos sostenidos: Fa y Do."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "contacto",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Para subir medio tono un dedo, ¿hacia dónde lo mueves en el diapasón?",
+        "opciones": [
+          "Hacia la voluta",
+          "No se mueve",
+          "Hacia el puente"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Más cerca del puente, cuerda más corta, nota más aguda.",
+        "mensaje_error": "Acortar la cuerda sube la nota: el dedo va hacia el puente."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 6,
+        "mensaje_acierto": "¡Leída con la armadura!",
+        "mensaje_error": "Mira la armadura: el Fa es sostenido.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Mi",
+          "Fa♯",
+          "Sol",
+          "La"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "F#4"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El ___ sube medio tono y el dedo se acerca al ___.",
+        "palabras_correctas": [
+          "sostenido",
+          "puente"
+        ],
+        "palabras_señuelo": [
+          "bemol",
+          "clavijero",
+          "becuadro"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases que alterna Do sostenido y Do natural en la cuerda La.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "La",
+        "Si",
+        "Do",
+        "Do♯",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lee la armadura en voz alta y señala la alteración del compás 3.",
+        "Paso 2: Pizzicato alternando dedo 2 alto y bajo con el afinador delante.",
+        "Paso 3: Con el arco, escuchando lo estrecho que es el semitono."
+      ],
+      "criterio_microfono_hz": "Tolerancia de afinación estricta de ±15 cents: Do sostenido a 554 Hz y Do natural a 523 Hz."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n10",
+    "titulo_leccion": "Matices: peso, velocidad y punto de contacto",
+    "pestana_libro": {
+      "descripcion": "Los matices indican la intensidad: piano es suave, forte es fuerte, y los reguladores piden crecer o decrecer poco a poco. En el violín el volumen depende de tres palancas que se combinan: el peso del brazo sobre la cuerda, la velocidad del arco y el punto de contacto, más cerca o más lejos del puente. Para un forte necesitas más peso, más arco y acercarte al puente; para un piano, menos peso, menos arco y alejarte hacia el diapasón. Si cambias solo una palanca aparecen problemas: mucho peso sin velocidad produce el arañazo y mucha velocidad sin peso, un sonido soplado. En este nivel aprenderás a mover las tres juntas para que el crescendo y el diminuendo suenen limpios y sin desafinar.",
+      "bloque_teoria_solfeo": "p piano (suave), mf mezzoforte, f forte (fuerte). El regulador que se abre es crescendo y el que se cierra, diminuendo. El matiz vale hasta que aparece otro.",
+      "bloque_tecnica_instrumento": "Forte: más peso del brazo, arco más rápido y más cerca del puente. Piano: menos peso, arco más lento y hacia el diapasón. En el crescendo las tres cosas crecen a la vez; en el diminuendo bajan a la vez.",
+      "consejo_unificado": "Si en el forte aparece el arañazo, no quites fuerza: añade velocidad de arco. Peso y velocidad tienen que ir siempre de la mano."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué significa p?",
+        "opciones": [
+          "Pausa",
+          "Piano, suave",
+          "Puntillo",
+          "Pizzicato"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Piano, suave.",
+        "mensaje_error": "Los matices son palabras italianas: p es piano."
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "contacto",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "Para tocar forte, ¿dónde colocas el arco?",
+        "opciones": [
+          "Sobre el diapasón",
+          "Entre el diapasón y el puente",
+          "Pegado al puente"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Más cerca del puente, con peso y velocidad.",
+        "mensaje_error": "Sobre el diapasón el sonido es suave; el forte se busca hacia el puente."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar forte basta con apretar más el arco contra la cuerda.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! Sin velocidad, más presión solo da arañazo.",
+        "mensaje_error": "Peso sin velocidad es el arañazo clásico. Peso, velocidad y punto de contacto juntos."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En el ___ el arco va más rápido y más cerca del ___.",
+        "palabras_correctas": [
+          "crescendo",
+          "puente"
+        ],
+        "palabras_señuelo": [
+          "diminuendo",
+          "diapasón",
+          "talón"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 72,
+        "ritmo": "| q q h | q e e h | e e q q q | w |",
+        "mensaje_acierto": "¡Ritmo dominado!",
+        "mensaje_error": "Escucha y repite: negras, corcheas y blancas.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 12,
+        "mensaje_acierto": "¡Oído de violinista!",
+        "mensaje_error": "Es la cuerda Mi al aire, una quinta por encima de La.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "A4",
+        "nota": "E5"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Notas largas en La y Re con crescendo y diminuendo, y una guía del punto de contacto que se mueve.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Re",
+        "La"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Sin arco, di en voz alta las tres palancas: peso, velocidad, punto de contacto.",
+        "Paso 2: Pizzicato piano y forte para oír la diferencia de volumen.",
+        "Paso 3: Con el arco, crescendo acercándote al puente y diminuendo alejándote."
+      ],
+      "criterio_microfono_hz": "Rango dinámico de al menos 12 dB entre piano y forte, sin ruido de arañazo y con la afinación estable a ±10 cents."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n11",
+    "titulo_leccion": "Escala de Re mayor y su arpegio",
+    "pestana_libro": {
+      "descripcion": "La escala mayor sigue el patrón tono, tono, semitono, tono, tono, tono, semitono, y en el violín ese patrón se ve en la mano: los semitonos son dedos pegados y los tonos, dedos separados. En Re mayor tocas Re, Mi y Fa sostenido en la cuerda Re, Sol con el dedo 3, y sigues en la cuerda La hasta el Re agudo. El arpegio, con la primera, la tercera, la quinta y la octava, salta por las notas del acorde y combina cuerdas al aire con dedos. En este nivel aprenderás a dejar los dedos puestos cuando sea posible, a preparar el cambio de cuerda con el codo y a escuchar los semitonos para que la escala suene perfectamente afinada.",
+      "bloque_teoria_solfeo": "Escala mayor: tono, tono, semitono, tono, tono, tono, semitono. En Re mayor los semitonos caen entre Fa sostenido y Sol y entre Do sostenido y Re. El arpegio es Re, Fa sostenido, La y Re.",
+      "bloque_tecnica_instrumento": "En la escala, el dedo 2 alto queda pegado al 3 en las dos cuerdas: ese es el semitono. Deja los dedos puestos al subir y levántalos uno a uno al bajar. En el arpegio, el cambio de cuerda lo hace el codo, preparando el nivel antes de la nota.",
+      "consejo_unificado": "Afina el Sol (dedo 3 en Re) contra la cuerda Sol al aire y el Re agudo contra la cuerda Re: las resonancias te dicen si están justos. Si el violín vibra más, está afinado."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Entre qué notas de Re mayor hay semitono?",
+        "opciones": [
+          "Re-Mi y La-Si",
+          "Fa♯-Sol y Do♯-Re",
+          "Mi-Fa♯ y Si-Do♯",
+          "En ninguna"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Dedos 2 y 3 pegados.",
+        "mensaje_error": "Los semitonos están entre la 3.ª y la 4.ª y entre la 7.ª y la 8.ª."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "El Sol de la segunda línea se toca con la cuerda Sol al aire.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Es el dedo 3 en Re; la cuerda Sol suena una octava más grave.",
+        "mensaje_error": "Cuidado con la posición en el diapasón: el Sol de la segunda línea es el dedo 3 en Re."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 11,
+        "modo": "nombre",
+        "mensaje_acierto": "¡La octava! Re agudo, dedo 3 en La.",
+        "mensaje_error": "El Re agudo está en la cuarta línea.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "D5",
+        "nombre": "Re"
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "cuerdas",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "¿En qué cuerda empieza la escala de Re mayor?",
+        "opciones": [
+          "Sol",
+          "Re",
+          "La",
+          "Mi"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Cuerda Re al aire.",
+        "mensaje_error": "Empieza en su propia nota: la cuerda Re."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 6,
+        "mensaje_acierto": "¡Has oído la tercera del arpegio!",
+        "mensaje_error": "Es el Fa sostenido, la tercera del acorde de Re.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "A4",
+        "nota": "F#4"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 10,
+        "mensaje_acierto": "¡Leída! La sensible, Do sostenido.",
+        "mensaje_error": "Es la nota justo debajo del Re agudo.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Do♯",
+          "Re",
+          "Mi",
+          "Si"
+        ],
+        "respuesta_correcta": 0,
+        "pentagrama": "C#5"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Escala de Re mayor subiendo y bajando y su arpegio, con el diapasón mostrando los dedos pegados del semitono.",
+      "bpm_recomendado": 66,
+      "notas_usadas": [
+        "Re",
+        "Mi",
+        "Fa♯",
+        "Sol",
+        "La",
+        "Si",
+        "Do♯",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Canta la escala con los nombres y marca dónde van los dedos pegados.",
+        "Paso 2: Pizzicato comparando Sol y Re agudo con las cuerdas al aire.",
+        "Paso 3: Con el arco, dejando los dedos puestos al subir."
+      ],
+      "criterio_microfono_hz": "Escala afinada a ±15 cents con especial atención a Sol (392 Hz) y Re agudo (587 Hz), comparados con las resonancias de las cuerdas al aire."
+    }
+  },
+  {
+    "leccion_id": "violin_c1_n12",
+    "titulo_leccion": "Tu primera pieza: Oda a la alegría",
+    "pestana_libro": {
+      "descripcion": "La Oda a la alegría de Beethoven reúne todo lo aprendido: frases de cuatro compases, una negra con puntillo seguida de corchea y signos de repetición. En el violín una pieza se prepara también con el arco: el violinista decide las arcadas para que cada frase empiece con arco abajo y para que la nota con puntillo tenga arco suficiente. La barra de repetición manda volver a tocar un fragmento y la coma marca dónde separar las frases, que en el violín es un pequeño respiro del arco. En este nivel aprenderás a planificar las arcadas de una melodía real, a pensar en frases que preguntan y responden y a tocar la pieza entera a tempo, afinada y con un sonido limpio de principio a fin.",
+      "bloque_teoria_solfeo": "La barra de repetición tiene dos puntos y manda volver a tocar. La coma separa las frases. Las frases suelen durar cuatro compases: la primera pregunta y la segunda responde.",
+      "bloque_tecnica_instrumento": "Empieza cada frase con arco abajo. En la negra con puntillo usa arco lento y en la corchea, rápido, para recuperar. En la coma, detén el arco un instante en la cuerda y vuelve a empezar con peso.",
+      "consejo_unificado": "Antes de tocar, escribe con lápiz las arcadas sobre la partitura. Un violinista que sabe hacia dónde va su arco no se queda sin él y no araña en los finales."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué indica la barra de repetición?",
+        "opciones": [
+          "Que la obra termina",
+          "Que se vuelve a tocar un fragmento",
+          "Que hay que respirar",
+          "Que se toca en pizzicato"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Se repite el fragmento.",
+        "mensaje_error": "Los dos puntos junto a la doble barra mandan repetir."
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 72,
+        "ritmo": "| q q q q | q q q q | q q q q | q. e h |",
+        "mensaje_acierto": "¡El ritmo de la Oda!",
+        "mensaje_error": "La negra con puntillo es larga y la corchea, corta.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "zona_tactil",
+        "zona": "arco",
+        "enfoque": "tecnica_instrumento",
+        "pregunta_ui": "¿Desde qué parte del arco empiezas cada frase?",
+        "opciones": [
+          "El talón (cerca de la mano)",
+          "El centro",
+          "La punta"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Exacto! Desde el talón, con arco abajo.",
+        "mensaje_error": "Las frases empiezan con arco abajo, es decir, desde el talón."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "El Fa sostenido con el que empieza la Oda se toca con el dedo 2 bajo en la cuerda Re.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Fa sostenido es el dedo 2 alto.",
+        "mensaje_error": "Cuidado con la posición en el diapasón: el sostenido pide el dedo 2 alto."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Cada ___ empieza con arco abajo y las arcadas se escriben con ___.",
+        "palabras_correctas": [
+          "frase",
+          "lápiz"
+        ],
+        "palabras_señuelo": [
+          "nota",
+          "tinta",
+          "colofonia"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 6,
+        "mensaje_acierto": "¡Es la primera nota de la Oda!",
+        "mensaje_error": "Es Fa sostenido, dedo 2 alto en Re.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "A4",
+        "nota": "F#4"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Oda a la alegría en Re mayor, ocho compases con arcadas marcadas y la coma entre frases.",
+      "bpm_recomendado": 72,
+      "notas_usadas": [
+        "Re",
+        "Mi",
+        "Fa♯",
+        "Sol",
+        "La"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lectura rítmica percutiendo con las manos y marcando las frases.",
+        "Paso 2: La pieza entera en pizzicato para afianzar notas y ritmo.",
+        "Paso 3: Con el arco, siguiendo las arcadas escritas y el paralelismo con el puente."
+      ],
+      "criterio_microfono_hz": "Pieza completa a tempo: notas a ±20 cents, puntillo exacto y sin ruido de arañazo en los cambios de arco."
+    }
+  }
+]

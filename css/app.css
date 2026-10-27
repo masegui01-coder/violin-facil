@@ -1065,3 +1065,21 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .pro-fig .st-note.fig-hi { color: var(--accent); }
 .pro-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .pro-num .ic { width: 18px; height: 18px; }
+.pro-fig .fig-finger { font: 800 15px var(--f-body); fill: var(--accent); text-anchor: middle; }
+.pro-zone-box { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 6px; display: grid; gap: 6px; }
+.pro-zones { width: 100%; height: auto; touch-action: manipulation; }
+.zt-labels { display: grid; gap: 4px; padding: 0 6px; }
+.zt-labels .zt-label { font: inherit; font-weight: 700; font-size: .82rem; line-height: 1.2; padding: 8px 4px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.zt-labels .zt-label.picked { border-color: var(--ink); }
+.zt-labels .zt-label.right { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); }
+.zt-labels .zt-label.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.pro-zones .zt-wood { fill: var(--wood-edge); }
+.pro-zones .zt-stick { fill: none; stroke: var(--wood-edge); stroke-width: 5; stroke-linecap: round; }
+.pro-zones .zt-hair { stroke: var(--muted); stroke-width: 3; }
+.pro-zones .zt-board { fill: var(--staff); opacity: .85; }
+.pro-zones .zt-string { stroke: var(--muted); stroke-width: 1.6; }
+.pro-zones .zt-area { fill: transparent; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; cursor: pointer; }
+.pro-zones .zt-zone:hover .zt-area { fill: color-mix(in srgb, var(--accent) 8%, transparent); }
+.pro-zones .zt-zone.picked .zt-area { fill: color-mix(in srgb, var(--ink) 10%, transparent); stroke: var(--ink); stroke-dasharray: none; }
+.pro-zones .zt-zone.right .zt-area { fill: var(--ok-soft); stroke: var(--ok); stroke-dasharray: none; opacity: .85; }
+.pro-zones .zt-zone.wrong .zt-area { fill: var(--bad-soft); stroke: var(--bad); stroke-dasharray: none; opacity: .85; }

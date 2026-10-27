@@ -120,3 +120,43 @@ test('cada tema del Libro tiene su ilustración y un ejemplo que suena en el reg
     parseScore(fig.play).notes.filter(n => !n.rest).forEach(n => assert.ok(n.midi >= inst.written[0] && n.midi <= inst.written[1], `${inst.id} ${level.leccion_id}: ${n.midi}`));
   }));
 });
+
+test('el violín tiene su propio libro Pro con el formato de violín', async () => {
+  const { VIOLIN_LEVELS } = await import('../js/method-violin.js');
+  const { figureFor } = await import('../js/pro-figures.js');
+  const violin = instrumentById('violin');
+  const levels = buildMethod(violin);
+  assert.equal(levels.length, 12);
+  assert.equal(levels[0].leccion_id, 'violin_c1_n1');
+  VIOLIN_LEVELS.forEach(l => { const n = words(l.descripcion); assert.ok(n >= 100 && n <= 150, `violín ${l.n}: ${n} palabras`); });
+  const missing = [];
+  const check = s => { if (typeof s === 'string' && /[a-záéíóúñ]{3}/i.test(s) && !TIPS_EN[s]) missing.push(s); };
+  const ZONES = { arco: 3, contacto: 3, cuerdas: 4 };
+  levels.forEach(level => {
+    const p = level.pestana_practica;
+    assert.ok(p.criterio_microfono_hz && !p.criterio_microfono, level.leccion_id);
+    [level.titulo_leccion, ...Object.values(level.pestana_libro), p.instruccion_pantalla, p.criterio_microfono_hz, ...p.rutina_pasos].forEach(check);
+    const score = parseScore(level.score);
+    score.notes.filter(n => !n.rest).forEach(n => assert.ok(n.midi >= violin.written[0] && n.midi <= violin.written[1], `${level.leccion_id}: ${n.midi}`));
+    score.bars.forEach(bar => assert.equal(bar.beats, level.time, `${level.leccion_id}: compás incompleto`));
+    assert.ok(level.pestana_relax.length >= 5, level.leccion_id);
+    level.pestana_relax.forEach(it => {
+      [it.pregunta, it.pregunta_ui, it.afirmacion, it.texto_incompleto, it.mensaje_acierto, it.mensaje_error].forEach(check);
+      if (!it.notesAreNames) (it.opciones || []).forEach(check);
+      if (it.tipo_interaccion === 'zona_tactil') {
+        assert.equal(it.opciones.length, ZONES[it.zona], it.id);
+        assert.ok(it.respuesta_correcta < it.opciones.length, it.id);
+      }
+      if (it.tipo_interaccion === 'opcion_multiple') assert.ok(it.respuesta_correcta < it.opciones.length && new Set(it.opciones).size === it.opciones.length, it.id);
+      if (it.tipo_interaccion === 'escribir_nota') assert.ok(it.nota, it.id);
+    });
+    const fig = figureFor(level, violin);
+    assert.ok(fig && TIPS_EN[fig.caption], `${level.leccion_id}: ilustración`);
+  });
+  assert.deepEqual(missing, []);
+  assert.ok(levels.some(l => l.pestana_relax.some(it => it.tipo_interaccion === 'zona_tactil')));
+});
+
+test('los instrumentos sin método Pro no reciben niveles', () => {
+  assert.deepEqual(buildMethod(instrumentById('guitar')), []);
+});

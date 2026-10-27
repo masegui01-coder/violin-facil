@@ -10,7 +10,7 @@ import { parseScore } from '../music.js';
 import { createStaff } from '../staff.js';
 import { sliceScore } from '../book.js';
 import { launch } from '../launch.js';
-import { buildMethod, isWind, levelStates, practiceLesson } from '../method.js';
+import { buildMethod, hasMethod, courseIdFor, levelStates, practiceLesson } from '../method.js';
 import * as audio from '../audio.js';
 import { startRelax, stopRelax } from './pro-relax.js';
 import { figureFor } from '../pro-figures.js';
@@ -19,9 +19,9 @@ import { sheet } from './band-ui.js';
 const BARS_PER_LINE = 2; // en el móvil, dos compases por renglón se leen bien
 const XP_PER_STAR = 5;
 const TXT = {
-  eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
+  eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), eyebrowViolin: L('Método Pro · Violín', 'Pro method · Violin'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
   intro: L('Un camino aparte del curso, para estudiar como en el conservatorio pero desde el móvil. Cada nivel tiene tres pestañas: Libro para entender el solfeo y la técnica, Relax para practicarlo como un juego (leer, escribir notas y marcar ritmos) y Práctica para tocarlo con el micrófono.', 'A path separate from the course, to study as in a music school but from your phone. Each level has three tabs: Book to understand reading and technique, Relax to practise it as a game (reading, writing notes and tapping rhythms) and Practice to play it with the microphone.'),
-  notWind: L('El método Pro está, de momento, para instrumentos de viento. Elige un instrumento de viento en tu perfil para verlo.', 'The Pro method is, for now, for wind instruments. Choose a wind instrument in your profile to see it.'),
+  notWind: L('El método Pro está, de momento, para violín e instrumentos de viento. Elige uno de ellos en tu perfil para verlo.', 'The Pro method is, for now, for violin and wind instruments. Choose one of them in your profile to see it.'),
   level: L('Nivel', 'Level'), locked: L('Termina el nivel anterior para abrirlo', 'Finish the previous level to open it'),
   book: L('Libro', 'Book'), relax: L('Relax', 'Relax'), play: L('Práctica', 'Practice'),
   theory: L('Solfeo', 'Music reading'), technique: L('Tu instrumento', 'Your instrument'), tip: L('Consejo', 'Tip'),
@@ -43,6 +43,7 @@ let tab = 'book';
 let stopDemo = null;
 
 const inst = () => instrumentById(getState().instrument);
+const eyebrow = () => (courseIdFor(inst()) === 'violin' ? TXT.eyebrowViolin : TXT.eyebrow);
 const levels = () => buildMethod(inst(), getState().nom);
 const saved = () => (getState().pro || {})[getState().instrument] || {};
 const statesOf = list => levelStates(list, saved(), instrumentProgress(), getState().unlockAll || getState().proTester);
@@ -50,14 +51,14 @@ const statesOf = list => levelStates(list, saved(), instrumentProgress(), getSta
 // ---------- Lista de niveles (dentro de Aprender) ----------
 export function renderPro() {
   const box = $('proView');
-  if (!isWind(inst())) {
+  if (!hasMethod(inst())) {
     box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.eyebrow)}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.notWind)}</p></div>`;
     return;
   }
   const list = levels();
   const states = statesOf(list);
   const done = list.filter(l => states[l.leccion_id].state === 'done').length;
-  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.eyebrow)}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.intro)}</p>
+  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(eyebrow())}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.intro)}</p>
       <div class="progress"><i style="width:${Math.round(done / list.length * 100)}%"></i></div><span class="unit-pct">${done}/${list.length}</span></div>
     <div class="pro-levels">${list.map(l => levelCard(l, states[l.leccion_id])).join('')}</div>`;
   box.querySelectorAll('[data-pro]').forEach(b => b.addEventListener('click', () => {
@@ -94,7 +95,7 @@ function enter(params = {}) {
     tab = params.tab || tab;
   }
   if (!level) { go('learn'); return; }
-  $('proEyebrow').innerHTML = `<span>${esc(TXT.eyebrow)}</span> · <span>${esc(TXT.level)}</span> ${level.nivel}`;
+  $('proEyebrow').innerHTML = `<span>${esc(eyebrow())}</span> · <span>${esc(TXT.level)}</span> ${level.nivel}`;
   $('proTitle').textContent = level.titulo_leccion;
   render();
 }
@@ -167,7 +168,7 @@ function renderPractice() {
     ${noteChips()}
     <h3>${esc(TXT.routine)}</h3>
     <ol class="pro-steps">${p.rutina_pasos.map((s, i) => `<li><label><input type="checkbox" data-step="${i}"><span>${esc(s)}</span></label></li>`).join('')}</ol>
-    <section class="pro-block mic"><h3><span class="ic">${icon('notes')}</span>${esc(TXT.mic)}</h3><p>${esc(p.criterio_microfono)}</p></section>
+    <section class="pro-block mic"><h3><span class="ic">${icon('notes')}</span>${esc(TXT.mic)}</h3><p>${esc(p.criterio_microfono || p.criterio_microfono_hz)}</p></section>
     <div class="pro-actions"><button id="proLearn" class="btn ghost" type="button">${esc(TXT.learnMode)}</button>
     <button id="proTempo" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.tempoMode)}</button></div></article>`;
   for (let i = 0; i < lines; i++) {

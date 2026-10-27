@@ -175,9 +175,28 @@ function startTaps(item) {
   run.stopTaps = stop;
 }
 
+// ---------- Zona táctil (arco, punto de contacto o cuerdas) ----------
+const ZONE_W = 340;
+// Límites de cada zona (x) y el dibujo de fondo de cada tipo
+const ZONES = {
+  arco: { cuts: [14, 115, 225, 326], art: `<rect x="14" y="50" width="34" height="26" rx="5" class="zt-wood"/><path d="M48 58 Q180 46 320 56" class="zt-stick"/><line x1="48" y1="74" x2="318" y2="62" class="zt-hair"/><path d="M318 52 l8 4 -8 8z" class="zt-wood"/>` },
+  contacto: { cuts: [8, 185, 268, 332], art: `<rect x="8" y="40" width="177" height="56" rx="6" class="zt-board"/>${[48, 60, 72, 84].map(y => `<line x1="8" x2="320" y1="${y}" y2="${y}" class="zt-string"/>`).join('')}<rect x="312" y="34" width="9" height="68" rx="2" class="zt-wood"/>` },
+  cuerdas: { cuts: [10, 92, 172, 252, 332], art: [51, 132, 212, 292].map((x, i) => `<line x1="${x}" x2="${x}" y1="20" y2="104" class="zt-string" stroke-width="${4 - i * 0.8}"/>`).join('') },
+};
+function zoneSvg(item) {
+  const z = ZONES[item.zona];
+  const widths = item.opciones.map((_, k) => z.cuts[k + 1] - z.cuts[k]);
+  const zones = item.opciones.map((o, k) => `<g class="zt-zone" data-zone="${k}" aria-hidden="true"><rect x="${z.cuts[k]}" y="8" width="${widths[k]}" height="104" rx="10" class="zt-area"/></g>`).join('');
+  // Los nombres van debajo, alineados con su zona (en el dibujo no caben)
+  const labels = item.opciones.map((o, k) => `<button type="button" class="zt-zone zt-label" data-zone="${k}">${esc(o)}</button>`).join('');
+  return `<div class="pro-zone-box"><svg class="pro-zones" viewBox="0 0 ${ZONE_W} 120">${z.art}${zones}</svg>
+    <div class="zt-labels" style="grid-template-columns:${widths.map(w => w + 'fr').join(' ')}">${labels}</div></div>`;
+}
+
 const RENDER = {
   opcion_multiple: item => `<h2>${esc(item.pregunta)}</h2>${item.pentagrama ? '<svg id="relaxStaff" class="staff pro-mini" role="img" aria-label="Nota escrita"></svg>' : ''}${optionsHtml(item.opciones)}`,
   verdadero_falso: item => `<h2>${esc(item.afirmacion)}</h2>${optionsHtml([TXT.true, TXT.false])}`,
+  zona_tactil: item => `<h2>${esc(item.pregunta_ui)}</h2>${zoneSvg(item)}`,
   completar_hueco: item => {
     run.gaps = { ...gapState(item), chips: stableShuffle([...item.palabras_correctas, ...item.palabras_señuelo], item.id) };
     return `<p id="gapText" class="gap-text"></p><div id="gapChips" class="gap-chips">${run.gaps.chips.map((w, k) => `<button type="button" class="chip-btn" data-chip="${k}">${esc(w)}</button>`).join('')}</div>`;
@@ -203,6 +222,18 @@ const BIND = {
     bindOptions(item, () => item.respuesta_correcta);
   },
   verdadero_falso: item => bindOptions(item, () => (item.respuesta_correcta ? 0 : 1)),
+  zona_tactil: () => {
+    const zones = [...$('proBody').querySelectorAll('[data-zone]')];
+    const pick = z => {
+      if (run.checked) return;
+      run.answer = Number(z.dataset.zone);
+      zones.forEach(o => o.classList.toggle('picked', o.dataset.zone === z.dataset.zone));
+      setReady(true);
+    };
+    zones.forEach(z => {
+      z.addEventListener('click', () => pick(z));
+    });
+  },
   completar_hueco: () => {
     renderGaps();
     $('gapChips').addEventListener('click', e => {
@@ -263,6 +294,15 @@ const BIND = {
 const CHECK = {
   opcion_multiple: item => withMark(it => run.answer === it.respuesta_correcta, item),
   verdadero_falso: item => withMark(it => (run.answer === 0) === it.respuesta_correcta, item),
+  zona_tactil: item => {
+    const ok = run.answer === item.respuesta_correcta;
+    $('proBody').querySelectorAll('[data-zone]').forEach(z => {
+      const k = Number(z.dataset.zone);
+      if (k === item.respuesta_correcta) z.classList.add('right');
+      else if (k === run.answer) z.classList.add('wrong');
+    });
+    return ok;
+  },
   completar_hueco: item => {
     const words = run.gaps.blanks.map(k => run.gaps.chips[k]);
     const ok = words.every((w, i) => w === item.palabras_correctas[i]);
