@@ -13,6 +13,8 @@ import { launch } from '../launch.js';
 import { buildMethod, isWind, levelStates, practiceLesson } from '../method.js';
 import * as audio from '../audio.js';
 import { startRelax, stopRelax } from './pro-relax.js';
+import { figureFor } from '../pro-figures.js';
+import { sheet } from './band-ui.js';
 
 const BARS_PER_LINE = 2; // en el móvil, dos compases por renglón se leen bien
 const XP_PER_STAR = 5;
@@ -29,6 +31,11 @@ const TXT = {
   tempo: L('Tempo', 'Tempo'), time: L('Compás', 'Time'), routine: L('Rutina', 'Routine'), mic: L('Qué escucha la app', 'What the app listens for'),
   listen: L('Escuchar', 'Listen'), stop: L('Parar', 'Stop'), learnMode: L('Nota a nota', 'Note by note'), tempoMode: L('Tocar a tempo', 'Play in tempo'),
   done: L('Hecho', 'Done'),
+  lockedTitle: L('Este nivel aún está bloqueado', 'This level is still locked'),
+  lockedText: L('Lo normal es llegar aquí terminando el nivel anterior, pero puedes verlo ya en modo tester: se abre sin cambiar tu progreso.', 'Normally you get here by finishing the previous level, but you can look at it now in tester mode: it opens without changing your progress.'),
+  peek: L('Verlo en modo tester', 'View in tester mode'), cancel: L('Ahora no', 'Not now'),
+  figure: L('Míralo en el pentagrama', 'See it on the staff'), playFig: L('Escuchar el ejemplo', 'Listen to the example'),
+  practiseIt: L('Practícalo en Relax', 'Practise it in Relax'), playIt: L('Tócalo en Práctica', 'Play it in Practice'),
 };
 
 let level = null;      // nivel abierto
@@ -53,14 +60,25 @@ export function renderPro() {
   box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.eyebrow)}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.intro)}</p>
       <div class="progress"><i style="width:${Math.round(done / list.length * 100)}%"></i></div><span class="unit-pct">${done}/${list.length}</span></div>
     <div class="pro-levels">${list.map(l => levelCard(l, states[l.leccion_id])).join('')}</div>`;
-  box.querySelectorAll('[data-pro]').forEach(b => b.addEventListener('click', () => go('pro', { id: b.dataset.pro })));
+  box.querySelectorAll('[data-pro]').forEach(b => b.addEventListener('click', () => {
+    if (states[b.dataset.pro].state === 'locked') askPeek(b.dataset.pro);
+    else go('pro', { id: b.dataset.pro });
+  }));
+}
+
+// Nivel cerrado: se puede abrir igualmente para verlo (modo tester), sin marcarlo como hecho
+function askPeek(id) {
+  sheet(`<h2><span class="ic">${icon('lock')}</span> ${esc(TXT.lockedTitle)}</h2><p>${esc(TXT.lockedText)}</p>
+    <div class="row"><button type="button" class="btn ghost" data-close>${esc(TXT.cancel)}</button><button type="button" class="btn" id="proPeek">${esc(TXT.peek)}</button></div>`, box => {
+    box.querySelector('#proPeek').addEventListener('click', () => { document.getElementById('sheet').close(); go('pro', { id }); });
+  });
 }
 
 function levelCard(l, st) {
   const locked = st.state === 'locked';
   const pill = (on, ic, label, stars) => `<span class="pro-pill${on ? ' on' : ''}"><span class="ic">${icon(ic)}</span>${esc(label)}${stars ? starsHtml(stars) : ''}</span>`;
-  return `<button type="button" class="pro-level ${st.state}" data-pro="${l.leccion_id}" ${locked ? 'disabled' : ''}>
-    <span class="pro-num">${l.nivel}</span>
+  return `<button type="button" class="pro-level ${st.state}" data-pro="${l.leccion_id}">
+    <span class="pro-num">${locked ? `<span class="ic">${icon('lock')}</span>` : l.nivel}</span>
     <span class="pro-level-text"><small><span>${esc(TXT.level)}</span> ${l.nivel}</small><b>${esc(l.titulo_leccion)}</b>
     ${locked ? `<small>${esc(TXT.locked)}</small>` : `<span class="pro-pills">${pill(st.book, 'theory', TXT.book)}${pill(st.relax > 0, 'star', TXT.relax, st.relax)}${pill(st.play > 0, 'notes', TXT.play, st.play)}</span>`}</span>
   </button>`;
@@ -88,7 +106,7 @@ function leave() {
 
 function render() {
   document.querySelectorAll('[data-pro-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.proTab === tab)));
-  stopRelax();
+  leave();
   if (tab === 'book') renderBook();
   else if (tab === 'relax') renderRelaxIntro();
   else renderPractice();
@@ -102,15 +120,22 @@ function noteChips() {
 
 function renderBook() {
   const b = level.pestana_libro;
+  const fig = figureFor(level, inst(), getState().nom);
   $('proBody').innerHTML = `<article class="pro-book">
     <p class="pro-lead">${esc(b.descripcion)}</p>
-    <section class="pro-block solfeo"><h3>${esc(TXT.theory)}</h3><p>${esc(b.bloque_teoria_solfeo)}</p></section>
-    <section class="pro-block tecnica"><h3><span>${esc(TXT.technique)}</span> · <span>${esc(inst().name)}</span></h3><p>${esc(b.bloque_tecnica_instrumento)}</p></section>
+    <section class="pro-block solfeo"><h3>${esc(TXT.theory)}</h3><p>${esc(b.bloque_teoria_solfeo)}</p>
+      ${fig ? `<figure class="pro-figure"><figcaption class="eyebrow">${esc(TXT.figure)}</figcaption>${fig.svg}<p class="muted">${esc(fig.caption)}</p></figure>` : ''}
+      <div class="pro-links">${fig ? `<button type="button" class="btn ghost small" id="proFigPlay"><span class="ic">${icon('speaker')}</span><span>${esc(TXT.playFig)}</span></button>` : ''}
+      <button type="button" class="btn ghost small" data-goto="relax"><span>${esc(TXT.practiseIt)}</span> ›</button></div></section>
+    <section class="pro-block tecnica"><h3><span>${esc(TXT.technique)}</span> · <span>${esc(inst().name)}</span></h3><p>${esc(b.bloque_tecnica_instrumento)}</p>
+      <div class="pro-links"><button type="button" class="btn ghost small" data-goto="play"><span>${esc(TXT.playIt)}</span> ›</button></div></section>
     <section class="pro-block consejo"><h3>${esc(TXT.tip)}</h3><p>${esc(b.consejo_unificado)}</p></section>
     <h3>${esc(TXT.notes)}</h3>${noteChips()}
     <button id="proGoRelax" class="btn" type="button"><span>${esc(TXT.goRelax)}</span> ›</button></article>`;
   recordPro(level.leccion_id, { book: true });
   $('proGoRelax').addEventListener('click', () => { tab = 'relax'; render(); });
+  $('proBody').querySelectorAll('[data-goto]').forEach(btn => btn.addEventListener('click', () => { tab = btn.dataset.goto; render(); }));
+  if (fig) $('proFigPlay').addEventListener('click', () => toggleDemo(parseScore(fig.play).notes, level.pestana_practica.bpm_recomendado, 'proFigPlay'));
 }
 
 function renderRelaxIntro() {
@@ -149,20 +174,24 @@ function renderPractice() {
     const slice = sliceScore(score, i * BARS_PER_LINE, BARS_PER_LINE);
     if (slice) createStaff($(`proLine${i}`)).render(slice, { key: level.key, time: i === 0 ? level.time : null, mode: 'review', clef: level.clef });
   }
-  $('proListen').addEventListener('click', () => toggleDemo(score.notes, p.bpm_recomendado));
+  $('proListen').addEventListener('click', () => toggleDemo(score.notes, p.bpm_recomendado, 'proListen'));
   const lesson = practiceLesson(level);
   $('proLearn').addEventListener('click', () => launch(lesson, { mode: 'learn', from: 'pro' }));
   $('proTempo').addEventListener('click', () => launch(lesson, { mode: 'tempo', from: 'pro' }));
 }
 
-function toggleDemo(notes, bpm) {
-  const label = $('proListen').lastChild;
-  if (stopDemo) { stopDemo(); stopDemo = null; label.textContent = TXT.listen; return; }
+// Escuchar/Parar en el botón indicado (su último <span> lleva el texto)
+function toggleDemo(notes, bpm, buttonId) {
+  const btn = $(buttonId);
+  const label = btn.lastElementChild;
+  const idle = label.textContent;
+  if (stopDemo) { stopDemo(); stopDemo = null; label.textContent = btn.dataset.idle || idle; return; }
+  btn.dataset.idle = idle;
   label.textContent = TXT.stop;
   stopDemo = audio.playScore(notes, bpm, (beat, done) => {
     if (!done) return;
     stopDemo = null;
-    if ($('proListen')) $('proListen').lastChild.textContent = TXT.listen;
+    if (document.body.contains(btn)) label.textContent = btn.dataset.idle;
   });
 }
 

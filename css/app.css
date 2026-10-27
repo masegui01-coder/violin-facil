@@ -1048,3 +1048,20 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .relax-feedback.wrong { background: var(--bad-soft); color: var(--bad); }
 .relax-feedback span { color: var(--ink); }
 .relax-check { width: 100%; }
+.pro-figure { margin: 10px 0 0; background: var(--surface-2); border-radius: 14px; padding: 8px 6px; display: grid; gap: 4px; }
+.pro-figure figcaption { margin: 0 6px; }
+.pro-figure p { margin: 0 6px; font-size: .9rem; }
+.pro-fig { width: 100%; height: auto; }
+.pro-fig .fig-label { font: 700 12px var(--f-body); fill: var(--accent); }
+.pro-fig .fig-text { font: 600 12px var(--f-body); fill: var(--muted); }
+.pro-fig .fig-name { font: 700 12px var(--f-body); fill: var(--ink); text-anchor: middle; }
+.pro-fig .fig-num { font: 700 10px var(--f-body); fill: var(--muted); }
+.pro-fig .fig-dyn { font: italic 700 20px Georgia, serif; fill: var(--staff); }
+.pro-fig .fig-breath { font: 700 26px Georgia, serif; fill: var(--staff); }
+.pro-fig .fig-arrow { stroke: var(--accent); stroke-width: 1.4; }
+.pro-fig .fig-head { fill: var(--accent); }
+.pro-fig .fig-arc, .pro-fig .fig-bracket { fill: none; stroke: var(--staff); stroke-width: 1.6; }
+.pro-fig .fig-bracket { stroke: var(--muted); stroke-width: 1.2; }
+.pro-fig .st-note.fig-hi { color: var(--accent); }
+.pro-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pro-num .ic { width: 18px; height: 18px; }

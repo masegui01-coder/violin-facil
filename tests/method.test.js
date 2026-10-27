@@ -110,3 +110,13 @@ test('los nombres de las notas siguen la nomenclatura elegida', () => {
   assert.deepEqual(eu.pestana_practica.notas_usadas, ['Si♭']);
   assert.deepEqual(us.pestana_practica.notas_usadas, ['B♭4']);
 });
+
+test('cada tema del Libro tiene su ilustración y un ejemplo que suena en el registro del instrumento', async () => {
+  const { figureFor } = await import('../js/pro-figures.js');
+  WINDS.forEach(inst => buildMethod(inst).forEach(level => {
+    const fig = figureFor(level, inst);
+    assert.match(fig.svg, /^<svg/, `${inst.id} ${level.leccion_id}`);
+    assert.ok(TIPS_EN[fig.caption], `${level.leccion_id}: pie sin traducir`);
+    parseScore(fig.play).notes.filter(n => !n.rest).forEach(n => assert.ok(n.midi >= inst.written[0] && n.midi <= inst.written[1], `${inst.id} ${level.leccion_id}: ${n.midi}`));
+  }));
+});
