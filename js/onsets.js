@@ -3,7 +3,12 @@
 const HOP = 128;              // muestras por bloque de energía (~2,7 ms a 48 kHz)
 const AVG_BLOCKS = 40;        // ventana para el nivel de fondo (~100 ms)
 const RATIO = 3.2;            // un golpe es una subida brusca de energía sobre el fondo
-const MIN_ENERGY = 0.0008;    // por debajo es silencio
+// Umbral que se adapta a la sala: un golpe tiene que superar varias veces el ruido de fondo medido. Antes era un umbral
+// fijo (0.0008) y los golpes suaves (una baqueta sobre la mesa con el móvil a un metro) no se oían.
+const MIN_ENERGY = 0.000004;  // suelo absoluto (micrófono casi mudo)
+const FLOOR_RATIO = 12;       // el golpe supera 12 veces el ruido de fondo de la sala
+const FLOOR_RISE = 0.002;     // el ruido de fondo sube despacio (si sube el ruido de la sala)
+const FLOOR_FALL = 0.05;      // y baja deprisa cuando hay silencio
 const REFRACTORY_S = 0.07;    // dos golpes no pueden estar más cerca de 70 ms
 // Cajón: tras cada golpe se mira ~30 ms de sonido. El grave (palma en el centro) tiene casi toda la energía
 // por debajo de 250 Hz; el agudo (dedos en el borde) suena con las bordonas, muy por encima.
@@ -21,6 +26,7 @@ export function createOnsetDetector(sampleRate) {
   const alpha = 1 - Math.exp(-2 * Math.PI * TONE_CUTOFF_HZ / sampleRate);
   let lp = 0;
   let pending = null;
+  let floor = null;           // ruido de fondo de la sala (energía por bloque)
 
   function feed(samples, startTime) {
     const buf = new Float32Array(rest.length + samples.length);
@@ -48,11 +54,13 @@ export function createOnsetDetector(sampleRate) {
       }
       const background = history.length ? history.reduce((s, x) => s + x, 0) / history.length : 0;
       const time = t0 + i / sampleRate;
-      if (e > MIN_ENERGY && e > background * RATIO && time - lastOnset > REFRACTORY_S) {
+      const quiet = floor === null ? e : floor;
+      if (e > MIN_ENERGY && e > quiet * FLOOR_RATIO && e > background * RATIO && time - lastOnset > REFRACTORY_S) {
         if (pending) hits.push({ ...pending.hit, low: pending.total ? pending.low / pending.total : 0, tone: null });
         pending = { hit: { time, strength: Math.sqrt(e) }, total: e, low: eLow, blocks: 1 };
         lastOnset = time;
       }
+      floor = floor === null ? e : floor + (e > floor ? FLOOR_RISE * Math.min(e - floor, floor) : FLOOR_FALL * (e - floor));
       history.push(e);
       if (history.length > AVG_BLOCKS) history.shift();
     }
@@ -104,6 +112,7 @@ export function accentContrast(results, accents) {
 
 export function rhythmTip({ meanOffset, spread, results }) {
   const missed = results.filter(r => r.status === 'miss').length;
+  if (results.length && missed === results.length) return 'No he oído ningún golpe: deja el móvil cerca (a un palmo de la mesa o del pad), con el micrófono destapado, y toca un poco más fuerte.';
   if (missed > results.length / 3) return 'Se me escapan muchos golpes: toca más fuerte o acerca el móvil, y calibra el micrófono en Estudio.';
   if (meanOffset < -25) return `Tiendes a adelantarte unos ${Math.round(-meanOffset)} ms: escucha el pulso y espera a que llegue.`;
   if (meanOffset > 25) return `Tiendes a retrasarte unos ${Math.round(meanOffset)} ms: anticipa un poco el movimiento de la baqueta.`;

@@ -85,7 +85,7 @@ function resolveItem(item, scale, nom, i, id, ref) {
   if (item.tipo_interaccion === 'marcar_ritmo') return { ...base, consigna: L('Escucha el ritmo y márcalo tocando el botón en cada nota', 'Listen to the rhythm and tap the button on every note') };
   if (item.tipo_interaccion === 'tocar_baquetas') {
     delete base.patron;
-    return { ...base, consigna: L('Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha', 'Play the rhythm with both hands: L pad on the left and R pad on the right'), manos: item.manos || cycle(item.patron, rhythmOnsets(item.ritmo).onsets.length) };
+    return { ...base, consigna: L('Toca el ritmo en la pantalla con dos dedos: el botón I con la izquierda y el D con la derecha', 'Tap the rhythm on the screen with two fingers: the L button with your left hand and the R one with your right'), manos: item.manos || cycle(item.patron, rhythmOnsets(item.ritmo).onsets.length) };
   }
   return base;
 }

@@ -62,7 +62,7 @@ function renderControls() {
 function onHits(hits) {
   if (!run || !run.playing) return;
   hits.forEach(h => {
-    if (h.time < run.countEnd - 0.1) return; // la cuenta previa no cuenta
+    if (h.time < run.countEnd - 0.1) { setStatus('Te oigo: espera a que acabe la cuenta', 'var(--muted)'); return; } // la cuenta previa no cuenta
     run.onsets.push(h);
     const t = h.time - latency();
     const near = run.expected.reduce((best, e, i) => (Math.abs(e - t) < Math.abs(run.expected[best] - t) ? i : best), 0);
