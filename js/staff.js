@@ -87,6 +87,14 @@ function drawNote(g, x, note, sig, shownAcc) {
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: HEAD_RX, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
   if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
+  // notas de adorno (flam): cabeza pequeña con la plica tachada, justo antes
+  (note.grace || []).forEach((gn, k, all) => {
+    const gx = x - 18 - (all.length - 1 - k) * 10;
+    const gy = y(diatonicStep(gn));
+    el('ellipse', { cx: gx, cy: gy, rx: 4.6, ry: 3.4, transform: `rotate(-20 ${gx} ${gy})`, class: 'st-fill' }, g);
+    el('line', { x1: gx + 4, x2: gx + 4, y1: gy, y2: gy - 22, class: 'st-stroke', 'stroke-width': 1.2 }, g);
+    el('line', { x1: gx - 2, x2: gx + 10, y1: gy - 8, y2: gy - 16, class: 'st-stroke', 'stroke-width': 1.2 }, g);
+  });
   for (let d = 0; d < (note.dots || (note.dotted ? 1 : 0)); d++) el('circle', { cx: x + 13 + d * 6, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
   if (note.tuplet && note.tupletFirst) text(g, x - 4, BOTTOM_Y - HALF * 12, String(note.tuplet), { class: 'st-tuplet' });
   if (note.dur === 'w') return;

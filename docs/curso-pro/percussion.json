@@ -1,0 +1,1324 @@
+[
+  {
+    "leccion_id": "perc_c1_n1",
+    "titulo_leccion": "Tu primer golpe: negras y pulso",
+    "pestana_libro": {
+      "descripcion": "En percusión no buscas notas agudas ni graves: todo el reto está en el tiempo. Una negra en el papel es un golpe exacto en cada pulso, y tu trabajo es convertir esa fila de negras en un movimiento de muñeca que se repite siempre igual, como un péndulo. En este nivel aprenderás a sujetar las baquetas con el fulcro, la pinza entre el pulgar y el índice, mientras los demás dedos solo acompañan. Descubrirás el golpe libre: levantas la baqueta, la dejas caer y el parche te la devuelve. Si aprietas, la baqueta se queda pegada y suena ahogada; si la sueltas, rebota sola y suena redonda. Contar en voz alta, mover la muñeca y escuchar el rebote a la vez: ese es tu primer juego.",
+      "bloque_teoria_solfeo": "La clave de percusión, dos barras gruesas, indica que no hay alturas: la caja se escribe en el tercer espacio. La negra dura un pulso y en un compás de 4/4 caben cuatro, que se cuentan «1, 2, 3, 4». Debajo de cada nota, la letra D o I te dice con qué mano tocar.",
+      "bloque_tecnica_instrumento": "Fulcro: pinza la baqueta entre la yema del pulgar y la segunda falange del índice, a un tercio del final. Los demás dedos la rodean sin apretar. Empieza con la punta a unos 15 cm del parche, deja caer la baqueta con la muñeca y vuelve a la misma altura: el rebote hace la mitad del trabajo.",
+      "consejo_unificado": "Si notas el antebrazo cargado, para y sacude las manos: la tensión mata el rebote. Baja los hombros y piensa que la baqueta pesa; tú solo la guías arriba y abajo."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas negras caben en un compás de 4/4?",
+        "opciones": [
+          "Dos",
+          "Tres",
+          "Cuatro",
+          "Ocho"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! Cuatro pulsos, cuatro golpes.",
+        "mensaje_error": "El 4 de arriba dice cuatro pulsos, y cada negra dura uno."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar más rápido o más fuerte, debes bloquear las muñecas y usar la fuerza de los codos y hombros.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Exacto! El motor principal siempre es la muñeca y los dedos, buscando el rebote.",
+        "mensaje_error": "Cuidado, usar los brazos genera tensión, lentitud y posibles lesiones."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Ordena las manos de cuatro negras alternadas, empezando con la derecha.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! Alternar las manos es la base de todo.",
+        "mensaje_error": "Golpes alternados: derecha, izquierda, derecha, izquierda."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| q q q q | q q h |",
+        "compas": 4,
+        "bpm": 70,
+        "mensaje_acierto": "¡Golpes a tiempo y con la mano buena!",
+        "mensaje_error": "Mira la letra de cada nota y espera al pulso: ni antes ni después.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "tecnica_instrumento",
+        "texto_incompleto": "El ___ es la pinza entre el pulgar y el índice, y el ___ devuelve la baqueta hacia arriba.",
+        "palabras_correctas": [
+          "fulcro",
+          "rebote"
+        ],
+        "palabras_señuelo": [
+          "codo",
+          "puño",
+          "hombro"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 70,
+        "ritmo": "| q q q q | h h |",
+        "mensaje_acierto": "¡Clavado! Pulso firme.",
+        "mensaje_error": "Escucha la cuenta y deja que la blanca dure dos pulsos.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja de cuatro compases: negras alternadas y una redonda final, con las letras D e I debajo de cada golpe.",
+      "bpm_recomendado": 70,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Cuenta «1, 2, 3, 4» en voz alta marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad dejando caer la baqueta desde 15 cm y deja que rebote sola.",
+        "Paso 3: Toca junto al metrónomo buscando el mismo sonido con las dos manos."
+      ],
+      "criterio_microfono_ritmo": "Precisión del ataque: cada golpe a menos de 40 ms del pulso, y volumen parecido entre la mano derecha y la izquierda."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n2",
+    "titulo_leccion": "Blancas, redondas y la cuenta en el aire",
+    "pestana_libro": {
+      "descripcion": "La caja no puede sostener un sonido: el golpe suena y se apaga enseguida. Entonces, ¿cómo se toca una blanca o una redonda? Golpeando una vez y contando el resto del valor mientras la baqueta espera arriba. Aquí la teoría se vuelve control muscular: el golpe tiene que ser igual de limpio, pero lo difícil es lo que viene después, mantener la muñeca suelta y la cuenta viva sin adelantar el siguiente golpe. En este nivel aprenderás a medir el tiempo con el cuerpo, moviendo la baqueta en el aire al ritmo del pulso, como si tocaras sin tocar. Así, cuando llegue la siguiente nota, la muñeca ya estará en marcha y el golpe caerá justo en su sitio, sin prisa y sin sorpresas.",
+      "bloque_teoria_solfeo": "La redonda vale cuatro pulsos, la blanca dos y la negra uno: una redonda equivale a dos blancas o a cuatro negras. En percusión solo se toca el principio de la figura; el resto del valor se cuenta.",
+      "bloque_tecnica_instrumento": "Después de cada golpe largo, la baqueta vuelve arriba y sigue marcando el pulso en el aire con un pequeño movimiento de muñeca. No la dejes apoyada en el parche: apaga el sonido y te obliga a despegarla con tensión.",
+      "consejo_unificado": "Cuenta en voz alta incluso los pulsos que no tocas. Si solo cuentas en la cabeza, las notas largas se acortan sin que te des cuenta."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántos pulsos dura una blanca?",
+        "opciones": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Un golpe y un pulso contado en el aire.",
+        "mensaje_error": "La blanca vale dos negras: dos pulsos."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Mientras dura una redonda, la baqueta se queda apoyada en el parche.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! La baqueta rebota y sigue el pulso en el aire.",
+        "mensaje_error": "Apoyada, la baqueta apaga el parche y te tensa la muñeca."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "h"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "w"
+        ],
+        "usar": null,
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| h q q | w |",
+        "compas": 4,
+        "bpm": 72,
+        "mensaje_acierto": "¡Muy bien! Las notas largas, enteras.",
+        "mensaje_error": "Tras la blanca y la redonda, espera contando: no adelantes el golpe.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Alterna las manos en «blanca, negra, negra» empezando con la izquierda.",
+        "secuencia_correcta": [
+          "I",
+          "D",
+          "I"
+        ],
+        "mensaje_acierto": "¡Eso es! Empezar con la izquierda equilibra las manos.",
+        "mensaje_error": "Alterna: izquierda, derecha, izquierda."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "solfeo",
+        "texto_incompleto": "La ___ dura cuatro pulsos y la ___ dura dos.",
+        "palabras_correctas": [
+          "redonda",
+          "blanca"
+        ],
+        "palabras_señuelo": [
+          "negra",
+          "corchea"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja de seis compases que mezcla redondas, blancas y negras, con la cuenta en el aire marcada en cada nota larga.",
+      "bpm_recomendado": 70,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo diciendo «ta» en cada golpe y alargando la vocal en las notas largas.",
+        "Paso 2: Toca en el pad y, en cada nota larga, marca los pulsos en el aire con la baqueta.",
+        "Paso 3: Toca junto al metrónomo comprobando que ninguna nota larga se queda corta."
+      ],
+      "criterio_microfono_ritmo": "Precisión del ataque después de cada nota larga (que el golpe no llegue antes de tiempo) y ausencia de golpes extra durante las blancas y redondas."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n3",
+    "titulo_leccion": "Silencios: el golpe que no suena",
+    "pestana_libro": {
+      "descripcion": "Un silencio no es una pausa para descansar: es un golpe que decides no dar. En el papel, el silencio de negra ocupa el mismo pulso que una negra, y en las manos debe ocupar el mismo movimiento. Por eso los buenos percusionistas tocan los silencios en el aire: la baqueta hace el gesto completo, sube y baja, pero se detiene a un par de centímetros del parche. Así la muñeca no pierde el balanceo y el siguiente golpe llega a su hora. En este nivel aprenderás a leer los silencios de negra y de blanca, a contarlos en voz alta y a convertirlos en movimientos fantasma. Descubrirás que el ritmo se oye tanto en los golpes como en los huecos que dejas entre ellos.",
+      "bloque_teoria_solfeo": "El silencio de negra vale un pulso y el de blanca dos: duran lo mismo que su figura. El de blanca se apoya sobre la tercera línea y el de redonda cuelga de la cuarta.",
+      "bloque_tecnica_instrumento": "En cada silencio, la mano hace el mismo gesto que haría para tocar, pero frena a dos centímetros del parche. Mantén el fulcro suelto: si aprietas para frenar, el siguiente golpe saldrá rígido.",
+      "consejo_unificado": "Di «sh» en voz baja en cada silencio. Oírte callar te ayuda a no adelantar la siguiente nota."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué haces durante un silencio de negra?",
+        "opciones": [
+          "Dejo de contar",
+          "Sigo contando y muevo la baqueta en el aire",
+          "Toco más flojo",
+          "Espero dos pulsos"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Eso es! El pulso nunca se para.",
+        "mensaje_error": "El silencio dura un pulso y se cuenta igual que una nota."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "solfeo",
+        "afirmacion": "El silencio de blanca dura lo mismo que una blanca.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Correcto! Dos pulsos.",
+        "mensaje_error": "Cada silencio dura lo mismo que su figura: el de blanca, dos pulsos."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| q Rq q Rq | Rq q Rq q |",
+        "compas": 4,
+        "bpm": 72,
+        "mensaje_acierto": "¡Genial! Los silencios, limpios.",
+        "mensaje_error": "En los silencios no toques: cuenta y mueve la mano en el aire.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q",
+          "Rq"
+        ],
+        "figuras": [
+          "q",
+          "Rq",
+          "Rh"
+        ],
+        "usar": "Rh",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Golpes alternados para zurdos: cuatro negras empezando con la izquierda.",
+        "secuencia_correcta": [
+          "I",
+          "D",
+          "I",
+          "D"
+        ],
+        "mensaje_acierto": "¡Muy bien! Las dos manos deben poder empezar.",
+        "mensaje_error": "Empieza con la izquierda y alterna: I, D, I, D."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "tecnica_instrumento",
+        "texto_incompleto": "En el silencio la baqueta ___ en el aire y la cuenta ___.",
+        "palabras_correctas": [
+          "se mueve",
+          "sigue"
+        ],
+        "palabras_señuelo": [
+          "se apoya",
+          "se para"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 72,
+        "ritmo": "| q Rq q q | Rq q h |",
+        "mensaje_acierto": "¡Bien contado!",
+        "mensaje_error": "Los silencios también se cuentan: no toques en ellos.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja de cuatro compases con silencios de negra y de blanca; los silencios se marcan en gris para tocarlos en el aire.",
+      "bpm_recomendado": 72,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea con «ta» en los golpes y «sh» en los silencios, marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad haciendo el gesto completo en los silencios, frenando antes del parche.",
+        "Paso 3: Toca junto al metrónomo enfocándote en que el golpe tras el silencio no se adelante."
+      ],
+      "criterio_microfono_ritmo": "Silencio real en cada pausa (sin golpes ni rebotes extra) y precisión de menos de 40 ms en el golpe que sigue a cada silencio."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n4",
+    "titulo_leccion": "Corcheas y golpes simples",
+    "pestana_libro": {
+      "descripcion": "Ha llegado el momento de partir el pulso en dos. La corchea dura medio pulso, así que en cada negra caben dos golpes: uno en el número y otro en la «y». En la caja, esta división se toca con golpes simples, alternando derecha e izquierda, el rudimento más importante de todos. La teoría te pide dos sonidos iguales por pulso y el cuerpo te responde con dos muñecas que se turnan como las piernas al caminar. Si una mano sube más que la otra, oirás un cojeo: un golpe fuerte y otro débil. En este nivel aprenderás a contar «1 y 2 y», a repartir el trabajo entre las dos manos y a escuchar si suenan idénticas. La regularidad, no la velocidad, es tu objetivo.",
+      "bloque_teoria_solfeo": "La corchea dura medio pulso: dos corcheas valen una negra. Sola lleva un corchete; en grupo se unen con una barra. Se cuentan «1 y 2 y 3 y 4 y».",
+      "bloque_tecnica_instrumento": "Golpes simples: D I D I, las dos baquetas a la misma altura y con el mismo gesto de muñeca. Mientras una baja, la otra ya está arriba preparada, como un balancín.",
+      "consejo_unificado": "Grábate con el móvil y escucha con los ojos cerrados: si no sabes qué mano ha tocado cada golpe, lo estás haciendo de maravilla."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas corcheas caben en una negra?",
+        "opciones": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! La subdivisión es matemáticamente exacta.",
+        "mensaje_error": "Revisa cuántos golpes caben en un solo pulso."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Golpes simples: ordena las manos de seis corcheas empezando con la derecha.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! El rudimento número uno.",
+        "mensaje_error": "Golpe simple: una mano cada vez, siempre alternando."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "En los golpes simples cada mano toca dos veces seguidas.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! Eso sería un golpe doble.",
+        "mensaje_error": "Simple significa un golpe por mano: D I D I."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e e e e q q | e e e e h |",
+        "compas": 4,
+        "bpm": 70,
+        "mensaje_acierto": "¡Las corcheas, igualitas!",
+        "mensaje_error": "Dos golpes por pulso, alternando, y sin correr en las corcheas.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q",
+          "ee"
+        ],
+        "figuras": [
+          "ee",
+          "q",
+          "h"
+        ],
+        "usar": "ee",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "solfeo",
+        "texto_incompleto": "Dos corcheas suman una ___ y se cuentan «uno-___».",
+        "palabras_correctas": [
+          "negra",
+          "y"
+        ],
+        "palabras_señuelo": [
+          "blanca",
+          "dos"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 70,
+        "ritmo": "| q e e q e e |",
+        "mensaje_acierto": "¡Muy bien! Corcheas en su sitio.",
+        "mensaje_error": "Cuenta «1, 2 y, 3, 4 y» mientras marcas.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja de cuatro compases con corcheas y negras en golpes simples, con las manos D e I debajo de cada nota.",
+      "bpm_recomendado": 72,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo con «1 y 2 y» marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad mirando que las dos baquetas suban a la misma altura.",
+        "Paso 3: Toca junto al metrónomo enfocándote en la igualdad de sonido entre ambas manos."
+      ],
+      "criterio_microfono_ritmo": "Regularidad de las corcheas (separación igual entre golpes, ±30 ms) y diferencia de volumen menor del 15 % entre la mano derecha y la izquierda."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n5",
+    "titulo_leccion": "Golpes dobles: el rebote controlado",
+    "pestana_libro": {
+      "descripcion": "El golpe doble es el primer truco de magia del percusionista: un solo movimiento de muñeca produce dos notas. En el papel son dos corcheas iguales, D D o I I, pero en el cuerpo se reparten el trabajo de otra manera: la muñeca lanza el primer golpe y los dedos aprovechan el rebote para dar el segundo. Si intentas hacer los dos con la muñeca, te cansarás enseguida; si dejas el segundo al azar, sonará débil. En este nivel aprenderás a escuchar el rebote, a guiarlo con los dedos y a que las dos notas del doble suenen gemelas. Empezarás despacio, casi exagerando cada golpe, y descubrirás que la velocidad llega sola cuando el movimiento es correcto.",
+      "bloque_teoria_solfeo": "El golpe doble se escribe igual que cualquier pareja de corcheas: la diferencia está en las manos, D D I I. Cada pareja ocupa un pulso y se cuenta «1 y».",
+      "bloque_tecnica_instrumento": "Primer golpe: muñeca, desde la altura normal. Segundo golpe: los dedos cierran un poco el agarre y empujan la baqueta que vuelve del rebote. Mantén el fulcro como bisagra: si lo aprietas, el rebote se pierde.",
+      "consejo_unificado": "Practica primero el doble como dos golpes separados de muñeca y acércalos poco a poco. Si el segundo suena flojo, acentúalo a propósito hasta que se iguale."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Ordena un golpe doble de ocho corcheas empezando con la derecha.",
+        "secuencia_correcta": [
+          "D",
+          "D",
+          "I",
+          "I",
+          "D",
+          "D",
+          "I",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! Dos y dos, como un tren.",
+        "mensaje_error": "Doble: dos golpes con cada mano, D D I I."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "En el golpe doble, el segundo golpe debe sonar igual de fuerte que el primero.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Exacto! Dos notas gemelas.",
+        "mensaje_error": "Si el segundo suena flojo, el redoble cojea: deben ser iguales."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "tecnica_instrumento",
+        "pregunta": "¿Qué empuja el segundo golpe del doble?",
+        "opciones": [
+          "El hombro",
+          "El codo",
+          "Los dedos y el rebote",
+          "La espalda"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! Muñeca para el primero, dedos para el segundo.",
+        "mensaje_error": "El brazo es demasiado lento: el segundo golpe sale de los dedos."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e e e e e e e e |",
+        "compas": 4,
+        "bpm": 66,
+        "mensaje_acierto": "¡Dobles impecables!",
+        "mensaje_error": "Dos golpes seguidos con la misma mano antes de cambiar.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "D",
+          "I",
+          "I",
+          "D",
+          "D",
+          "I",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "tecnica_instrumento",
+        "texto_incompleto": "En el doble, la ___ da el primer golpe y los ___ el segundo.",
+        "palabras_correctas": [
+          "muñeca",
+          "dedos"
+        ],
+        "palabras_señuelo": [
+          "codo",
+          "hombros"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| e e q e e q |",
+        "mensaje_acierto": "¡Muy bien!",
+        "mensaje_error": "Escucha: dos corcheas y una negra, dos veces.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja con golpes dobles en corcheas (D D I I) y un compás de descanso, con las manos debajo de cada nota.",
+      "bpm_recomendado": 66,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo diciendo «de-re, de-re» para sentir las parejas.",
+        "Paso 2: Toca en el pad exagerando el segundo golpe de cada pareja con los dedos.",
+        "Paso 3: Toca junto al metrónomo enfocándote en que los dos golpes del doble suenen gemelos."
+      ],
+      "criterio_microfono_ritmo": "Igualdad dentro de cada doble: el segundo golpe con al menos el 85 % del volumen del primero y la misma separación temporal que las demás corcheas."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n6",
+    "titulo_leccion": "Domina tu primer paradiddle",
+    "pestana_libro": {
+      "descripcion": "El paradiddle es el rudimento estrella: mezcla dos golpes simples con un golpe doble, D I D D · I D I I, y al repetirse cambia solo de mano. Su nombre ya es un solfeo: «pa-ra» son los simples y «di-ddle» el doble. Sobre el papel son ocho corcheas iguales con un acento en la primera de cada grupo, pero tu cerebro tiene que coordinar dos manos que hacen cosas distintas a la vez. Aquí la teoría se traduce en independencia: la mano que acentúa sube más y la otra se queda baja y tranquila. En este nivel aprenderás el patrón de memoria, lo dirás en voz alta y lo tocarás despacio hasta que salga sin pensar. Cuando lo domines, oirás cómo el acento salta de una mano a otra.",
+      "bloque_teoria_solfeo": "El paradiddle ocupa ocho corcheas, dos grupos de cuatro: D I D D · I D I I. El signo «>» marca el acento, en la primera nota de cada grupo, que cae siempre en un pulso.",
+      "bloque_tecnica_instrumento": "La mano del acento empieza alta (unos 20 cm) y, tras golpear, se queda baja para las notas suaves. La otra mano toca siempre baja, a unos 5 cm. Dos alturas distintas, la misma muñeca suelta.",
+      "consejo_unificado": "Para que los golpes suaves no suenen como los acentos, no los toques con menos fuerza: tócalos desde más abajo. La altura de la baqueta decide el volumen."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas corcheas caben en un pulso?",
+        "opciones": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! La subdivisión es matemáticamente exacta.",
+        "mensaje_error": "Revisa cuántos golpes caben en un solo pulso."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar más rápido o más fuerte, debes bloquear las muñecas y usar la fuerza de los codos y hombros.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Exacto! El motor principal siempre es la muñeca y los dedos, buscando el rebote.",
+        "mensaje_error": "Cuidado, usar los brazos genera tensión, lentitud y posibles lesiones."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Ordena la digitación correcta (Derecha/Izquierda) para ejecutar un Paradiddle simple.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "D"
+        ],
+        "mensaje_acierto": "¡Perfecto! Esa es la base de la independencia rítmica.",
+        "mensaje_error": "«Pa-ra» son dos simples y «di-ddle» un doble: D I D D."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Ahora el paradiddle entero: los dos grupos seguidos.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "D",
+          "I",
+          "D",
+          "I",
+          "I"
+        ],
+        "mensaje_acierto": "¡Genial! Y el acento ha cambiado de mano.",
+        "mensaje_error": "El segundo grupo es el espejo del primero: I D I I."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "En el paradiddle, el acento cae siempre en la mano derecha.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien visto! Un grupo empieza con D y el siguiente con I.",
+        "mensaje_error": "Por el doble, el patrón cambia de mano: el acento alterna."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e> e e e e> e e e |",
+        "compas": 4,
+        "bpm": 63,
+        "mensaje_acierto": "¡Paradiddle conseguido!",
+        "mensaje_error": "Dilo mientras tocas: «pa-ra-di-ddle».",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "D",
+          "I",
+          "D",
+          "I",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Para-di-ddle: dos golpes ___ y un golpe ___.",
+        "palabras_correctas": [
+          "simples",
+          "doble"
+        ],
+        "palabras_señuelo": [
+          "rápidos",
+          "triple"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura interactiva de caja con paradiddles en corcheas, acentos en la primera nota de cada grupo y marcas de baqueta D e I.",
+      "bpm_recomendado": 70,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo con sílabas (pa-ra-di-ddle) marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad exagerando la altura de la baqueta solo en los acentos.",
+        "Paso 3: Toca junto al metrónomo enfocándote en la igualdad de sonido entre ambas manos."
+      ],
+      "criterio_microfono_ritmo": "Evaluación estricta de la precisión en los milisegundos del impacto y diferenciación de volumen (velocidad) entre acentos y golpes normales."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n7",
+    "titulo_leccion": "Semicorcheas: ta-ka-di-mi",
+    "pestana_libro": {
+      "descripcion": "Ahora el pulso se parte en cuatro. Cada semicorchea dura un cuarto de pulso y, para no perderte, se solfean con cuatro sílabas: ta-ka-di-mi. «Ta» cae siempre en el pulso y «di» en la «y», así que puedes comprobar en cualquier momento si vas en su sitio. En la caja, cuatro golpes por pulso exigen muñecas pequeñas y relajadas: cuanto más rápida es la figura, más baja va la baqueta. Si intentas tocarlas desde arriba, te faltará tiempo y los golpes se amontonarán. En este nivel aprenderás a leer grupos de cuatro y combinaciones como el galope, una corchea y dos semicorcheas, y a tocarlas sin acelerar. El secreto es empezar lento, muy lento, y subir el metrónomo solo cuando todo suene perfectamente igual.",
+      "bloque_teoria_solfeo": "La semicorchea vale un cuarto de pulso: cuatro semicorcheas son una negra y dos son una corchea. Llevan dos barras. Se solfean «ta-ka-di-mi»; el galope (corchea y dos semicorcheas) se dice «ta-di-mi».",
+      "bloque_tecnica_instrumento": "Baja la altura de las baquetas a unos 5 cm y deja que trabajen sobre todo las muñecas y los dedos. Golpes simples, D I D I, y los codos quietos y sueltos junto al cuerpo.",
+      "consejo_unificado": "Si las semicorcheas se aceleran, baja el metrónomo diez puntos y cuenta «ta-ka-di-mi» en voz alta. La velocidad sin control solo es ruido."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas semicorcheas caben en una negra?",
+        "opciones": [
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Correcto! Ta-ka-di-mi: cuatro.",
+        "mensaje_error": "Revisa cuántos golpes caben en un solo pulso: el pulso se divide en cuatro."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Cuatro semicorcheas alternadas empezando con la izquierda.",
+        "secuencia_correcta": [
+          "I",
+          "D",
+          "I",
+          "D"
+        ],
+        "mensaje_acierto": "¡Perfecto! Tu izquierda también manda.",
+        "mensaje_error": "Simples empezando con la izquierda: I D I D."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar semicorcheas, lo primero es subir la velocidad hasta que salgan.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Exacto! Primero lento y regular; la velocidad llega después.",
+        "mensaje_error": "Correr antes de controlar crea tensión y golpes desiguales."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| s s s s s s s s q q |",
+        "compas": 4,
+        "bpm": 56,
+        "mensaje_acierto": "¡Semicorcheas al milímetro!",
+        "mensaje_error": "Cuatro golpes por pulso, alternando y sin correr.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "solfeo",
+        "ritmo": "| e s s e s s q q |",
+        "compas": 4,
+        "bpm": 60,
+        "mensaje_acierto": "¡Galope perfecto!",
+        "mensaje_error": "Di «ta-di-mi» en cada galope: la corchea es más larga.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "solfeo",
+        "texto_incompleto": "Las semicorcheas se solfean «ta-___-di-___».",
+        "palabras_correctas": [
+          "ka",
+          "mi"
+        ],
+        "palabras_señuelo": [
+          "to",
+          "do"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja con grupos de cuatro semicorcheas y galopes, con las sílabas ta-ka-di-mi y las manos D e I debajo.",
+      "bpm_recomendado": 60,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo con sílabas (ta-ka-di-mi) marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad con las baquetas bajas, a 5 cm, sin mover los codos.",
+        "Paso 3: Toca junto al metrónomo y sube 4 puntos solo cuando salga tres veces seguidas sin fallo."
+      ],
+      "criterio_microfono_ritmo": "Regularidad de las semicorcheas (desviación menor de 25 ms entre golpes) y detección de aceleración a lo largo de los cuatro compases."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n8",
+    "titulo_leccion": "Acentos y notas fantasma",
+    "pestana_libro": {
+      "descripcion": "Un ritmo sin dinámica es como una frase dicha en un solo tono. En la caja, el signo «>» marca los acentos, los golpes que deben sobresalir, y entre ellos aparecen las notas fantasma, golpes tan suaves que casi no se oyen pero dan vida al groove. La teoría solo te dice cuáles destacar; el cuerpo resuelve el cómo con alturas: la baqueta del acento sale de arriba y la de la nota fantasma, de dos o tres centímetros. En este nivel aprenderás los cuatro golpes del percusionista, completo, hacia abajo, suave y hacia arriba, que permiten pasar de un acento a una nota suave sin tensión. Escucharás cómo un mismo patrón cambia por completo cuando mueves sus acentos de sitio.",
+      "bloque_teoria_solfeo": "El acento «>» indica que esa nota suena más fuerte que las demás. Un grupo de ocho corcheas acentuado «3-3-2» lleva acentos en la 1.ª, la 4.ª y la 7.ª nota: el famoso ritmo que suena a tresillo largo.",
+      "bloque_tecnica_instrumento": "Cuatro golpes: completo (de arriba a arriba), hacia abajo (de arriba, y la baqueta se queda baja), suave o tap (de abajo a abajo) y hacia arriba (golpe suave que sube preparando el acento). Así cada mano llega a tiempo a su altura.",
+      "consejo_unificado": "Para asegurar que los golpes débiles no suenen como los acentos, no frenes la baqueta con fuerza: tócalos desde 2 cm y deja que reboten. Si el antebrazo se tensa, tus notas fantasma están demasiado altas."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué indica el signo «>» encima de una nota?",
+        "opciones": [
+          "Tocar más fuerte",
+          "Tocar más rápido",
+          "Ligar con la siguiente",
+          "Un silencio"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Correcto! Es un acento.",
+        "mensaje_error": "El «>» es un acento: esa nota destaca sobre las demás."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "tecnica_instrumento",
+        "pregunta": "¿Desde qué altura tocas una nota fantasma?",
+        "opciones": [
+          "2 o 3 cm",
+          "15 cm",
+          "30 cm",
+          "Lo más alto posible"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Eso es! Altura mínima, sonido mínimo.",
+        "mensaje_error": "La nota fantasma casi no se oye: la baqueta casi no se levanta."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para que el acento suene más, aprieta la baqueta con fuerza al golpear.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Muy bien! El volumen sale de la altura, no de apretar.",
+        "mensaje_error": "Apretar ahoga el sonido y cansa: levanta más la baqueta y suéltala."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e> e e e> e e e> e |",
+        "compas": 4,
+        "bpm": 66,
+        "mensaje_acierto": "¡El 3-3-2 te sale solo!",
+        "mensaje_error": "Alterna las manos y cuenta «1-2-3, 1-2-3, 1-2».",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Paradiddle con acentos: ¿qué manos tocan las ocho notas?",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "D",
+          "I",
+          "D",
+          "I",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! El acento cae en la D y luego en la I.",
+        "mensaje_error": "Recuerda: D I D D · I D I I."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El acento sale de la ___ de la baqueta, no de ___ más.",
+        "palabras_correctas": [
+          "altura",
+          "apretar"
+        ],
+        "palabras_señuelo": [
+          "velocidad",
+          "empujar"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja con acentos «3-3-2» en corcheas y acentos desplazados en semicorcheas; los acentos se resaltan en color y las notas fantasma en gris.",
+      "bpm_recomendado": 66,
+      "superficie_recomendada": "Caja con bordonero o pad de práctica",
+      "rutina_pasos": [
+        "Paso 1: Solfea el ritmo diciendo fuerte las sílabas acentuadas y en susurro las demás.",
+        "Paso 2: Toca en el pad exagerando la altura de la baqueta solo en los acentos.",
+        "Paso 3: Toca junto al metrónomo comprobando que las notas suaves no crecen."
+      ],
+      "criterio_microfono_ritmo": "Diferenciación de volumen entre acentos y notas fantasma (al menos el doble de intensidad en cada acento) y precisión del ataque de ±35 ms."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n9",
+    "titulo_leccion": "Contratiempo y síncopa",
+    "pestana_libro": {
+      "descripcion": "Hasta ahora casi todos tus golpes caían en el pulso. El contratiempo los mueve a la «y»: el pulso sigue ahí, pero tú tocas justo en medio, y la música empieza a bailar. La síncopa va un paso más allá y estira una nota que nace en parte débil hasta la parte fuerte siguiente. Sobre el papel verás silencios de corchea en el pulso y notas en la «y»; en el cuerpo, la clave es sentir el pulso aunque no lo toques. Por eso marcarás los tiempos con el pie, o moviendo la baqueta en el aire, mientras la otra mano golpea a contratiempo. En este nivel aprenderás a no dejarte arrastrar hacia el pulso y a que tus contratiempos suenen firmes, decididos y exactamente en mitad del tiempo.",
+      "bloque_teoria_solfeo": "El silencio de corchea dura medio pulso. «Silencio de corchea + corchea» pone el golpe en la «y». Una síncopa (corchea, negra, corchea) desplaza el acento natural: la negra empieza en la «y» y dura hasta la siguiente «y».",
+      "bloque_tecnica_instrumento": "Marca el pulso con el talón o con la baqueta en el aire y golpea la «y» con la otra mano. Mantén la muñeca del contratiempo igual de suelta que en el pulso: el miedo a llegar tarde hace adelantar el golpe.",
+      "consejo_unificado": "Di «pum» en el pulso y «TA» en la «y», en voz alta. Cuando tu voz lo tenga claro, tus manos lo seguirán."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "En «1 y 2 y», ¿dónde cae el contratiempo?",
+        "opciones": [
+          "En los números",
+          "En las «y»",
+          "Solo en el 1",
+          "En ninguno"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Justo en medio del pulso.",
+        "mensaje_error": "Contratiempo: el golpe va en la «y», entre pulso y pulso."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "solfeo",
+        "afirmacion": "Una síncopa alarga una nota que empieza en parte débil hasta la parte fuerte.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Exacto! Por eso se siente el empujón.",
+        "mensaje_error": "Sí: la síncopa nace débil y se apoya en la parte fuerte."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| Re e Re e Re e Re e |",
+        "compas": 4,
+        "bpm": 66,
+        "mensaje_acierto": "¡Contratiempos firmes!",
+        "mensaje_error": "Espera el pulso y toca en la «y»: ni pegado al número ni tarde.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "e",
+          "Re",
+          "q",
+          "h"
+        ],
+        "usar": "Re",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| Re e Re e q q |",
+        "mensaje_acierto": "¡Muy bien! Has esperado el «y».",
+        "mensaje_error": "Los dos primeros golpes van en la «y»: cuenta «1 Y 2 Y».",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En el contratiempo el golpe cae en la ___ y el pulso se marca con el ___.",
+        "palabras_correctas": [
+          "«y»",
+          "pie"
+        ],
+        "palabras_señuelo": [
+          "uno",
+          "codo"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja con contratiempos y síncopas; una flecha en cada pulso recuerda marcar el tiempo con el pie.",
+      "bpm_recomendado": 66,
+      "superficie_recomendada": "Pad de práctica o caja sorda",
+      "rutina_pasos": [
+        "Paso 1: Solfea con «pum» en el pulso y «TA» en la «y», marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad mientras el pie sigue el pulso, sin que la mano se pegue al pie.",
+        "Paso 3: Toca junto al metrónomo comprobando que cada contratiempo cae en mitad del pulso."
+      ],
+      "criterio_microfono_ritmo": "Posición de cada golpe a contratiempo (en la mitad del pulso, ±35 ms) y ausencia de golpes en los silencios del pulso."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n10",
+    "titulo_leccion": "El puntillo y el 2/4 de marcha",
+    "pestana_libro": {
+      "descripcion": "La marcha es el corazón de la percusión de banda, y su ritmo más famoso es la corchea con puntillo seguida de una semicorchea. El puntillo suma la mitad del valor: la corchea, que valía medio pulso, pasa a durar tres cuartos, y la semicorchea completa el último cuarto. Suena como un paso firme seguido de un saltito, «taaa-ki». En el cuerpo, la muñeca da un golpe largo y la otra mano responde rápida y pegada al siguiente pulso. Además conocerás el compás de 2/4, el de las marchas y pasodobles: dos pulsos, uno fuerte y otro débil, como izquierda y derecha al desfilar. En este nivel aprenderás a no convertir el puntillo en un tresillo blando y a darle el empuje marcial que pide la banda.",
+      "bloque_teoria_solfeo": "El puntillo suma la mitad del valor de la figura: corchea con puntillo = ¾ de pulso, y con su semicorchea suman un pulso. En 2/4 caben dos negras por compás: «1 y 2 y».",
+      "bloque_tecnica_instrumento": "Toca la corchea con puntillo con la mano derecha y la semicorchea con la izquierda, baja y muy pegada al siguiente golpe. Piensa en la semicorchea como una nota de impulso hacia el pulso, no como una nota suelta.",
+      "consejo_unificado": "Si el puntillo te suena «a caballito» blando, cuenta en semicorcheas «ta-ka-di-mi» y toca solo el «ta» y el «mi». Así el saltito cae en su sitio exacto."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuánto dura una corchea con puntillo?",
+        "opciones": [
+          "½ pulso",
+          "¾ de pulso",
+          "1 pulso",
+          "1½ pulsos"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Medio más un cuarto.",
+        "mensaje_error": "El puntillo suma la mitad: ½ + ¼ = ¾."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "solfeo",
+        "afirmacion": "En 2/4 caben dos negras por compás.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Sí! Fuerte y débil, como al desfilar.",
+        "mensaje_error": "El 2 de arriba son dos pulsos y el 4, que cada pulso es una negra."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e. s e. s | e e q |",
+        "compas": 2,
+        "bpm": 76,
+        "mensaje_acierto": "¡Ritmo de marcha clavado!",
+        "mensaje_error": "Golpe largo y saltito pegado al pulso: «taaa-ki».",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D"
+        ]
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Manos de dos «corchea con puntillo y semicorchea» seguidas.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! La derecha en el pulso, la izquierda en el saltito.",
+        "mensaje_error": "Corchea con puntillo con la D y semicorchea con la I."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 2,
+        "dados": [
+          "e",
+          "e"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "ee"
+        ],
+        "usar": null,
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 2,
+        "bpm": 80,
+        "ritmo": "| q e e | q q |",
+        "mensaje_acierto": "¡Muy bien, a paso de marcha!",
+        "mensaje_error": "Cuenta en 2: «1, 2 y | 1, 2».",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "solfeo",
+        "texto_incompleto": "El ___ suma la mitad del valor: la corchea con puntillo vale ___ de pulso.",
+        "palabras_correctas": [
+          "puntillo",
+          "tres cuartos"
+        ],
+        "palabras_señuelo": [
+          "acento",
+          "medio"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de marcha en 2/4: corcheas con puntillo, semicorcheas y un final acentuado, con las manos debajo de cada golpe.",
+      "bpm_recomendado": 88,
+      "superficie_recomendada": "Caja con bordonero o pad de práctica",
+      "rutina_pasos": [
+        "Paso 1: Solfea con sílabas (taaa-ki, ta-ta, ta) marchando en el sitio.",
+        "Paso 2: Toca en el pad con la semicorchea baja y pegada al siguiente golpe.",
+        "Paso 3: Toca junto al metrónomo a 2 por compás, sin que el puntillo se convierta en tresillo."
+      ],
+      "criterio_microfono_ritmo": "Proporción exacta del puntillo (la semicorchea en el último cuarto del pulso, ±25 ms) y tempo estable de marcha sin acelerar."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n11",
+    "titulo_leccion": "El flam y el tresillo",
+    "pestana_libro": {
+      "descripcion": "Dos sonidos nuevos para tu caja. El flam es una nota de adorno pequeña que se toca un instante antes de la nota principal, con la otra mano: suena gordo, como un «flam», y da peso a los golpes importantes de una marcha. El tresillo, en cambio, mete tres corcheas donde normalmente caben dos, y se cuenta «tri-po-le». En el papel verás la notita tachada del flam y un 3 sobre las corcheas del tresillo; en las manos, el flam es una cuestión de alturas, una baqueta baja y otra alta que caen casi a la vez, y el tresillo es un reparto en tres que hace que la mano que empieza vaya cambiando. En este nivel aprenderás los dos y escucharás cuánto color añaden a tu ritmo.",
+      "bloque_teoria_solfeo": "La nota de adorno del flam no tiene duración: se toca justo antes de la principal. El tresillo de corcheas son tres corcheas en el tiempo de dos, un pulso entero, marcadas con un 3.",
+      "bloque_tecnica_instrumento": "Flam: la mano del adorno empieza a 3 cm y la principal a 15 cm; las dejas caer a la vez y la baja llega antes. Tresillo en golpes simples: D I D · I D I, la mano que empieza cambia en cada pulso.",
+      "consejo_unificado": "Si el flam suena como dos golpes separados, acerca las alturas. Si suena como uno solo y plano, sepáralas un poco: el «fl» debe ser suave y el «am» fuerte."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas corcheas de tresillo caben en un pulso?",
+        "opciones": [
+          "2",
+          "3",
+          "4",
+          "6"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Correcto! Tri-po-le.",
+        "mensaje_error": "El tresillo mete tres corcheas en el pulso de dos."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "En el flam las dos baquetas golpean exactamente a la vez.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! La nota de adorno, más baja, llega un instante antes.",
+        "mensaje_error": "Si caen a la vez es un «flat», no un flam: la baja va un poquito antes."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Dos tresillos seguidos en golpes simples: ordena las seis manos.",
+        "secuencia_correcta": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ],
+        "mensaje_acierto": "¡Perfecto! El segundo tresillo empieza con la izquierda.",
+        "mensaje_error": "Sigue alternando sin parar: el segundo tresillo empieza con I."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e:3 e:3 e:3 e:3 e:3 e:3 h |",
+        "compas": 4,
+        "bpm": 60,
+        "mensaje_acierto": "¡Tresillos redondos!",
+        "mensaje_error": "Tres golpes iguales por pulso: «tri-po-le, tri-po-le».",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D"
+        ]
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "tecnica_instrumento",
+        "texto_incompleto": "En el flam, la nota de ___ sale baja y la principal ___.",
+        "palabras_correctas": [
+          "adorno",
+          "alta"
+        ],
+        "palabras_señuelo": [
+          "silencio",
+          "pegada"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| q q h | e e q h |",
+        "mensaje_acierto": "¡Muy bien!",
+        "mensaje_error": "Cuenta «1, 2, 3-4 | 1 y 2, 3-4».",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de caja con flams (nota de adorno tachada) y tresillos de corcheas, con las manos debajo de cada golpe principal.",
+      "bpm_recomendado": 66,
+      "superficie_recomendada": "Caja con bordonero o pad de práctica",
+      "rutina_pasos": [
+        "Paso 1: Solfea con «flam» en los adornos y «tri-po-le» en los tresillos, marcando el pulso con el pie.",
+        "Paso 2: Toca en el pad cuidando las dos alturas del flam: 3 cm y 15 cm.",
+        "Paso 3: Toca junto al metrónomo comprobando que los tresillos no se convierten en corchea y dos semicorcheas."
+      ],
+      "criterio_microfono_ritmo": "Separación del flam (la nota de adorno entre 15 y 40 ms antes de la principal) y reparto igual de los tres golpes de cada tresillo."
+    }
+  },
+  {
+    "leccion_id": "perc_c1_n12",
+    "titulo_leccion": "Tu primera marcha de banda",
+    "pestana_libro": {
+      "descripcion": "Es la hora de juntarlo todo. Una marcha de banda es un pequeño examen de todo lo aprendido: corcheas con puntillo para el paso firme, acentos que empujan a los músicos, semicorcheas en golpes simples para los redobles cortos, un flam para marcar la llegada y silencios que dejan respirar a la banda. Leerás una partitura de ocho compases en 2/4 y tendrás que convertir cada símbolo en su gesto: alturas distintas para acentos y golpes suaves, muñecas sueltas para las semicorcheas y el pulso siempre estable. En la banda, la caja es el reloj: si tú aceleras, todos aceleran. En este nivel aprenderás a sostener ese tempo de principio a fin y a tocar con la seguridad de quien sabe que el resto depende de él.",
+      "bloque_teoria_solfeo": "La marcha está en 2/4 y se lee por frases de cuatro compases. Repasa los símbolos: corchea con puntillo, acento «>», semicorcheas, nota de adorno del flam y silencio de negra al final.",
+      "bloque_tecnica_instrumento": "Antes de empezar, decide tres alturas: 20 cm para los acentos, 8 cm para los golpes normales y 3 cm para los adornos. Mantén los codos sueltos y respira en los silencios; la caja de banda se toca con las piernas firmes y los hombros caídos.",
+      "consejo_unificado": "Toca la marcha entera una vez a 80 sin parar aunque falles. En la banda nadie se detiene: aprender a seguir tras un error es tan importante como no fallar."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "cruzado",
+        "pregunta": "En una marcha de banda, ¿quién sostiene el tempo?",
+        "opciones": [
+          "La percusión",
+          "Los clarinetes",
+          "El público",
+          "Nadie"
+        ],
+        "respuesta_correcta": 0,
+        "mensaje_acierto": "¡Eso es! La caja es el reloj de la banda.",
+        "mensaje_error": "La percusión es el motor: si se mueve, se mueve toda la banda."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "cruzado",
+        "afirmacion": "Si la banda se acelera, la caja debe acelerar con ella.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Exacto! La caja sostiene el tempo y la banda vuelve a ella.",
+        "mensaje_error": "Tu trabajo es justo el contrario: mantener el pulso firme."
+      },
+      {
+        "tipo_interaccion": "secuencia_logica",
+        "enfoque": "cruzado",
+        "pregunta_ui": "Paradiddle inverso: el paradiddle empezando con la izquierda.",
+        "secuencia_correcta": [
+          "I",
+          "D",
+          "I",
+          "I",
+          "D",
+          "I",
+          "D",
+          "D"
+        ],
+        "mensaje_acierto": "¡Genial! Ya lo dominas con las dos manos.",
+        "mensaje_error": "Es el espejo: I D I I · D I D D."
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| e. s e. s | e> e e> e |",
+        "compas": 2,
+        "bpm": 80,
+        "mensaje_acierto": "¡A desfilar!",
+        "mensaje_error": "Puntillo largo, saltito corto y acentos arriba.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I"
+        ]
+      },
+      {
+        "tipo_interaccion": "tocar_baquetas",
+        "enfoque": "cruzado",
+        "ritmo": "| s s s s e> e | q> Rq |",
+        "compas": 2,
+        "bpm": 76,
+        "mensaje_acierto": "¡Final de marcha perfecto!",
+        "mensaje_error": "Semicorcheas iguales y para en seco en el silencio.",
+        "consigna": "Toca el ritmo con las dos manos: pad I a la izquierda y pad D a la derecha",
+        "manos": [
+          "D",
+          "I",
+          "D",
+          "I",
+          "D",
+          "I",
+          "D"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 2,
+        "bpm": 84,
+        "ritmo": "| e e q | q Rq |",
+        "mensaje_acierto": "¡Muy bien!",
+        "mensaje_error": "Cuenta en 2 y respeta el silencio final.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En la marcha, el ___ no se mueve y la caja ___ a la banda.",
+        "palabras_correctas": [
+          "pulso",
+          "sostiene"
+        ],
+        "palabras_señuelo": [
+          "acento",
+          "sigue"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura completa de una marcha de banda de ocho compases en 2/4, con acentos, flam, semicorcheas y las manos D e I bajo cada golpe.",
+      "bpm_recomendado": 96,
+      "superficie_recomendada": "Caja con bordonero o pad de práctica",
+      "rutina_pasos": [
+        "Paso 1: Solfea la marcha entera con sílabas, marchando en el sitio para sentir el 2/4.",
+        "Paso 2: Toca en el pad frase a frase (cuatro compases) cuidando las tres alturas.",
+        "Paso 3: Toca junto al metrónomo de principio a fin sin parar, aunque falles."
+      ],
+      "criterio_microfono_ritmo": "Estabilidad del tempo durante toda la marcha (sin derivar más de 3 BPM), precisión del ataque de ±35 ms y contraste de volumen en los acentos."
+    }
+  }
+]

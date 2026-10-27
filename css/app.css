@@ -1083,3 +1083,51 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .pro-zones .zt-zone.picked .zt-area { fill: color-mix(in srgb, var(--ink) 10%, transparent); stroke: var(--ink); stroke-dasharray: none; }
 .pro-zones .zt-zone.right .zt-area { fill: var(--ok-soft); stroke: var(--ok); stroke-dasharray: none; opacity: .85; }
 .pro-zones .zt-zone.wrong .zt-area { fill: var(--bad-soft); stroke: var(--bad); stroke-dasharray: none; opacity: .85; }
+
+/* ---------- Método Pro de percusión: puntos, racha, pads D/I y secuencia de manos ---------- */
+.relax-top { display: flex; align-items: center; gap: 10px; }
+.relax-top .pro-progress { flex: 1; }
+.relax-score { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; color: var(--ink); white-space: nowrap; }
+.combo-badge { display: inline-flex; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--gold); color: #fff; font-size: .78rem; font-weight: 800; animation: comboPop .3s ease-out; }
+.relax-feedback .gain { color: var(--gold); margin-left: 4px; }
+.pro-points { font-size: 1.15rem; }
+.pro-points b { font-size: 1.6rem; color: var(--accent); }
+@keyframes comboPop { 0% { transform: scale(.6); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+.stick-pads { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stick-pad { font: inherit; height: 128px; border-radius: 50%/38%; border: 2px solid var(--line); background: radial-gradient(circle at 50% 40%, var(--surface), var(--surface-2)); color: var(--ink); display: grid; place-content: center; gap: 2px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.stick-pad b { font-size: 2rem; line-height: 1; }
+.stick-pad small { color: var(--muted); font-weight: 700; }
+.stick-pad.D { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.stick-pad.I { border-color: color-mix(in srgb, var(--staff) 50%, var(--line)); }
+.stick-pad.hit { animation: tapHit .18s ease-out; }
+.stick-pad[disabled] { opacity: .55; }
+.stick-keys { text-align: center; margin: 0; }
+@media (pointer: coarse) { .stick-keys { display: none; } }
+
+.seq-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 52px; }
+.seq-slot { width: 44px; height: 48px; border-radius: 12px; border: 2px dashed var(--line); display: grid; place-content: center; font-weight: 800; font-size: 1.3rem; }
+.seq-slot.D, .stick-chip.D, .chip.hand.D { color: var(--accent); }
+.seq-slot.D, .seq-slot.I { border-style: solid; background: var(--surface-2); }
+.seq-slot.right { border-color: var(--ok); background: var(--ok-soft); }
+.seq-slot.wrong { border-color: var(--bad); background: var(--bad-soft); }
+
+.stick-lane { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.stick-chip { width: 30px; height: 34px; border-radius: 9px; border: 1.5px solid var(--line); display: grid; place-content: center; font-weight: 800; transition: transform .08s; }
+.stick-chip.now { transform: scale(1.18); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.stick-chip.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.stick-chip.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.stick-chip.miss { opacity: .45; border-style: dashed; }
+.stick-stage { display: flex; justify-content: center; align-items: baseline; gap: 10px; min-height: 34px; }
+.stick-call { font-weight: 800; font-size: 1.25rem; }
+.stick-call.ok { color: var(--ok); }
+.stick-call.bad { color: var(--bad); }
+.stick-call.pop { animation: comboPop .25s ease-out; }
+.stick-combo { font-weight: 800; color: var(--gold); font-size: 1.1rem; }
+.pro-chips.hands .chip.hand { font-weight: 800; min-width: 30px; text-align: center; }
+
+.pro-fig .fig-accent { font: 800 15px var(--f-body); fill: var(--accent); }
+.pro-fig .fig-stick { font: 800 13px var(--f-body); fill: var(--staff); text-anchor: middle; }
+.pro-fig .fig-stick.D { fill: var(--accent); }
+.pro-fig .fig-height { fill: var(--line); }
+.pro-fig .fig-height.hi { fill: var(--accent); }

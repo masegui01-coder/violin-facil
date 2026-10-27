@@ -1,4 +1,5 @@
-// Método Pro (opcional, no cambia el curso): en Aprender, la vista «Pro» lista los niveles del curso de viento y cada
+// Método Pro (opcional, no cambia el curso): en Aprender, la vista «Pro» lista los niveles del curso (viento, violín o
+// percusión) y cada
 // nivel se abre con tres pestañas. Libro: descripción, solfeo, técnica de tu instrumento y consejo. Relax: retos
 // rápidos (pro-relax.js). Práctica: partitura, rutina de pasos, lo que escucha el micrófono y el botón para tocar.
 import { $, esc, icon, starsHtml } from '../ui.js';
@@ -19,9 +20,13 @@ import { sheet } from './band-ui.js';
 const BARS_PER_LINE = 2; // en el móvil, dos compases por renglón se leen bien
 const XP_PER_STAR = 5;
 const TXT = {
-  eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), eyebrowViolin: L('Método Pro · Violín', 'Pro method · Violin'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
+  eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), eyebrowViolin: L('Método Pro · Violín', 'Pro method · Violin'),
+  eyebrowPerc: L('Método Pro · Percusión', 'Pro method · Percussion'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
   intro: L('Un camino aparte del curso, para estudiar como en el conservatorio pero desde el móvil. Cada nivel tiene tres pestañas: Libro para entender el solfeo y la técnica, Relax para practicarlo como un juego (leer, escribir notas y marcar ritmos) y Práctica para tocarlo con el micrófono.', 'A path separate from the course, to study as in a music school but from your phone. Each level has three tabs: Book to understand reading and technique, Relax to practise it as a game (reading, writing notes and tapping rhythms) and Practice to play it with the microphone.'),
-  notWind: L('El método Pro está, de momento, para violín e instrumentos de viento. Elige uno de ellos en tu perfil para verlo.', 'The Pro method is, for now, for violin and wind instruments. Choose one of them in your profile to see it.'),
+  notWind: L('El método Pro está, de momento, para violín, percusión e instrumentos de viento. Elige uno de ellos en tu perfil para verlo.', 'The Pro method is, for now, for violin, percussion and wind instruments. Choose one of them in your profile to see it.'),
+  introPerc: L('Un camino aparte del curso para aprender caja como en el conservatorio, pero jugando. Libro para entender el ritmo y la técnica de baquetas, Relax para practicarlo como un videojuego (ordenar las manos, tocar con dos pads, sumar rachas) y Práctica para tocarlo en el pad con el micrófono.', 'A path separate from the course to learn snare as in a music school, but playing. Book to understand rhythm and stick technique, Relax to practise it like a video game (ordering hands, playing two pads, building streaks) and Practice to play it on the pad with the microphone.'),
+  hands: L('Las manos de este nivel', 'The sticking in this level'), surface: L('Superficie:', 'Surface:'), bestPoints: L('Tu récord:', 'Your record:'), points: L('puntos', 'points'),
+  playMic: L('Tocar con el micrófono', 'Play with the microphone'),
   level: L('Nivel', 'Level'), locked: L('Termina el nivel anterior para abrirlo', 'Finish the previous level to open it'),
   book: L('Libro', 'Book'), relax: L('Relax', 'Relax'), play: L('Práctica', 'Practice'),
   theory: L('Solfeo', 'Music reading'), technique: L('Tu instrumento', 'Your instrument'), tip: L('Consejo', 'Tip'),
@@ -43,7 +48,9 @@ let tab = 'book';
 let stopDemo = null;
 
 const inst = () => instrumentById(getState().instrument);
-const eyebrow = () => (courseIdFor(inst()) === 'violin' ? TXT.eyebrowViolin : TXT.eyebrow);
+const EYEBROW = { violin: 'eyebrowViolin', percusion: 'eyebrowPerc' };
+const eyebrow = () => TXT[EYEBROW[courseIdFor(inst())] || 'eyebrow'];
+const isPerc = () => courseIdFor(inst()) === 'percusion';
 const levels = () => buildMethod(inst(), getState().nom);
 const saved = () => (getState().pro || {})[getState().instrument] || {};
 const statesOf = list => levelStates(list, saved(), instrumentProgress(), getState().unlockAll || getState().proTester);
@@ -58,7 +65,7 @@ export function renderPro() {
   const list = levels();
   const states = statesOf(list);
   const done = list.filter(l => states[l.leccion_id].state === 'done').length;
-  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(eyebrow())}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.intro)}</p>
+  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(eyebrow())}</p><h2>${esc(TXT.course)}</h2><p>${esc(isPerc() ? TXT.introPerc : TXT.intro)}</p>
       <div class="progress"><i style="width:${Math.round(done / list.length * 100)}%"></i></div><span class="unit-pct">${done}/${list.length}</span></div>
     <div class="pro-levels">${list.map(l => levelCard(l, states[l.leccion_id])).join('')}</div>`;
   box.querySelectorAll('[data-pro]').forEach(b => b.addEventListener('click', () => {
@@ -116,6 +123,7 @@ function render() {
 }
 
 function noteChips() {
+  if (level.patron) return `<div class="pro-chips hands">${level.patron.map(h => `<span class="chip hand ${h}">${h}</span>`).join('')}</div>`;
   return `<div class="pro-chips">${level.pestana_practica.notas_usadas.map(n => `<span class="chip">${esc(n)}</span>`).join('')}</div>`;
 }
 
@@ -131,7 +139,7 @@ function renderBook() {
     <section class="pro-block tecnica"><h3><span>${esc(TXT.technique)}</span> · <span>${esc(inst().name)}</span></h3><p>${esc(b.bloque_tecnica_instrumento)}</p>
       <div class="pro-links"><button type="button" class="btn ghost small" data-goto="play"><span>${esc(TXT.playIt)}</span> ›</button></div></section>
     <section class="pro-block consejo"><h3>${esc(TXT.tip)}</h3><p>${esc(b.consejo_unificado)}</p></section>
-    <h3>${esc(TXT.notes)}</h3>${noteChips()}
+    <h3>${esc(level.patron ? TXT.hands : TXT.notes)}</h3>${noteChips()}
     <button id="proGoRelax" class="btn" type="button"><span>${esc(TXT.goRelax)}</span> ›</button></article>`;
   recordPro(level.leccion_id, { book: true });
   $('proGoRelax').addEventListener('click', () => { tab = 'relax'; render(); });
@@ -140,16 +148,19 @@ function renderBook() {
 }
 
 function renderRelaxIntro() {
-  const best = (saved()[level.leccion_id] || {}).relax || 0;
+  const mine = saved()[level.leccion_id] || {};
+  const best = mine.relax || 0;
   $('proBody').innerHTML = `<div class="pro-relax-intro"><p>${esc(TXT.relaxIntro)}</p>
     <p class="muted"><span>${esc(TXT.challenges)}</span> ${level.pestana_relax.length}</p>
     ${best ? `<p class="muted"><span>${esc(TXT.best)}</span> ${starsHtml(best)}</p>` : ''}
+    ${mine.score ? `<p class="muted"><span>${esc(TXT.bestPoints)}</span> ${mine.score} <span>${esc(TXT.points)}</span></p>` : ''}
     <button id="proStartRelax" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.startRelax)}</button></div>`;
-  $('proStartRelax').addEventListener('click', () => startRelax(level, finishRelax));
+  $('proStartRelax').addEventListener('click', () => startRelax(level, finishRelax, { best: mine.score || 0 }));
 }
 
-function finishRelax({ stars, minutes, again }) {
-  recordPro(level.leccion_id, { relax: stars });
+function finishRelax({ stars, minutes, points, again }) {
+  const prev = (saved()[level.leccion_id] || {}).score || 0;
+  recordPro(level.leccion_id, { relax: stars, score: Math.max(prev, points) });
   logPractice(minutes, stars * XP_PER_STAR);
   $('relaxToPlay').addEventListener('click', () => { tab = 'play'; render(); });
   $('relaxAgain').addEventListener('click', again);
@@ -162,23 +173,49 @@ function renderPractice() {
   const best = instrumentProgress()['lesson:' + practiceLesson(level).id] || 0;
   $('proBody').innerHTML = `<article class="pro-play">
     <p class="pro-lead">${esc(p.instruccion_pantalla)}</p>
-    <div class="pro-chips"><span class="chip">♩ = ${p.bpm_recomendado}</span><span class="chip"><span>${esc(TXT.time)}</span> ${level.time}/4</span>${best ? `<span class="chip">${starsHtml(best)}</span>` : ''}</div>
+    <div class="pro-chips"><span class="chip">♩ = ${p.bpm_recomendado}</span><span class="chip"><span>${esc(TXT.time)}</span> ${level.time}/4</span>${p.superficie_recomendada ? `<span class="chip"><span>${esc(TXT.surface)}</span> <span>${esc(p.superficie_recomendada)}</span></span>` : ''}${best ? `<span class="chip">${starsHtml(best)}</span>` : ''}</div>
     <div class="pro-score">${Array.from({ length: lines }, (_, i) => `<svg class="staff" id="proLine${i}" role="img" aria-label="Partitura"></svg>`).join('')}</div>
     <button id="proListen" class="btn ghost small" type="button"><span class="ic">${icon('speaker')}</span><span>${esc(TXT.listen)}</span></button>
     ${noteChips()}
     <h3>${esc(TXT.routine)}</h3>
     <ol class="pro-steps">${p.rutina_pasos.map((s, i) => `<li><label><input type="checkbox" data-step="${i}"><span>${esc(s)}</span></label></li>`).join('')}</ol>
-    <section class="pro-block mic"><h3><span class="ic">${icon('notes')}</span>${esc(TXT.mic)}</h3><p>${esc(p.criterio_microfono || p.criterio_microfono_hz)}</p></section>
-    <div class="pro-actions"><button id="proLearn" class="btn ghost" type="button">${esc(TXT.learnMode)}</button>
-    <button id="proTempo" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.tempoMode)}</button></div></article>`;
+    <section class="pro-block mic"><h3><span class="ic">${icon('notes')}</span>${esc(TXT.mic)}</h3><p>${esc(p.criterio_microfono || p.criterio_microfono_hz || p.criterio_microfono_ritmo)}</p></section>
+    <div class="pro-actions">${level.sticking ? `<button id="proTempo" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.playMic)}</button>`
+      : `<button id="proLearn" class="btn ghost" type="button">${esc(TXT.learnMode)}</button>
+    <button id="proTempo" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.tempoMode)}</button>`}</div></article>`;
+  let stroke = 0; // la mano de cada golpe sigue de un renglón al siguiente
   for (let i = 0; i < lines; i++) {
     const slice = sliceScore(score, i * BARS_PER_LINE, BARS_PER_LINE);
-    if (slice) createStaff($(`proLine${i}`)).render(slice, { key: level.key, time: i === 0 ? level.time : null, mode: 'review', clef: level.clef });
+    if (!slice) continue;
+    const strokes = slice.notes.filter(n => !n.rest).length;
+    const sticking = level.sticking ? level.sticking.slice(stroke, stroke + strokes) : null;
+    stroke += strokes;
+    createStaff($(`proLine${i}`)).render(slice, { key: level.key, time: i === 0 ? level.time : null, mode: 'review', clef: level.clef, sticking });
   }
   $('proListen').addEventListener('click', () => toggleDemo(score.notes, p.bpm_recomendado, 'proListen'));
   const lesson = practiceLesson(level);
-  $('proLearn').addEventListener('click', () => launch(lesson, { mode: 'learn', from: 'pro' }));
+  if (!level.sticking) $('proLearn').addEventListener('click', () => launch(lesson, { mode: 'learn', from: 'pro' }));
   $('proTempo').addEventListener('click', () => launch(lesson, { mode: 'tempo', from: 'pro' }));
+}
+
+// Caja para «Escuchar» en percusión: golpes con sus acentos y los flams, programados poco a poco
+const DRUM_LOOKAHEAD_S = 0.3;
+const FLAM_S = 0.035;
+function playDrums(notes, bpm, onDone) {
+  const spb = 60 / bpm;
+  const t0 = audio.audioTime() + 0.15;
+  const hits = notes.filter(n => !n.rest).flatMap(n => [
+    ...(n.grace || []).map(() => ({ time: t0 + n.start * spb - FLAM_S, accent: false, gain: 0.4 })),
+    { time: t0 + n.start * spb, accent: n.accent, gain: n.accent ? 1 : 0.6 },
+  ]);
+  const last = hits.length ? hits[hits.length - 1].time : t0;
+  let i = 0;
+  const timer = setInterval(() => {
+    const until = audio.audioTime() + DRUM_LOOKAHEAD_S;
+    for (; i < hits.length && hits[i].time < until; i++) audio.drumHit(hits[i].time, hits[i].accent, hits[i].gain);
+    if (i >= hits.length && audio.audioTime() > last + DRUM_LOOKAHEAD_S) { clearInterval(timer); onDone(); }
+  }, 100);
+  return () => clearInterval(timer);
 }
 
 // Escuchar/Parar en el botón indicado (su último <span> lleva el texto)
@@ -189,11 +226,11 @@ function toggleDemo(notes, bpm, buttonId) {
   if (stopDemo) { stopDemo(); stopDemo = null; label.textContent = btn.dataset.idle || idle; return; }
   btn.dataset.idle = idle;
   label.textContent = TXT.stop;
-  stopDemo = audio.playScore(notes, bpm, (beat, done) => {
-    if (!done) return;
+  const finished = () => {
     stopDemo = null;
     if (document.body.contains(btn)) label.textContent = btn.dataset.idle;
-  });
+  };
+  stopDemo = isPerc() ? playDrums(notes, bpm, finished) : audio.playScore(notes, bpm, (beat, done) => { if (done) finished(); });
 }
 
 register('pro', { enter, leave });

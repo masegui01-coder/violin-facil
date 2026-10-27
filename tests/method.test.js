@@ -157,6 +157,54 @@ test('el violín tiene su propio libro Pro con el formato de violín', async () 
   assert.ok(levels.some(l => l.pestana_relax.some(it => it.tipo_interaccion === 'zona_tactil')));
 });
 
-test('los instrumentos sin método Pro no reciben niveles', () => {
+test('la percusión tiene su libro Pro con manos, superficie y criterio de ritmo', async () => {
+  const { PERC_LEVELS, gradeSticks, strokeCount } = await import('../js/method.js');
+  const { figureFor } = await import('../js/pro-figures.js');
+  const perc = instrumentById('percussion');
+  const levels = buildMethod(perc);
+  assert.equal(levels.length, 12);
+  assert.equal(levels[0].leccion_id, 'perc_c1_n1');
+  PERC_LEVELS.forEach(l => { const n = words(l.descripcion); assert.ok(n >= 100 && n <= 150, `percusión ${l.n}: ${n} palabras`); });
+  const missing = [];
+  const check = s => { if (typeof s === 'string' && /[a-záéíóúñ]{3}/i.test(s) && !TIPS_EN[s]) missing.push(s); };
+  levels.forEach(level => {
+    const p = level.pestana_practica;
+    assert.ok(p.criterio_microfono_ritmo && p.superficie_recomendada && !p.notas_usadas, level.leccion_id);
+    [level.titulo_leccion, ...Object.values(level.pestana_libro), p.instruccion_pantalla, p.superficie_recomendada, p.criterio_microfono_ritmo, ...p.rutina_pasos].forEach(check);
+    assert.equal(level.sticking.length, strokeCount(level.score), `${level.leccion_id}: una mano por golpe`);
+    assert.equal(lessonKey(practiceLesson(level)), 'lesson:pro-' + level.leccion_id);
+    assert.deepEqual(practiceLesson(level).sticking, level.sticking);
+    parseScore(level.score).bars.forEach(bar => assert.ok(Math.abs(bar.beats - level.time) < 1e-6, `${level.leccion_id}: compás incompleto`));
+    const types = new Set(level.pestana_relax.map(it => it.tipo_interaccion));
+    assert.ok(level.pestana_relax.length >= 5 && types.has('tocar_baquetas'), level.leccion_id);
+    level.pestana_relax.forEach(it => {
+      [it.pregunta, it.pregunta_ui, it.afirmacion, it.texto_incompleto, it.mensaje_acierto, it.mensaje_error, it.consigna].forEach(check);
+      if (it.tipo_interaccion !== 'opcion_multiple' || !it.notesAreNames) (it.opciones || []).forEach(check);
+      [...(it.palabras_correctas || []), ...(it.palabras_señuelo || [])].forEach(check);
+      if (it.tipo_interaccion === 'secuencia_logica') assert.ok(it.secuencia_correcta.length >= 3 && it.secuencia_correcta.every(h => h === 'D' || h === 'I'), it.id);
+      if (it.tipo_interaccion === 'tocar_baquetas' || it.tipo_interaccion === 'marcar_ritmo') {
+        const { onsets, beats } = rhythmOnsets(it.ritmo);
+        assert.ok(Math.abs(beats % it.compas) < 1e-6 || Math.abs(beats % it.compas - it.compas) < 1e-6, it.id);
+        if (it.manos) assert.equal(it.manos.length, onsets.length, it.id);
+      }
+      if (it.tipo_interaccion === 'completar_compas') assert.ok(barBeats(it.dados) < it.compas && (!it.usar || it.figuras.includes(it.usar)), it.id);
+    });
+    const fig = figureFor(level, perc);
+    assert.ok(fig && fig.svg.startsWith('<svg') && TIPS_EN[fig.caption], `${level.leccion_id}: ilustración`);
+    parseScore(fig.play);
+  });
+  assert.deepEqual(missing, []);
+  assert.ok(levels.some(l => l.pestana_relax.some(it => it.tipo_interaccion === 'secuencia_logica' && it.secuencia_correcta.join('') === 'DIDD')));
+  // Reto de baquetas: a tiempo y con la mano que toca
+  const taps = [{ beat: 0.05, hand: 'D' }, { beat: 1.02, hand: 'I' }];
+  assert.ok(gradeSticks([0, 1], ['D', 'I'], taps).ok);
+  const swapped = gradeSticks([0, 1], ['D', 'I'], [{ beat: 0, hand: 'I' }, { beat: 1, hand: 'D' }]);
+  assert.equal(swapped.ok, false);
+  assert.equal(swapped.wrongHand, 2);
+  assert.equal(gradeSticks([0, 1], ['D', 'I'], [...taps, { beat: 2, hand: 'D' }]).extra, 1);
+});
+
+test('el cajón y los instrumentos sin método Pro no reciben niveles', () => {
   assert.deepEqual(buildMethod(instrumentById('guitar')), []);
+  assert.deepEqual(buildMethod(instrumentById('cajon')), []);
 });

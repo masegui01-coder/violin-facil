@@ -5,7 +5,7 @@ import { L } from './tips-l10n.js';
 import { parseNote, diatonicStep, noteLabel, keyCount } from './music.js';
 
 const HALF = 7;
-const BASE = { treble: 30, bass: 18 };
+const BASE = { treble: 30, bass: 18, perc: 30 };
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const SHARP_STEPS = [38, 35, 39, 36, 33, 37, 34];
 const FLAT_STEPS = [34, 37, 33, 36, 32, 35, 31];
@@ -28,6 +28,10 @@ function canvas({ width, height, clef, bottom = 120 }) {
       for (let i = 0; i < 5; i++) add(`<line x1="${x0}" x2="${x1}" y1="${bottom - i * HALF * 2}" y2="${bottom - i * HALF * 2}" class="st-line"/>`);
     },
     clef(x = 10) {
+      if (clef === 'perc') {
+        [x + 6, x + 16].forEach(cx => add(`<rect x="${cx}" y="${bottom - HALF * 6}" width="6" height="${HALF * 4}" class="st-fill"/>`));
+        return x + 44;
+      }
       add(clef === 'bass' ? `<text x="${x + 2}" y="${bottom - HALF * 2 + 2}" class="st-clef bass">𝄢</text>` : `<text x="${x}" y="${bottom + 9}" class="st-clef">𝄞</text>`);
       return x + 44;
     },
@@ -54,7 +58,7 @@ function canvas({ width, height, clef, bottom = 120 }) {
       for (let s = base + 10; s <= step; s += 2) add(`<line x1="${x - 13}" x2="${x + 13}" y1="${y(s)}" y2="${y(s)}" class="st-line"/>`);
     },
     // Nota: dur w h q e; dot; acc ('♯' '♭' '♮'); flag false para corcheas unidas por barra. Devuelve dónde acaba la plica.
-    note(x, step, dur, { dot = false, acc = null, flag = true, cls = '' } = {}) {
+    note(x, step, dur, { dot = false, acc = null, flag = true, cls = '', up: forceUp = null } = {}) {
       f.ledgers(x, step);
       const ny = y(step);
       const hollow = dur === 'w' || dur === 'h';
@@ -64,7 +68,7 @@ function canvas({ width, height, clef, bottom = 120 }) {
       if (dot) add(`<circle cx="${x + 14}" cy="${(step - base) % 2 === 0 ? ny - 4 : ny}" r="2.3" class="st-fill"/>`);
       let stem = null;
       if (dur !== 'w') {
-        const up = step < mid;
+        const up = forceUp ?? step < mid;
         const sx = up ? x + 7.3 : x - 7.3;
         const tip = up ? ny - STEM : ny + STEM;
         add(`<line x1="${sx}" x2="${sx}" y1="${ny}" y2="${tip}" class="st-stroke" stroke-width="1.7"/>`);
@@ -74,11 +78,17 @@ function canvas({ width, height, clef, bottom = 120 }) {
       add('</g>');
       return { x, y: ny, stem };
     },
-    beam(a, b) { add(`<line x1="${a.stem.x}" x2="${b.stem.x}" y1="${a.stem.y}" y2="${b.stem.y}" class="st-stroke" stroke-width="5"/>`); },
+    // Nota de adorno (flam): cabeza pequeña con plica tachada justo antes de la nota
+    grace(x, step) {
+      const gy = y(step);
+      add(`<g class="st-note"><ellipse cx="${x}" cy="${gy}" rx="4.6" ry="3.4" transform="rotate(-20 ${x} ${gy})" class="st-fill"/><line x1="${x + 4}" x2="${x + 4}" y1="${gy}" y2="${gy - 22}" class="st-stroke" stroke-width="1.2"/><line x1="${x - 2}" x2="${x + 10}" y1="${gy - 8}" y2="${gy - 16}" class="st-stroke" stroke-width="1.2"/></g>`);
+    },
+    beam(a, b, offset = 0) { if (offset) { add(`<line x1="${a.stem.x}" x2="${b.stem.x}" y1="${a.stem.y + offset}" y2="${b.stem.y + offset}" class="st-stroke" stroke-width="5"/>`); return; } add(`<line x1="${a.stem.x}" x2="${b.stem.x}" y1="${a.stem.y}" y2="${b.stem.y}" class="st-stroke" stroke-width="5"/>`); },
     rest(x, kind) {
       const m = bottom - HALF * 4;
       if (kind === 'w') add(`<rect x="${x - 7}" y="${m - HALF * 2}" width="14" height="6" class="st-fill"/>`);
       else if (kind === 'h') add(`<rect x="${x - 7}" y="${m - 6}" width="14" height="6" class="st-fill"/>`);
+      else if (kind === 'e') add(`<circle cx="${x - 3}" cy="${m - 4}" r="2.8" class="st-fill"/><path d="M${x - 3} ${m - 2} q5 1 7 -4 l-5 16" class="st-stroke" stroke-width="1.6" fill="none"/>`);
       else add(`<path d="M${x - 2} ${m - 14} l6 7 -5 6 6 8 c-5 -2 -8 1 -4 5 c-7 -3 -6 -9 0 -7 l-6 -7 5 -6z" class="st-fill"/>`);
     },
     arc(x1, x2, yy, up = true) {
@@ -101,6 +111,14 @@ function canvas({ width, height, clef, bottom = 120 }) {
       add(`<path d="M${x1} ${yy - 5} V${yy} H${x2} V${yy - 5}" class="fig-bracket"/>`);
       f.text((x1 + x2) / 2, yy + 14, s, cls);
     },
+    // Corchete suelto de una corchea (o el segundo de una semicorchea) y barrita corta de semicorchea en un grupo
+    flag(n, offset = 0) {
+      const { x: sx, y: tip, up } = n.stem;
+      const fy = tip + (up ? offset : -offset);
+      add(up ? `<path d="M${sx} ${fy} q2 10 10 16 q-4 -8 -10 -10" class="st-fill"/>` : `<path d="M${sx} ${fy} q2 -10 10 -16 q-4 8 -10 10" class="st-fill"/>`);
+    },
+    stub(n, dx) { add(`<line x1="${n.stem.x}" x2="${n.stem.x + dx}" y1="${n.stem.y + 8}" y2="${n.stem.y + 8}" class="st-stroke" stroke-width="5"/>`); },
+    height(x, h) { add(`<rect x="${x - 4}" y="${bottom + 58 - h}" width="8" height="${h}" rx="2" class="fig-height${h > 10 ? ' hi' : ''}"/>`); },
     svg() {
       return `<svg class="staff pro-fig" viewBox="0 0 ${width} ${height}" role="img"><defs><marker id="figHead" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8z" class="fig-head"/></marker></defs>${parts.join('')}</svg>`;
     },
@@ -364,14 +382,215 @@ FIGURES.dedos = f => {
   return '| A4q B4q C#5q D5q | C#5q B4q A4h |';
 };
 
-const HEIGHT = { 4: 230, 11: 230 };
+// ---------- Percusión: ritmos en la caja con la mano de cada golpe ----------
+const PT = {
+  clefPerc: L('Clave de percusión', 'Percussion clef'), snare: L('Caja: 3.er espacio', 'Snare: 3rd space'), hand: L('Mano: D o I', 'Hand: R or L'),
+  pulse: L('Un golpe en cada pulso', 'One stroke on each beat'), air: L('cuenta en el aire', 'count in the air'), restAir: L('gesto en el aire', 'gesture in the air'),
+  singles: L('Golpes simples', 'Single strokes'), doubles: L('Golpes dobles', 'Double strokes'), bounce: L('rebote', 'bounce'),
+  para: L('pa-ra', 'pa-ra'), diddle: L('di-ddle', 'di-ddle'), accent: L('Acento', 'Accent'), ghost: L('Nota fantasma', 'Ghost note'),
+  high: L('baqueta alta', 'stick high'), low: L('baqueta baja', 'stick low'), sixteenth: L('2 barras: ¼ de pulso', '2 beams: ¼ beat'), gallop: L('Galope', 'Gallop'),
+  offbeat: L('Golpe en la «y»', 'Stroke on the "and"'), eighthRest: L('Silencio de corchea', 'Eighth rest'), sync: L('Síncopa', 'Syncopation'),
+  dotted: L('¾ + ¼ = 1 pulso', '¾ + ¼ = 1 beat'), march: L('Marcha en 2/4', 'March in 2/4'), flam: L('Flam: adorno + nota', 'Flam: grace + note'),
+  triplet: L('Tresillo: 3 en 1 pulso', 'Triplet: 3 in 1 beat'), phrase: L('Frase de 4 compases', '4-bar phrase'), ending: L('Final con acento', 'Accented ending'),
+};
+Object.assign(CAPTION, {
+  perc1: L('La caja se escribe en el tercer espacio; debajo de cada golpe, la mano que toca.', 'The snare is written in the third space; under each stroke, the hand that plays it.'),
+  perc2: L('En la caja solo suena el principio de la figura: el resto se cuenta con la baqueta en el aire.', 'On the snare only the start of the note sounds: the rest is counted with the stick in the air.'),
+  perc3: L('Cada silencio es un golpe que no suena: la mano hace el gesto sin tocar.', 'Each rest is a stroke that does not sound: the hand makes the gesture without playing.'),
+  perc4: L('Dos corcheas por pulso, una con cada mano: D I D I.', 'Two eighths per beat, one with each hand: R L R L.'),
+  perc5: L('Dos golpes con cada mano: el segundo sale del rebote.', 'Two strokes with each hand: the second comes from the bounce.'),
+  perc6: L('Paradiddle: dos simples y un doble, y el acento cambia de mano.', 'Paradiddle: two singles and a double, and the accent switches hands.'),
+  perc7: L('Cuatro semicorcheas por pulso, «ta-ka-di-mi», y el galope «ta-di-mi».', 'Four sixteenths per beat, "ta-ka-di-mi", and the gallop "ta-di-mi".'),
+  perc8: L('La altura de la baqueta decide el volumen: arriba para el acento, abajo para la nota fantasma.', 'Stick height sets the volume: high for the accent, low for the ghost note.'),
+  perc9: L('El contratiempo cae en la «y» y la síncopa se apoya sobre el pulso.', 'The off-beat falls on the "and" and the syncopation leans over the beat.'),
+  perc10: L('Corchea con puntillo y semicorchea: el paso firme y el saltito de la marcha.', 'Dotted eighth and sixteenth: the firm step and little hop of the march.'),
+  perc11: L('El flam con su nota de adorno y el tresillo, tres golpes en un pulso.', 'The flam with its grace note and the triplet, three strokes in one beat.'),
+  perc12: L('Una frase de marcha con todo lo aprendido y su final acentuado.', 'A march phrase with everything you have learned and its accented ending.'),
+});
+
+// Dibuja una fila de figuras en la caja: «q» «e» «s» «e.» «Rq» «Re»…, con «>» de acento y «g» delante para el flam.
+// Las corcheas y semicorcheas de un mismo pulso se unen con barras. Devuelve la posición de cada figura.
+const SNARE_STEP = 35;
+const FIG_BEATS = { w: 4, h: 2, q: 1, 'e.': 0.75, e: 0.5, 's': 0.25, t3: 1 / 3 };
+function percRow(f, x0, tokens, hands = [], { gap = 26, perBeat = 30 } = {}) {
+  let x = x0;
+  let beat = 0;
+  let h = 0;
+  const out = [];
+  tokens.forEach(raw => {
+    const accent = raw.endsWith('>');
+    const flam = raw.startsWith('g');
+    const tok = raw.replace(/>$/, '').replace(/^g/, '');
+    const rest = tok.startsWith('R');
+    const fig = rest ? tok.slice(1) : tok;
+    const dur = fig === 't3' ? 'e' : fig.replace('.', '');
+    const beats = FIG_BEATS[fig] ?? (dur === 'e' ? 0.5 : 1);
+    if (rest) f.rest(x, dur);
+    else {
+      if (flam) f.grace(x - 16, SNARE_STEP + 1);
+      const n = f.note(x, SNARE_STEP, dur, { dot: fig.includes('.'), flag: false, up: true });
+      if (accent) f.text(x + 7, n.stem.y - 8, '>', 'fig-accent');
+      if (hands[h]) f.text(x, f.bottom + 22, hands[h], `fig-stick ${hands[h]}`);
+      h++;
+      out.push({ ...n, dur, beat, fig, accent });
+    }
+    if (rest) out.push({ x, rest: true, beat });
+    beat += beats;
+    x += gap + beats * perBeat;
+  });
+  // Barras por pulso (y la segunda barra entre semicorcheas); una corchea sola lleva corchete
+  const groups = {};
+  out.filter(n => !n.rest && ['e', 's'].includes(n.dur)).forEach(n => { const k = Math.floor(n.beat + 1e-6); (groups[k] = groups[k] || []).push(n); });
+  Object.values(groups).forEach(g => {
+    if (g.length === 1) {
+      const n = g[0];
+      f.flag(n);
+      if (n.dur === 's') f.flag(n, 8);
+      return;
+    }
+    f.beam(g[0], g[g.length - 1]);
+    g.forEach((n, i) => {
+      if (n.dur !== 's') return;
+      const next = g[i + 1];
+      if (next && next.dur === 's') f.beam(n, next, 8);
+      else if (!(g[i - 1] && g[i - 1].dur === 's')) f.stub(n, next ? 9 : -9);
+    });
+  });
+  return out;
+}
+const PARA = ['D', 'I', 'D', 'D', 'I', 'D', 'I', 'I'];
+const sticks = (pattern, n) => Array.from({ length: n }, (_, i) => pattern[i % pattern.length]);
+
+Object.assign(FIGURES, {
+  perc1: f => {
+    f.staff();
+    let x = f.clef(10);
+    f.time(x, 4);
+    f.label(70, 22, PT.clefPerc, 22, f.bottom - HALF * 5);
+    const row = percRow(f, x + 40, ['q', 'q', 'q', 'q'], ['D', 'I', 'D', 'I'], { gap: 22, perBeat: 36 });
+    f.label(row[1].x + 40, 22, PT.snare, row[1].x + 2, row[1].y - 4);
+    f.text(352, f.bottom + 46, PT.hand, 'fig-label', 'end');
+    f.finalBar(row[3].x + 40);
+    return '| C5q C5q C5q C5q |';
+  },
+  perc2: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 16, ['w', 'h', 'q', 'q'], ['D', 'I', 'D', 'I'], { gap: 34, perBeat: 22 });
+    [[row[0].x, T.beats4], [row[1].x, T.beats2], [row[2].x, T.beat1]].forEach(([nx, b]) => f.text(nx, f.bottom + 40, b));
+    f.bracket(row[0].x + 14, row[1].x - 14, f.bottom - HALF * 10, PT.air);
+    f.text(180, 18, T.equal, 'fig-label');
+    return '| C5w | C5h C5q C5q |';
+  },
+  perc3: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 20, ['q', 'Rq', 'q', 'Rq', 'h', 'Rh'], ['D', 'I', 'D'], { gap: 26, perBeat: 22 });
+    f.label(row[1].x + 30, 22, PT.restAir, row[1].x, f.bottom - HALF * 7);
+    return '| C5q Rq C5q Rq | C5h Rh |';
+  },
+  perc4: f => {
+    f.staff();
+    let x = f.clef(10);
+    f.time(x, 4);
+    const row = percRow(f, x + 36, ['e', 'e', 'e', 'e', 'q', 'q'], sticks(['D', 'I'], 6), { gap: 18, perBeat: 40 });
+    ['1', T.and, '2', T.and, '3', '4'].forEach((s2, i) => f.text(row[i].x, f.bottom + 40, s2, i % 2 && i < 4 ? 'fig-label' : 'fig-text'));
+    f.text(180, 18, PT.singles, 'fig-label');
+    f.finalBar(row[5].x + 36);
+    return '| C5e C5e C5e C5e C5q C5q |';
+  },
+  perc5: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 20, ['e', 'e', 'e', 'e', 'e', 'e', 'e', 'e'], sticks(['D', 'D', 'I', 'I'], 8), { gap: 16, perBeat: 36 });
+    [1, 3].forEach(i => f.label(row[i].x + 2, 22, PT.bounce, row[i].x - 4, row[i].stem.y - 6));
+    f.text(352, f.bottom + 46, PT.doubles, 'fig-label', 'end');
+    return '| C5e C5e C5e C5e C5e C5e C5e C5e |';
+  },
+  perc6: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 20, ['e>', 'e', 'e', 'e', 'e>', 'e', 'e', 'e'], PARA, { gap: 16, perBeat: 36 });
+    f.bracket(row[0].x - 6, row[1].x + 6, f.bottom + 40, PT.para);
+    f.bracket(row[2].x - 6, row[3].x + 6, f.bottom + 40, PT.diddle, 'fig-label');
+    f.bracket(row[4].x - 6, row[5].x + 6, f.bottom + 40, PT.para);
+    f.bracket(row[6].x - 6, row[7].x + 6, f.bottom + 40, PT.diddle, 'fig-label');
+    f.label(row[4].x + 40, 16, PT.accent, row[4].x + 8, row[4].stem.y - 14);
+    return '| C5e> C5e C5e C5e C5e> C5e C5e C5e |';
+  },
+  perc7: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 16, ['s', 's', 's', 's', 'e', 's', 's', 'q'], sticks(['D', 'I'], 8), { gap: 14, perBeat: 64 });
+    ['ta', 'ka', 'di', 'mi', 'ta', 'di', 'mi'].forEach((s2, i) => f.text(row[i].x, f.bottom + 40, s2, 'fig-text'));
+    f.label(row[1].x + 70, 18, PT.sixteenth, row[1].x, row[1].stem.y + 6);
+    f.text(row[5].x, f.bottom + 56, PT.gallop, 'fig-label');
+    return '| C5s C5s C5s C5s C5e C5s C5s C5q |';
+  },
+  perc8: f => {
+    f.staff();
+    const x = f.clef(10);
+    const toks = ['e>', 'e', 'e', 'e>', 'e', 'e', 'e>', 'e'];
+    const row = percRow(f, x + 20, toks, sticks(['D', 'I'], 8), { gap: 16, perBeat: 36 });
+    // Altura de la baqueta de cada golpe (barra alta para el acento, baja para la nota fantasma)
+    row.forEach(n => f.height(n.x, n.accent ? 24 : 6));
+    f.label(row[0].x + 40, 16, PT.accent, row[0].x + 8, row[0].stem.y - 14);
+    f.text(row[0].x, f.bottom + 76, PT.high, 'fig-label');
+    f.text(row[1].x + 40, f.bottom + 76, PT.low, 'fig-text');
+    return '| C5e> C5e C5e C5e> C5e C5e C5e> C5e |';
+  },
+  perc9: f => {
+    f.staff();
+    let x = f.clef(10);
+    f.time(x, 4);
+    const row = percRow(f, x + 36, ['Re', 'e', 'Re', 'e', 'e', 'q', 'e'], ['D', 'I', 'D', 'I', 'D'], { gap: 16, perBeat: 40 });
+    ['1', T.and, '2', T.and, '3', T.and, T.and].forEach((s2, i) => f.text(row[i].x, f.bottom + 40, s2, i % 2 ? 'fig-label' : 'fig-text'));
+    f.label(row[1].x + 30, 18, PT.offbeat, row[1].x + 2, row[1].stem.y - 4);
+    f.text(row[5].x, f.bottom + 58, PT.sync, 'fig-label');
+    return '| Re C5e Re C5e C5e C5q C5e |';
+  },
+  perc10: f => {
+    f.staff();
+    let x = f.clef(10);
+    f.time(x, 2);
+    const row = percRow(f, x + 36, ['e.', 's', 'e.', 's', 'e', 'e', 'q'], sticks(['D', 'I'], 7), { gap: 16, perBeat: 44 });
+    f.label(row[0].x + 44, 18, T.dot, row[0].x + 14, row[0].y - 4);
+    f.text((row[0].x + row[1].x) / 2, f.bottom + 40, PT.dotted, 'fig-text');
+    f.text(352, f.bottom + 58, PT.march, 'fig-label', 'end');
+    return '@time:2/4 | C5e. C5s C5e. C5s | C5e C5e C5q |';
+  },
+  perc11: f => {
+    f.staff();
+    const x = f.clef(10);
+    const row = percRow(f, x + 34, ['gq', 'q', 't3', 't3', 't3', 'q'], ['D', 'I', 'D', 'I', 'D', 'I'], { gap: 22, perBeat: 48 });
+    f.label(row[0].x + 30, 16, PT.flam, row[0].x - 16, row[0].y - 14);
+    f.text((row[2].x + row[4].x) / 2, row[2].stem.y - 10, '3', 'fig-label');
+    f.text((row[2].x + row[4].x) / 2, f.bottom + 44, PT.triplet, 'fig-label');
+    return '| g:C5 C5q C5q C5e:3 C5e:3 C5e:3 C5q |';
+  },
+  perc12: f => {
+    f.staff();
+    let x = f.clef(10);
+    f.time(x, 2);
+    const row = percRow(f, x + 36, ['e.', 's', 'e>', 'e', 's', 's', 's', 's', 'q>'], sticks(['D', 'I'], 9), { gap: 12, perBeat: 40 });
+    f.bar((row[1].x + row[2].x) / 2 + 2);
+    f.bar((row[3].x + row[4].x) / 2 + 2);
+    f.bar((row[7].x + row[8].x) / 2 + 2);
+    f.finalBar(row[8].x + 30);
+    f.label(row[8].x - 30, 16, PT.ending, row[8].x + 8, row[8].stem.y - 14);
+    f.bracket(row[0].x - 6, row[7].x + 6, f.bottom + 44, PT.phrase);
+    return '@time:2/4 | C5e. C5s C5e> C5e | C5s C5s C5s C5s C5q> |';
+  },
+});
+
+const HEIGHT = { 4: 230, 11: 230, perc6: 220, perc7: 230, perc8: 250, perc9: 220, perc10: 220, perc12: 220 };
 
 // Ilustración del nivel: { svg, caption, play } (play: partitura en texto con las notas del instrumento)
 export function figureFor(level, inst, nom = 'eu') {
   const topic = level.tema ?? level.nivel;
   const draw = FIGURES[topic];
   if (!draw) return null;
-  const clef = level.clef === 'bass' ? 'bass' : 'treble';
+  const clef = ['bass', 'perc'].includes(level.clef) ? level.clef : 'treble';
   const steps = level.scale.map(n => diatonicStep(parseNote(n)));
   const lowest = Math.min(...steps);
   // Notas muy graves (tuba): se baja el pentagrama para que quepan sus líneas adicionales
