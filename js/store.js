@@ -22,7 +22,7 @@ const DEFAULTS = Object.freeze({
   chordsKnown: {}, changes: {}, theoryAnswers: {},
   accountPromptSince: null, analyticsConsent: null,
   publicName: '', publicBoards: false, kidMode: false, bandPending: [],
-  groups: [], bandView: 'band', placement: {}, seenScreens: {}, listenMelody: true, accompOn: false, learnView: 'casual', bookPlays: {}, bookShelf: {}, booksUnlocked: {}, school: null, proTester: false, adminUser: false, rhythmBookOpts: null, rhythmBook: null, lang: null, coach: {}, tipsSeen: {},
+  groups: [], bandView: 'band', placement: {}, seenScreens: {}, listenMelody: true, accompOn: false, learnView: 'casual', bookPlays: {}, bookShelf: {}, booksUnlocked: {}, school: null, proTester: false, adminUser: false, rhythmBookOpts: null, rhythmBook: null, lang: null, coach: {}, tipsSeen: {}, pro: {},
 });
 
 function read(key) {
@@ -194,6 +194,15 @@ export function recordTheoryAnswer(id, right, day = today()) {
 
 // Guitarra y piano: acordes que ya sabes (desbloquean canciones) y récords de cambios en un minuto
 const MAX_CHANGES = 30;
+// Método Pro: por instrumento y nivel, { book: leído, relax: mejores estrellas }
+export function recordPro(levelId, patch) {
+  const inst = state.instrument;
+  const mine = state.pro[inst] || {};
+  const cur = mine[levelId] || {};
+  const next = { ...cur, ...patch, relax: Math.max(cur.relax || 0, patch.relax || 0) };
+  return update({ pro: { ...state.pro, [inst]: { ...mine, [levelId]: next } } });
+}
+
 export const knownChords = () => state.chordsKnown[state.instrument] || [];
 
 export function learnChords(names) {

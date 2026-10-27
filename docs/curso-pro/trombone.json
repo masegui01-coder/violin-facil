@@ -1,0 +1,1231 @@
+[
+  {
+    "leccion_id": "viento_c1_n1",
+    "titulo_leccion": "Tu primer sonido",
+    "pestana_libro": {
+      "descripcion": "La música se escribe en el pentagrama, cinco líneas en las que cada nota tiene su sitio: cuanto más arriba está, más aguda suena. Al principio de cada línea va la clave, que dice qué nota corresponde a cada línea. En este nivel aprendes una sola figura, la redonda, que dura cuatro pulsos. El pulso es el latido regular de la música, como el tic tac de un reloj. Tu reto es sencillo y a la vez el más importante de todos: que tu instrumento suene con una nota larga, limpia y estable mientras cuentas cuatro pulsos. Antes de tocar aprenderás a respirar sin tensión y a colocar la boca. No tengas prisa: los buenos músicos siguen haciendo notas largas toda la vida, porque ahí nace el sonido bonito.",
+      "bloque_teoria_solfeo": "El pentagrama tiene cinco líneas y cuatro espacios, y se cuentan de abajo arriba. Tu instrumento lee en clave de fa: sus dos puntos rodean la cuarta línea y le dan el nombre de Fa. La redonda es una cabeza hueca sin plica y vale cuatro pulsos.",
+      "bloque_tecnica_instrumento": "Coge aire por la boca, profundo, sin subir los hombros. Junta los labios como para decir «mmm», apoya la boquilla centrada y sopla hasta que vibren: es el «buzz». No aprietes la boquilla contra la boca; la nota sale del aire rápido.",
+      "consejo_unificado": "Cuenta los cuatro pulsos por dentro mientras soplas y piensa en el aire como una línea recta que sale del abdomen: si la línea no tiembla, la redonda tampoco."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas líneas tiene el pentagrama?",
+        "opciones": [
+          "Cuatro",
+          "Cinco",
+          "Seis",
+          "Siete"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Cinco líneas y cuatro espacios.",
+        "mensaje_error": "Cuenta otra vez: son cinco líneas, de abajo arriba."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tener más aire hay que subir los hombros al respirar.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! El aire va abajo, al abdomen; los hombros quietos.",
+        "mensaje_error": "Cuidado: subir los hombros tensa el cuello y llena menos los pulmones."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "La ___ dura cuatro pulsos, y para que suene estable el aire debe ser ___.",
+        "palabras_correctas": [
+          "redonda",
+          "constante"
+        ],
+        "palabras_señuelo": [
+          "negra",
+          "cortado",
+          "flojo"
+        ]
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 0,
+        "mensaje_acierto": "¡Eso es! Es la primera nota de tu escala de la banda.",
+        "mensaje_error": "Fíjate en qué línea o espacio está la cabeza de la nota.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Do",
+          "Re",
+          "Mi♭",
+          "Si♭"
+        ],
+        "respuesta_correcta": 3,
+        "pentagrama": "Bb2"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 0,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecto! Ya sabes escribir tu primera nota.",
+        "mensaje_error": "Casi: la nota correcta aparece en verde.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "Bb2",
+        "nombre": "Si♭"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué es el pulso?",
+        "opciones": [
+          "La nota más aguda",
+          "El latido regular de la música",
+          "El volumen del sonido",
+          "El nombre de la clave"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Como el tic tac de un reloj.",
+        "mensaje_error": "El pulso es el latido que se repite siempre igual."
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases: redondas de tu primera nota con un compás de descanso entre cada una.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Si♭"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Respira tres veces despacio, llenando primero el abdomen.",
+        "Paso 2: Prepara la embocadura frente al espejo, sin soplar.",
+        "Paso 3: Toca cada redonda contando cuatro pulsos y descansa el compás de silencio."
+      ],
+      "criterio_microfono": "Sonido estable durante los cuatro pulsos: la afinación no sube ni baja más de 25 cents."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n2",
+    "titulo_leccion": "Blancas, negras y la lengua",
+    "pestana_libro": {
+      "descripcion": "Ya tienes una nota larga; ahora aprendes a repetirla con ritmo. Para eso necesitas dos figuras nuevas. La blanca tiene la cabeza hueca con plica y dura dos pulsos; la negra tiene la cabeza rellena con plica y dura uno. Dos negras ocupan lo mismo que una blanca, y dos blancas lo mismo que una redonda. Cada vez que empieza una nota la marcas con la lengua, como si dijeras «tu» sin voz. La lengua no corta el aire con fuerza: solo abre la puerta para que el aire, que sigue saliendo igual, haga sonar la nota en su sitio. En la práctica tocarás tu primera nota con blancas y negras, cuidando que cada una empiece justo en su pulso y con un ataque limpio, sin golpes ni sonidos sucios.",
+      "bloque_teoria_solfeo": "La blanca vale dos pulsos y la negra uno. La plica es el palito que sale de la cabeza: hacia arriba a la derecha si la nota está abajo, hacia abajo a la izquierda si está arriba. Una redonda equivale a dos blancas o a cuatro negras.",
+      "bloque_tecnica_instrumento": "La punta de la lengua toca detrás de los dientes de arriba y se retira diciendo «tu»: los labios empiezan a vibrar a la vez. No empujes la boquilla para atacar; el ataque lo hacen la lengua y el aire.",
+      "consejo_unificado": "Di el ritmo en voz alta con «tu» antes de tocarlo: si la boca ya sabe el ritmo, la lengua solo tiene que repetirlo con el aire."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas negras caben en una blanca?",
+        "opciones": [
+          "Una",
+          "Dos",
+          "Tres",
+          "Cuatro"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! La blanca vale dos pulsos.",
+        "mensaje_error": "Recuerda que la negra vale un pulso y la blanca dos."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "h"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "w"
+        ],
+        "mensaje_acierto": "¡Compás lleno! Cuatro pulsos justos.",
+        "mensaje_error": "Suma los pulsos: tienen que salir cuatro.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "La lengua empieza la nota cortando el aire con fuerza, como un golpe.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! La lengua solo abre la puerta; el aire hace el resto.",
+        "mensaje_error": "Cuidado: un golpe fuerte ensucia el ataque. La lengua se retira suave, diciendo «tu»."
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 60,
+        "ritmo": "| q q h | h q q |",
+        "mensaje_acierto": "¡En el pulso! Así suena el ritmo.",
+        "mensaje_error": "Escúchalo otra vez y cuenta en voz baja «1, 2, 3, 4».",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Cada ___ dura un pulso y empieza con un golpe suave de ___.",
+        "palabras_correctas": [
+          "negra",
+          "lengua"
+        ],
+        "palabras_señuelo": [
+          "blanca",
+          "garganta",
+          "labio"
+        ]
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cómo es la blanca?",
+        "opciones": [
+          "Cabeza rellena con plica",
+          "Cabeza hueca sin plica",
+          "Cabeza hueca con plica",
+          "Cabeza rellena con corchete"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Eso es! Hueca y con plica.",
+        "mensaje_error": "La redonda es hueca sin plica; la blanca, hueca con plica."
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con blancas y negras sobre tu primera nota.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Si♭"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lee el ritmo en voz alta diciendo «tu» en cada nota.",
+        "Paso 2: Sopla el ritmo sin instrumento, marcando cada nota con la lengua.",
+        "Paso 3: Toca la partitura fijándote en el ataque de la lengua."
+      ],
+      "criterio_microfono": "Ataque limpio: cada nota empieza en su pulso y en su afinación, sin subir ni bajar al principio."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n3",
+    "titulo_leccion": "Tu primer compás con sonido",
+    "pestana_libro": {
+      "descripcion": "La música se ordena en compases, como las palabras en frases. Una barra vertical separa cada compás y una doble barra marca el final. Al principio de la partitura, justo después de la clave, aparecen dos números: el de arriba dice cuántos pulsos tiene cada compás y el de abajo qué figura vale un pulso. En el compás de cuatro por cuatro caben cuatro negras, y el primer pulso de cada compás es el más fuerte. En este nivel tocas por fin dos notas distintas: tu primera nota y la siguiente de tu escala. Aprenderás a cambiar de una a otra justo en el pulso, sin cortar el aire, y a contar los compases mientras tocas, para no perderte nunca en la partitura cuando toques con la banda.",
+      "bloque_teoria_solfeo": "Las barras dividen la partitura en compases y la doble barra final cierra la obra. En el 4/4 el 4 de arriba son cuatro pulsos por compás y el 4 de abajo dice que la negra vale un pulso. El primer pulso de cada compás se siente más fuerte.",
+      "bloque_tecnica_instrumento": "Para pasar a la segunda nota mueve la vara rápido y suelta, con la muñeca relajada, a la posición que marca el diagrama. El aire sigue: la lengua ataca justo cuando la vara llega a su sitio.",
+      "consejo_unificado": "Cuenta el número del compás en voz baja en cada primer pulso: «uno, dos, tres, cuatro; dos, dos, tres, cuatro». Así la cabeza sabe dónde está y el cuerpo puede ocuparse del sonido."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "En un compás de 4/4, ¿qué indica el número de arriba?",
+        "opciones": [
+          "La velocidad",
+          "Cuántos pulsos tiene el compás",
+          "Qué nota se toca",
+          "El volumen"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Cuatro pulsos en cada compás.",
+        "mensaje_error": "El de arriba cuenta los pulsos; el de abajo dice qué figura vale un pulso."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "q",
+          "h"
+        ],
+        "usar": "h",
+        "mensaje_acierto": "¡Compás completo! Así se llena un 4/4.",
+        "mensaje_error": "Tiene que sumar cuatro pulsos y llevar al menos una blanca.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 1,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Bien escrita! Es tu segunda nota.",
+        "mensaje_error": "Está justo encima de tu primera nota: una línea o un espacio más arriba.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "C3",
+        "nombre": "Do"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Al cambiar de nota hay que parar el aire un momento.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! El aire sigue; solo cambian la lengua y los dedos.",
+        "mensaje_error": "Si paras el aire la frase se rompe. Mantén el aire y cambia a la vez lengua y dedos."
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| q q q q | h h | q q h | w |",
+        "mensaje_acierto": "¡Cuatro compases a tempo!",
+        "mensaje_error": "Prueba otra vez: marca justo cuando suena cada nota.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 1,
+        "mensaje_acierto": "¡Gran oído! La segunda nota sube un poco.",
+        "mensaje_error": "Escucha otra vez: la segunda nota es más aguda que la primera.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "C3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases en 4/4 con tus dos primeras notas.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Si♭",
+        "Do"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lee el ritmo en voz alta sin tocar, contando los compases.",
+        "Paso 2: Haz la digitación en el instrumento soplando solo aire.",
+        "Paso 3: Toca la partitura cambiando de nota justo en el pulso."
+      ],
+      "criterio_microfono": "Cambio de nota limpio: la segunda nota empieza a tiempo y afinada, sin sonidos intermedios."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n4",
+    "titulo_leccion": "Líneas y espacios: tres notas",
+    "pestana_libro": {
+      "descripcion": "Las notas se colocan en las líneas o en los espacios del pentagrama, y siguen siempre el mismo orden: Do, Re, Mi, Fa, Sol, La, Si y otra vez Do. Si una nota está en una línea, la siguiente está en el espacio de encima, y así hacia arriba. Cuando una nota no cabe en el pentagrama se dibujan líneas adicionales, pequeñas rayas que lo amplían. En este nivel aprendes a leer y escribir tres notas seguidas de tu escala, y a tocarlas pasando de una a otra sin dudar. La clave del éxito está en coordinar: la lengua marca el comienzo de la nota justo cuando los dedos, o la vara, ya están en su sitio. Leerás despacio, nombrando cada nota, y luego tocarás sin parar.",
+      "bloque_teoria_solfeo": "Línea, espacio, línea, espacio: cada paso hacia arriba es la nota siguiente. El orden es Do, Re, Mi, Fa, Sol, La, Si. Las líneas adicionales son trocitos de línea por encima o por debajo para las notas que no caben.",
+      "bloque_tecnica_instrumento": "Cada posición de la vara da varias notas y los labios eligen cuál suena. Llega a la posición exacta, mirando el diagrama, y piensa la nota antes de tocarla; si sale otra, ajusta la velocidad del aire, no la presión.",
+      "consejo_unificado": "Canta las tres notas con su nombre antes de tocarlas. Si tu oído sabe a dónde va, tu cuerpo se coloca solo; si no, el instrumento adivina por ti."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 2,
+        "mensaje_acierto": "¡Leída! Es tu tercera nota.",
+        "mensaje_error": "Cuenta líneas y espacios desde tu primera nota.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Do",
+          "Re",
+          "Mi♭",
+          "Fa"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "D3"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 2,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Perfecta! Dos pasos por encima de la primera.",
+        "mensaje_error": "Sube paso a paso desde tu primera nota: línea, espacio, línea.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "D3",
+        "nombre": "Re"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué nota va justo después de Mi?",
+        "opciones": [
+          "Re",
+          "Sol",
+          "Fa",
+          "Do"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Do, Re, Mi, Fa.",
+        "mensaje_error": "Recita el orden: Do, Re, Mi, Fa, Sol, La, Si."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Con la misma posición se pueden tocar varias notas distintas.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Exacto! Los labios y el aire eligen cuál suena.",
+        "mensaje_error": "Es verdad: son los armónicos, y el aire decide cuál suena."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 2,
+        "mensaje_acierto": "¡Oído fino! Has reconocido el salto.",
+        "mensaje_error": "Escucha cuánto sube desde la primera nota.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "D3"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "La nota que no cabe en el pentagrama usa una línea ___, y la lengua ataca cuando los ___ ya están colocados.",
+        "palabras_correctas": [
+          "adicional",
+          "dedos"
+        ],
+        "palabras_señuelo": [
+          "doble",
+          "labios",
+          "pulsos"
+        ]
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con tus tres primeras notas, subiendo y bajando.",
+      "bpm_recomendado": 66,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Nombra las notas de la partitura en voz alta.",
+        "Paso 2: Canta la melodía con el nombre de las notas.",
+        "Paso 3: Tócala: los dedos primero y la lengua justo después."
+      ],
+      "criterio_microfono": "Dedos y lengua coordinados: cada nota cambia sin sonidos intermedios y llega afinada."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n5",
+    "titulo_leccion": "El silencio también es música",
+    "pestana_libro": {
+      "descripcion": "En la partitura los silencios se escriben igual que las notas, cada uno con su duración. El silencio de redonda es un rectángulo colgado de la cuarta línea y dura un compás entero; el de blanca es un rectángulo apoyado sobre la tercera línea y dura dos pulsos; el de negra parece un rayo y dura uno. Durante el silencio el pulso sigue avanzando: hay que contarlo con la misma atención que una nota. Los silencios son además tu mejor amigo para respirar sin prisas. En este nivel aprenderás a terminar la nota justo donde empieza el silencio, a coger aire durante él y a entrar otra vez a tiempo, con un ataque tan limpio como el primero, sin adelantarte ni llegar tarde.",
+      "bloque_teoria_solfeo": "Cada figura tiene su silencio: el de redonda cuelga de la cuarta línea y llena un compás, el de blanca se apoya en la tercera y dura dos pulsos, el de negra dura uno. En un silencio el pulso no se para.",
+      "bloque_tecnica_instrumento": "Para terminar una nota deja de soplar sin cerrar la garganta: los labios dejan de vibrar solos. En el silencio respira por las comisuras sin separar la boquilla, así la embocadura sigue en su sitio para la siguiente entrada.",
+      "consejo_unificado": "Respira en el tempo: si el silencio dura un pulso, coge el aire en ese pulso, no antes. Así la respiración también forma parte del ritmo y entras siempre a tiempo."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuánto dura el silencio de blanca?",
+        "opciones": [
+          "Un pulso",
+          "Dos pulsos",
+          "Tres pulsos",
+          "Cuatro pulsos"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Lo mismo que una blanca.",
+        "mensaje_error": "Cada silencio dura lo mismo que su figura: la blanca, dos pulsos."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q",
+          "Rq"
+        ],
+        "figuras": [
+          "q",
+          "Rq",
+          "h",
+          "Rh"
+        ],
+        "mensaje_acierto": "¡Compás completo, con notas y silencios!",
+        "mensaje_error": "Los silencios también suman pulsos: tienen que salir cuatro.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para terminar una nota hay que cerrar la garganta.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! Basta con dejar de soplar; la garganta siempre abierta.",
+        "mensaje_error": "Cuidado: cerrar la garganta hace un golpe feo al final. Deja de soplar y ya está."
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 66,
+        "ritmo": "| q Rq q Rq | h Rh | q q Rq q | w |",
+        "mensaje_acierto": "¡Has respetado los silencios!",
+        "mensaje_error": "En los silencios no se marca: cuenta el pulso en silencio.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Durante el ___ el pulso sigue, y es el mejor momento para ___.",
+        "palabras_correctas": [
+          "silencio",
+          "respirar"
+        ],
+        "palabras_señuelo": [
+          "compás",
+          "soplar",
+          "afinar"
+        ]
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 1,
+        "mensaje_acierto": "¡Leída sin dudar!",
+        "mensaje_error": "Es la nota de justo encima de tu primera nota.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Si♭",
+          "Do",
+          "Re",
+          "Mi♭"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "C3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con notas y silencios de negra y blanca.",
+      "bpm_recomendado": 66,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Lee el ritmo diciendo «tu» en las notas y «sss» en los silencios.",
+        "Paso 2: Marca con un lápiz dónde vas a respirar.",
+        "Paso 3: Toca la partitura cortando cada nota justo en el silencio."
+      ],
+      "criterio_microfono": "Silencio limpio: el sonido se corta en el pulso marcado y la nota siguiente entra a tiempo."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n6",
+    "titulo_leccion": "Cinco notas y la ligadura",
+    "pestana_libro": {
+      "descripcion": "Ya conoces tres notas; ahora completas cinco, la mitad de tu escala. Con ellas aparece un signo nuevo: la ligadura de expresión, una línea curva que une notas distintas. Significa que solo la primera nota lleva golpe de lengua y que las demás se tocan con el mismo aire, cambiando únicamente los dedos o la vara. Así la melodía suena cantada, sin cortes. No la confundas con la ligadura de prolongación, que une dos notas iguales para sumar su duración en una sola. En este nivel trabajarás el legato: un aire continuo que pasa de nota a nota como el agua por un río. Te ayudará a descubrir que la calidad del sonido depende sobre todo de que el aire nunca se pare entre notas.",
+      "bloque_teoria_solfeo": "La ligadura de expresión une notas distintas: se toca todo con un solo golpe de lengua. La ligadura de prolongación une dos notas iguales y suma sus duraciones: una blanca ligada a una negra dura tres pulsos.",
+      "bloque_tecnica_instrumento": "En el trombón el legato necesita un poco de lengua suave, «du», en cada cambio, porque al mover la vara sonaría un glissando. Mueve la vara rápida y deja el aire siempre en marcha.",
+      "consejo_unificado": "Antes de tocar un pasaje ligado, cántalo con «aaa» sin cortar la voz. Si la voz pasa de nota a nota sin pararse, el aire en el instrumento hará lo mismo."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "En el trombón el legato se hace con una lengua muy suave, «du», en cada cambio.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Exacto! Así evitas el glissando de la vara.",
+        "mensaje_error": "Es verdad: sin esa lengua suave, mover la vara haría un glissando."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "Una blanca ligada a una negra de la misma nota, ¿cuánto dura?",
+        "opciones": [
+          "Dos pulsos",
+          "Tres pulsos",
+          "Cuatro pulsos",
+          "Un pulso"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Dos más uno, en una sola nota.",
+        "mensaje_error": "La ligadura de prolongación suma: dos más uno."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 4,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Muy bien! Es la quinta nota de tu escala.",
+        "mensaje_error": "Cuenta cinco notas desde la primera: línea, espacio, línea, espacio, línea (o al revés).",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "F3",
+        "nombre": "Fa"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 3,
+        "mensaje_acierto": "¡Leída! Es la cuarta nota.",
+        "mensaje_error": "Sube desde tu primera nota contando pasos.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Re",
+          "Mi♭",
+          "Fa",
+          "Sol"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "Eb3"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En el ___ solo la primera nota lleva lengua y el aire debe ser ___ entre notas.",
+        "palabras_correctas": [
+          "legato",
+          "continuo"
+        ],
+        "palabras_señuelo": [
+          "staccato",
+          "cortado",
+          "débil"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 4,
+        "mensaje_acierto": "¡Gran oído! Es la quinta: un salto grande.",
+        "mensaje_error": "Es un salto grande desde la primera nota: canta las notas intermedias.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "F3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con cinco notas en legato.",
+      "bpm_recomendado": 66,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Canta la melodía con «aaa», sin cortar la voz.",
+        "Paso 2: Pasa los dedos o la vara sin soplar, muy despacio.",
+        "Paso 3: Tócala ligada: un golpe de lengua por cada ligadura."
+      ],
+      "criterio_microfono": "Ligado sin cortes: el sonido no se interrumpe entre notas ligadas y cada nota llega afinada."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n7",
+    "titulo_leccion": "La corchea: medio pulso",
+    "pestana_libro": {
+      "descripcion": "Hasta ahora cada nota duraba uno o más pulsos. La corchea divide el pulso en dos mitades iguales: tiene la cabeza rellena, plica y un corchete, como una banderita. Cuando van dos o más juntas, los corchetes se unen en una barra. Dos corcheas valen lo mismo que una negra. Para contarlas se dice «uno y dos y tres y cuatro y»: el número cae en el pulso y la «y» en la mitad. En este nivel aprendes a tocar corcheas iguales, sin correr ni atascarte, con una lengua ligera que da golpes cortos y suaves mientras el aire sigue soplando sin parar. Es el primer paso hacia los pasajes rápidos de la banda, así que la regla es siempre la misma: primero despacio y regular, después más rápido.",
+      "bloque_teoria_solfeo": "La corchea vale medio pulso: dos corcheas ocupan una negra. Una sola lleva corchete; varias se unen con una barra. Se cuentan «1 y 2 y 3 y 4 y», con el número en el pulso y la «y» justo en medio.",
+      "bloque_tecnica_instrumento": "Para las corcheas la lengua se mueve poco, «tu-tu», ligera, mientras los labios siguen vibrando con el mismo aire. No muevas la mandíbula en cada nota: solo la punta de la lengua trabaja.",
+      "consejo_unificado": "Pon el metrónomo y di «1 y 2 y» mientras tocas corcheas en una sola nota. Cuando la «y» caiga exacta en medio, añade los dedos."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuántas corcheas caben en una blanca?",
+        "opciones": [
+          "Dos",
+          "Tres",
+          "Cuatro",
+          "Ocho"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Dos pulsos, dos corcheas por pulso.",
+        "mensaje_error": "La blanca dura dos pulsos y en cada pulso caben dos corcheas."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "ee",
+          "q",
+          "h"
+        ],
+        "usar": "ee",
+        "mensaje_acierto": "¡Compás completo con corcheas!",
+        "mensaje_error": "Tiene que sumar cuatro pulsos e incluir dos corcheas.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 60,
+        "ritmo": "| q e e q q | e e e e h |",
+        "mensaje_acierto": "¡Corcheas regulares!",
+        "mensaje_error": "Di «1 y 2 y» en voz baja y marca cada sílaba que suena.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar corcheas el aire se para un instante entre nota y nota.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! El aire sigue; la lengua separa las notas.",
+        "mensaje_error": "Si paras el aire las corcheas salen débiles. Aire continuo y lengua ligera."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Dos ___ valen una negra y se tocan con una lengua ___.",
+        "palabras_correctas": [
+          "corcheas",
+          "ligera"
+        ],
+        "palabras_señuelo": [
+          "blancas",
+          "pesada",
+          "quieta"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 3,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Bien escrita!",
+        "mensaje_error": "Es la cuarta nota de tu escala: tres pasos por encima de la primera.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "Eb3",
+        "nombre": "Mi♭"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con negras y parejas de corcheas.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Di el ritmo con «1 y 2 y» mientras das palmas en el pulso.",
+        "Paso 2: Toca el ritmo entero sobre tu primera nota.",
+        "Paso 3: Toca la partitura con las notas, al 60 % y luego a tempo."
+      ],
+      "criterio_microfono": "Corcheas iguales: las dos mitades de cada pulso duran lo mismo y cada nota está afinada."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n8",
+    "titulo_leccion": "El puntillo y el compás de 3/4",
+    "pestana_libro": {
+      "descripcion": "Un puntillo es un punto a la derecha de la nota que le suma la mitad de lo que vale. La blanca dura dos pulsos; con puntillo dura tres. La negra dura uno; con puntillo dura uno y medio, y normalmente va seguida de una corchea que completa el segundo pulso. Con la blanca con puntillo llega también un compás nuevo, el de tres por cuatro, con tres negras en cada compás y el acento en el primer pulso: es el compás del vals. En este nivel aprenderás a sostener una nota larga hasta el final sin que se apague ni se desafine, y a sentir el balanceo del tres. El secreto es que el aire empuje igual al final de la nota que al principio.",
+      "bloque_teoria_solfeo": "El puntillo suma la mitad del valor: blanca con puntillo, tres pulsos; negra con puntillo, uno y medio. En el 3/4 hay tres negras por compás y el primer pulso es el fuerte: «UN-dos-tres».",
+      "bloque_tecnica_instrumento": "En una nota larga el aire tiende a caerse al final y la afinación baja. Mantén el abdomen firme, como si alguien empujara suave tu tripa y tú resistieras, y lleva el sonido hasta el último instante del tercer pulso.",
+      "consejo_unificado": "Antes de tocar el vals, balancéate de un pie a otro contando «UN-dos-tres». Cuando el cuerpo siente el tres, el puntillo deja de ser un cálculo y se convierte en baile."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Cuánto dura una blanca con puntillo?",
+        "opciones": [
+          "Dos pulsos",
+          "Dos y medio",
+          "Tres pulsos",
+          "Cuatro pulsos"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Exacto! Dos más la mitad de dos.",
+        "mensaje_error": "El puntillo suma la mitad: dos más uno."
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 3,
+        "dados": [
+          "q"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "h."
+        ],
+        "mensaje_acierto": "¡Compás de vals completo!",
+        "mensaje_error": "En el 3/4 caben tres pulsos justos.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 3,
+        "bpm": 72,
+        "ritmo": "| h q | h. | q q q | h. |",
+        "mensaje_acierto": "¡Ese es el balanceo del tres!",
+        "mensaje_error": "Cuenta «UN-dos-tres» y aguanta la blanca con puntillo hasta el final.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Al final de una nota larga es normal dejar que el aire se apague poco a poco.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! El aire se mantiene firme hasta el último instante.",
+        "mensaje_error": "Si el aire se apaga, la nota baja de afinación. Apoyo firme hasta el final."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El ___ suma la mitad del valor, y en una nota larga el ___ debe empujar hasta el final.",
+        "palabras_correctas": [
+          "puntillo",
+          "abdomen"
+        ],
+        "palabras_señuelo": [
+          "silencio",
+          "hombro",
+          "compás"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 3,
+        "mensaje_acierto": "¡Muy bien! Es la cuarta.",
+        "mensaje_error": "Sube tres pasos desde la primera nota.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "Eb3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Vals de cuatro compases en 3/4 con blancas con puntillo.",
+      "bpm_recomendado": 72,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Balancéate contando «UN-dos-tres» durante cuatro compases.",
+        "Paso 2: Toca solo la blanca con puntillo del compás 2 hasta que dure tres pulsos exactos.",
+        "Paso 3: Toca el vals entero, sosteniendo el aire en las notas largas."
+      ],
+      "criterio_microfono": "Nota larga sostenida: la blanca con puntillo dura tres pulsos y su final no baja de afinación."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n9",
+    "titulo_leccion": "Alteraciones y armadura",
+    "pestana_libro": {
+      "descripcion": "Entre algunas notas hay un escalón más pequeño, el semitono, y las alteraciones sirven para movernos por esos escalones. El sostenido sube la nota un semitono, el bemol la baja un semitono y el becuadro anula la alteración y devuelve la nota natural. Una alteración escrita junto a una nota vale hasta el final de ese compás. Si las alteraciones aparecen al principio de cada línea, justo después de la clave, forman la armadura y valen para toda la obra, en cualquier octava. Tu escala de la banda tiene su propia armadura: en este nivel aprenderás a leerla antes de tocar, a recordar qué notas cambian y a afinar con cuidado esas notas alteradas, que a menudo necesitan una digitación distinta.",
+      "bloque_teoria_solfeo": "Sostenido ♯ sube un semitono, bemol ♭ baja un semitono, becuadro ♮ anula. La alteración junto a una nota vale hasta la barra de compás; la de la armadura vale para toda la obra y en todas las octavas.",
+      "bloque_tecnica_instrumento": "Las notas alteradas cambian de posición de vara, a veces solo unos centímetros. El oído decide el sitio exacto: toca la nota, compárala con el afinador y aprende dónde cae tu brazo.",
+      "consejo_unificado": "Antes de tocar, di en voz alta la armadura: «todos los Si son bemol». Señala con el dedo en la partitura cada nota afectada. Lo que la cabeza ha nombrado, los dedos lo recuerdan."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué hace el bemol?",
+        "opciones": [
+          "Sube la nota un semitono",
+          "Baja la nota un semitono",
+          "Alarga la nota",
+          "Anula una alteración"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! El bemol baja un semitono.",
+        "mensaje_error": "El sostenido sube, el bemol baja y el becuadro anula."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "solfeo",
+        "afirmacion": "Un sostenido escrito junto a una nota vale solo hasta el final de ese compás.",
+        "respuesta_correcta": true,
+        "mensaje_acierto": "¡Bien! La barra de compás la anula.",
+        "mensaje_error": "Es verdad: solo la armadura vale para toda la obra."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Dónde se escribe la armadura?",
+        "opciones": [
+          "Al final de la obra",
+          "Encima de cada nota",
+          "Después de la clave, en cada línea",
+          "Solo en el primer compás"
+        ],
+        "respuesta_correcta": 2,
+        "mensaje_acierto": "¡Eso es! Al principio de cada línea.",
+        "mensaje_error": "Se repite en cada línea, justo después de la clave."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 3,
+        "mensaje_acierto": "¡Leída con armadura y todo!",
+        "mensaje_error": "Mira la armadura: puede cambiar el nombre de la nota.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Re",
+          "Mi♭",
+          "Fa",
+          "Sol"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "Eb3"
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "El ___ sube un semitono, y las notas alteradas se comprueban con el ___.",
+        "palabras_correctas": [
+          "sostenido",
+          "afinador"
+        ],
+        "palabras_señuelo": [
+          "bemol",
+          "metrónomo",
+          "becuadro"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 5,
+        "modo": "nombre",
+        "mensaje_acierto": "¡Muy bien! La sexta de tu escala.",
+        "mensaje_error": "Cuenta seis notas desde la primera.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "G3",
+        "nombre": "Sol"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Partitura de cuatro compases con la armadura de tu escala de la banda y seis notas.",
+      "bpm_recomendado": 66,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa",
+        "Sol"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Di la armadura en voz alta y señala las notas que cambia.",
+        "Paso 2: Toca solas las notas alteradas mirando el afinador.",
+        "Paso 3: Toca la partitura completa a tempo."
+      ],
+      "criterio_microfono": "Afinación de las notas alteradas: cada una a menos de 20 cents de su altura."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n10",
+    "titulo_leccion": "Matices: piano y forte",
+    "pestana_libro": {
+      "descripcion": "Los matices dicen con qué intensidad se toca. Se escriben con palabras italianas abreviadas bajo el pentagrama: p es piano, suave; mf es mezzoforte, medio fuerte; f es forte, fuerte. Para cambiar poco a poco se usan los reguladores, dos líneas que se abren para el crescendo, ir aumentando, o se cierran para el diminuendo, ir disminuyendo. En un instrumento de viento el volumen lo da la cantidad de aire, no la fuerza de los labios. El gran reto es que la nota no cambie de afinación al cambiar de volumen. En este nivel harás notas largas que crecen y decrecen, como una ola, mientras el afinador te muestra si la nota se mantiene quieta: es uno de los ejercicios favoritos de los profesionales.",
+      "bloque_teoria_solfeo": "p piano (suave), mf mezzoforte (medio fuerte), f forte (fuerte). El regulador que se abre es un crescendo; el que se cierra, un diminuendo. El matiz vale hasta que aparece otro.",
+      "bloque_tecnica_instrumento": "Más volumen es más aire, no más presión de boquilla. En forte abre la garganta como al bostezar; en piano mantén el aire rápido y la embocadura firme para que los labios sigan vibrando.",
+      "consejo_unificado": "Imagina que el sonido es un globo: el aire lo hincha y lo deshincha, pero el globo no cambia de color. El color es la afinación, y el afinador te dice si ha cambiado."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué significa f?",
+        "opciones": [
+          "Fin",
+          "Forte, fuerte",
+          "Fa",
+          "Flojo"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Forte, fuerte.",
+        "mensaje_error": "Los matices son palabras italianas: f es forte."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "Un regulador que se va abriendo indica…",
+        "opciones": [
+          "Diminuendo",
+          "Crescendo",
+          "Ligadura",
+          "Silencio"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Bien! Crescendo: el sonido crece.",
+        "mensaje_error": "Si se abre, crece: es un crescendo."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para tocar forte hay que apretar más los labios.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! El forte sale del aire, no de apretar.",
+        "mensaje_error": "Apretar cambia la afinación y estrecha el sonido. Más aire, misma boca."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "En un ___ el volumen sube, y lo que no debe cambiar es la ___.",
+        "palabras_correctas": [
+          "crescendo",
+          "afinación"
+        ],
+        "palabras_señuelo": [
+          "diminuendo",
+          "postura",
+          "clave"
+        ]
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 72,
+        "ritmo": "| q q h | q e e h | e e q q q | w |",
+        "mensaje_acierto": "¡Ritmo dominado!",
+        "mensaje_error": "Escucha y repite: negras, corcheas y blancas mezcladas.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 5,
+        "mensaje_acierto": "¡Oído de músico!",
+        "mensaje_error": "Es la sexta de tu escala: un poco más arriba que la quinta.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "G3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Notas largas con crescendo y diminuendo: piano, forte y vuelta a piano.",
+      "bpm_recomendado": 60,
+      "notas_usadas": [
+        "Si♭",
+        "Re",
+        "Fa"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Toca una nota larga en mf mirando el afinador para tener una referencia.",
+        "Paso 2: Haz la ola: crece cuatro pulsos y decrece cuatro, sin mirar la aguja.",
+        "Paso 3: Toca la partitura y comprueba en el resultado si la afinación se mantuvo."
+      ],
+      "criterio_microfono": "La afinación se mantiene al cambiar de volumen: en el crescendo y el diminuendo la nota no sube ni baja más de 20 cents."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n11",
+    "titulo_leccion": "La escala de la banda y su arpegio",
+    "pestana_libro": {
+      "descripcion": "Ya conoces las ocho notas de tu escala de la banda. Una escala mayor sigue siempre el mismo patrón de distancias: tono, tono, semitono, tono, tono, tono, semitono. Ese patrón es el que le da su sonido alegre y luminoso, y la armadura existe para mantenerlo empiece donde empiece la escala. El arpegio toma solo la primera, la tercera, la quinta y la octava de la escala, las notas que forman su acorde. Las bandas calientan con esta escala para afinar juntas, así que tocarla bien es tu entrada al ensayo. En este nivel subirás hasta la octava, donde aprenderás a llegar a las notas agudas con más velocidad de aire en lugar de con más fuerza, manteniendo el sonido redondo de arriba abajo.",
+      "bloque_teoria_solfeo": "Escala mayor: tono, tono, semitono, tono, tono, tono, semitono. Los semitonos caen entre la tercera y la cuarta y entre la séptima y la octava. El arpegio es primera, tercera, quinta y octava: las notas del acorde.",
+      "bloque_tecnica_instrumento": "Para subir no aprietes la boquilla: piensa «iii» con la lengua alta y deja que el aire vaya más rápido. Para bajar, «ooo» con la lengua baja. Los labios cambian poco; el aire hace el trabajo.",
+      "consejo_unificado": "Toca la escala con el afinador delante y fíjate en las dos notas del semitono: son las que más se desafinan. Si esas dos están en su sitio, la escala entera suena a banda."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Entre qué notas de la escala mayor hay semitono?",
+        "opciones": [
+          "Primera-segunda y quinta-sexta",
+          "Tercera-cuarta y séptima-octava",
+          "Segunda-tercera y sexta-séptima",
+          "En ninguna"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Tono, tono, semitono… tono, tono, tono, semitono.",
+        "mensaje_error": "Los semitonos están entre la 3.ª y la 4.ª y entre la 7.ª y la 8.ª."
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 7,
+        "modo": "nombre",
+        "mensaje_acierto": "¡La octava! Misma nota, más aguda.",
+        "mensaje_error": "La octava tiene el mismo nombre que la primera nota, ocho pasos más arriba.",
+        "consigna": "Escribe en el pentagrama la nota:",
+        "nota": "Bb3",
+        "nombre": "Si♭"
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 4,
+        "mensaje_acierto": "¡Has oído la quinta del arpegio!",
+        "mensaje_error": "Es una nota del arpegio: canta 1, 3, 5 y piensa cuál es.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "F3"
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué notas forman el arpegio?",
+        "opciones": [
+          "1.ª, 2.ª, 3.ª y 4.ª",
+          "1.ª, 3.ª, 5.ª y 8.ª",
+          "2.ª, 4.ª, 6.ª y 8.ª",
+          "Solo la 1.ª y la 8.ª"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Eso es! Las notas del acorde.",
+        "mensaje_error": "El arpegio salta de tercera en tercera: 1, 3, 5 y 8."
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Para llegar a las notas agudas hay que soplar más fuerte y apretar.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! Más rápido y más fino, no más fuerte.",
+        "mensaje_error": "Apretar cierra el sonido. Las agudas salen con aire más rápido."
+      },
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "grado": 6,
+        "mensaje_acierto": "¡Leída! Es la séptima, la nota sensible.",
+        "mensaje_error": "Es la nota de justo debajo de la octava.",
+        "pregunta": "¿Qué nota está escrita?",
+        "opciones": [
+          "Sol",
+          "La",
+          "Si♭",
+          "Fa"
+        ],
+        "respuesta_correcta": 1,
+        "pentagrama": "A3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Escala de la banda subiendo y bajando, y su arpegio.",
+      "bpm_recomendado": 72,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa",
+        "Sol",
+        "La",
+        "Si♭"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Canta la escala con el nombre de las notas, marcando los dos semitonos.",
+        "Paso 2: Toca solo la parte de arriba (de la quinta a la octava) en notas largas.",
+        "Paso 3: Toca la escala y el arpegio completos a tempo."
+      ],
+      "criterio_microfono": "Escala completa afinada: los semitonos en su sitio y sin cortes de aire al subir a las notas agudas."
+    }
+  },
+  {
+    "leccion_id": "viento_c1_n12",
+    "titulo_leccion": "Tu primera pieza: Oda a la alegría",
+    "pestana_libro": {
+      "descripcion": "Ha llegado el momento de juntarlo todo en una pieza de verdad: la Oda a la alegría de Beethoven. En ella aparecen las figuras que ya conoces, una negra con puntillo seguida de corchea, frases de cuatro compases y signos nuevos de la partitura. La barra de repetición, dos puntos junto a una doble barra, indica que se vuelve a tocar un fragmento. La coma de respiración, una pequeña marca encima del pentagrama, dice dónde coger aire sin romper la frase. Una pieza no es una lista de notas: es una historia con frases que preguntan y responden. En este nivel aprenderás a planificar tus respiraciones, a pensar en frases y a tocar la melodía entera a tempo, afinada y con buen sonido.",
+      "bloque_teoria_solfeo": "La barra de repetición tiene dos puntos y manda volver al principio o a la barra que mira hacia ella. La coma de respiración marca dónde coger aire. Las frases suelen durar cuatro compases: la primera pregunta y la segunda responde.",
+      "bloque_tecnica_instrumento": "Respira solo en las comas, a fondo y rápido, para que el aire te llegue hasta el final de la frase. En la negra con puntillo no cortes el aire: la corchea sale de una lengua ligera sobre el aire que sigue.",
+      "consejo_unificado": "Toca la pieza pensando en la letra o en una historia: la primera frase pregunta, la segunda responde. Cuando la música te cuenta algo, el sonido se vuelve más bonito sin que lo busques."
+    },
+    "pestana_relax": [
+      {
+        "tipo_interaccion": "opcion_multiple",
+        "enfoque": "solfeo",
+        "pregunta": "¿Qué indica la barra de repetición?",
+        "opciones": [
+          "Que la obra termina",
+          "Que se vuelve a tocar un fragmento",
+          "Que hay que respirar",
+          "Que se toca más fuerte"
+        ],
+        "respuesta_correcta": 1,
+        "mensaje_acierto": "¡Exacto! Se repite el fragmento.",
+        "mensaje_error": "Los dos puntos junto a la doble barra mandan repetir."
+      },
+      {
+        "tipo_interaccion": "marcar_ritmo",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "bpm": 72,
+        "ritmo": "| q q q q | q q q q | q q q q | q. e h |",
+        "mensaje_acierto": "¡El ritmo de la Oda, con su puntillo!",
+        "mensaje_error": "Fíjate en el último compás: la negra con puntillo es larga y la corchea corta.",
+        "consigna": "Escucha el ritmo y márcalo tocando el botón en cada nota"
+      },
+      {
+        "tipo_interaccion": "completar_compas",
+        "enfoque": "solfeo",
+        "compas": 4,
+        "dados": [
+          "q.",
+          "e"
+        ],
+        "figuras": [
+          "q",
+          "h",
+          "ee"
+        ],
+        "mensaje_acierto": "¡Compás completo!",
+        "mensaje_error": "Negra con puntillo y corchea ya suman dos pulsos: faltan otros dos.",
+        "consigna": "Completa el compás con las figuras de abajo"
+      },
+      {
+        "tipo_interaccion": "verdadero_falso",
+        "enfoque": "tecnica_instrumento",
+        "afirmacion": "Lo mejor es respirar siempre que te falte el aire, aunque sea en mitad de la frase.",
+        "respuesta_correcta": false,
+        "mensaje_acierto": "¡Bien! Se planifica: respiras en las comas, a fondo.",
+        "mensaje_error": "Respirar en mitad de la frase la rompe. Planifica las respiraciones en las comas."
+      },
+      {
+        "tipo_interaccion": "completar_hueco",
+        "enfoque": "cruzado",
+        "texto_incompleto": "Las ___ suelen durar cuatro compases, y se respira en la ___.",
+        "palabras_correctas": [
+          "frases",
+          "coma"
+        ],
+        "palabras_señuelo": [
+          "notas",
+          "clave",
+          "barra"
+        ]
+      },
+      {
+        "tipo_interaccion": "escribir_nota",
+        "enfoque": "solfeo",
+        "grado": 2,
+        "mensaje_acierto": "¡Es la nota con la que empieza la Oda!",
+        "mensaje_error": "Es la tercera de tu escala: la primera nota de la Oda.",
+        "modo": "dictado",
+        "consigna": "Escucha las dos notas. La primera ya está escrita: escribe la segunda.",
+        "referencia": "Bb2",
+        "nota": "D3"
+      }
+    ],
+    "pestana_practica": {
+      "instruccion_pantalla": "Oda a la alegría completa, ocho compases con respiraciones marcadas.",
+      "bpm_recomendado": 72,
+      "notas_usadas": [
+        "Si♭",
+        "Do",
+        "Re",
+        "Mi♭",
+        "Fa"
+      ],
+      "rutina_pasos": [
+        "Paso 1: Canta la melodía con el nombre de las notas y marca las respiraciones.",
+        "Paso 2: Toca cada frase de cuatro compases por separado al 60 %.",
+        "Paso 3: Toca la pieza entera a tempo, respirando solo en la coma."
+      ],
+      "criterio_microfono": "Pieza completa a tempo: notas afinadas, puntillo exacto y sin cortes fuera de la respiración marcada."
+    }
+  }
+]

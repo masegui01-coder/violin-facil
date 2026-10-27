@@ -1,0 +1,280 @@
+// Pestaña Relax del método Pro: retos rápidos como en un juego. Opción múltiple (a veces leyendo una nota),
+// verdadero o falso, completar huecos, escribir notas en el pentagrama (por nombre o al dictado), completar un compás
+// con figuras y marcar un ritmo tocando la pantalla. Los fallos vuelven una vez al final de la ronda.
+import { $, esc, icon, starsHtml } from '../ui.js';
+import { L } from '../tips-l10n.js';
+import { t } from '../i18n.js';
+import { parseScore } from '../music.js';
+import { createStaff } from '../staff.js';
+import { createWriter } from '../note-writer.js';
+import { FIGURE_BEATS, barBeats, checkBar, rhythmOnsets, gradeTaps, sameWrittenNote, relaxStars } from '../method.js';
+import * as audio from '../audio.js';
+
+const FIGURE_NAME = {
+  w: L('Redonda', 'Whole note'), 'h.': L('Blanca con puntillo', 'Dotted half note'), h: L('Blanca', 'Half note'),
+  'q.': L('Negra con puntillo', 'Dotted quarter note'), q: L('Negra', 'Quarter note'), ee: L('Dos corcheas', 'Two eighth notes'),
+  e: L('Corchea', 'Eighth note'), Rw: L('Silencio de redonda', 'Whole rest'), Rh: L('Silencio de blanca', 'Half rest'), Rq: L('Silencio de negra', 'Quarter rest'),
+};
+const TXT = {
+  check: L('Comprobar', 'Check'), next: L('Continuar', 'Continue'), right: L('¡Correcto!', 'Correct!'), wrong: L('No es correcto', 'Not quite'),
+  true: L('Verdadero', 'True'), false: L('Falso', 'False'), listen: L('Escuchar', 'Listen'), undo: L('Borrar la última', 'Remove last'),
+  missing: L('Faltan pulsos:', 'Beats missing:'), full: L('Compás completo', 'Bar complete'), noFit: L('Esa figura no cabe', 'That value does not fit'),
+  use: L('Usa al menos una:', 'Use at least one:'), start: L('Empezar', 'Start'), tap: L('Toca aquí', 'Tap here'),
+  ready: L('Escucha la cuenta y marca cada nota', 'Listen to the count-in and tap every note'), taps: L('Notas marcadas:', 'Notes tapped:'),
+  extra: L('Toques de más:', 'Extra taps:'), again: L('Repaso', 'Review'), done: L('¡Relax completado!', 'Relax complete!'),
+  mistakes: L('Fallos:', 'Mistakes:'), toPlay: L('Ahora, a tocarlo', 'Now, play it'), retry: L('Repetir el Relax', 'Repeat the Relax'),
+  solfeo: L('Solfeo', 'Music reading'), tecnica_instrumento: L('Técnica', 'Technique'), cruzado: L('Solfeo y técnica', 'Reading and technique'),
+  writeHint: L('Toca una línea o un espacio para poner la nota', 'Tap a line or space to place the note'),
+};
+const NEXT_DELAY_MS = 900;
+const TAP_GRACE_S = 0.6;
+
+let run = null; // { level, queue, i, mistakes, retried:Set, answer, onFinish, ... }
+
+// Barajado fijo (no cambia al repetir la pantalla) para las fichas de los huecos
+function stableShuffle(list, seed) {
+  let h = [...seed].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const out = list.map((v, i) => ({ v, k: (h = (h * 1103515245 + 12345) >>> 0) + i }));
+  return out.sort((a, b) => a.k - b.k).map(x => x.v);
+}
+
+const pitchFor = level => (level.clef === 'bass' ? 'D3' : 'B4');
+const figToScore = (fig, pitch) => (fig === 'ee' ? `${pitch}e ${pitch}e` : fig.startsWith('R') ? fig : pitch + fig);
+const rhythmToScore = (ritmo, pitch) => ritmo.split(/\s+/).filter(Boolean).map(tok => (tok === '|' ? '|' : figToScore(tok, pitch))).join(' ');
+
+function drawRhythm(svg, text, level, time) {
+  const score = parseScore(text);
+  createStaff(svg).render(score, { key: 'C', time, mode: 'review', clef: level.clef });
+}
+
+export function startRelax(level, onFinish) {
+  run = { level, queue: [...level.pestana_relax], i: 0, mistakes: 0, retried: new Set(), answer: null, checked: false, onFinish, started: Date.now() };
+  renderItem();
+}
+
+export function stopRelax() {
+  if (run && run.stopTaps) run.stopTaps();
+  run = null;
+}
+
+function shell(item, body) {
+  const pct = Math.round(run.i / run.queue.length * 100);
+  const isReview = run.i >= run.level.pestana_relax.length;
+  return `<div class="progress pro-progress"><i style="width:${pct}%"></i></div>
+    <p class="eyebrow">${isReview ? `<span>${esc(TXT.again)}</span> · ` : ''}<span>${esc(TXT[item.enfoque] || '')}</span></p>
+    <div class="pro-item">${body}</div>
+    <div id="relaxFeedback" class="relax-feedback" hidden></div>
+    <button id="relaxCheck" class="btn relax-check" type="button" disabled>${esc(TXT.check)}</button>`;
+}
+
+function setReady(ready) { $('relaxCheck').disabled = !ready; }
+
+function renderItem() {
+  const item = run.queue[run.i];
+  run.answer = null;
+  run.checked = false;
+  const body = RENDER[item.tipo_interaccion](item);
+  $('proBody').innerHTML = shell(item, body);
+  BIND[item.tipo_interaccion](item);
+  $('relaxCheck').addEventListener('click', () => (run.checked ? advance() : check(CHECK[item.tipo_interaccion](item))));
+}
+
+function check(ok) {
+  const item = run.queue[run.i];
+  run.checked = true;
+  if (!ok) {
+    run.mistakes++;
+    if (!run.retried.has(item.id)) { run.retried.add(item.id); run.queue.push(item); }
+  }
+  const fb = $('relaxFeedback');
+  fb.hidden = false;
+  fb.className = 'relax-feedback ' + (ok ? 'right' : 'wrong');
+  fb.innerHTML = `<b>${esc(ok ? TXT.right : TXT.wrong)}</b><span>${esc(ok ? item.mensaje_acierto || '' : item.mensaje_error || '')}</span>`;
+  $('proBody').querySelectorAll('.pro-item button, .pro-item svg').forEach(b => { if (!b.dataset.keep) b.setAttribute('disabled', ''); });
+  const btn = $('relaxCheck');
+  btn.disabled = false;
+  btn.hidden = false;
+  btn.textContent = TXT.next;
+}
+
+function advance() {
+  if (run.stopTaps) run.stopTaps();
+  run.i++;
+  if (run.i < run.queue.length) { renderItem(); return; }
+  const stars = relaxStars(run.mistakes);
+  const minutes = Math.max(1, Math.round((Date.now() - run.started) / 60000));
+  const { onFinish } = run;
+  $('proBody').innerHTML = `<div class="pro-done"><p class="eyebrow">${esc(run.level.titulo_leccion)}</p><h2>${esc(TXT.done)}</h2>
+    <div class="big-stars">${starsHtml(stars)}</div><p class="muted"><span>${esc(TXT.mistakes)}</span> ${run.mistakes}</p>
+    <button id="relaxToPlay" class="btn" type="button"><span class="ic">${icon('play')}</span>${esc(TXT.toPlay)}</button>
+    <button id="relaxAgain" class="btn ghost" type="button">${esc(TXT.retry)}</button></div>`;
+  const level = run.level;
+  run = null;
+  onFinish({ stars, minutes, again: () => startRelax(level, onFinish) });
+}
+
+// ---------- Opción múltiple y verdadero/falso ----------
+function optionsHtml(labels) {
+  return `<div class="quiz-options" role="group">${labels.map((o, k) => `<button type="button" class="quiz-opt" data-opt="${k}">${esc(o)}</button>`).join('')}</div>`;
+}
+function bindOptions(item, correctOf) {
+  const box = $('proBody');
+  box.querySelectorAll('[data-opt]').forEach(b => b.addEventListener('click', () => {
+    if (run.checked) return;
+    run.answer = Number(b.dataset.opt);
+    box.querySelectorAll('[data-opt]').forEach(o => o.classList.toggle('picked', o === b));
+    setReady(true);
+  }));
+  run.markOptions = ok => box.querySelectorAll('[data-opt]').forEach(o => {
+    const k = Number(o.dataset.opt);
+    if (k === correctOf()) o.classList.add('right');
+    else if (k === run.answer && !ok) o.classList.add('wrong');
+  });
+}
+const withMark = (fn, item) => { const ok = fn(item); run.markOptions(ok); return ok; };
+
+// ---------- Huecos ----------
+function gapState(item) {
+  const sentence = t(item.texto_incompleto).split('___');
+  return { sentence, blanks: Array(sentence.length - 1).fill(null) };
+}
+function renderGaps() {
+  const { sentence, blanks, chips } = run.gaps;
+  $('gapText').innerHTML = sentence.map((part, i) => esc(part) + (i < blanks.length ? `<button type="button" class="gap${blanks[i] !== null ? ' filled' : ''}" data-gap="${i}">${blanks[i] !== null ? esc(t(chips[blanks[i]])) : '&nbsp;'}</button>` : '')).join('');
+  $('gapChips').querySelectorAll('[data-chip]').forEach(c => { c.disabled = blanks.includes(Number(c.dataset.chip)); });
+  setReady(blanks.every(b => b !== null));
+}
+
+// ---------- Escribir notas ----------
+function playDictation(item) {
+  audio.playTone(parseNoteMidi(item.referencia), 1);
+  setTimeout(() => audio.playTone(parseNoteMidi(item.nota), 1.2), 1100);
+}
+const parseNoteMidi = name => parseScore(`${name}q`).notes[0].midi;
+
+// ---------- Marcar el ritmo ----------
+function startTaps(item) {
+  const spb = 60 / item.bpm;
+  const { onsets, beats } = rhythmOnsets(item.ritmo);
+  const end = audio.countIn(item.compas + beats, item.bpm);
+  const t0 = end - beats * spb;
+  const taps = [];
+  const pad = $('tapPad');
+  pad.disabled = false;
+  pad.classList.add('live');
+  $('tapStatus').textContent = TXT.ready;
+  const onTap = e => { e.preventDefault(); taps.push((audio.audioTime() - audio.outputLatency() - t0) / spb); pad.classList.remove('hit'); void pad.offsetWidth; pad.classList.add('hit'); };
+  pad.addEventListener('pointerdown', onTap);
+  const timer = setTimeout(() => {
+    stop();
+    const g = gradeTaps(onsets, taps.filter(b => b > -0.5));
+    $('tapStatus').textContent = `${t(TXT.taps)} ${g.hits}/${g.total}${g.extra ? ` · ${t(TXT.extra)} ${g.extra}` : ''}`;
+    check(g.ok);
+  }, (end - audio.audioTime() + TAP_GRACE_S) * 1000);
+  const stop = () => { clearTimeout(timer); pad.removeEventListener('pointerdown', onTap); pad.classList.remove('live'); run && (run.stopTaps = null); };
+  run.stopTaps = stop;
+}
+
+const RENDER = {
+  opcion_multiple: item => `<h2>${esc(item.pregunta)}</h2>${item.pentagrama ? '<svg id="relaxStaff" class="staff pro-mini" role="img" aria-label="Nota escrita"></svg>' : ''}${optionsHtml(item.opciones)}`,
+  verdadero_falso: item => `<h2>${esc(item.afirmacion)}</h2>${optionsHtml([TXT.true, TXT.false])}`,
+  completar_hueco: item => {
+    run.gaps = { ...gapState(item), chips: stableShuffle([...item.palabras_correctas, ...item.palabras_señuelo], item.id) };
+    return `<p id="gapText" class="gap-text"></p><div id="gapChips" class="gap-chips">${run.gaps.chips.map((w, k) => `<button type="button" class="chip-btn" data-chip="${k}">${esc(w)}</button>`).join('')}</div>`;
+  },
+  escribir_nota: item => `<h2>${esc(item.consigna)}</h2>
+    ${item.modo === 'dictado' ? `<button type="button" class="btn ghost small" id="dictPlay" data-keep="1"><span class="ic">${icon('speaker')}</span>${esc(TXT.listen)}</button>` : `<p class="pro-target">${esc(item.nombre)}</p>`}
+    <svg id="writer" class="staff pro-writer" role="img" aria-label="${esc(TXT.writeHint)}"></svg><p class="muted small">${esc(TXT.writeHint)}</p>`,
+  completar_compas: item => `<h2>${esc(item.consigna)}</h2>${item.usar ? `<p class="muted">${esc(TXT.use)} <b>${esc(FIGURE_NAME[item.usar])}</b></p>` : ''}
+    <div class="pro-bar-box"><svg id="barStaff" class="staff pro-mini" role="img" aria-label="Compás"></svg></div>
+    <p id="barLeft" class="bar-left"></p>
+    <div class="fig-palette">${item.figuras.map(f => `<button type="button" class="fig-btn" data-fig="${f}"><b>${esc(FIGURE_NAME[f])}</b><small>${FIGURE_BEATS[f]}</small></button>`).join('')}</div>
+    <button type="button" class="btn ghost small" id="barUndo">${esc(TXT.undo)}</button>`,
+  marcar_ritmo: item => `<h2>${esc(item.consigna)}</h2>
+    <div class="pro-bar-box"><svg id="rhythmStaff" class="staff pro-mini" role="img" aria-label="Ritmo"></svg></div>
+    <div class="row"><button type="button" class="btn ghost small" id="rhythmListen" data-keep="1"><span class="ic">${icon('speaker')}</span>${esc(TXT.listen)}</button>
+    <button type="button" class="btn small" id="rhythmStart"><span class="ic">${icon('play')}</span>${esc(TXT.start)}</button></div>
+    <button type="button" class="tap-pad" id="tapPad" disabled>${esc(TXT.tap)}</button><p id="tapStatus" class="muted" aria-live="polite">&nbsp;</p>`,
+};
+
+const BIND = {
+  opcion_multiple: item => {
+    if (item.pentagrama) createStaff($('relaxStaff')).render(parseScore(`| ${item.pentagrama}w |`), { key: run.level.key, time: null, mode: 'review', clef: run.level.clef });
+    bindOptions(item, () => item.respuesta_correcta);
+  },
+  verdadero_falso: item => bindOptions(item, () => (item.respuesta_correcta ? 0 : 1)),
+  completar_hueco: () => {
+    renderGaps();
+    $('gapChips').addEventListener('click', e => {
+      const c = e.target.closest('[data-chip]');
+      if (!c || run.checked) return;
+      const free = run.gaps.blanks.indexOf(null);
+      if (free >= 0) { run.gaps.blanks[free] = Number(c.dataset.chip); renderGaps(); }
+    });
+    $('gapText').addEventListener('click', e => {
+      const g = e.target.closest('[data-gap]');
+      if (!g || run.checked) return;
+      run.gaps.blanks[Number(g.dataset.gap)] = null;
+      renderGaps();
+    });
+  },
+  escribir_nota: item => {
+    run.writer = createWriter($('writer'), { clef: run.level.clef, key: run.level.key, reference: item.referencia || null, onChange: note => { run.answer = note; setReady(true); } });
+    if (item.modo === 'dictado') {
+      $('dictPlay').addEventListener('click', () => playDictation(item));
+      playDictation(item);
+    }
+  },
+  completar_compas: item => {
+    run.added = [];
+    const pitch = pitchFor(run.level);
+    const draw = () => {
+      const figs = [...item.dados, ...run.added];
+      drawRhythm($('barStaff'), `| ${figs.map(f => figToScore(f, pitch)).join(' ')} |`, run.level, item.compas);
+      const left = item.compas - barBeats(figs);
+      $('barLeft').textContent = left > 0 ? `${t(TXT.missing)} ${left}` : t(TXT.full);
+      setReady(left === 0);
+    };
+    $('proBody').querySelectorAll('[data-fig]').forEach(b => b.addEventListener('click', () => {
+      if (run.checked) return;
+      if (barBeats([...item.dados, ...run.added, b.dataset.fig]) > item.compas + 1e-6) { $('barLeft').textContent = t(TXT.noFit); return; }
+      run.added.push(b.dataset.fig);
+      draw();
+    }));
+    $('barUndo').addEventListener('click', () => { if (!run.checked) { run.added.pop(); draw(); } });
+    draw();
+  },
+  marcar_ritmo: item => {
+    const text = rhythmToScore(item.ritmo, pitchFor(run.level));
+    drawRhythm($('rhythmStaff'), text, run.level, item.compas);
+    $('rhythmListen').addEventListener('click', () => {
+      const sounding = parseScore(rhythmToScore(item.ritmo, run.level.scale[0]));
+      audio.playScore(sounding.notes, item.bpm, () => {});
+    });
+    $('rhythmStart').addEventListener('click', () => {
+      if (run.checked || run.stopTaps) return;
+      $('rhythmStart').disabled = true;
+      startTaps(item);
+    });
+    $('relaxCheck').hidden = true;
+  },
+};
+
+const CHECK = {
+  opcion_multiple: item => withMark(it => run.answer === it.respuesta_correcta, item),
+  verdadero_falso: item => withMark(it => (run.answer === 0) === it.respuesta_correcta, item),
+  completar_hueco: item => {
+    const words = run.gaps.blanks.map(k => run.gaps.chips[k]);
+    const ok = words.every((w, i) => w === item.palabras_correctas[i]);
+    $('gapText').querySelectorAll('[data-gap]').forEach((g, i) => g.classList.add(words[i] === item.palabras_correctas[i] ? 'right' : 'wrong'));
+    return ok;
+  },
+  escribir_nota: item => {
+    const ok = !!run.answer && sameWrittenNote(run.answer, item.nota);
+    run.writer.reveal(item.nota, ok);
+    if (item.modo === 'dictado' || !ok) audio.playTone(parseNoteMidi(item.nota), 1);
+    return ok;
+  },
+  completar_compas: item => checkBar(item, run.added),
+  marcar_ritmo: () => false,
+};

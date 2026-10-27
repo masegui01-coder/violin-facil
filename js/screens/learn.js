@@ -10,6 +10,7 @@ import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../lau
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
 import { renderBook } from './book.js';
+import { renderPro } from './pro.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -68,13 +69,16 @@ function unitHtml(unit, ui) {
   </section>`;
 }
 
-// Casual: siguiente paso, retos y mapa. Libro: el método página a página con medallas.
+// Casual: siguiente paso, retos y mapa. Libro: el método página a página con medallas. Pro: el método de viento
+// con Libro, Relax y Práctica en cada nivel (opcional, aparte del curso).
 function render() {
   const view = getState().learnView || 'casual';
   document.querySelectorAll('[data-learn-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.learnView === view)));
   $('casualView').hidden = view !== 'casual';
   $('bookView').hidden = view !== 'book';
+  $('proView').hidden = view !== 'pro';
   if (view === 'book') { renderBook(); return; }
+  if (view === 'pro') { renderPro(); return; }
   course = currentCourse();
   states = currentStates(course);
   const next = nextLesson(null, course);

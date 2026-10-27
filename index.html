@@ -47,7 +47,7 @@
 
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
-      <div class="seg learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button></div>
+      <div class="seg three learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="pro">Pro</button></div>
       <div id="casualView">
         <div id="continueCard"></div>
         <div id="placementCard"></div>
@@ -56,6 +56,14 @@
         <div id="courseMap" class="course"></div>
       </div>
       <div id="bookView" class="book" hidden></div>
+      <div id="proView" class="pro" hidden></div>
+    </section>
+
+    <!-- Nivel del método Pro: Libro, Relax y Práctica -->
+    <section id="pro" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><div class="pro-head"><p id="proEyebrow" class="eyebrow"></p><h2 id="proTitle"></h2></div></div>
+      <div class="seg three pro-tabs" role="group" aria-label="Pestañas del nivel"><button type="button" data-pro-tab="book">Libro</button><button type="button" data-pro-tab="relax">Relax</button><button type="button" data-pro-tab="play">Práctica</button></div>
+      <div id="proBody" class="pro-body"></div>
     </section>
 
     <!-- Pestaña Canciones -->

@@ -135,3 +135,6 @@ export function windUnits(inst, helpers) {
     ] },
   ];
 }
+
+// Escala de la banda escrita para el instrumento (8 notas, de la tónica a la octava). La usa el método Pro.
+export const bandScale = inst => scaleFrom(inst.bandKey, ...SCALE_START[inst.id]);
