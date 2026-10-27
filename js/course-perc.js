@@ -33,8 +33,8 @@ export function percUnits({ theory, exercise, slots }) {
     ] },
     { id: P + 'u4', title: 'Semicorcheas', sub: 'Cuatro golpes por pulso', color: 'var(--u4)', lessons: [
       theory(P + 'u4-intro', 'Las semicorcheas', [{ title: 'Uno-e-y-a', text: 'Cada pulso se divide en cuatro: «uno-e-y-a». Empieza despacio (al 50 %) y no aceleres: la regularidad es más importante que la velocidad.' }]),
-      ex(P + 'u4-sixteenths', 'Semicorcheas', 'D I D I', 56, bar(...repeat('C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s', 2), 'C5s C5s C5s C5s C5q C5s C5s C5s C5s C5q', 'C5w'), hands('DI', 43).join(' ')),
-      ex(P + 'u4-combos', 'Corchea y dos semicorcheas', 'Galope', 60, bar('C5e C5s C5s C5e C5s C5s C5e C5s C5s C5e C5s C5s', 'C5s C5s C5e C5s C5s C5e C5s C5s C5e C5s C5s C5e', 'C5e C5s C5s C5e C5s C5s C5q C5q', 'C5w'), 'D D I D D I D D I D D I D I D D I D D I D I D D I D D I D D D I D'),
+      ex(P + 'u4-sixteenths', 'Semicorcheas', 'D I D I', 56, bar(...repeat('C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s C5s', 2), 'C5s C5s C5s C5s C5q C5s C5s C5s C5s C5q', 'C5w'), [...hands('DI', 32), ...'D I D I D D I D I D'.split(' '), 'D'].join(' ')),
+      ex(P + 'u4-combos', 'Corchea y dos semicorcheas', 'Galope', 60, bar('C5e C5s C5s C5e C5s C5s C5e C5s C5s C5e C5s C5s', 'C5s C5s C5e C5s C5s C5e C5s C5s C5e C5s C5s C5e', 'C5e C5s C5s C5e C5s C5s C5q C5q', 'C5w'), 'D D I D D I D D I D D I D I D D I D D I D D I D D D I D D I D I D'),
     ] },
     { id: P + 'u5', title: 'Rudimentos', sub: 'La técnica básica de caja', color: 'var(--u5)', lessons: [
       theory(P + 'u5-intro', 'Los rudimentos', [{ title: 'El abecedario del percusionista', text: 'Los rudimentos son combinaciones de manos que aparecen en todas las marchas: golpes simples (D I D I), dobles (D D I I) y paradiddle (D I D D I D I I). Mira las letras debajo de cada nota.' }]),
@@ -49,8 +49,8 @@ export function percUnits({ theory, exercise, slots }) {
     ] },
     { id: P + 'u7', title: 'Ritmos de banda', sub: 'Marcha, pasodoble y vals', color: 'var(--u7)', lessons: [
       theory(P + 'u7-intro', 'Tocar en la banda', [{ title: 'El motor de la banda', text: 'La percusión lleva el tempo de toda la banda. En la marcha y el pasodoble (2/4) el pulso no se puede mover; en el vals (3/4), el bombo marca el primer tiempo y la caja el segundo y el tercero.' }]),
-      ex(P + 'u7-march', 'Marcha', '2/4 con puntillo', 96, bar('C5e. C5s C5e. C5s', 'C5e C5e C5q', 'C5e. C5s C5e. C5s', 'C5e C5e C5q', 'C5s C5s C5s C5s C5e C5e', 'C5q> Rq'), 'D I D I D I D D I D I D I D D I D I D I D', 2),
-      ex(P + 'u7-pasodoble', 'Pasodoble', '2/4 vivo', 112, bar('C5e> C5e C5e> C5e', 'C5e> C5s C5s C5e> C5e', 'C5e> C5e C5e> C5e', 'C5e> C5s C5s C5q>', 'C5s C5s C5s C5s C5s C5s C5s C5s', 'C5q> Rq'), 'D I D I D D I D I D I D I D D I D D I D I D I D I D', 2),
+      ex(P + 'u7-march', 'Marcha', '2/4 con puntillo', 76, bar('C5e. C5s C5e. C5s', 'C5e C5e C5q', 'C5e. C5s C5e. C5s', 'C5e C5e C5q', 'C5s C5s C5s C5s C5e C5e', 'C5q> Rq'), 'D I D I D I D D I D I D I D D I D I D I D', 2),
+      ex(P + 'u7-pasodoble', 'Pasodoble', '2/4 vivo', 88, bar('C5e> C5e C5e> C5e', 'C5e> C5s C5s C5e> C5e', 'C5e> C5e C5e> C5e', 'C5e> C5s C5s C5q>', 'C5s C5s C5s C5s C5s C5s C5s C5s', 'C5q> Rq'), 'D I D I D D I D I D I D I D D I D D I D I D I D I D', 2),
       ex(P + 'u7-waltz', 'Vals', '3/4: um-pa-pa', 120, bar(...repeat('C5q> C5q C5q', 7), 'C5h.'), hands(['D', 'I', 'I'], 22).join(' '), 3),
       slots(2, 1),
     ] },

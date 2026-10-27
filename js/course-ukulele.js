@@ -42,6 +42,7 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
         { title: 'El péndulo', text: 'La mano no para: abajo en cada pulso y arriba entre pulsos, toques o no. Así nunca pierdes el compás.' },
         { title: 'El rasgueo de isla', text: 'Abajo, abajo-arriba, arriba-abajo-arriba (↓ ↓↑ ↑↓↑). Es el ritmo del ukelele por excelencia. Dilo en voz alta mientras rasgueas: «uno, dos-y, y-cua-tro-y».' },
         { title: '{C7} y {G7}', text: '{C7} es el acorde más fácil de todos: dedo 1 en el traste 1 de la 1.ª cuerda. {G7} es un triángulo al revés que el de {G}. Las séptimas «piden» volver a casa.', chord: 'G7' },
+        { title: '{Dm}', text: 'Lo vas a encontrar en las canciones de esta unidad: trastes 2, 2 y 1 en las cuerdas 4, 3 y 2 (la 1.ª al aire). Es {F} con un dedo más.', chord: 'Dm' },
       ]),
       chordsHold('uk3-sevenths', '{G7} y {C7}', 'Con ganas de volver a {C}', ['C', 'G7', 'C', 'C7', 'F', 'G7', 'C']),
       changes('uk3-ch', 'C', 'G7', 30),

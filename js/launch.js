@@ -28,6 +28,7 @@ export function nextLesson(afterId = null, course = currentCourse()) {
 }
 
 export function defaultMode(lesson) {
+  if (lesson.mode === 'learn') return 'learn';
   if (lesson.kind === 'notes') return 'learn';
   return lesson.song ? 'tempo' : 'learn';
 }

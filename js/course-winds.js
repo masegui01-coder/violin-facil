@@ -89,7 +89,7 @@ export function windUnits(inst, helpers) {
       theory(p + 'u1-intro', `Conoce tu ${inst.name.toLowerCase()}`, [...cards, { title: 'Tus primeras notas', text: `Empezamos por ${names(first.slice(0, 3))} (notas escritas). ${inst.id === 'trombone' ? 'El diagrama te muestra en qué posición va la vara' : 'El diagrama te muestra qué pulsar'} en cada una.`, board: midis(first.slice(0, 1)) }, MIC_CARD]),
       warmup(p + 'u1-warm', 'Notas tenidas', repeatPattern(first, [0, 0, 1, 1, 2, 2, 1, 1, 0, 0])),
       notes(p + 'u1-three', 'Tres notas', names(first.slice(0, 3)), repeatPattern(first, [0, 1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 1, 2, 1, 0, 0])),
-      exercise(p + 'u1-long', 'Sonidos largos', 'Redondas: mantén el aire 4 pulsos', { key: 'C', time: 4, bpm: 60, score: toScore([first[0], first[1], first[2], first[1], first[0]], 'w') }),
+      exercise(p + 'u1-long', 'Sonidos largos', 'Redondas: mantén el aire 4 pulsos', { key: 'C', time: 4, bpm: 60, score: '| ' + [first[0], first[1], first[2], first[1], first[0]].map(n => n + 'w').join(' | Rw | ') + ' |' }),
       exercise(p + 'u1-rhythm', 'Primer ritmo', 'Negras y blancas', { key: 'C', time: 4, bpm: 60, score: `| ${first[0]}q ${first[0]}q ${first[0]}h | ${first[1]}q ${first[1]}q ${first[1]}h | ${first[2]}q ${first[1]}q ${first[0]}h | ${first[0]}w |` }),
     ] },
     { id: p + 'u2', title: 'Cinco notas', sub: 'Tu primera melodía', color: 'var(--u2)', lessons: [

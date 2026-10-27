@@ -27,8 +27,18 @@ function bandStepCard(task) {
     <button type="button" class="btn" id="bandStepBtn"><span class="ic">${icon('play')}</span>Ir a ensayarla</button></div>`;
 }
 
+// Niveles del curso: todo lo que se toca (sin la teoría ni los calentamientos opcionales)
+const isLevel = l => l.kind !== 'theory' && !l.optional;
+function levelsDone() {
+  const levels = course.flatMap(u => u.lessons).filter(isLevel);
+  return { total: levels.length, done: levels.filter(l => states[l.id] === 'done').length, index: id => levels.findIndex(l => l.id === id) + 1 };
+}
+const progressBar = ({ done, total }) => `<div class="level-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}">
+  <span style="width:${Math.round(100 * done / Math.max(1, total))}%"></span></div><p class="small muted">${done} de ${total} niveles superados</p>`;
+
 function continueCard() {
   const next = nextLesson(null, course);
+  const lv = levelsDone();
   if (!next) {
     return `<div class="continue" style="--unit:var(--u4)"><p class="eyebrow">Curso completado</p><h2>¡Has terminado todas las lecciones!</h2>
       <p>Sigue con la biblioteca de canciones o sube la exigencia de afinación en tu perfil.</p></div>`;
@@ -37,8 +47,9 @@ function continueCard() {
   const song = lessonSong(next);
   const color = next.slot && song ? styleById(song.style).color : unit.color;
   return `<div class="continue" style="--unit:${color}">
-    <div class="continue-meta"><div><p class="eyebrow">Tu siguiente paso · ${esc(unit.title)} · ${KIND_NAME[next.kind]}</p><h2>${esc(lessonTitle(next))}</h2></div>
+    <div class="continue-meta"><div><p class="eyebrow">${isLevel(next) ? `Nivel ${lv.index(next.id)} de ${lv.total}` : 'Tu siguiente paso'} · ${esc(unit.title)}</p><h2>${esc(lessonTitle(next))}</h2>${next.sub ? `<p>${esc(chordText(next.sub))}</p>` : ''}</div>
     <span class="continue-note" aria-hidden="true">${next.kind === 'song' ? '♫' : '♪'}</span></div>
+    ${progressBar(lv)}
     <button type="button" class="btn" id="continueBtn"><span class="ic">${icon('play')}</span>Continuar</button></div>`;
 }
 

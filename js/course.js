@@ -13,6 +13,7 @@ import { celloUnits } from './course-cello.js';
 import { songbookById, songbookLesson } from './songbook.js';
 import { chordLabel } from './chords.js';
 import { pillsFor } from './theory-pills.js';
+import { expandCourse, unknownNotes } from './course-steps.js';
 import { getState } from './store.js';
 import { t } from './i18n.js';
 
@@ -50,6 +51,7 @@ export const UNITS = [
   { id: 'u3', title: 'Cuerda Re', sub: 'Escala de Re mayor', color: 'var(--u3)', lessons: [
     theory('u3-intro', 'La cuerda Re', [
       { title: 'Mismos dedos, otra cuerda', text: 'Sobre la cuerda Re los dedos 1, 2 alto y 3 dan Mi, Fa♯ y Sol. Con la cuerda La ya tienes la escala de Re mayor.', board: [64, 66, 67] },
+      { title: 'Negra con puntillo', text: 'El puntillo alarga la nota la mitad: una negra con puntillo dura un pulso y medio y suele ir seguida de una corchea. Lo verás en el Himno de la alegría.' },
     ]),
     warmup('u3-warm', 'Cruces Re-La', 'D4 A4 E4 B4 F#4 C#5 G4 D5 G4 C#5 F#4 B4 E4 A4 D4'),
     notes('u3-d123', 'Re, Mi, Fa♯, Sol', 'Dedos en la cuerda Re', 'D4 E4 F#4 G4 F#4 E4 D4 E4 F#4 G4 F#4 E4 D4 F#4 E4 G4 F#4 D4'),
@@ -70,6 +72,7 @@ export const UNITS = [
   { id: 'u5', title: 'Cuerda Sol', sub: 'Escala de Sol mayor', color: 'var(--u5)', lessons: [
     theory('u5-intro', 'La cuerda Sol', [
       { title: 'La cuerda más grave', text: 'Dedo 1 La, dedo 2 alto Si y dedo 3 Do. Sube a la cuerda Re y tendrás la escala de Sol mayor.', board: [57, 59, 60] },
+      { title: 'Dos notas por pulso', text: 'Las corcheas duran medio pulso y van de dos en dos: cuenta «un-y, dos-y» y toca una en cada sílaba. Martinillo las usa al final.' },
     ]),
     warmup('u5-warm', 'Arpegio de Sol', 'G3 B3 D4 G4 D4 B3 G3 B3 D4 G4 B4 D5 B4 G4 D4 B3 G3'),
     notes('u5-g123', 'Sol, La, Si, Do', 'Dedos en la cuerda Sol', 'G3 A3 B3 C4 B3 A3 G3 A3 B3 C4 B3 A3 G3 B3 A3 C4 B3 G3'),
@@ -90,6 +93,7 @@ export const UNITS = [
   { id: 'u7', title: 'Segundo dedo bajo', sub: 'Do natural y Sol natural', color: 'var(--u7)', lessons: [
     theory('u7-intro', 'Dedo 2 bajo', [
       { title: 'Junto al primero', text: 'Si pegas el dedo 2 al 1 suena medio tono más bajo: en la cuerda La da Do natural y en la cuerda Mi, Sol natural.', board: [72, 79] },
+      { title: 'Fa natural en la cuerda Re', text: 'En la cuerda Re, el dedo 2 bajo (pegado al 1) da Fa natural. Lo necesitas para la escala de Do mayor.', board: [65] },
       { title: 'Dedo 1 bajo', text: 'En la cuerda Mi, el dedo 1 pegado a la cejuela da Fa natural. Lo usarás en las tonalidades menores.', board: [77] },
     ]),
     warmup('u7-warm', 'Dedo 2 alto y bajo', 'A4 B4 C#5 B4 C5 B4 C#5 D5 C5 B4 A4 E5 F#5 G#5 F#5 G5 F#5 E5'),
@@ -101,6 +105,7 @@ export const UNITS = [
   { id: 'u8', title: 'Menores y expresión', sub: 'La menor y frases largas', color: 'var(--u8)', lessons: [
     theory('u8-intro', 'Tonalidades menores', [
       { title: 'Otro color', text: 'La escala de La menor usa Do natural, Fa natural y Sol natural. Suena más melancólica. En las melodías a veces aparece Sol♯ para volver a La.', board: [72, 77, 79] },
+      { title: 'Sol♯ en la cuerda Re', text: 'El dedo 3 alto (pegado al 4) en la cuerda Re da Sol♯. En La menor aparece para volver a La.', board: [68] },
     ]),
     warmup('u8-warm', 'Escala de Re menor', 'D4 E4 F4 G4 A4 Bb4 C5 D5 C5 Bb4 A4 G4 F4 E4 D4'),
     notes('u8-scale', 'Escala de La menor', 'Natural, una octava', 'A4 B4 C5 D5 E5 F5 G5 A5 G5 F5 E5 D5 C5 B4 A4'),
@@ -111,9 +116,11 @@ export const UNITS = [
 
 const CORE_SONG_IDS = new Set(UNITS.flatMap(u => u.lessons.filter(l => l.songId).map(l => l.songId)));
 
-// Canciones candidatas para «Tu música»: primero las de tus estilos, alternando estilos
-function pickSongs(count, difficulty, styles, used, inst) {
-  const free = SONGS.filter(s => !CORE_SONG_IDS.has(s.id) && !used.has(s.id) && octaveShiftFor(s, inst) !== null);
+// Canciones candidatas para «Tu música»: primero las de tus estilos, alternando estilos. Solo canciones con las notas
+// que ya conoces al llegar a esa unidad; si no hay ninguna, el hueco se queda vacío.
+function pickSongs(count, difficulty, styles, used, inst, known) {
+  const playable = s => octaveShiftFor(s, inst) !== null && unknownNotes(s, inst, known) === 0;
+  const free = SONGS.filter(s => !CORE_SONG_IDS.has(s.id) && !used.has(s.id) && playable(s));
   const byStyle = styles.map(st => free.filter(s => s.style === st && s.difficulty === difficulty));
   const picked = [];
   for (let round = 0; picked.length < count && byStyle.some(list => list.length > round); round++) {
@@ -137,14 +144,15 @@ const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, ukulele: ukuleleUnits, piano:
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);
-  const units = inst.id === 'violin' ? UNITS : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : inst.rhythmOnly ? percUnits(HELPERS) : windUnits(inst, HELPERS);
+  const base = inst.id === 'violin' ? UNITS : UNITS_BY_INSTRUMENT[inst.id] ? UNITS_BY_INSTRUMENT[inst.id](HELPERS) : inst.rhythmOnly ? percUnits(HELPERS) : windUnits(inst, HELPERS);
+  const units = expandCourse(base, inst, lessonKey);
   const used = new Set();
   const pills = pillsFor(inst.id);
   return units.map((unit, ui) => ({
     ...unit,
     lessons: withPills(unit.lessons, pills.filter(p => Math.min(p.unit, units.length - 1) === ui)).flatMap(l => {
       if (l.kind !== 'slots') return [l];
-      const picks = pickSongs(l.count, l.difficulty, styles, used, inst);
+      const picks = pickSongs(l.count, l.difficulty, styles, used, inst, unit.known);
       picks.forEach(p => used.add(p.song.id));
       return picks.map((p, i) => ({ id: `${unit.id}-tu${i + 1}`, kind: 'song', songId: p.song.id, slot: true, fromStyles: p.fromStyles, sub: 'Tu música' }));
     }),
@@ -198,7 +206,8 @@ export function lessonStates(course, progress, { level = 'new', unlockAll = fals
     const preUnlocked = unlockAll || ui < Math.max(START_UNIT[level], startUnit); // startUnit: test de nivel
     let unitOpen = false;
     unit.lessons.forEach((lesson, li) => {
-      const done = (progress[lessonKey(lesson)] || 0) > 0;
+      // los pasos intermedios cuentan como hechos si ya tenías la lección original
+      const done = (progress[lessonKey(lesson)] || 0) > 0 || (lesson.parentKey && (progress[lesson.parentKey] || 0) > 0);
       let open;
       if (lesson.slot || lesson.optional) open = unitOpen;
       else {

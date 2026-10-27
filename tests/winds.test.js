@@ -19,7 +19,9 @@ for (const inst of winds) {
     }));
     lessons.filter(l => l.song).forEach(l => {
       const { bars, notes } = parseScore(l.song.score);
-      bars.forEach((b, i) => assert.equal(b.beats, l.song.time, `${l.id} compás ${i + 1}`));
+      // las frases de una canción con anacrusa empiezan o acaban en un compás incompleto, como la canción
+      const partial = i => l.fromSong && (i === 0 || i === bars.length - 1);
+      bars.forEach((b, i) => assert.ok(partial(i) || b.beats === l.song.time, `${l.id} compás ${i + 1}`));
       notes.filter(n => !n.rest).forEach(n => assert.ok(n.midi >= inst.written[0] && n.midi <= inst.written[1], `${l.id}: ${n.midi}`));
     });
   });

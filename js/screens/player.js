@@ -373,7 +373,8 @@ function stopDemo() {
 function enter({ lesson, mode, from, eyebrow }) {
   const meta = buildMeta(lesson);
   const score = meta.parsed ? structuredClone(meta.parsed) : parseScore(meta.score);
-  const shift = lesson.songId || lesson.passage ? (octaveShiftFor(meta, instrumentById(getState().instrument)) ?? 0) : 0;
+  // octaveShift: la octava que eligió el curso para esta canción (la de sus pasos intermedios)
+  const shift = lesson.octaveShift ?? (lesson.songId || lesson.passage ? (octaveShiftFor(meta, instrumentById(getState().instrument)) ?? 0) : 0);
   if (shift) score.notes.forEach(n => { if (!n.rest) { n.midi += shift; n.oct += shift / 12; } });
   const notes = score.notes.map(n => ({ ...n }));
   const playable = notes.map((n, i) => (n.rest ? -1 : i)).filter(i => i >= 0);

@@ -60,9 +60,10 @@ test('lessons unlock in order and style slots do not block progress', () => {
   const course = buildCourse(['jazz']);
   const states = lessonStates(course, {});
   assert.equal(states['u1-intro'], 'open');
-  assert.equal(states['u1-ae'], 'locked');
+  assert.equal(states['u1-ae-pn0'], 'locked');
   const done = { [lessonKey(course[0].lessons[0])]: 3 };
-  assert.equal(lessonStates(course, done)['u1-ae'], 'open');
+  assert.equal(lessonStates(course, done)['u1-ae-pn0'], 'open');
+  assert.equal(lessonStates(course, done)['u1-ae'], 'locked'); // antes, sus pasos intermedios
   const basic = lessonStates(course, {}, { level: 'basic' });
   assert.equal(basic['u3-scale'], 'open');
   assert.equal(basic['u4-intro'], 'open');
@@ -71,7 +72,11 @@ test('lessons unlock in order and style slots do not block progress', () => {
   const afterIntro = lessonStates(course, done);
   assert.equal(afterIntro['u1-warm'], 'open');
   const warmSkipped = { ...done, 'lesson:u1-ae': 2, 'lesson:u1-dg': 2 };
-  assert.equal(lessonStates(course, warmSkipped)['u1-all'], 'open');
+  const skipped = lessonStates(course, warmSkipped);
+  assert.equal(skipped['u1-all-pa'], 'open');
+  // quien ya tenía hecha una lección (antes de los pasos intermedios) no tiene que repetir sus pasos
+  assert.equal(skipped['u1-ae-pn0'], 'done');
+  assert.equal(skipped['u1-dg-pn1'], 'done');
   const all = lessonStates(course, {}, { unlockAll: true });
   assert.ok(Object.values(all).every(s => s === 'open'));
 });

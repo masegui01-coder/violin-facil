@@ -88,6 +88,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
     { id: 'gu7', title: 'Quintas y blues', sub: 'Power chords', color: 'var(--u7)', lessons: [
       theory('gu7-intro', 'Acordes de quinta', [
         { title: 'Dos notas, mucha energía', text: 'Un acorde de quinta ({E5}, {A5}…) es solo la nota base y su quinta. Se mueve igual por todo el mástil: aprende la forma una vez y sirve siempre.', chord: 'G5' },
+        { title: '{D5} y {C5}', text: '{D5}: la 4.ª cuerda al aire y el dedo 1 en el traste 2 de la 3.ª. {C5}: dedo 1 en el traste 3 de la 5.ª y dedo 3 en el traste 5 de la 4.ª. La misma forma que {G5}, una cuerda más aguda.', chord: 'C5' },
         { title: 'Silencia lo que sobra', text: 'Toca solo las cuerdas del acorde. Apoya un poco la palma derecha sobre las cuerdas graves cerca del puente para un sonido más seco.' },
         { title: '{B7}', text: 'El acorde que lleva de vuelta a {E} en el blues. Cuatro dedos: tómate tu tiempo.', chord: 'B7' },
       ]),
@@ -113,7 +114,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       theory('gu9-intro', 'La guitarra flamenca', [
         { title: 'La cadencia andaluza', text: '{Am}, {G}, {F} y {E}: bajando de uno en uno hasta el {E}. Es el sonido del flamenco y lo usan los tangos, la rumba y las sevillanas.', chord: 'E' },
         { title: 'El rasgueo de rumba', text: 'Golpe hacia abajo con el pulgar, arriba con el índice y un golpe seco con la palma que apaga las cuerdas en el 2 y el 4. Empieza despacio.' },
-        { title: 'Por medio', text: 'El mismo camino empezando en {Dm}: {Dm}, {C}, {Bb} y {A}. Lo llaman «por medio» porque descansa en La.', chord: 'Bb' },
+        { title: 'Por medio', text: 'El mismo camino empezando en {Dm}: {Dm}, {C}, {Bb} y {A}. Lo llaman «por medio» porque descansa en La. {Bb} es la forma de {A} en el traste 1 con cejilla del dedo 1: si cuesta, toca solo las cuatro cuerdas agudas.', chord: 'Bb' },
       ]),
       changes('gu9-ch', 'F', 'E', 20),
       sbSong('gu9-cadencia', 'cadencia-andaluza', 'El sonido del flamenco'),

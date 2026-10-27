@@ -57,7 +57,8 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
       <div><h2>${esc(lessonTitle(lesson))}</h2><p class="muted small">${esc(sub)}</p>${starsHtml(best)}</div>
     </div>
     <div class="sheet-facts">${facts(lesson, song).map(f => `<span>${esc(f)}</span>`).join('')}</div>
-    ${locked ? '<p class="muted">Completa la lección anterior para desbloquear esta, o actívalas todas en Perfil.</p>' : ''}
+    ${locked ? `<p class="muted">Lo normal es llegar aquí terminando la lección anterior, pero puedes intentarlo ya en modo tester.</p>
+      <button type="button" class="btn ghost" data-peek><span class="ic">${icon('lock')}</span>Intentarlo en modo tester</button>` : ''}
     ${isSong && rhythmOnly
       ? `<button type="button" class="btn big" data-mode="tempo" ${locked ? 'disabled' : ''}>Tocar el ritmo</button>`
       : isSong
@@ -101,7 +102,10 @@ export function openLessonSheet(lesson, { state = 'open', from = 'course', color
     launch(lesson, { mode: b.dataset.mode, from });
   }));
   $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
-  $('sheet').showModal();
+  // Modo tester: cualquiera puede intentar una lección cerrada; si la supera, cuenta como hecha
+  const peek = $('sheetBody').querySelector('[data-peek]');
+  if (peek) peek.addEventListener('click', () => openLessonSheet(lesson, { state: 'open', from, color, onChange }));
+  if (!$('sheet').open) $('sheet').showModal();
 }
 
 // Lista de canciones para elegir con cuál comparar
@@ -112,7 +116,10 @@ export function openSongPicker(onPick) {
     <button type="button" class="btn ghost small" data-close>Cancelar</button></div>`;
   $('sheetBody').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { $('sheet').close(); onPick(b.dataset.pick); }));
   $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
-  $('sheet').showModal();
+  // Modo tester: cualquiera puede intentar una lección cerrada; si la supera, cuenta como hecha
+  const peek = $('sheetBody').querySelector('[data-peek]');
+  if (peek) peek.addEventListener('click', () => openLessonSheet(lesson, { state: 'open', from, color, onChange }));
+  if (!$('sheet').open) $('sheet').showModal();
 }
 
 // Cerrar al tocar fuera de la hoja

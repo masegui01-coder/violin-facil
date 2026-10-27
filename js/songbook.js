@@ -11,7 +11,7 @@ export const SONGBOOK = [
   { id: 'cumple', title: 'Cumpleaños feliz', by: 'Tradicional', time: 3, bpm: 100, chart: 'G | D | D | G | G | C | G D | G' },
   { id: 'amazing-grace', title: 'Amazing Grace', by: 'Tradicional', time: 3, bpm: 84, chart: 'G | G | C | G | G | G | D | D | G | G | C | G | G | D | G | G' },
   { id: 'kumbaya', title: 'Kumbayá', by: 'Tradicional', time: 4, bpm: 80, chart: 'D | G | D | D | D | G | A | A | D | G | D | D | G | D | A | D' },
-  { id: 'cucaracha', title: 'La cucaracha', by: 'Tradicional', time: 3, bpm: 140, chart: 'D | D | D | A7 | A7 | A7 | A7 | D | D | D | D | A7 | A7 | A7 | A7 | D' },
+  { id: 'cucaracha', title: 'La cucaracha', by: 'Tradicional', time: 3, bpm: 110, chart: 'D | D | D | A7 | A7 | A7 | A7 | D | D | D | D | A7 | A7 | A7 | A7 | D' },
   { id: 'when-saints', title: 'When the Saints Go Marching In', by: 'Tradicional', time: 4, bpm: 110, chart: 'G | G | G | G | G | G | D7 | D7 | G | G7 | C | C | G | D7 | G | G' },
   { id: 'clementine', title: 'Clementine', by: 'Tradicional', time: 3, bpm: 110, chart: 'C | C | C | G7 | G7 | G7 | G7 | C | C | C | C | G7 | G7 | G7 | G7 | C' },
   { id: 'pop-cuatro', title: 'Los cuatro acordes del pop', by: 'Ejercicio', time: 4, bpm: 90, chart: 'C | G | Am | F | C | G | Am | F' },
