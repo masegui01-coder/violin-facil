@@ -1,6 +1,7 @@
 // Diagramas de guitarra, ukelele y piano: mástil con la nota, caja de acorde y teclado con las teclas que se tocan.
 import { chordShape, isFretted, pianoMidis, chordLabel } from './chords.js';
-import { stringName } from './fingerings.js';
+import { stringName, isNaturalBar } from './fingerings.js';
+import { noteLabel } from './music.js';
 
 // Grosor de cada cuerda por su número: en la guitarra crece de la 1.ª a la 6.ª; en el ukelele (Sol agudo) la 3.ª es la más gruesa
 const STRING_WIDTH = { guitar: { 1: 1, 2: 1.3, 3: 1.6, 4: 1.9, 5: 2.2, 6: 2.5 }, ukulele: { 1: 1, 2: 1.4, 3: 1.9, 4: 1.2 } };
@@ -106,6 +107,32 @@ export function drawKeyboard(svg, midis, { fingers = null } = {}) {
     if (!fingers[i]) return;
     const x = BLACK.has(m % 12) ? xOfWhite(m - 1) + KW : xOfWhite(m) + KW / 2;
     el('text', { x, y: KH + 16, class: 'kd-label' }, svg, String(fingers[i]));
+  });
+}
+
+// Xilófono visto desde arriba: láminas de colores (como los de los niños) de larga a corta y las alteradas en la fila de atrás.
+// Se ve de Do a Do (escritos Do5–Do6) y se amplía si la nota cae fuera; la que toca se enciende y las demás quedan suaves.
+const BAR_COLORS = { 0: '#E53935', 2: '#FB8C00', 4: '#F9C80E', 5: '#43A047', 7: '#00ACC1', 9: '#1E88E5', 11: '#8E24AA' };
+export function drawXylophone(svg, midis, { nom = 'eu' } = {}) {
+  const lowest = Math.min(72, ...midis), highest = Math.max(84, ...midis);
+  const naturals = [];
+  for (let m = lowest - (isNaturalBar(lowest) ? 0 : 1); m <= highest + (isNaturalBar(highest) ? 0 : 1); m++) if (isNaturalBar(m)) naturals.push(m);
+  const BW = 26, GAP = 4, X0 = 8, TOP = 34, LONG = 108, SHORT = 70;
+  const W = X0 * 2 + naturals.length * (BW + GAP) - GAP, H = TOP + LONG + 24;
+  reset(svg, W, H, 'Xilófono');
+  const on = new Set(midis);
+  const lenOf = i => LONG - (LONG - SHORT) * (naturals.length > 1 ? i / (naturals.length - 1) : 0);
+  naturals.forEach((m, i) => {
+    const x = X0 + i * (BW + GAP), len = lenOf(i), y = TOP + (LONG - len) / 2;
+    el('rect', { x, y, width: BW, height: len, rx: 5, fill: BAR_COLORS[m % 12], opacity: on.has(m) || !midis.length ? 1 : 0.35, style: on.has(m) ? 'stroke: var(--ink); stroke-width: 2.5px' : '' }, svg);
+    [y + 10, y + len - 10].forEach(cy => el('circle', { cx: x + BW / 2, cy, r: 2, fill: '#fff', opacity: 0.8 }, svg));
+    if (on.has(m)) el('circle', { cx: x + BW / 2, cy: TOP + LONG / 2, r: 6, fill: '#fff', stroke: '#333', 'stroke-width': 1.5 }, svg);
+    el('text', { x: x + BW / 2, y: H - 6, class: on.has(m) ? 'kd-label kd-strong' : 'kd-label' }, svg, noteLabel({ midi: m }, nom).replace(/\d+$/, ''));
+    // la alterada que va detrás, entre esta lámina y la siguiente
+    const sharp = m + 1;
+    if (!isNaturalBar(sharp) && i < naturals.length - 1) {
+      el('rect', { x: x + BW - 6 + GAP / 2, y: 4, width: 12, height: TOP - 8, rx: 3, fill: '#9AA3B2', opacity: on.has(sharp) ? 1 : 0.45, style: on.has(sharp) ? 'fill: var(--accent)' : '' }, svg);
+    }
   });
 }
 

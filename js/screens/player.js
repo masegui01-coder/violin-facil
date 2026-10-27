@@ -7,7 +7,7 @@ import { lessonMeta, lessonSong, lessonTitle } from '../course.js';
 import { createStaff } from '../staff.js';
 import { renderDiagram } from '../keydiagram.js';
 import { fingeringText } from '../fingerings.js';
-import { instrumentById } from '../instruments.js';
+import { instrumentById, foldOctave, toleranceFor } from '../instruments.js';
 import { octaveShiftFor } from '../songs.js';
 import { getState, update, addTuningSamples, recordAttempts, TOLERANCE_CENTS } from '../store.js';
 import * as audio from '../audio.js';
@@ -38,7 +38,8 @@ let offBeat = null;
 
 const buildMeta = lessonMeta;
 
-const tolerance = () => TOLERANCE_CENTS[getState().tolerance] || TOLERANCE_CENTS.facil;
+const inst = () => instrumentById(getState().instrument);
+const tolerance = () => toleranceFor(TOLERANCE_CENTS[getState().tolerance] || TOLERANCE_CENTS.facil, inst());
 // Metrónomo en toda la app: la cuenta previa siempre suena, el péndulo siempre se ve y el clic durante la canción es opcional
 const metroSound = () => getState().metroClick;
 const tempoBpm = () => Math.round(run.bpm * run.speed);
@@ -93,7 +94,7 @@ function updateProgress(done) {
 
 function showHeard(p, target) {
   if (!p || p.freq === null) { $('heard').innerHTML = '&nbsp;'; setMeter(null); return null; }
-  const detected = p.midi;
+  const detected = target ? foldOctave(p.midi, target.midi, inst()) : p.midi;
   const cents = target ? (detected - target.midi) * 100 : 0;
   $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom, !isBowed(getState().instrument)) + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
   setMeter(target ? (Math.abs(cents) <= 100 ? cents : Math.sign(cents) * 50) : null);
@@ -270,9 +271,10 @@ function tempoTick(p, dt) {
   if (run.heardMidi !== null && run.heardMidi !== undefined) {
     started.forEach(i => {
       const n = run.notes[i];
-      if (n.hit || Math.abs(run.heardMidi - n.midi) * 100 > tolerance()) return;
+      const heard = foldOctave(run.heardMidi, n.midi, inst());
+      if (n.hit || Math.abs(heard - n.midi) * 100 > tolerance()) return;
       n.inTune = (n.inTune || 0) + dt / 1000;
-      n.centsSum = (n.centsSum || 0) + (run.heardMidi - n.midi) * 100;
+      n.centsSum = (n.centsSum || 0) + (heard - n.midi) * 100;
       n.centsN = (n.centsN || 0) + 1;
       if (n.inTune >= Math.min(MIN_HIT_S, n.beats * run.spb * 0.5)) {
         n.hit = true;

@@ -98,6 +98,13 @@ export const INSTRUMENTS = [
     board: 'recorder', firstNotes: ['B4', 'A4', 'G4', 'C5', 'D5'], bandKey: 'G',
     blurb: 'La del cole: para niños y principiantes',
   },
+  // Láminas afinadas de fábrica (fixedPitch: no se corrige la afinación) y cada marca suena en una octava distinta
+  // (anyOctave: vale la nota en cualquier octava). Se escribe una octava por debajo de como suena.
+  {
+    id: 'xylophone', name: 'Xilófono', family: 'escuela', transpose: 12, written: [60, 86], minHz: 240, maxHz: 4300,
+    board: 'xylophone', firstNotes: ['C5', 'D5', 'E5'], bandKey: 'C', timbre: 'mallet', fixedPitch: true, anyOctave: true,
+    blurb: 'Láminas de colores y dos baquetas',
+  },
   {
     id: 'guitar', name: 'Guitarra', family: 'pulsada', polyphonic: true, transpose: -12, written: [52, 81], minHz: 70, maxHz: 1100,
     board: 'fretboard', firstNotes: ['E5', 'B4', 'G4'], bandKey: 'G',
@@ -131,6 +138,12 @@ export function instrumentById(id) {
 
 export const writtenToSounding = (midi, inst) => midi + inst.transpose;
 export const soundingToWritten = (midi, inst) => midi - inst.transpose;
+
+// La nota oída llevada a la octava de la que toca, en los instrumentos donde vale cualquier octava (xilófono)
+export const foldOctave = (midi, target, inst) => (inst.anyOctave ? midi + 12 * Math.round((target - midi) / 12) : midi);
+
+// Tolerancia de afinación: en las láminas fijas solo importa acertar la lámina, no los cents
+export const toleranceFor = (cents, inst) => (inst.fixedPitch ? Math.max(cents, 50) : cents);
 
 // ¿Está la nota escrita dentro del registro cómodo del instrumento?
 export function inRange(midi, inst) {

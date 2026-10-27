@@ -120,6 +120,11 @@ const INSTRUMENT_PILL = {
     { title: 'Tapar bien', text: 'El secreto de la flauta es tapar los agujeros con la yema del dedo, sin dejar rendijas. Si una nota chilla o no sale, mira qué dedo deja pasar el aire.' },
     { title: 'Afinar la flauta', text: 'Sacando un poquito la cabeza de la flauta (la parte de arriba) suena más grave; metiéndola, más aguda. Así todos los de clase suenan juntos.' },
   ], quiz: [{ id: 'rec-squeak', q: 'Si tu flauta pita muy fuerte, ¿qué haces?', options: ['Soplar más fuerte', 'Soplar más suave', 'Morder la boquilla', 'Tapar menos agujeros'], answer: 1, why: 'Soplar más suave: la flauta dulce necesita muy poco aire.' }] },
+  xylophone: { cards: [
+    { title: 'Láminas de madera', text: 'Xilo quiere decir «madera» en griego. Las láminas largas suenan graves y las cortas agudas. Los de juguete suelen ser de metal: se llaman metalófonos o carillones.' },
+    { title: 'Se escribe más grave', text: 'El xilófono suena una octava más agudo de lo que se escribe, para que la partitura no se llene de líneas adicionales. Cada marca suena en una octava distinta: la app te escucha en cualquiera.' },
+    { title: 'Viene afinado', text: 'Las láminas se afinan en la fábrica limando la madera por debajo: tú no tienes que afinar nada. Solo acertar la lámina.' },
+  ], quiz: [{ id: 'xyl-long', q: '¿Qué láminas suenan más graves?', options: ['Las más cortas', 'Las más largas', 'Las de colores claros', 'Todas igual'], answer: 1, why: 'Cuanto más larga es la lámina, más despacio vibra y más grave suena.' }] },
   cajon: { cards: [
     { title: 'Un instrumento peruano', text: 'El cajón nació en Perú. Paco de Lucía lo trajo al flamenco en los años 70 y desde entonces no falta en ningún tablao.' },
     { title: 'Las bordonas', text: 'Dentro lleva cuerdas o bordonas pegadas a la tapa: son las que dan el chasquido del agudo. Algunos cajones tienen un tornillo para tensarlas o aflojarlas.' },
@@ -150,6 +155,7 @@ const INSTRUMENT_PILL = {
 // Tono y semitono, explicado con el instrumento de cada uno (en el piano con las teclas negras, en la guitarra con los trastes…)
 const TONE_EXAMPLE = {
   pulsada: L('En el mástil cada traste es un semitono: de Do a Re hay dos trastes; de Mi a Fa, solo uno.', 'On the neck each fret is a semitone: from C to D there are two frets; from E to F, just one.'),
+  xylophone: L('En el xilófono los semitonos se ven en la fila de atrás: entre Do y Re hay una lámina; entre Mi y Fa y entre Si y Do, ninguna.', 'On the xylophone you can see semitones in the back row: between C and D there is a bar; between E and F and between B and C, none.'),
   tecla: L('En el piano se ve en las teclas negras: entre Do y Re hay una; entre Mi y Fa y entre Si y Do, ninguna.', 'On the piano you can see it in the black keys: there is one between C and D, and none between E and F or between B and C.'),
   cuerda: L('En el diapasón se nota en los dedos: de Do a Re se separan; de Mi a Fa van pegados.', 'On the fingerboard you feel it in the fingers: from C to D they are apart; from E to F they sit together.'),
   // en el chelo cada dedo está a medio tono del siguiente

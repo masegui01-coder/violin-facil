@@ -253,6 +253,29 @@ export const TECHNIQUE = {
       ['Acompañar a otros', 'El cajón sostiene el ritmo del grupo: escucha la guitarra y la voz, toca menos de lo que sabes y no te dejes arrastrar.'],
     ],
   },
+  // El xilófono: dos baquetas, golpe al centro con rebote y láminas fijas (no se afina)
+  xylophone: {
+    2: [
+      ['Postura', 'De pie o sentado con el xilófono a la altura de la cintura y un poco separado: los codos sueltos y las baquetas formando una «V».'],
+      ['Golpe y rebote', 'El golpe sale de la muñeca y la baqueta rebota sola. Busca el centro de la lámina: ahí suena más redondo.'],
+      ['Manos alternas', 'D-I-D-I sobre la misma lámina y luego subiendo la escala. Empieza lento con el metrónomo y sube de 4 en 4.'],
+      ['Mirar adelantado', 'Mientras tocas una nota, los ojos ya buscan la siguiente lámina. Así los saltos dejan de dar miedo.'],
+      ['Leer ritmos', 'Cuenta en voz alta «1-y-2-y». En el xilófono las notas no se sostienen: el ritmo lo marcan los golpes.'],
+      ['Matices', 'Más altura de baqueta, más volumen. Practica una escala de pp a ff sin acelerar.'],
+      ['Saltos y arpegios', 'Do-Mi-Sol-Do: practica cada salto lento, mirando la lámina antes de golpear.'],
+      ['Tocar con otros', 'El xilófono suena brillante y corto: en grupo, toca algo más suave para no tapar la melodía de los demás.'],
+    ],
+    3: [
+      ['El trémolo', 'Para que una nota larga «suene seguida», alterna las dos baquetas muy rápido sobre la misma lámina, sin tensión.'],
+      ['Dobles y paradiddles', 'Los rudimentos de la caja (DD-II, D-I-D-D) también sirven en las láminas para elegir qué mano va a cada nota.'],
+      ['La fila de atrás', 'Sostenidos y bemoles van detrás: golpéalos en el borde de delante de la lámina, que queda más cerca de ti.'],
+      ['Escalas en todas las tonalidades', 'Do, Sol y Fa mayor primero, luego las demás. Una octava, después dos, siempre alternando manos.'],
+      ['Cuatro baquetas', 'Los marimbistas usan dos baquetas en cada mano para tocar acordes. Empieza con terceras en la mano derecha.'],
+      ['Lectura a primera vista', 'Mira la armadura, el compás y los saltos grandes antes de empezar. Al tocar, mantén el pulso aunque falles una lámina.'],
+      ['Repertorio', 'Ragtimes, marchas y piezas de orquesta tienen solos de xilófono famosos. Escúchalos y elige uno para preparar.'],
+      ['Preparar una pieza', 'Decide las manos de los pasajes difíciles, márcalas en la partitura y grábate para escucharte.'],
+    ],
+  },
   // La flauta dulce: agujeros (sin llaves), soplo muy suave con «du» y el pulgar de atrás entreabierto para las agudas
   recorder: {
     2: [

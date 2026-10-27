@@ -23,7 +23,7 @@ test('los consejos a los que apunta el detector existen para cada instrumento', 
   const NEEDS = {
     reed: ['embouchure', 'breath', 'mouthpiece'], oboe: ['embouchure', 'breath', 'mouthpiece'], clarinet: ['embouchure', 'breath', 'mouthpiece'], flute: ['embouchure', 'breath', 'mouthpiece'],
     recorder: ['breath', 'holes'], brass: ['buzz', 'breath', 'embouchure'], trombone: ['buzz', 'breath', 'slide'],
-    bowed: ['left-hand', 'bow'], fretted: ['fretting', 'right-hand'], keys: ['hand'], perc: ['stroke'],
+    bowed: ['left-hand', 'bow'], fretted: ['fretting', 'right-hand'], keys: ['hand'], perc: ['stroke'], mallet: ['stroke'],
   };
   INSTRUMENTS.forEach(inst => NEEDS[techniqueKind(inst)].forEach(kind => assert.ok(tipOfKind(inst.id, kind), `${inst.id} sin consejo «${kind}»`)));
 });

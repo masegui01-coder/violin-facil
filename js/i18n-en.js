@@ -1,6 +1,8 @@
 // Traducción al inglés de la interfaz (fase 1). Clave: el texto en español tal cual aparece en pantalla.
 // El contenido de los cursos y libros (teoría, títulos de lecciones) sigue en español por ahora.
 export const EXACT = {
+  'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
+  'Fila de atrás, antes de la lámina 1 (xilófono grande)': 'Back row, before bar 1 (big xylophone)',
   // ---------- Barra y pestañas ----------
   'Aprender': 'Learn', 'Canciones': 'Songs', 'Estudio': 'Practice', 'Banda': 'Band', 'Perfil': 'Profile',
   'Beta': 'Beta', 'Versión de prueba: seguimos desarrollando la app': 'Test version: we are still building the app',
@@ -86,6 +88,7 @@ export const EXACT = {
   'Un poco alto: sopla más suave': 'A bit sharp: blow more gently', 'Un poco bajo: sopla un poco más': 'A bit flat: blow a little more',
   'Vuelve a pulsar la nota': 'Play the note again', 'Un poco alto: pisa con menos fuerza': 'A bit sharp: press the string more lightly',
   'Esa no es la nota': "That's not the note", 'Vuelve a pulsar la tecla': 'Press the key again',
+  'Esa no es la lámina': "That's not the bar", 'Vuelve a golpear la lámina': 'Strike the bar again', 'Láminas de colores y dos baquetas': 'Coloured bars and two mallets',
   'Casi: alguna tecla de más suena a la vez.': 'Almost: an extra key is sounding at the same time.',
   "No he oído una nota estable. Prueba a tocar más fuerte o más cerca del móvil.": "I didn't hear a steady note. Try playing louder or closer to the phone.",
   "Al subir el volumen te vas alto: abre la garganta y relaja la embocadura en el forte.": "You go sharp as you get louder: open your throat and relax the embouchure in forte.",
@@ -248,7 +251,7 @@ export const INSTRUMENT_NAMES = {
   'Saxofón barítono': 'Baritone sax', 'Flauta': 'Flute', 'Oboe': 'Oboe', 'Requinto': 'E♭ clarinet', 'Clarinete bajo': 'Bass clarinet',
   'Flautín': 'Piccolo', 'Saxofón soprano': 'Soprano sax', 'Fliscorno': 'Flugelhorn', 'Trompa': 'French horn', 'Trombón': 'Trombone',
   'Bombardino': 'Euphonium', 'Tuba': 'Tuba', 'Flauta dulce': 'Recorder', 'Guitarra': 'Guitar', 'Ukelele': 'Ukulele', 'Piano': 'Piano',
-  'Cajón flamenco': 'Cajón', 'Percusión': 'Percussion',
+  'Cajón flamenco': 'Cajón', 'Percusión': 'Percussion', 'Xilófono': 'Xylophone',
 };
 
 // Nombres de notas y tonalidades: Do → C, Fa♯ → F♯, «Re mayor» → «D major»
@@ -265,6 +268,9 @@ const tr = text => (deep ? deep(text) : text);
 
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
+  [/^Lámina (\d+) desde la izquierda$/, (m, n) => `Bar ${n} from the left`],
+  [/^Lámina (\d+): la segunda octava$/, (m, n) => `Bar ${n}: the second octave`],
+  [/^Fila de atrás, entre las láminas (\d+) y (\d+)$/, (m, a, b) => `Back row, between bars ${a} and ${b}`],
   [/^(Compases variables|\d+\/\d+) · nivel (\d+)$/, (m, meter, l) => `${meter === 'Compases variables' ? 'Changing meters' : meter} · level ${l}`],
   [/^(\d+) lecturas, del nivel (\d+) al (\d+)\.$/, (m, n, a, b) => `${n} readings, from level ${a} to ${b}.`],
   [/^Lectura (n\.º )?(\d+)$/, (m, nn, n) => `Reading ${nn ? 'no. ' : ''}${n}`],

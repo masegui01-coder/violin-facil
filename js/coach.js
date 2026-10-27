@@ -15,7 +15,7 @@ const KIND_BY_ID = {
   clarinet: 'clarinet', 'eb-clarinet': 'clarinet', 'bass-clarinet': 'clarinet', oboe: 'oboe',
   flute: 'flute', piccolo: 'flute', recorder: 'recorder',
   trumpet: 'brass', flugelhorn: 'brass', horn: 'brass', euphonium: 'brass', tuba: 'brass', trombone: 'trombone',
-  violin: 'bowed', cello: 'bowed', guitar: 'fretted', ukulele: 'fretted', piano: 'keys', cajon: 'perc', percussion: 'perc',
+  violin: 'bowed', cello: 'bowed', guitar: 'fretted', ukulele: 'fretted', piano: 'keys', cajon: 'perc', percussion: 'perc', xylophone: 'mallet',
 };
 export const techniqueKind = inst => KIND_BY_ID[inst.id] || 'reed';
 const WINDS = ['reed', 'oboe', 'clarinet', 'flute', 'recorder', 'brass', 'trombone'];
@@ -29,6 +29,7 @@ const PLAY_HINTS = {
   recorder: { repeat: 'Vuelve a atacar la nota con la lengua', sharp: 'Un poco alto: sopla más suave', flat: 'Un poco bajo: sopla un poco más' },
   fretted: { repeat: 'Vuelve a pulsar la nota', sharp: 'Un poco alto: pisa con menos fuerza', flat: 'Esa no es la nota' },
   keys: { repeat: 'Vuelve a pulsar la tecla', sharp: 'Esa no es la nota', flat: 'Esa no es la nota' },
+  mallet: { repeat: 'Vuelve a golpear la lámina', sharp: 'Esa no es la lámina', flat: 'Esa no es la lámina' },
 };
 export function playHints(inst) {
   const kind = techniqueKind(inst);
@@ -279,6 +280,17 @@ const RULES = [
     evidence: s => [ev(L('Teclas vecinas', 'Neighbouring keys'), String(RULES_BY_ID['neighbour-key'].count(s)))],
   },
   {
+    id: 'neighbour-bar', kinds: ['mallet'],
+    count: s => slipsWhere(s, off => Math.abs(off) <= 2),
+    test: s => { const c = RULES_BY_ID['neighbour-bar'].count(s); return c >= MIN_SLIPS && rate(c, s.attempts) >= 0.12; },
+    weight: s => 100 * rate(RULES_BY_ID['neighbour-bar'].count(s), s.attempts),
+    tip: () => 'stroke',
+    title: L('Se te escapa la lámina de al lado', 'You hit the bar next door'),
+    why: () => L('Muchas notas han caído en la lámina vecina: la baqueta sale antes de mirar dónde va o golpea en el borde.', 'Many notes landed on the neighbouring bar: the mallet moves before you look where it goes, or it strikes the edge.'),
+    action: () => L('Mira la lámina antes de golpear y apunta al centro; si la canción va rápida, bájale el tempo hasta que aciertes siempre.', 'Look at the bar before you strike and aim for the centre; if the song is fast, lower the tempo until you always hit it.'),
+    evidence: s => [ev(L('Láminas vecinas', 'Neighbouring bars'), String(RULES_BY_ID['neighbour-bar'].count(s)))],
+  },
+  {
     id: 'perc-timing', kinds: ['perc'],
     test: (s, k, extra) => (extra.recentAcc || []).length >= 3 && avg(extra.recentAcc) < 0.7,
     weight: (s, k, extra) => 100 * (1 - avg(extra.recentAcc)),
@@ -299,7 +311,7 @@ function avgSlope(s) {
 
 // Afinación desplazada por igual en todo el registro: no es la técnica, es el instrumento sin afinar
 function globalOffset(s, kind) {
-  if (kind === 'keys' || kind === 'perc' || kind === 'fretted') return null;
+  if (kind === 'keys' || kind === 'perc' || kind === 'fretted' || kind === 'mallet') return null;
   const regs = ['low', 'mid', 'high'].filter(r => s.reg[r].notes >= MIN_NOTES);
   if (regs.length < 2) return null;
   const means = regs.map(r => s.reg[r].mean);

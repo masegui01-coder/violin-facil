@@ -7,6 +7,7 @@ import { guitarUnits } from './course-guitar.js';
 import { ukuleleUnits } from './course-ukulele.js';
 import { pianoUnits } from './course-piano.js';
 import { recorderUnits } from './course-recorder.js';
+import { xylophoneUnits } from './course-xylophone.js';
 import { cajonUnits } from './course-cajon.js';
 import { celloUnits } from './course-cello.js';
 import { songbookById, songbookLesson } from './songbook.js';
@@ -132,7 +133,7 @@ const sbSong = (id, songbookId, sub, extra = {}) => ({ ...songbookLesson(songboo
 
 const HELPERS = { theory, notes, song, exercise, slots, warmup, chordsHold, changes, sbSong };
 
-const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, ukulele: ukuleleUnits, piano: pianoUnits, recorder: recorderUnits, cajon: cajonUnits, cello: celloUnits };
+const UNITS_BY_INSTRUMENT = { guitar: guitarUnits, ukulele: ukuleleUnits, piano: pianoUnits, recorder: recorderUnits, xylophone: xylophoneUnits, cajon: cajonUnits, cello: celloUnits };
 
 export function buildCourse(styles, instId = 'violin') {
   const inst = instrumentById(instId);

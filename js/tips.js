@@ -530,6 +530,21 @@ const CAJON = [
   },
 ];
 
+const XYLOPHONE = [
+  {
+    kind: 'stroke', art: 'mallet-grip', sources: ['stone'],
+    title: L('Baquetas y golpe', 'Mallets and stroke'),
+    intro: L('El xilófono suena bonito cuando la baqueta golpea el centro de la lámina y sale rebotando. Si se queda apoyada, la nota se apaga.', 'The xylophone sounds lovely when the mallet strikes the middle of the bar and bounces off. If it stays on the bar, the note dies.'),
+    steps: [
+      { t: L('Agarre suave', 'Gentle grip'), d: L('Coge la baqueta como si dieras la mano: pulgar e índice la sujetan y los demás dedos la rodean sin apretar.', 'Hold the mallet as if shaking hands: thumb and index hold it and the other fingers wrap round without squeezing.') },
+      { t: L('Al centro y rebota', 'Middle and bounce'), d: L('Golpea en el centro de la lámina, no en el borde ni encima de los clavos, y deja que la baqueta suba sola.', 'Strike the middle of the bar, not the edge or the pins, and let the mallet lift by itself.') },
+      { t: L('Manos alternas', 'Alternate hands'), d: L('Derecha, izquierda, derecha… Si dos notas seguidas están lejos, cada mano se encarga de su lado.', 'Right, left, right… If two notes in a row are far apart, each hand looks after its own side.') },
+    ],
+    check: L('Toca la misma lámina diez veces seguidas alternando manos: las diez deben sonar igual de fuerte y limpias.', 'Play the same bar ten times alternating hands: all ten should sound equally loud and clean.'),
+    avoid: [L('Apretar la baqueta', 'Squeezing the mallet'), L('Dejar la baqueta apoyada en la lámina', 'Leaving the mallet resting on the bar'), L('Golpear en el borde o en los clavos', 'Striking the edge or the pins')],
+  },
+];
+
 const PERCUSSION = [
   {
     kind: 'stroke', art: 'stick-grip', sources: ['stone'],
@@ -551,7 +566,7 @@ const GROUPS = {
   oboe: OBOE, flute: FLUTE, piccolo: FLUTE, recorder: RECORDER,
   trumpet: BRASS, flugelhorn: BRASS, euphonium: BRASS, tuba: BRASS,
   horn: [BRASS[0], BRASS[1], HORN_POSTURE, HORN_HAND, BREATH], trombone: [BRASS[0], BRASS[1], SLIDE, BRASS[2], BREATH],
-  violin: VIOLIN, cello: CELLO, guitar: GUITAR, ukulele: UKULELE, piano: PIANO, cajon: CAJON, percussion: PERCUSSION,
+  violin: VIOLIN, cello: CELLO, guitar: GUITAR, ukulele: UKULELE, piano: PIANO, xylophone: XYLOPHONE, cajon: CAJON, percussion: PERCUSSION,
 };
 
 export const tipsFor = instId => GROUPS[instId] || [];

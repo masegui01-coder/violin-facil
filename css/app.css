@@ -395,6 +395,7 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .kd-num { font: 800 15px var(--f-body); fill: var(--muted); text-anchor: middle; }
 .kd-num.on { fill: var(--accent-ink); }
 .kd-label { font: 700 10px var(--f-body); fill: var(--muted); text-anchor: middle; }
+.kd-label.kd-strong { fill: var(--ink); font-size: 11px; }
 .kd-chip { font: 800 10px var(--f-body); fill: var(--accent-ink); text-anchor: middle; }
 .kd-caption { font: 700 12px var(--f-body); fill: var(--muted); text-anchor: middle; }
 .kd-beta { font: 800 14px var(--f-body); fill: var(--warn); }

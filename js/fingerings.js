@@ -118,6 +118,7 @@ export function fingeringFor(rawId, midi) {
     return pos ? { type: 'fret', ...pos } : null;
   }
   if (instId === 'piano') return midi >= 21 && midi <= 108 ? { type: 'key', midi } : null;
+  if (instId === 'xylophone') return midi >= 60 && midi <= 96 ? { type: 'bar', midi } : null;
   if (instId === 'recorder') {
     if (!(midi in RECORDER)) return null;
     const t = RECORDER[midi].split(' ');
@@ -142,10 +143,25 @@ export function fingeringFor(rawId, midi) {
   return table && midi in table ? parseKeys(table[midi], instId) : null;
 }
 
-export const fingeringsReviewed = instId => ['recorder', 'violin', 'cello', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'ukulele', 'piano'].includes(instId);
+export const fingeringsReviewed = instId => ['recorder', 'violin', 'cello', 'trumpet', 'flugelhorn', 'euphonium', 'horn', 'trombone', 'tuba', 'guitar', 'ukulele', 'piano', 'xylophone'].includes(instId);
 
 
 const HAND = { L: 'izq.', R: 'der.' };
+
+// Xilófono: las láminas naturales se cuentan desde el Do escrito Do5 (la 1, la más larga); las alteradas van en la fila de atrás
+const BAR_STEP = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
+export const isNaturalBar = midi => midi % 12 in BAR_STEP;
+export const xyloBar = midi => (Math.floor(midi / 12) - 6) * 7 + BAR_STEP[midi % 12] + 1;
+function xyloText(midi) {
+  if (!isNaturalBar(midi)) {
+    const n = xyloBar(midi - 1);
+    return n >= 1 ? `Fila de atrás, entre las láminas ${n} y ${n + 1}` : 'Fila de atrás, antes de la lámina 1 (xilófono grande)';
+  }
+  const n = xyloBar(midi);
+  if (n < 1) return 'Más grave que la lámina 1 (xilófono grande)';
+  if (n === 1) return 'Lámina 1: la más larga, a la izquierda';
+  return n <= 8 ? `Lámina ${n} desde la izquierda` : `Lámina ${n}: la segunda octava`;
+}
 
 // Las notas con 1-3 y 1-2-3 salen altas: cada instrumento las corrige a su manera
 const SLIDE_HINT = {
@@ -158,6 +174,7 @@ export function fingeringText(instId, midi, nom) {
   const f = fingeringFor(instId, midi);
   if (!f) return 'Digitación: consulta tu tabla o a tu profesor';
   if (f.type === 'fret') return `Cuerda ${f.string} (${stringName(instId, f.string, nom)}) · ${f.fret ? `traste ${f.fret}, dedo ${Math.min(4, f.fret)}` : 'al aire'}`;
+  if (f.type === 'bar') return xyloText(midi);
   if (f.type === 'key') return midi === 60 ? 'El Do central' : `Tecla ${PIANO_OCTAVE[Math.floor(midi / 12) - 1] || ''}`.trim();
   if (f.type === 'recorder') {
     const thumb = f.thumb === 'closed' ? 'pulgar' : f.thumb === 'half' ? 'medio pulgar' : 'sin pulgar';

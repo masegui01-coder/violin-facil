@@ -20,6 +20,11 @@ function pianist(x, { lean = 0 } = {}) {
 const keysTop = (x, y, n, w = 34, h = 110) => Array.from({ length: n }, (_, i) => `<rect x="${x + i * w}" y="${y}" width="${w}" height="${h}" fill="${P.key}" stroke="${P.keyLine}" stroke-width="1.5"/>`).join('')
   + [0, 1, 3, 4, 5].filter(i => i < n - 1).map(i => `<rect x="${x + (i + 1) * w - 10}" y="${y}" width="20" height="${h * 0.6}" fill="${P.black}"/>`).join('');
 
+// Xilófono visto desde arriba: cinco láminas de colores de larga a corta
+const XYLO_COLORS = ['#E53935', '#FB8C00', '#F9C80E', '#43A047', '#00ACC1'];
+const XYLO_TOP = XYLO_COLORS.map((c, i) => `<rect x="${40 + i * 40}" y="${60 + i * 6}" width="30" height="${110 - i * 12}" rx="5" fill="${c}"/>`).join('')
+  + '<rect x="30" y="74" width="214" height="5" fill="#8A5A26"/><rect x="30" y="146" width="214" height="5" fill="#8A5A26"/>';
+
 export const KEYS_ART = {
   // ---- Piano: sentarse ----
   'piano-posture': [
@@ -76,5 +81,20 @@ export const KEYS_ART = {
       ${arm(shoulderStanding(60), [76, 118], [116, 112])}<line x1="116" y1="112" x2="168" y2="146" stroke="${P.stick}" stroke-width="6" stroke-linecap="round"/>
       ${arrow('M184 140 C214 110 214 80 190 64')}${label(264, 62, L('rebota sola', 'bounces back'), { size: 12, anchor: 'end' })}
       ${dashed('M100 146 L240 146')}${label(264, 214, L('caja a la altura del cinturón', 'snare at belt height'), { size: 11, anchor: 'end' })}`),
+  ],
+  // ---- Xilófono: agarre de la baqueta, golpe al centro con rebote y manos alternas ----
+  'mallet-grip': [
+    panel(`<line x1="20" y1="170" x2="226" y2="82" stroke="${P.stick}" stroke-width="8" stroke-linecap="round"/><circle cx="236" cy="77" r="17" fill="#C0392B"/>
+      ${limb('M30 230 C50 200 72 176 86 158', 24)}${limb('M86 150 C92 138 104 132 112 136', 12)}${limb('M84 160 C96 168 110 164 112 146', 12)}
+      <circle cx="104" cy="142" r="15" fill="none" stroke="${C.green}" stroke-width="3"/>
+      ${label(150, 190, L('como dar la mano:', 'like a handshake:'), { size: 12 })}${label(150, 204, L('pulgar e índice,', 'thumb and index,'), { size: 12 })}${label(150, 218, L('sin apretar', 'without squeezing'), { size: 12 })}`),
+    panel(`${XYLO_TOP}<circle cx="135" cy="112" r="22" fill="${C.green}" opacity=".25"/>
+      <line x1="135" y1="20" x2="135" y2="92" stroke="${P.stick}" stroke-width="6" stroke-linecap="round"/><circle cx="135" cy="98" r="12" fill="#C0392B"/>
+      ${arrow('M160 92 C190 70 190 40 166 26')}${label(196, 30, L('rebota', 'bounce'), { size: 12 })}${label(135, 214, L('al centro de la lámina', 'the middle of the bar'), { anchor: 'middle', size: 12 })}`),
+    panel(`${XYLO_TOP}
+      <line x1="60" y1="24" x2="88" y2="98" stroke="${P.stick}" stroke-width="6" stroke-linecap="round"/><circle cx="90" cy="104" r="11" fill="#C0392B"/>
+      <line x1="210" y1="24" x2="182" y2="80" stroke="${P.stick}" stroke-width="6" stroke-linecap="round"/><circle cx="180" cy="86" r="11" fill="#C0392B"/>
+      ${label(40, 30, 'I', { size: 20 })}${label(222, 30, 'D', { size: 20 })}${arrow('M104 70 C120 52 150 52 166 70')}
+      ${label(135, 214, L('derecha, izquierda, derecha…', 'right, left, right…'), { anchor: 'middle', size: 12 })}${ok(244, 196)}`),
   ],
 };

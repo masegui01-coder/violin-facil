@@ -1,5 +1,5 @@
 // Audio del navegador: micrófono, notas de referencia y metrónomo.
-import { detectPitch, rms } from './pitch.js';
+import { detectPitch, refinePitch, rms } from './pitch.js';
 import { midiToFreq, freqToMidi } from './music.js';
 import { createOnsetDetector } from './onsets.js';
 import { chromaFromSpectrum } from './chroma.js';
@@ -13,13 +13,14 @@ const SCHED_MS = 25;
 const CHORD_FFT = 16384;       // resolución fina para separar notas graves de guitarra y piano
 const CHORD_SMOOTHING = 0.5;
 
-const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600 };
+const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600, timbre: null };
 
 // Instrumento activo: registro del detector y transposición (las notas que entran y salen son ESCRITAS)
 export function setInstrument(inst) {
   state.transpose = inst.transpose;
   state.minHz = inst.minHz;
   state.maxHz = inst.maxHz;
+  state.timbre = inst.timbre || null;
 }
 
 export function ctx() {
@@ -75,7 +76,8 @@ export function readPitch() {
   if (performance.now() < state.muteUntil) { state.recent = []; return null; }
   state.analyser.getFloatTimeDomainData(state.buf);
   const level = rms(state.buf);
-  const f = level < MIN_RMS ? null : detectPitch(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
+  const raw = level < MIN_RMS ? null : detectPitch(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
+  const f = raw && state.timbre === 'mallet' ? refinePitch(state.buf, state.ctx.sampleRate, raw) : raw;
   if (!f) { state.recent = []; return { freq: null, midi: null, level }; }
   state.recent = [...state.recent, f].slice(-MEDIAN_FRAMES);
   const sorted = [...state.recent].sort((x, y) => x - y);
@@ -93,7 +95,29 @@ export function readChroma() {
   return { chroma: chromaFromSpectrum(state.spectrum, state.ctx.sampleRate, CHORD_FFT, Math.max(60, state.minHz * 0.9), 2000), level };
 }
 
+// Golpe de baqueta en una lámina de madera: la fundamental y su parcial de 3× (afinado a la duodécima), con caída rápida
+const MALLET_DECAY_S = 0.18;
+const MALLET_PARTIALS = [[1, 1], [3, 0.28], [6.3, 0.06]];
+function malletVoice(c, midi, start, seconds, peak = 0.3) {
+  const f = midiToFreq(midi + state.transpose);
+  const end = start + Math.min(seconds, 1.2) + 0.4;
+  const oscs = MALLET_PARTIALS.filter(([k]) => f * k < 12000).map(([k, amp], i) => {
+    const osc = c.createOscillator(), gain = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = f * k;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(peak * amp, start + 0.004);
+    gain.gain.setTargetAtTime(0, start + 0.006, MALLET_DECAY_S / (i + 1));
+    osc.connect(gain).connect(c.destination);
+    osc.start(start);
+    osc.stop(end);
+    return osc;
+  });
+  return { stop: () => oscs.forEach(o => { try { o.stop(); } catch (e) { /* ya parado */ } }) };
+}
+
 function voice(c, midi, start, seconds, peak = 0.16) {
+  if (state.timbre === 'mallet') return malletVoice(c, midi, start, seconds);
   const osc = c.createOscillator(), filt = c.createBiquadFilter(), gain = c.createGain();
   osc.type = 'sawtooth';
   osc.frequency.value = midiToFreq(midi + state.transpose);

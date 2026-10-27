@@ -21,7 +21,7 @@ function currentSkills() {
   const gym = Object.entries(s.gym).filter(([k]) => k.startsWith(s.instrument + ':')).map(([, v]) => v);
   const since = new Date(Date.now() - 30 * DAY_MS).toISOString().slice(0, 10);
   const practiceDays30 = Object.entries(s.practiceLog).filter(([d, m]) => d >= since && m > 0).length;
-  return skills({ tuningAbs, tempoAcc: avg(s.recentAcc), gymBest: gym.length ? Math.max(...gym) : 0, readingAcc: avg(s.recentReading), practiceDays30, rhythmOnly: inst.rhythmOnly, chordsKnown: inst.polyphonic ? knownChords().length : null });
+  return skills({ tuningAbs, tempoAcc: avg(s.recentAcc), gymBest: gym.length ? Math.max(...gym) : 0, readingAcc: avg(s.recentReading), practiceDays30, rhythmOnly: inst.rhythmOnly || inst.fixedPitch, chordsKnown: inst.polyphonic ? knownChords().length : null });
 }
 
 function radarSvg(list) {
