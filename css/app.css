@@ -384,7 +384,7 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 
 @media (max-width: 380px) {
   .target-row { grid-template-columns: 1fr 96px; }
-  .target .name { font-size: 2.8rem; }
+  .target .name, .now .name { font-size: 3rem; }
   .stats { grid-template-columns: 1fr 1fr 1fr; }
   .stat b { font-size: 1.4rem; }
 }
@@ -428,6 +428,9 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .tm-bar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
 .seg.wrap { grid-template-columns: repeat(3, 1fr); border-radius: 18px; }
 .meter.wide { max-width: 100%; }
+.gym-tempo { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.gym-tempo b { min-width: 6.5ch; text-align: center; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.gym-tempo .icon-btn { width: 48px; height: 48px; font-size: 1.5rem; border: 1.5px solid var(--line); border-radius: 50%; }
 .gym-list { display: flex; flex-direction: column; gap: 8px; }
 .gym-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; text-align: left; width: 100%; }
 .gym-row b { display: block; }
@@ -846,19 +849,23 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 .note-fill { display: block; width: 120px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .note-fill i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .08s linear; }
 /* «Ahora» en grande y, a su lado, la tarjeta «Siguiente» con flecha */
-.now-next { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
-.now { display: flex; flex-direction: column; align-items: center; }
+/* La nota de ahora manda: tarjeta sólida y grande; la siguiente, más pequeña y discreta a su lado */
+.now-next { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+.now { display: flex; flex-direction: column; align-items: center; padding: 8px 18px 10px; border-radius: 18px;
+  border: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent); }
+.now .nn-label { color: var(--accent); }
+.now .name { font-size: 3.8rem; }
 .nn-label { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .next-card { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label label" "arrow name" "hint hint";
-  align-items: center; column-gap: 6px; min-width: 104px; max-width: 46%; padding: 8px 12px; border-radius: 16px;
-  border: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); text-align: left; }
-.next-card .nn-label { grid-area: label; color: var(--accent); }
-.next-card .nn-arrow { grid-area: arrow; font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1; }
-.next-card b { grid-area: name; font-family: var(--f-display); font-size: 1.9rem; line-height: 1.05; }
-.next-card small { grid-area: hint; font-size: .75rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
+  align-items: center; column-gap: 5px; min-width: 88px; max-width: 42%; padding: 6px 10px; border-radius: 14px;
+  border: 1.5px dashed var(--line); background: var(--surface); text-align: left; opacity: .8; }
+.next-card .nn-arrow { grid-area: arrow; font-size: 1.1rem; font-weight: 800; color: var(--muted); line-height: 1; }
+.next-card .nn-label { grid-area: label; }
+.next-card b { grid-area: name; font-family: var(--f-display); font-size: 1.4rem; line-height: 1.05; color: var(--muted); }
+.next-card small { grid-area: hint; font-size: .7rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
 .next-card.last { border-style: solid; }
-.next-card.last b { font-size: 1.3rem; }
-.st-note.next { color: var(--accent); opacity: .5; }
+.next-card.last b { font-size: 1.1rem; }
+.st-note.next { color: var(--accent); opacity: .35; }
 .mix-row { gap: 8px; }
 
 /* ---------- Modo libro ---------- */

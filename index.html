@@ -498,8 +498,11 @@
     <!-- Gimnasio de técnica -->
     <section id="gym" class="screen lesson-screen" hidden>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Gimnasio de técnica</h2></div>
-      <p class="muted small">Cada ejercicio empieza a tu mejor tempo. Si lo haces con 2 estrellas o más, sube 4 BPM.</p>
+      <p class="muted small">Elige el tempo y la figura. Si lo haces con 2 estrellas o más, puedes subir 4 BPM.</p>
       <div class="setting"><span id="gymKindLabel">Ejercicio</span><div id="gymKinds" class="seg three" role="group" aria-labelledby="gymKindLabel"></div></div>
+      <div class="setting"><span id="gymFigureLabel">Figura</span><div id="gymFigures" class="seg three" role="group" aria-labelledby="gymFigureLabel"></div></div>
+      <div class="setting"><span>Tempo del metrónomo</span>
+        <div class="gym-tempo"><button id="gymSlower" class="icon-btn" type="button" aria-label="Más lento">−</button><b id="gymBpm" class="tempo-bpm" aria-live="polite"></b><button id="gymFaster" class="icon-btn" type="button" aria-label="Más rápido">+</button></div></div>
       <div id="gymList" class="gym-list"></div>
     </section>
   </main>

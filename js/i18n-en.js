@@ -60,7 +60,8 @@ export const EXACT = {
   'Prueba un crescendo y un diminuendo sin que la línea se mueva: así se trabaja la afinación con dinámicas.': 'Try a crescendo and a diminuendo without the line moving: that is how you work on tuning with dynamics.',
   'Acorde (sonido real)': 'Chord (concert pitch)', 'Cómo suena el acorde': 'How the chord sounds', 'Diagrama del acorde': 'Chord diagram', 'Acordes de la lección': 'Lesson chords',
   'En un acorde afinado de verdad (afinación justa), cada grado tiene su sitio: la tercera mayor va unos 14 cents por debajo del afinador y la quinta unos 2 por encima.': 'In a truly tuned chord (just intonation) each degree has its place: the major third sits about 14 cents below the tuner and the fifth about 2 above.',
-  'Cada ejercicio empieza a tu mejor tempo. Si lo haces con 2 estrellas o más, sube 4 BPM.': 'Each exercise starts at your best tempo. With 2 stars or more it goes up 4 BPM.',
+  'Elige el tempo y la figura. Si lo haces con 2 estrellas o más, puedes subir 4 BPM.': 'Choose the tempo and the note value. With 2 stars or more you can go up 4 BPM.',
+  'Figura': 'Note value', 'Blancas': 'Half notes', 'Tempo del metrónomo': 'Metronome tempo',
   'Comparar con una canción': 'Compare with a song', 'Terminar y comparar': 'Finish and compare', 'Últimas notas tocadas': 'Last notes played', 'Tú tocas': 'You play',
   'Ensaya tu propia partitura': 'Rehearse your own score',
   // ---------- Lección ----------

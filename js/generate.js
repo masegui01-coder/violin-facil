@@ -72,19 +72,21 @@ const EXERCISES = {
 };
 export const EXERCISE_IDS = Object.keys(EXERCISES);
 
-// Ejercicio de técnica como canción de la app (corcheas, cierra con blanca). null si no cabe en el registro.
-export function technique(kind, key, inst, bpm) {
+// Ejercicio de técnica como canción de la app, en corcheas (e), negras (q) o blancas (h); la última nota
+// se alarga hasta completar el compás. null si no cabe en el registro.
+const FIGURE_BEATS = { e: 0.5, q: 1, h: 2 };
+export function technique(kind, key, inst, bpm, figure = 'e') {
   const ex = EXERCISES[kind];
   const names = fit(key, MAJOR, ex.degrees, inst);
   if (!names) return null;
-  // corcheas y la última nota alargada hasta completar el compás
-  const tokens = names.slice(0, -1).map(n => ({ tok: n + 'e', beats: 0.5 }));
-  const used = tokens.length * 0.5;
+  const beats = FIGURE_BEATS[figure];
+  const tokens = names.slice(0, -1).map(n => ({ tok: n + figure, beats }));
+  const used = tokens.length * beats;
   let last = 4 - (used % 4);
   if (last < 1) last += 4;
   tokens.push({ tok: names[names.length - 1] + DUR[last], beats: last });
   return {
-    id: `gym-${kind}-${key}`, title: `${ex.name} de ${keyLabel(key)}`, by: 'Gimnasio de técnica', style: null, difficulty: 2,
+    id: `gym-${kind}-${key}${figure === 'e' ? '' : '-' + figure}`, title: `${ex.name} de ${keyLabel(key)}`, by: 'Gimnasio de técnica', style: null, difficulty: 2,
     key, time: 4, bpm, score: bars(tokens, 4),
   };
 }

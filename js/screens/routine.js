@@ -40,9 +40,11 @@ function techniqueLesson(inst) {
   const kind = KINDS[d % KINDS.length];
   const keys = MAJOR_KEYS.filter(k => technique(kind, k, inst, START_BPM));
   const key = keys[d % keys.length];
-  const id = `gym-${kind}-${key}`;
-  const bpm = best(id) || START_BPM;
-  return { lesson: { id, kind: 'song', song: technique(kind, key, inst, bpm), fixedSpeed: true, gym: { id, bpm } }, title: `${KIND_NAME[kind]} de ${keyLabel(key)} a ${bpm} BPM` };
+  // la figura y el tempo que el alumno eligió en el gimnasio (o su récord con esa figura)
+  const { figure = 'q', bpm: chosen = START_BPM } = getState().gymOpts || {};
+  const id = technique(kind, key, inst, START_BPM, figure).id;
+  const bpm = best(id) || chosen;
+  return { lesson: { id, kind: 'song', song: technique(kind, key, inst, bpm, figure), fixedSpeed: true, gym: { id, bpm } }, title: `${KIND_NAME[kind]} de ${keyLabel(key)} a ${bpm} BPM` };
 }
 
 // Repaso espaciado: una pregunta de las píldoras que ya viste (primero las que fallaste)
