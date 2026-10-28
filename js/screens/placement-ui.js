@@ -4,7 +4,7 @@ import { go } from '../router.js';
 import { getState, update, instrumentProgress } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { currentCourse, launch } from '../launch.js';
-import { placementSteps, placedUnit, offerPlacement, PASS_STARS } from '../placement.js';
+import { placementSteps, placedUnit, offerPlacement, placementSpeed, PASS_STARS } from '../placement.js';
 import { sheet } from './band-ui.js';
 
 const instName = () => instrumentById(getState().instrument).name.toLowerCase();
@@ -43,6 +43,7 @@ function run(steps, stars, i) {
   const { lesson, unit } = steps[i];
   const test = {
     ...lesson, noRecord: true, placement: true,
+    ...(lesson.song?.bpm ? { fixedSpeed: true, speedOverride: placementSpeed(lesson.song.bpm, lesson.speedOverride ?? 1) } : {}),
     title: `Test ${i + 1} de ${steps.length}: ${lesson.title || unit.title}`,
     nextAction: ctx => {
       const all = [...stars, ctx.stars];

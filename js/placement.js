@@ -1,6 +1,10 @@
 // Test de nivel (opcional, por instrumento): una prueba por unidad, cada vez más difícil.
 // Al fallar una (menos de 2 estrellas) se para y el curso se abre hasta la última unidad superada.
 export const PASS_STARS = 2;
+// El test mide qué notas y figuras sabes, no la velocidad: como mucho a 66 negras por minuto,
+// para que dé tiempo a colocar posiciones lentas (el Si♭ de garganta del clarinete, por ejemplo)
+export const PLACEMENT_MAX_BPM = 66;
+export const placementSpeed = (bpm, speed = 1) => Math.min(speed, PLACEMENT_MAX_BPM / bpm);
 const SKIP_KINDS = ['theory'];
 
 // La última lección con partitura de cada unidad (desde la 2.ª): resume lo que hay que saber para pasarla

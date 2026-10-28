@@ -91,13 +91,14 @@ const slowFactor = bpm => Math.round(100 * Math.min(SLOW_SPEED, SLOW_MAX_BPM / b
 const hasShortNotes = score => parseScore(score).notes.some(n => pitched(n) && n.beats < 1);
 
 // Quita los pares cromáticos de la misma nota (Fa y Fa♯): se queda con la que más sale
-function withoutChromaticPairs(names, counts, fresh = new Set()) {
+function withoutChromaticPairs(names, counts, fresh = new Set(), scale = new Set()) {
   const byLetter = new Map();
   names.forEach(n => {
     const p = parseNote(n);
     const k = p.letter + p.oct;
     const prev = byLetter.get(k);
-    const score = x => (fresh.has(x) ? 1e6 : 0) + (counts.get(x) || 0); // la alteración que se acaba de aprender gana
+    // manda la escala que se practica en la unidad; si no la hay, la alteración que se acaba de aprender
+    const score = x => (scale.has(x) ? 1e9 : 0) + (fresh.has(x) ? 1e6 : 0) + (counts.get(x) || 0);
     if (!prev || score(n) > score(prev)) byLetter.set(k, n);
   });
   return [...byLetter.values()].sort(byPitch);
@@ -333,7 +334,8 @@ function makeSteps(inst) {
       const source = [...(notesLessons.length ? notesLessons.flatMap(l => l.notes.split(' ')) : core.flatMap(l => l._notes || [])), ...unitFresh];
       const counts = new Map();
       source.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
-      const sorted = withoutChromaticPairs(uniq(source), counts, unitFresh).filter((n, i, all) => all.findIndex(m => keyOf(m) === keyOf(n)) === i);
+      const scale = new Set(notesLessons.flatMap(l => l.notes.split(' ')));
+      const sorted = withoutChromaticPairs(uniq(source), counts, unitFresh, scale).filter((n, i, all) => all.findIndex(m => keyOf(m) === keyOf(n)) === i);
       if (sorted.length < 3) return out;
       const s = reviewWindow(sorted, unitFresh);
       const clef = core.find(l => l.clef)?.clef;

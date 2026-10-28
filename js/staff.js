@@ -83,7 +83,8 @@ function drawNote(g, x, note, sig, shownAcc) {
   const ny = y(step);
   ledgerSteps(step).forEach(s => el('line', { x1: x - 13, x2: x + 13, y1: y(s), y2: y(s), class: 'st-line' }, g));
   const acc = shownAcc !== undefined ? shownAcc : accidentalToShow(note, sig);
-  if (acc) text(g, x - 23, ny + 5, ACC_GLYPH[acc], { class: 'st-acc-note' });
+  // pegada a la cabeza (a su izquierda) para que se lea como parte de la nota y no de la barra de compás
+  if (acc) text(g, x - HEAD_RX + 0.5, ny + 5, ACC_GLYPH[acc], { class: 'st-acc-note', 'text-anchor': 'end' });
   const hollow = note.dur === 'h' || note.dur === 'w';
   el('ellipse', { cx: x, cy: ny, rx: HEAD_RX, ry: 6, transform: `rotate(-20 ${x} ${ny})`, class: hollow ? 'st-head-hollow' : 'st-fill' }, g);
   if (note.accent) text(g, x - 7, BOTTOM_Y - HALF * 10, '>', { class: 'st-accent' });
@@ -133,7 +134,7 @@ export function createStaff(svg) {
     notes = score.notes;
     base = BASE[clef] || E4;
     const minBeats = Math.min(1, ...notes.map(n => n.beats));
-    beatPx = Math.max(48, 28 / minBeats);
+    beatPx = Math.max(52, 32 / minBeats);
     const fixed = el('g', {}, svg);
     startX = drawPrefix(fixed, key, time, clef);
     const width = mode === 'review' ? xOfBeat(score.totalBeats) + 16 : WIDTH;
@@ -150,7 +151,7 @@ export function createStaff(svg) {
     for (let i = 0; i < 5; i++) el('line', { x1: 0, x2: 44, y1: BOTTOM_Y - i * HALF * 2, y2: BOTTOM_Y - i * HALF * 2 }, highlightLines);
     const sig = keySignature(key);
     score.bars.slice(0, -1).forEach(b => {
-      const bx = xOfBeat(b.start + b.beats) - Math.min(16, beatPx * 0.35);
+      const bx = xOfBeat(b.start + b.beats) - Math.min(22, beatPx * 0.4); // deja sitio a la alteración de la nota que sigue
       el('line', { x1: bx, x2: bx, y1: BOTTOM_Y - HALF * 8, y2: BOTTOM_Y, class: 'st-line' }, scroller);
     });
     const endX = xOfBeat(score.totalBeats) - 8;
