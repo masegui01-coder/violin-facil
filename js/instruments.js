@@ -20,7 +20,7 @@ export const INSTRUMENTS = [
   },
   {
     id: 'clarinet', name: 'Clarinete', family: 'madera', transpose: -2, written: [52, 91], minHz: 140, maxHz: 1900,
-    board: 'keys', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'C', inKey: 'Si♭',
+    octaveSlack: true, board: 'keys', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'C', inKey: 'Si♭',
     blurb: 'En Si♭, caña simple',
   },
   {
@@ -50,12 +50,12 @@ export const INSTRUMENTS = [
   },
   {
     id: 'eb-clarinet', name: 'Requinto', family: 'madera', transpose: 3, written: [52, 91], minHz: 170, maxHz: 2300,
-    board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'G', inKey: 'Mi♭',
+    octaveSlack: true, board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'G', inKey: 'Mi♭',
     blurb: 'Clarinete pequeño en Mi♭',
   },
   {
     id: 'bass-clarinet', name: 'Clarinete bajo', family: 'madera', transpose: -14, written: [52, 84], minHz: 60, maxHz: 900,
-    board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'C', inKey: 'Si♭',
+    octaveSlack: true, board: 'keys', fingers: 'clarinet', firstNotes: ['G4', 'F4', 'E4', 'D4', 'C4'], bandKey: 'C', inKey: 'Si♭',
     blurb: 'En Si♭, una octava más grave',
   },
   {
@@ -139,8 +139,15 @@ export function instrumentById(id) {
 export const writtenToSounding = (midi, inst) => midi + inst.transpose;
 export const soundingToWritten = (midi, inst) => midi - inst.transpose;
 
-// La nota oída llevada a la octava de la que toca, en los instrumentos donde vale cualquier octava (xilófono)
-export const foldOctave = (midi, target, inst) => (inst.anyOctave ? midi + 12 * Math.round((target - midi) / 12) : midi);
+// La nota oída llevada a la octava de la que toca, en los instrumentos donde vale cualquier octava (xilófono).
+// En los clarinetes (octaveSlack) se perdona una octava arriba o abajo: el detector a veces se equivoca de octava en
+// las notas de garganta (Si♭), y el alumno no puede caer en la octava con la misma digitación (el registro sube una 12.ª).
+export function foldOctave(midi, target, inst) {
+  const octaves = Math.round((target - midi) / 12);
+  const folded = midi + 12 * octaves;
+  if (inst.anyOctave || (inst.octaveSlack && Math.abs(octaves) === 1 && Math.abs(folded - target) < 1)) return folded;
+  return midi;
+}
 
 // Tolerancia de afinación: en las láminas fijas solo importa acertar la lámina, no los cents
 export const toleranceFor = (cents, inst) => (inst.fixedPitch ? Math.max(cents, 50) : cents);

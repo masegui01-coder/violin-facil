@@ -252,7 +252,7 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .st-fill { fill: currentColor; }
 .st-stroke { stroke: currentColor; }
 .st-head-hollow { fill: none; stroke: currentColor; stroke-width: 2.4; }
-.st-acc-note { font-family: var(--f-music), sans-serif; font-size: 19px; fill: currentColor; }
+.st-acc-note { font-family: var(--f-music), sans-serif; font-size: 22px; fill: currentColor; }
 .st-highlight { fill: var(--accent-soft); }
 .st-highlight-lines line { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); stroke-width: 1.4; }
 .st-tuplet { font-family: var(--f-music), var(--f-body); font-size: 13px; font-style: italic; font-weight: 700; fill: currentColor; }

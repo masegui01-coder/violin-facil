@@ -16,3 +16,13 @@ test('el repaso y el reto de la unidad de la escala de Fa del clarinete se queda
   close.forEach(l => assert.doesNotMatch(l.notes || l.song.score, /F#/, l.id));
   assert.match(close.find(l => l.kind === 'notes').notes, /Bb4/);
 });
+
+test('en el clarinete el Si♭ oído una octava desplazada cuenta, pero una nota distinta no', async () => {
+  const { instrumentById, foldOctave } = await import('../js/instruments.js');
+  const cl = instrumentById('clarinet');
+  assert.equal(foldOctave(82, 70, cl), 70);
+  assert.equal(foldOctave(58.2, 70, cl), 70.2);
+  assert.equal(foldOctave(77, 70, cl), 77);
+  assert.equal(foldOctave(94, 70, cl), 94);
+  assert.equal(foldOctave(82, 70, instrumentById('flute')), 82);
+});
