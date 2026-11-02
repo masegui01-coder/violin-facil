@@ -5,14 +5,23 @@ import { L } from './tips-l10n.js';
 
 // art → { paso (0, 1, 2): { src, marks } }. Se rellena según llegan las imágenes (tools/foto-consejo.py).
 export const PHOTOS = {
-  'violin-hold': { 0: { src: 'img/consejos/fotos/violin-hold-1.webp', marks: [] } },
-  'violin-left': { 0: { src: 'img/consejos/fotos/violin-left-1.webp', marks: [] } },
-  'cello-hold': { 0: { src: 'img/consejos/fotos/cello-hold-1.webp', marks: [] } },
-  'sax-posture': { 2: { src: 'img/consejos/fotos/sax-posture-3.webp', marks: [] } },
-  'woodwind-hold': { 1: { src: 'img/consejos/fotos/woodwind-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/woodwind-hold-3.webp', marks: [] } },
+  'cello-bow': { 0: { src: 'img/consejos/fotos/cello-bow-1.webp', marks: [] } },
+  'cello-hold': { 0: { src: 'img/consejos/fotos/cello-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/cello-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/cello-hold-3.webp', marks: [] } },
+  'cello-left': { 0: { src: 'img/consejos/fotos/cello-left-1.webp', marks: [] } },
   'clar-barrel': { 1: { src: 'img/consejos/fotos/clar-barrel-2.webp', marks: [] } },
-  'oboe-embouchure': { 2: { src: 'img/consejos/fotos/oboe-embouchure-3.webp', marks: [] } },
-  'oboe-crow': { 0: { src: 'img/consejos/fotos/oboe-crow-1.webp', marks: [] } },
+  'clar-embouchure': { 1: { src: 'img/consejos/fotos/clar-embouchure-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/clar-embouchure-3.webp', marks: [] } },
+  'flute-embouchure': { 2: { src: 'img/consejos/fotos/flute-embouchure-3.webp', marks: [] } },
+  'flute-head': { 0: { src: 'img/consejos/fotos/flute-head-1.webp', marks: [] } },
+  'flute-hold': { 0: { src: 'img/consejos/fotos/flute-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/flute-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/flute-hold-3.webp', marks: [] } },
+  'oboe-crow': { 0: { src: 'img/consejos/fotos/oboe-crow-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/oboe-crow-3.webp', marks: [] } },
+  'oboe-embouchure': { 0: { src: 'img/consejos/fotos/oboe-embouchure-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/oboe-embouchure-3.webp', marks: [] } },
+  'oboe-hold': { 2: { src: 'img/consejos/fotos/oboe-hold-3.webp', marks: [] } },
+  'sax-neck': { 0: { src: 'img/consejos/fotos/sax-neck-1.webp', marks: [] } },
+  'sax-posture': { 0: { src: 'img/consejos/fotos/sax-posture-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/sax-posture-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/sax-posture-3.webp', marks: [] } },
+  'violin-bow': { 0: { src: 'img/consejos/fotos/violin-bow-1.webp', marks: [] } },
+  'violin-hold': { 0: { src: 'img/consejos/fotos/violin-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/violin-hold-2.webp', marks: [] } },
+  'violin-left': { 0: { src: 'img/consejos/fotos/violin-left-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/violin-left-2.webp', marks: [] } },
+  'woodwind-hold': { 0: { src: 'img/consejos/fotos/woodwind-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/woodwind-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/woodwind-hold-3.webp', marks: [] } },
 };
 
 export const photoFor = (art, step) => (PHOTOS[art] && PHOTOS[art][step]) || null;
