@@ -20,7 +20,7 @@ export const PHOTOS = {
   'flute-hold': { 0: { src: 'img/consejos/fotos/flute-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/flute-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/flute-hold-3.webp', marks: [] } },
   'fretting': { 1: { src: 'img/consejos/fotos/fretting-2.webp', marks: [] } },
   'guitar-posture': { 0: { src: 'img/consejos/fotos/guitar-posture-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/guitar-posture-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/guitar-posture-3.webp', marks: [] } },
-  'guitar-right': { 0: { src: 'img/consejos/fotos/guitar-right-1.webp', marks: [] } },
+  'guitar-right': { 0: { src: 'img/consejos/fotos/guitar-right-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/guitar-right-3.webp', marks: [] } },
   'horn-hand': { 0: { src: 'img/consejos/fotos/horn-hand-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/horn-hand-2.webp', marks: [] } },
   'oboe-crow': { 0: { src: 'img/consejos/fotos/oboe-crow-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/oboe-crow-3.webp', marks: [] } },
   'oboe-embouchure': { 0: { src: 'img/consejos/fotos/oboe-embouchure-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/oboe-embouchure-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/oboe-embouchure-3.webp', marks: [] } },
