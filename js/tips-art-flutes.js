@@ -44,10 +44,12 @@ export const FLUTE_ART = {
       ${label(135, 46, L('labio de abajo (lado de quien toca)', 'lower lip (player side)'), { color: C.ink, anchor: 'middle', size: 12 })}
       ${label(135, 186, L('tapa ¼ – ⅓ del agujero', 'cover ¼ – ⅓ of the hole'), { anchor: 'middle', size: 14 })}${label(135, 204, L('el resto queda abierto', 'the rest stays open'), { color: C.ink, anchor: 'middle', size: 12 })}`),
     // 3. «pu»: abertura pequeña y el aire contra el borde de enfrente, que lo parte en dos
-    panel(`<path d="M20 86 C50 70 80 74 104 92 C80 98 50 98 20 86 Z" fill="${C.lip}"/><path d="M20 112 C50 128 80 124 104 106 C80 100 50 100 20 112 Z" fill="${C.lip}"/>
-      <rect x="120" y="128" width="140" height="16" rx="4" fill="${F.silver}" stroke="${F.silverDark}"/><path d="M168 128 L196 128 L190 144 L174 144 Z" fill="${F.hole}"/>
-      ${arrow('M104 99 L190 126', F.air)}${arrow('M196 126 L240 112', F.air, 2.2)}${arrow('M196 128 L196 168', F.air, 2.2)}
-      ${label(60, 152, '«pu»', { color: C.ink, anchor: 'middle', size: 22 })}${label(240, 100, L('fuera', 'out'), { color: F.air, anchor: 'middle', size: 12 })}${label(212, 186, L('dentro', 'in'), { color: F.air, size: 12 })}`),
+    panel(`<path d="M50 90 C90 84 130 88 150 98 C157 102 155 108 148 108 C120 104 90 103 50 104 Z" fill="${C.lip}"/>
+      <path d="M50 128 L152 128 C158 127 159 118 152 113 C124 107 90 108 50 112 Z" fill="${C.lip}"/>
+      <rect x="40" y="128" width="222" height="16" rx="4" fill="${F.silver}" stroke="${F.silverDark}"/><path d="M150 128 L180 128 L174 144 L156 144 Z" fill="${F.hole}"/>
+      ${arrow('M154 110 L176 125', F.air)}${arrow('M182 126 L232 112', F.air, 2.2)}${arrow('M178 130 L178 172', F.air, 2.2)}
+      ${label(100, 72, '«pu»', { color: C.ink, anchor: 'middle', size: 22 })}${label(232, 100, L('fuera', 'out'), { color: F.air, anchor: 'middle', size: 12 })}${label(188, 190, L('dentro', 'in'), { color: F.air, size: 12 })}
+      ${label(100, 170, L('labio apoyado', 'lip resting'), { color: C.ink, anchor: 'middle', size: 12 })}${label(100, 186, L('en la placa', 'on the plate'), { color: C.ink, anchor: 'middle', size: 12 })}`),
   ],
 
   // ---- Flauta: cómo sujetarla ----

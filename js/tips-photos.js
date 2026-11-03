@@ -6,7 +6,7 @@ import { L } from './tips-l10n.js';
 // art → { paso (0, 1, 2): { src, marks } }. Se rellena según llegan las imágenes (tools/foto-consejo.py).
 export const PHOTOS = {
   'brass-buzz': { 0: { src: 'img/consejos/fotos/brass-buzz-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/brass-buzz-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-buzz-3.webp', marks: [] } },
-  'brass-placement': { 0: { src: 'img/consejos/fotos/brass-placement-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-placement-3.webp', marks: [] } },
+  'brass-placement': { 0: { src: 'img/consejos/fotos/brass-placement-1.webp', marks: [] } },
   'brass-posture': { 0: { src: 'img/consejos/fotos/brass-posture-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/brass-posture-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-posture-3.webp', marks: [] } },
   'breath': { 1: { src: 'img/consejos/fotos/breath-2.webp', marks: [] } },
   'cajon-strokes': { 0: { src: 'img/consejos/fotos/cajon-strokes-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/cajon-strokes-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/cajon-strokes-3.webp', marks: [] } },

@@ -125,7 +125,13 @@ export function reedArt(reedLip) {
 
     // ---- Clarinete: embocadura ----
     'clar-embouchure': [
-      reedLip[1],
+      // Corte: la boquilla entra inclinada hacia abajo, los dientes de arriba sobre ella y menos labio de abajo que en el saxo
+      panel(`${JAW}<g transform="rotate(36 120 112)"><path d="M92 110 L280 96 L280 126 L92 126 Z" fill="${B.black}"/><path d="M92 126 L280 126 L280 133 L96 133 Z" fill="${B.reed}"/></g>
+        <path d="M110 30 L140 30 L140 119 L110 100 Z" fill="#fff" stroke="#9AA3B2" stroke-width="2.5"/>
+        <path d="M140 26 C178 26 198 62 196 100 C194 120 180 134 166 135 L140 119 Z" fill="${C.lip}"/>
+        <path d="M110 146 L140 166 L140 214 L110 214 Z" fill="#fff" stroke="#9AA3B2" stroke-width="2.5"/><path d="M98 125 L156 166 C166 176 170 196 164 214 L140 214 L140 168 C128 160 112 150 98 146 Z" fill="${C.lip}"/>
+        ${arrow('M78 182 C92 170 104 160 118 150')}${label(48, 202, L('menos', 'less'), { size: 13 })}${label(48, 218, L('labio', 'lip'), { size: 13 })}
+        ${label(262, 40, L('inclinada', 'tilted'), { anchor: 'end', size: 13 })}${label(262, 56, L('hacia abajo', 'downwards'), { anchor: 'end', size: 13 })}`),
       // Barbilla: de perfil y con la boquilla puesta. Bien: estirada hacia abajo, lisa y en punta.
       // Mal: subida y arrugada, con bultos (la «barbilla de bolitas»).
       panel(`${[[4, false], [138, true]].map(([ox, bunched]) => {

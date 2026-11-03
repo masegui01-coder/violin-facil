@@ -36,6 +36,10 @@ const lowerFace = (cx, cy, w = 200) => `<path d="M${cx - w / 2} ${cy - 90} L${cx
   <path d="M${cx - 12} ${cy - 70} L${cx - 16} ${cy - 46} C${cx - 8} ${cy - 40} ${cx + 8} ${cy - 40} ${cx + 16} ${cy - 46} L${cx + 12} ${cy - 70}" fill="none" stroke="${SKIN_LINE}" stroke-width="2.5"/>`;
 const waves = (x, y) => [0, 1, 2].map(i => `<path d="M${x + i * 12} ${y - 12 - i * 4} C${x + 7 + i * 12} ${y - 4} ${x + 7 + i * 12} ${y + 4} ${x + i * 12} ${y + 12 + i * 4}" fill="none" stroke="${C.green}" stroke-width="2.6" stroke-linecap="round"/>`).join('');
 const buzzLines = (x, y) => [0, 1, 2].map(i => `<path d="M${x + i * 14} ${y - 16} l6 8 -6 8 6 8 -6 8" fill="none" stroke="${C.accent}" stroke-width="2.5"/>`).join('');
+// Corte de perfil de la boca y de la copa de la boquilla (para la viñeta de la presión)
+const toothCol = (y1, y2) => `<rect x="34" y="${y1}" width="16" height="${y2 - y1}" rx="3" fill="${C.tooth}" stroke="${C.toothLine}" stroke-width="2"/>`;
+const cupSection = `<path d="M74 66 C74 58 92 58 94 66 L118 108 L134 108 L134 126 L118 126 L94 168 C92 176 74 176 74 168 Z" fill="${M.silver}" stroke="${M.silverDark}" stroke-width="1.5"/>
+  <path d="M80 70 C88 72 96 84 104 100 L114 112 L134 112 L134 122 L114 122 L104 134 C96 150 88 162 80 164 Z" fill="#FDFBF7"/>`;
 function gauge(cx = 135, cy = 168) {
   return `<path d="M${cx - 100} ${cy} A100 100 0 0 1 ${cx + 100} ${cy}" fill="none" stroke="#E2D7CB" stroke-width="20" stroke-linecap="round"/>
     <path d="M${cx - 25} ${cy - 97} A100 100 0 0 1 ${cx + 25} ${cy - 97}" fill="none" stroke="${C.green}" stroke-width="20"/>
@@ -58,16 +62,22 @@ export const BRASS_ART = {
   'brass-placement': [
     panel(`${lowerFace(135, 100)}${lips(135, 120, 84)}<circle cx="135" cy="120" r="40" fill="none" stroke="${M.silver}" stroke-width="12"/><circle cx="135" cy="120" r="40" fill="none" stroke="${M.silverDark}" stroke-width="1.5"/>
       <line x1="135" y1="22" x2="135" y2="216" stroke="${C.green}" stroke-width="2" stroke-dasharray="6 6"/>${label(144, 30, L('centro', 'centre'), { size: 12 })}${ok(236, 196)}`),
-    panel(`${[[L('trompeta', 'trumpet'), 45, 0.5, 20], [L('trompa', 'horn'), 135, 0.66, 18], [L('graves', 'low brass'), 225, 0.6, 28]].map(([name, cx, f, r]) => `
+    panel(`${[[L('trompeta', 'trumpet'), 45, 0.5, 20, 2], [L('trompa', 'horn'), 135, 0.66, 18, 10], [L('graves', 'low brass'), 225, 0.6, 28, 11]].map(([name, cx, f, r, up]) => `
       <rect x="${cx - 40}" y="56" width="80" height="120" rx="30" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="2"/>${lips(cx, 120, 50)}
-      <circle cx="${cx}" cy="${120 - (f - 0.5) * 2 * r}" r="${r}" fill="none" stroke="${M.silver}" stroke-width="7"/>
-      ${label(cx, 200, name, { color: C.ink, anchor: 'middle', size: 13 })}${label(cx, 44, f === 0.5 ? '½ · ½' : f > 0.62 ? L('⅔ arriba', '⅔ top') : L('más arriba', 'more top'), { anchor: 'middle', size: 12 })}`).join('')}`),
-    panel(`${[[70, false], [200, true]].map(([cx, press]) => `
-      <path d="M${cx - 30} 70 C${cx - 6} ${press ? 92 : 84} ${cx - 6} ${press ? 100 : 104} ${cx - 30} ${press ? 116 : 118}" fill="${C.lip}" stroke="#C0706C" stroke-width="${press ? 6 : 2}"/>
-      ${mouthpiece(cx - 12 + (press ? -4 : 0), 94, 0.9)}${press ? arrow(`M${cx + 60} 70 L${cx + 20} 88`, C.red) : ''}
-      ${press ? bad(cx, 190) : ok(cx, 190)}`).join('')}
-      ${label(70, 40, L('apoyada', 'resting'), { anchor: 'middle', size: 13 })}${label(200, 40, L('apretando', 'pressing'), { color: C.red, anchor: 'middle', size: 13 })}
-      ${label(135, 222, L('el agudo sale con aire, no con fuerza', 'high notes come from air, not force'), { color: C.ink, anchor: 'middle', size: 11 })}`),
+      <circle cx="${cx}" cy="${120 - up}" r="${r}" fill="none" stroke="${M.silver}" stroke-width="7"/>
+      ${label(cx, 200, name, { color: C.ink, anchor: 'middle', size: 13 })}${f === 0.6 ? label(cx, 30, L('más arriba', 'more top'), { anchor: 'middle', size: 12 }) + label(cx, 45, L('que abajo', 'than bottom'), { anchor: 'middle', size: 12 }) : label(cx, 44, f === 0.5 ? '½ · ½' : L('⅔ arriba', '⅔ top'), { anchor: 'middle', size: 12 })}`).join('')}`),
+    // Corte de perfil: dientes algo separados, labios en su sitio (sin meterlos) y el borde de la copa apoyado en los
+    // dos labios, que entran un poco en la copa; al apretar, el borde se hunde y los aplasta contra los dientes
+    panel(`${[[0, false], [135, true]].map(([ox, press]) => {
+      const lipsSide = press
+        ? `<path d="M50 40 C60 40 66 66 66 96 C66 108 65 114 64 116 L50 116 Z" fill="${C.lip}" stroke="${C.red}" stroke-width="1.5"/><path d="M50 118 L64 118 C65 122 66 128 66 140 C66 168 60 196 50 196 Z" fill="${C.lip}" stroke="${C.red}" stroke-width="1.5"/>`
+        : `<path d="M50 40 C62 40 70 58 74 80 C77 96 78 108 78 116 L50 116 Z" fill="${C.lip}"/><path d="M50 118 L78 118 C78 126 77 138 74 154 C70 176 62 196 50 196 Z" fill="${C.lip}"/>`;
+      const cup = `<g transform="translate(${press ? -10 : 0} 0)">${cupSection}</g>`;
+      return `<g transform="translate(${ox} 0)"><rect x="4" y="40" width="32" height="170" rx="8" fill="${C.gum}"/>${toothCol(44, 108)}${toothCol(128, 192)}
+        ${press ? lipsSide + cup : cup + lipsSide}${arrow('M30 117 L124 117', '#17798A', 2.5)}${press ? arrow('M130 40 L104 66', C.red) : ''}</g>`;
+    }).join('')}
+      ${ok(16, 24)}${label(30, 29, L('apoyada', 'resting'), { size: 13 })}${bad(151, 24)}${label(165, 29, L('apretando', 'pressing'), { color: C.red, size: 13 })}
+      ${label(135, 224, L('agudo: aire rápido, no apretar la boquilla', 'high notes: fast air, not more pressure'), { color: C.ink, anchor: 'middle', size: 11 })}`),
   ],
 
   // ---- La postura ----
