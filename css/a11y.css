@@ -38,3 +38,7 @@ details > summary.muted { display: flex; align-items: center; min-height: 48px; 
 .badge { min-width: 0; }
 .badge b, .badge small { overflow-wrap: anywhere; }
 .pro-hero .unit-pct { background: var(--surface-2); }
+
+/* Subpestañas del director: mismo estado elegido que chips y segmentados (tonal + borde), no relleno negro */
+.subtabs button { border: 1px solid var(--ctl-outline); color: var(--ink); border-radius: var(--ctl-r); }
+.subtabs button[aria-selected="true"] { background-color: var(--ctl-sel); color: var(--ctl-sel-ink); border-color: color-mix(in srgb, var(--accent) 60%, var(--ink)); font-weight: 800; }

@@ -59,10 +59,12 @@ test('changing styles changes the style slots', () => {
 test('lessons unlock in order and style slots do not block progress', () => {
   const course = buildCourse(['jazz']);
   const states = lessonStates(course, {});
-  assert.equal(states['u1-intro'], 'open');
-  assert.equal(states['u1-ae-pn0'], 'locked');
+  // primero se toca (la primera cuerda al aire) y después se lee la bienvenida
+  assert.equal(course[0].lessons[0].id, 'u1-ae-pn0');
+  assert.equal(states['u1-ae-pn0'], 'open');
+  assert.equal(states['u1-intro'], 'locked');
   const done = { [lessonKey(course[0].lessons[0])]: 3 };
-  assert.equal(lessonStates(course, done)['u1-ae-pn0'], 'open');
+  assert.equal(lessonStates(course, done)['u1-intro'], 'open');
   assert.equal(lessonStates(course, done)['u1-ae'], 'locked'); // antes, sus pasos intermedios
   const basic = lessonStates(course, {}, { level: 'basic' });
   assert.equal(basic['u3-scale'], 'open');

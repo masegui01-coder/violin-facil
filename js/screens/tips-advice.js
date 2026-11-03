@@ -17,6 +17,8 @@ import { L } from '../tips-l10n.js';
   ['Consejo para ti', 'A tip for you'], ['Ver por qué y cómo se hace', 'See why and how to do it'],
   ['A partir de lo que has tocado con este instrumento.', 'Based on what you have played on this instrument.'],
   ['Toca unas cuantas lecciones más y aquí te diré qué detalle de técnica puede estar haciendo que se te vayan las notas.', 'Play a few more lessons and I will tell you here which technique detail may be pulling your notes off.'],
+  ['Toca tus primeras lecciones y aquí aparecerán consejos de técnica hechos a tu medida.', 'Play your first lessons and technique tips tailored to you will show up here.'],
+  ['Datos para tus consejos', 'Data for your tips'],
   ['No veo ningún fallo que se repita: sigue así. Revisa de vez en cuando los básicos de abajo.', 'I do not see any repeated mistake: keep it up. Review the basics below from time to time.'],
   ['Pronto habrá consejos para este instrumento.', 'Tips for this instrument are coming soon.'],
   ['Abrir el afinador', 'Open the tuner'], ['Hacer notas tenidas', 'Do long notes'], ['Abrir el metrónomo', 'Open the metronome'],

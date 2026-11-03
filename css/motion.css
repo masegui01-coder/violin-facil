@@ -14,7 +14,13 @@
 }
 .unit-banner > .unit-pct { position: relative; }
 /* Separación entre bloques de Aprender (el test de nivel, que antes iba en medio, ahora está en «Más») */
-#casualView > #todayCard { margin-top: 14px; }
+#todayCard { margin-top: 14px; }
+
+/* ---------- Objetivo de hoy y racha: a 360 px el texto cabe en 1-2 líneas ---------- */
+.today-goal, .today-streak { padding: 10px; gap: 8px; }
+.today-goal .ring { width: 38px; height: 38px; }
+.today-goal b, .today-streak b { line-height: 1.2; }
+.today-goal small, .today-streak small { display: block; line-height: 1.25; }
 
 /* ---------- Aprender (Casual): «Más» plegado bajo el objetivo de hoy ---------- */
 .learn-more { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); margin: 10px 0 22px; }
@@ -43,9 +49,7 @@
 .learn-more-daily > .today-link { justify-content: center; font-weight: 700; font-size: .88rem; color: var(--accent); padding: 8px; }
 .learn-more .today-friends { margin-top: 0; }
 .learn-more .placement-card { margin: 0; }
-@media (min-width: 900px) {
-  #casualView > .learn-more { grid-column: 2; }
-}
+
 
 /* Lección de lectura hecha: «Leída» en vez de estrellas */
 .read-tag { font-size: .74rem; font-weight: 800; color: var(--ok); letter-spacing: .02em; }

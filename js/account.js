@@ -1,6 +1,34 @@
 // Cuentas de usuario (obligatorias en la beta): Google o correo y contraseña.
 // Si ya había una sesión anónima (por ejemplo, de una banda), se vincula a la cuenta nueva para no perder nada.
-import { getCloud } from './cloud.js';
+import { getCloud, warmPopups, popupsReady } from './cloud.js';
+
+// La ventana de Google no se prepara al arrancar (ver cloud.js): se prepara cuando el usuario se acerca a un botón
+// «Continuar con Google» o al formulario que lo acompaña (toque, puntero encima o foco), antes de que llegue el clic.
+// También «Borrar mi cuenta» (Perfil): con Google pide volver a entrar en una ventana.
+const GOOGLE_BTN = '.google-btn';
+const POPUP_INTENT = `${GOOGLE_BTN}, #accDelete`;
+const nearGoogle = el => {
+  const form = el.closest('form');
+  return !!(form && form.parentElement && form.parentElement.querySelector(GOOGLE_BTN));
+};
+function warmOnIntent(e) {
+  const el = e.target instanceof Element ? e.target : null;
+  if (!el) return;
+  // El foco solo cuenta en los campos: al abrirse, la ventana del aviso enfoca sola el botón de Google
+  if (e.type === 'focusin') { if (el.matches('input') && nearGoogle(el)) warmPopups(); return; }
+  if (el.closest(POPUP_INTENT) || nearGoogle(el)) warmPopups();
+}
+if (typeof document !== 'undefined') {
+  ['pointerdown', 'pointerover', 'focusin', 'keydown'].forEach(type => document.addEventListener(type, warmOnIntent, { capture: true, passive: true }));
+}
+
+// Con el formulario ya en pantalla se prepara también en un rato libre: en iOS Safari una ventana preparada durante
+// el mismo clic puede quedar bloqueada, así que el primer toque en Google debe encontrarla lista
+const WARM_DELAY_MS = 2500;
+export function warmPopupsSoon() {
+  const idle = window.requestIdleCallback || (fn => setTimeout(fn, 0));
+  setTimeout(() => idle(() => warmPopups(), { timeout: 2000 }), WARM_DELAY_MS);
+}
 
 const listeners = new Set();
 let user = null;
@@ -37,6 +65,15 @@ const USER_CANCELLED = ['auth/popup-closed-by-user', 'auth/cancelled-popup-reque
 
 export async function signInWithGoogle() {
   const c = await getCloud();
+  const warm = popupsReady();
+  try { return await googlePopup(c); } catch (e) {
+    // La ventana se preparó durante el clic y el navegador la bloqueó por tardar: ya está lista, basta con repetir
+    if (e.code === 'auth/popup-blocked' && !warm) throw Object.assign(new Error(e.message), { code: 'auth/popup-retry' });
+    throw e;
+  }
+}
+
+async function googlePopup(c) {
   const provider = new c.authFns.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const anon = c.auth.currentUser && c.auth.currentUser.isAnonymous ? c.auth.currentUser : null;
@@ -97,6 +134,7 @@ export function accountErrorText(err) {
     'auth/user-not-found': 'No hay ninguna cuenta con ese correo.',
     'auth/too-many-requests': 'Demasiados intentos. Espera un poco y vuelve a probar.',
     'auth/popup-closed-by-user': 'Has cerrado la ventana de Google antes de terminar.',
+    'auth/popup-retry': 'La ventana de Google ya está preparada: vuelve a pulsar «Continuar con Google».',
     'auth/popup-blocked': 'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes y vuelve a probar.',
     'auth/operation-not-allowed': 'Este tipo de acceso aún no está activado.',
     'auth/requires-recent-login': 'Por seguridad, cierra sesión, vuelve a entrar y repite la acción.',

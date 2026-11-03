@@ -8,7 +8,7 @@ import { parseChart } from './songbook.js';
 import { rng, rhythmReading } from './generate.js';
 
 export const MEDALS = ['none', 'bronze', 'silver', 'gold'];
-export const MEDAL_NAME = { none: 'Sin empezar', bronze: 'Bronce', silver: 'Plata', gold: 'Oro' };
+export const MEDAL_NAME = { none: 'Sin empezar', read: 'Leída', bronze: 'Bronce', silver: 'Plata', gold: 'Oro' };
 export const SILVER_GOOD = 3; // veces con 2 estrellas o más
 export const GOLD_GOOD = 5;
 export const REPEAT_XP = 5; // cada repaso de una página ya pasada
@@ -29,10 +29,10 @@ export function recordPlay(prev, { stars, perfect, at }) {
   return { plays: p.plays + 1, good: p.good + (stars >= 2 ? 1 : 0), best: Math.max(p.best, stars), perfect: p.perfect || !!perfect, last: at };
 }
 
-// Las páginas de teoría no se «repiten»: leerlas da el oro
+// Las páginas de teoría no dan medalla: quedan «leídas» (no cuentan en bronce, plata ni oro)
 export function medalOf(p, kind) {
   if (!p || !p.best) return 'none';
-  if (kind === 'theory') return 'gold';
+  if (kind === 'theory') return 'read';
   if (p.good >= GOLD_GOOD && p.perfect) return 'gold';
   if (p.good >= SILVER_GOOD) return 'silver';
   return 'bronze';
@@ -41,7 +41,8 @@ export function medalOf(p, kind) {
 // Qué falta para la siguiente medalla, en una frase
 export function nextGoal(p, kind) {
   const medal = medalOf(p, kind);
-  if (medal === 'none') return kind === 'theory' ? 'Léela para conseguir el oro' : 'Tócala para conseguir el bronce';
+  if (medal === 'none') return kind === 'theory' ? 'Léela para marcarla como leída' : 'Tócala para conseguir el bronce';
+  if (medal === 'read') return 'Leída. Puedes repasarla cuando quieras';
   if (medal === 'bronze') { const left = SILVER_GOOD - p.good; return `Tócala ${left} ${left === 1 ? 'vez' : 'veces'} más con 2 estrellas para la plata`; }
   if (medal === 'silver') {
     const left = Math.max(0, GOLD_GOOD - p.good);
@@ -56,7 +57,8 @@ export function chapterStats(chapter, plays) {
   return {
     total: medals.length, started: medals.filter(m => m !== 'none').length,
     bronze: count('bronze'), silver: count('silver'), gold: count('gold'),
-    stamp: medals.every(m => m !== 'none') ? (medals.every(m => m === 'gold') ? 'gold' : 'done') : null,
+    // sello de oro: todo lo que se toca, de oro (la teoría leída no lo impide)
+    stamp: medals.every(m => m !== 'none') ? (medals.every(m => m === 'gold' || m === 'read') && medals.includes('gold') ? 'gold' : 'done') : null,
   };
 }
 

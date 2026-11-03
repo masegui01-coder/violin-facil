@@ -73,27 +73,69 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .lesson-screen { gap: 14px; }
 .screen-head { display: flex; flex-direction: column; gap: 4px; }
 
-/* Botones */
+/* Botones (Material 3): relleno plano sin sombra dura; la elevación tonal solo aparece al pasar el ratón.
+   El relieve «3D» queda únicamente en el botón principal de «Continuar» (learn.css). */
 .btn {
   border: 0; border-radius: 999px; padding: 12px 20px; font-weight: 700; letter-spacing: .01em;
   background: var(--accent); color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000);
-  transition: transform .08s, box-shadow .08s;
+  box-shadow: none;
+  transition: box-shadow .15s, filter .15s;
 }
-.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.btn:active { filter: brightness(.9); }
 .btn.ghost { background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); box-shadow: none; }
-.btn.ghost:active { transform: translateY(1px); }
+.btn.ghost:active { filter: none; background: color-mix(in srgb, var(--ink) 10%, var(--surface)); }
 .btn.small { padding: 8px 14px; font-size: .9rem; }
 .btn.big { padding: 16px 24px; font-size: 1.08rem; width: 100%; }
 .btn.danger { color: var(--bad); }
 .icon-btn { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 1.05rem; flex: none; }
 .round { width: 56px; height: 56px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font-size: 1.6rem; font-weight: 600; display: grid; place-items: center; }
 
-.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; }
+/* ---------- Controles pequeños: un solo juego de forma y estado (Material 3) ----------
+   Segmentados (.seg), chips de filtro (.filter, .chip-btn) y subpestañas (.subtabs) comparten altura (48 px de zona táctil),
+   radio, borde «outline», capa de estado al pasar/pulsar y el estado elegido: contenedor secundario tonal + ✓. */
+:root {
+  --ctl-h: 48px; --ctl-r: 999px;
+  --ctl-outline: color-mix(in srgb, var(--muted) 55%, var(--line));
+  --ctl-sel: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --ctl-sel-ink: var(--ink);
+  --ctl-hover: color-mix(in srgb, var(--ink) 7%, transparent);
+  --ctl-press: color-mix(in srgb, var(--ink) 12%, transparent);
+  --ctl-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23000' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* Segmentado: botones unidos con divisores de 1 px (el fondo del grupo asoma por el hueco) */
+.seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px; padding: 0; overflow: hidden;
+  background: var(--ctl-outline); border: 1px solid var(--ctl-outline); border-radius: var(--ctl-r);
+  container-type: inline-size;
+}
 .seg.three { grid-template-columns: repeat(3, 1fr); }
 .seg.four { grid-template-columns: repeat(4, 1fr); }
-.seg button { border: 0; background: transparent; border-radius: 999px; padding: 9px 6px; font-weight: 700; color: var(--muted); font-size: .92rem; }
-.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button {
+  border: 0; border-radius: 0; background: var(--surface); color: var(--ink); min-height: var(--ctl-h);
+  padding: 6px 10px; font-weight: 700; font-size: .9rem; line-height: 1.2;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0;
+}
+.seg button:focus-visible { outline-offset: -4px; }
+/* Cuadrícula que salta de línea (intervalos): botones sueltos con su propio borde */
+.seg.wrap { background: transparent; border: 0; gap: 6px; overflow: visible; border-radius: 0; }
+.seg.wrap button { border: 1px solid var(--ctl-outline); border-radius: 12px; }
+.seg.wrap button:focus-visible { outline-offset: 2px; }
+/* Capa de estado: pasar el ratón y pulsar */
+@media (hover: hover) {
+  .seg button:hover, .filter button:hover, .chip-btn:hover, .subtabs button:hover { background-image: linear-gradient(var(--ctl-hover), var(--ctl-hover)); }
+  .btn:not(.ghost):hover { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15); }
+}
+.seg button:active, .filter button:active, .chip-btn:active, .subtabs button:active { background-image: linear-gradient(var(--ctl-press), var(--ctl-press)); }
+/* Elegido: contenedor secundario tonal, texto oscuro y ✓ delante */
+.seg button[aria-pressed="true"] { background-color: var(--ctl-sel); color: var(--ctl-sel-ink); font-weight: 800; }
+.seg button[aria-pressed="true"]::before, .filter button[aria-pressed="true"]::before, .chip-btn[aria-pressed="true"]::before {
+  content: ""; flex: none; width: 18px; height: 18px; background: currentColor;
+  -webkit-mask: var(--ctl-check) center / contain no-repeat; mask: var(--ctl-check) center / contain no-repeat;
+}
+/* Sin sitio para el ✓ (cuatro o más segmentos, o segmentado estrecho): se marca solo con el relleno tonal y la letra gruesa */
+.seg.four button::before, .seg.five button::before, .seg.rb-levels button::before, .seg.wrap button::before { display: none; }
+@container (max-width: 299px) { .seg.three button::before { display: none; } }
+@container (max-width: 239px) { .seg button::before { display: none; } }
 .setting { display: flex; flex-direction: column; gap: 8px; }
 .setting > span { font-weight: 600; font-size: .9rem; }
 .switch-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; font-weight: 600; font-size: .95rem; cursor: pointer; }

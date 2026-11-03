@@ -150,7 +150,7 @@ export function buildCourse(styles, instId = 'violin') {
   const pills = pillsFor(inst.id);
   return units.map((unit, ui) => ({
     ...unit,
-    lessons: withPills(unit.lessons, pills.filter(p => Math.min(p.unit, units.length - 1) === ui)).flatMap(l => {
+    lessons: playFirst(withPills(unit.lessons, pills.filter(p => Math.min(p.unit, units.length - 1) === ui)), ui).flatMap(l => {
       if (l.kind !== 'slots') return [l];
       const picks = pickSongs(l.count, l.difficulty, styles, used, inst, unit.known);
       picks.forEach(p => used.add(p.song.id));
@@ -166,6 +166,16 @@ function withPills(lessons, pills) {
   return [...lessons.slice(0, at), ...pills, ...lessons.slice(at)];
 }
 
+// Al empezar el curso se toca antes de leer: la primera actividad de la unidad 1 es su primer paso tocable
+// (una cuerda al aire o la primera nota) y la teoría de bienvenida va justo después. Solo cambia el orden, no los ids.
+const isPlayable = l => l.kind !== 'theory' && l.kind !== 'slots' && !l.optional && !l.slot;
+export function playFirst(lessons, unitIndex) {
+  if (unitIndex !== 0) return lessons;
+  const i = lessons.findIndex(isPlayable);
+  if (i <= 0) return lessons;
+  return [lessons[i], ...lessons.slice(0, i), ...lessons.slice(i + 1)];
+}
+
 export function lessonKey(lesson) {
   return lesson.songId ? 'song:' + lesson.songId : 'lesson:' + lesson.id;
 }
@@ -175,6 +185,10 @@ export const READ_STARS = 1;
 export function isReadingLesson(lesson) {
   return !!lesson && lesson.kind === 'theory' && !lesson.exam && !(lesson.quiz && lesson.quiz.length);
 }
+
+// Niveles del curso (contador «niveles superados»): todo lo del camino salvo los calentamientos opcionales.
+// La teoría leída también cuenta, igual que en el camino sale como hecha.
+export const isCourseLevel = lesson => !!lesson && !lesson.optional;
 
 export function lessonSong(lesson) {
   return lesson.song || (lesson.songId ? songById(lesson.songId) : null);

@@ -216,18 +216,19 @@ function editSection(i) {
   const sections = [...(song.sections || [])].sort((a, b) => a.at - b.at);
   const s = sections[i];
   const others = Object.entries(s.notes || {}).filter(([uid]) => uid !== myId());
+  const canRemove = [song.createdBy, ctx.group.ownerUid].includes(myId()); // las reglas solo dejan quitar partes al autor o al dueño
   sheet(`<h2>${esc(s.name)} · ${clock(s.at)}</h2>
     <label for="gsNote">Qué toco yo aquí (acordes, ritmo, una nota para acordarte…)</label>
     <textarea id="gsNote" class="input" maxlength="200" rows="3">${esc((s.notes || {})[myId()] || '')}</textarea>
     ${others.length ? `<p class="muted small">Tus compañeros también han apuntado cosas en esta parte.</p>` : ''}
-    <div class="row"><button type="button" class="btn" id="gsNoteOk">Guardar</button><button type="button" class="btn ghost small" id="gsGo">Ir a esta parte</button><button type="button" class="btn ghost small danger" id="gsDelSection">Quitar la parte</button></div>`, box => {
+    <div class="row"><button type="button" class="btn" id="gsNoteOk">Guardar</button><button type="button" class="btn ghost small" id="gsGo">Ir a esta parte</button>${canRemove ? '<button type="button" class="btn ghost small danger" id="gsDelSection">Quitar la parte</button>' : ''}</div>`, box => {
     box.querySelector('#gsNoteOk').addEventListener('click', () => {
       $('sheet').close();
       const notes = { ...(s.notes || {}), [myId()]: $('gsNote').value.trim().slice(0, 200) };
       saveSections(sections.map((x, j) => (j === i ? { ...x, notes } : x)));
     });
     box.querySelector('#gsGo').addEventListener('click', () => { $('sheet').close(); mixer.seek(s.at); });
-    box.querySelector('#gsDelSection').addEventListener('click', () => { $('sheet').close(); saveSections(sections.filter((_, j) => j !== i)); });
+    box.querySelector('#gsDelSection')?.addEventListener('click', () => { $('sheet').close(); saveSections(sections.filter((_, j) => j !== i)); });
   });
 }
 

@@ -44,10 +44,10 @@ test('beta: cualquier cuenta iniciada ve todo el contenido; sin cuenta, no', () 
   assert.equal(hasFullContent({ signedIn: false, admin: true, proRole: true }), false);
 });
 
-test('el JS público no lleva correos de administradores ni de testers', () => {
+test('el JS público y las reglas no llevan correos de administradores ni de testers', () => {
   const files = ['js', 'js/screens'].flatMap(dir => readdirSync(new URL(`../${dir}/`, import.meta.url))
     .filter(f => f.endsWith('.js')).map(f => readFileSync(new URL(`../${dir}/${f}`, import.meta.url), 'utf8')));
-  const all = files.join('\n');
+  const all = [...files, readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8')].join('\n');
   for (const email of ['masegui01@gmail.com', 'fran-saxo@hotmail.com']) assert.ok(!all.toLowerCase().includes(email), email);
   assert.ok(!/ADMIN_EMAILS|PRO_TESTER_EMAILS|isAdminEmail|isProTesterEmail/.test(all));
 });

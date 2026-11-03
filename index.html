@@ -16,29 +16,37 @@
 <!-- Fuentes sin bloquear el primer pintado (display=swap: mientras llegan se ve la del sistema) -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap"></noscript>
+
 <!-- Tema elegido en Perfil (claro, oscuro o el del sistema) antes de pintar, para que no parpadee -->
 <script>(function(){try{var e=JSON.parse(localStorage.getItem("violin-facil-v2"))||{};if(e.appearance!=="light"&&e.appearance!=="dark")return;document.documentElement.dataset.theme=e.appearance;var t=e.appearance==="dark"?"#0F141B":"#B4461F";document.querySelectorAll('meta[name="theme-color"]').forEach(function(a){a.content=t})}catch{}})();</script>
+
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
-     base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion -->
-<link rel="stylesheet" href="dist/app-31ad3d0156.css">
-<link rel="modulepreload" href="dist/main-VV7IY5ZX.js">
-<link rel="modulepreload" href="dist/chunk-6VHXOMQP.js">
-<link rel="modulepreload" href="dist/chunk-MCAZ6DMO.js">
-<link rel="modulepreload" href="dist/chunk-PP7HGLDG.js">
-<link rel="modulepreload" href="dist/chunk-7AFRWHEC.js">
-<link rel="modulepreload" href="dist/chunk-7TV5NQYS.js">
-<link rel="modulepreload" href="dist/chunk-ELYABSSX.js">
-<link rel="modulepreload" href="dist/chunk-PWTI5GYQ.js">
+     base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
+<link rel="stylesheet" href="dist/app-5c7be61a2e.css">
+<link rel="modulepreload" href="dist/main-GA7OHJ2R.js">
+<link rel="modulepreload" href="dist/chunk-S665EH2O.js">
+<link rel="modulepreload" href="dist/chunk-OKFE2TKN.js">
+<link rel="modulepreload" href="dist/chunk-HSGOGKUA.js">
+<link rel="modulepreload" href="dist/chunk-ON2EBOFA.js">
+<link rel="modulepreload" href="dist/chunk-NEED5LWC.js">
+<link rel="modulepreload" href="dist/chunk-X222PP65.js">
+<link rel="modulepreload" href="dist/chunk-MKKB7WXZ.js">
+<link rel="modulepreload" href="dist/chunk-GJUJSYKC.js">
+<link rel="modulepreload" href="dist/chunk-LPETRC2C.js">
 <link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
-<link rel="modulepreload" href="dist/chunk-EBCR7F4X.js">
-<link rel="modulepreload" href="dist/chunk-PG7IQEUN.js">
+<link rel="modulepreload" href="dist/chunk-DC2RB7JW.js">
+<link rel="modulepreload" href="dist/chunk-SJWVOYGB.js">
+<link rel="modulepreload" href="dist/chunk-KXEWKLUL.js">
+<link rel="modulepreload" href="dist/chunk-N4EUGG7S.js">
 <link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
-<link rel="modulepreload" href="dist/chunk-3YDS737I.js">
-<link rel="modulepreload" href="dist/chunk-WTOLQYBJ.js">
-<link rel="modulepreload" href="dist/chunk-I3MRFXCP.js">
-<link rel="modulepreload" href="dist/chunk-VMKWKMUY.js">
-<link rel="modulepreload" href="dist/chunk-GQBTUJTD.js">
-<link rel="modulepreload" href="dist/chunk-EDKYZXAT.js">
+<link rel="modulepreload" href="dist/chunk-YKSWR52R.js">
+<link rel="modulepreload" href="dist/chunk-SW47H6AT.js">
+<link rel="modulepreload" href="dist/chunk-3GV7AFFR.js">
+<link rel="modulepreload" href="dist/chunk-JKXMEKL7.js">
+<link rel="modulepreload" href="dist/chunk-UEVO3H7G.js">
+<link rel="modulepreload" href="dist/chunk-TLMYMYPT.js">
+<link rel="modulepreload" href="dist/chunk-6WMIATDG.js">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -76,10 +84,12 @@
       <h1 class="sr-only">Aprender</h1>
       <div class="seg three learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="pro">Pro</button></div>
       <div id="casualView">
-        <div id="continueCard"></div>
-        <div id="placementCard"></div>
-        <div id="todayCard"></div>
-        <div id="friendsCard"></div>
+        <div id="learnSide" class="learn-side">
+          <div id="continueCard"></div>
+          <div id="placementCard"></div>
+          <div id="todayCard"></div>
+          <div id="friendsCard"></div>
+        </div>
         <div id="courseMap" class="course"></div>
       </div>
       <div id="bookView" class="book" hidden></div>
@@ -142,7 +152,7 @@
 
     <!-- Pestaña Banda -->
     <section id="band" class="screen" hidden>
-      <p class="beta-line"><span class="beta-pill">Beta</span> «Mi banda», «Grupos» y «Escuela» están en pruebas: puede haber fallos y seguimos añadiendo cosas. Cuéntanos qué echas en falta desde Perfil.</p>
+      <p class="beta-line">«Mi banda», «Grupos» y «Escuela» están en pruebas: puede haber fallos y seguimos añadiendo cosas. Cuéntanos qué echas en falta desde Perfil.</p>
       <div class="seg three" role="group" aria-label="Banda, grupos o escuela"><button type="button" data-band-view="band">Mi banda</button><button type="button" data-band-view="groups">Mis grupos</button><button type="button" data-band-view="school">Escuela</button></div>
       <div id="bandBody" class="band"></div>
       <div id="groupBody" class="band" hidden></div>
@@ -256,6 +266,7 @@
 
     <!-- Lección con violín -->
     <section id="lesson" class="screen lesson-screen" hidden>
+      <h1 class="sr-only">Lección</h1>
       <div class="bar">
         <button id="lessonExit" class="icon-btn" type="button" aria-label="Salir de la lección">✕</button>
         <div class="progress"><i id="lessonProg"></i></div>
@@ -362,7 +373,7 @@
 
     <!-- Metrónomo -->
     <section id="metro" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Metrónomo</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Metrónomo</h1></div>
       <div class="bpm">
         <button id="bpmDown" class="round" type="button" aria-label="Más lento">−</button>
         <div class="bpm-value"><b id="bpmValue">80</b><span>pulsos/min</span></div>
@@ -435,7 +446,7 @@
 
     <!-- Notas tenidas -->
     <section id="longtone" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Notas tenidas</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Notas tenidas</h1></div>
       <div id="ltGate" class="mic-gate" hidden><p><strong>Necesito el micrófono</strong> para escucharte.</p><p id="ltMicError" class="muted" hidden></p><button id="ltStart" class="btn" type="button">Activar micrófono</button></div>
       <div class="lt-controls">
         <label for="ltNote" class="muted small">Nota</label>
@@ -458,13 +469,13 @@
 
     <!-- Consejos de técnica -->
     <section id="tips" class="screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2 id="tipsTitle">Consejos</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1 id="tipsTitle">Consejos</h1></div>
       <div id="tipsBody" class="tips-body"></div>
     </section>
 
     <!-- Mapa de afinación -->
     <section id="tuningmap" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Mapa de afinación</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Mapa de afinación</h1></div>
       <p id="tmSummary" class="muted"></p>
       <div id="tmList" class="tm-list"></div>
     </section>
@@ -529,7 +540,7 @@
 
     <!-- Gimnasio de técnica -->
     <section id="gym" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Gimnasio de técnica</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Gimnasio de técnica</h1></div>
       <p class="muted small">Elige el tempo y la figura. Si lo haces con 2 estrellas o más, puedes subir 4 BPM.</p>
       <div class="setting"><span id="gymKindLabel">Ejercicio</span><div id="gymKinds" class="seg three" role="group" aria-labelledby="gymKindLabel"></div></div>
       <div class="setting"><span id="gymFigureLabel">Figura</span><div id="gymFigures" class="seg three" role="group" aria-labelledby="gymFigureLabel"></div></div>
@@ -575,6 +586,7 @@
 <div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" src="dist/main-VV7IY5ZX.js"></script>
+<script type="module" async src="dist/main-GA7OHJ2R.js"></script>
+
 </body>
 </html>

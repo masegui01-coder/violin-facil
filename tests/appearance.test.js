@@ -31,7 +31,8 @@ test('la plantilla index.src.html enlaza todas las hojas de css/ una vez y cada 
   const files = readdirSync(new URL('css/', root)).filter(f => f.endsWith('.css'));
   assert.equal(new Set(linked).size, linked.length);
   assert.deepEqual([...linked].sort(), [...files].sort());
-  assert.equal(linked.at(-1) === 'responsive.css' || linked.at(-1) === 'motion.css', true);
+  // Al final: los ajustes por formato y de movimiento, y detrás solo los de rendimiento (perf.css)
+  assert.equal(['responsive.css', 'motion.css', 'perf.css'].includes(linked.at(-1)), true);
   for (const f of files) assert.ok(read(`css/${f}`).split('\n').length < 800, `${f} supera 800 líneas`);
 });
 

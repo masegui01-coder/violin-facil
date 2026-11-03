@@ -12,7 +12,7 @@ import { buildLibrary, bookOpen, EXAM_PASS_STARS } from '../books.js';
 import { schoolBookOpen, bookSummary } from '../school.js';
 import { saveProgress } from '../school-api.js';
 
-const MEDAL_ICON = { none: '', bronze: '🥉', silver: '🥈', gold: '🥇' };
+const MEDAL_ICON = { none: '', read: '✓', bronze: '🥉', silver: '🥈', gold: '🥇' };
 const KIND = { theory: 'Teoría', chords: 'Acordes', song: 'Partitura', notes: 'Ejercicio' };
 
 export const bookPlays = () => (getState().bookPlays || {})[getState().instrument] || {};
@@ -169,7 +169,7 @@ function syncSchool(book, plays) {
 // Cada vez que se toca una página (desde el libro o desde el curso) cuenta para sus medallas.
 // Repasar una página ya pasada da puntos extra; la del repaso de hoy, el doble. Aprobar un examen abre el libro siguiente.
 window.addEventListener('lesson-finished', e => {
-  const { lesson, stars, mode, speed } = e.detail;
+  const { lesson, stars, mode, speed, from } = e.detail;
   if (lesson.noRecord || lesson.placement || lesson.daily || !stars) return;
   const s = getState();
   const hit = findInLibrary(lesson.id);
@@ -187,10 +187,12 @@ window.addEventListener('lesson-finished', e => {
   const stampAfter = chapterStats(hit.chapter, nextPlays).stamp;
   const passed = lesson.exam && stars >= EXAM_PASS_STARS && !(prev && prev.best >= EXAM_PASS_STARS);
   syncSchool(hit.book, nextPlays);
+  // los avisos del Libro solo cuando se toca desde el Libro (desde Casual cuentan, pero en silencio)
+  if (from !== 'book') return;
   setTimeout(() => {
     if (passed) toast(hit.book.n === 3 ? '¡Examen aprobado! Has terminado los tres libros' : schoolStudent() ? '¡Examen aprobado! Pasarás al siguiente libro con el nuevo curso' : `¡Examen aprobado! Se abre el Libro ${hit.book.n + 1}`);
     else if (stampAfter && stampAfter !== stampBefore) toast(stampAfter === 'gold' ? `¡Capítulo ${hit.chapter.number} dominado: todo de oro!` : `¡Sello del capítulo ${hit.chapter.number}!`);
-    else if (after !== before && after !== 'bronze') toast(`¡Medalla de ${MEDAL_NAME[after].toLowerCase()} en la página ${hit.page.number}!`);
+    else if (after !== before && !['bronze', 'read'].includes(after)) toast(`¡Medalla de ${MEDAL_NAME[after].toLowerCase()} en la página ${hit.page.number}!`);
     else if (bonus) toast(`Repaso: +${bonus} puntos`);
   }, 900);
 });

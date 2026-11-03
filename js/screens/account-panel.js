@@ -1,16 +1,18 @@
 // Perfil → Tu cuenta: sesión, estadísticas, borrar la cuenta y, para el administrador, el panel de testers.
 import { $, esc, toast, num } from '../ui.js';
 import { go } from '../router.js';
-import { cloudConfigured } from '../cloud.js';
+import { cloudConfigured, getCloud } from '../cloud.js';
 import { currentAccount, signOutAccount, deleteAccount, accountErrorText } from '../account.js';
-import { flushPush, stopSync, deleteCloudData, isAdmin, listTesters } from '../sync.js';
+import { flushPush, stopSync, deleteCloudData, isAdmin, listTesters, signedInRecently, isNetworkFailure } from '../sync.js';
 import { analyticsAvailable, setAnalyticsConsent } from '../analytics.js';
 import { getState, replaceState } from '../store.js';
 import { openAccountReminder } from './account.js';
 import { BETA_ALL_TESTERS } from '../metrics.js';
 import { listProTesters, setProTester } from '../roles-api.js';
+import { sheet } from './band-ui.js';
 
 const DAY_MS = 86400000;
+const CANCELLED = 'auth/user-cancelled';
 let confirmDelete = false;
 
 const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—');
@@ -52,17 +54,64 @@ async function signOut() {
   go('account');
 }
 
+// Contraseña para confirmar que eres tú (cuentas de correo); al cerrar la ventana se cancela
+function askPassword() {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    sheet(`<h2>Confirma que eres tú</h2><p class="muted small">Para borrar la cuenta escribe tu contraseña.</p>
+      <label for="delPass">Contraseña</label><input id="delPass" class="input" type="password" autocomplete="current-password">
+      <div class="row"><button type="button" class="btn danger" id="delPassOk">Borrar mi cuenta</button><button type="button" class="btn ghost small" data-close>Cancelar</button></div>`, box => {
+      box.querySelector('#delPassOk').addEventListener('click', () => {
+        const pass = box.querySelector('#delPass').value;
+        if (!pass) { toast('Escribe tu contraseña'); return; }
+        done = true;
+        $('sheet').close();
+        resolve(pass);
+      });
+    });
+    $('sheet').addEventListener('close', () => { if (!done) reject(Object.assign(new Error('cancel'), { code: CANCELLED })); }, { once: true });
+  });
+}
+
+// Vuelve a entrar con el mismo proveedor (Google o correo) para que Firebase permita borrar el usuario
+async function reauthenticate(c, user) {
+  const providers = (user.providerData || []).map(p => p.providerId);
+  if (providers.includes('google.com')) {
+    const provider = new c.authFns.GoogleAuthProvider();
+    if (user.email) provider.setCustomParameters({ login_hint: user.email });
+    await c.authFns.reauthenticateWithPopup(user, provider);
+    return;
+  }
+  if (providers.includes('password') && user.email) {
+    const pass = await askPassword();
+    await c.authFns.reauthenticateWithCredential(user, c.authFns.EmailAuthProvider.credential(user.email, pass));
+    return;
+  }
+  throw Object.assign(new Error('reauth'), { code: 'auth/requires-recent-login' });
+}
+
+// Orden: 1) confirmar que eres tú (si hace falta); 2) borrar los datos; 3) borrar el usuario. Si falla 1, no se borra nada.
 async function removeAccount() {
   if (!confirmDelete) { confirmDelete = true; $('accDelete').textContent = '¿Seguro? Se borra todo tu progreso'; return; }
-  const acc = currentAccount();
+  confirmDelete = false;
+  $('accDelete').textContent = 'Borrar mi cuenta';
+  const c = await getCloud();
+  const user = c.auth.currentUser;
+  if (!user || user.isAnonymous) return;
   try {
-    await deleteCloudData(acc.uid);
+    if (!signedInRecently(user)) await reauthenticate(c, user);
+  } catch (e) {
+    toast(e.code === CANCELLED || e.code === 'auth/popup-closed-by-user' ? 'No se ha borrado nada.' : `No se ha borrado nada. ${accountErrorText(e)}`);
+    return;
+  }
+  try {
+    const failed = await deleteCloudData(user.uid, getState());
+    if (failed.some(isNetworkFailure)) { toast('Sin conexión: la cuenta no se ha borrado. Vuelve a intentarlo con internet.'); return; }
     await deleteAccount();
     replaceState({});
-    toast('Cuenta borrada');
+    toast(failed.length ? 'Cuenta borrada. Algún dato compartido no se ha podido borrar: escríbenos si quieres que lo quitemos.' : 'Cuenta borrada');
     go('account');
   } catch (e) { toast(accountErrorText(e)); }
-  confirmDelete = false;
 }
 
 // ---------- Panel de testers (solo administrador) ----------

@@ -10,22 +10,14 @@ import { checkCelebrations } from './screens/daily.js';
 import { openInstrumentPicker, instrumentIcon } from './screens/instrument-picker.js';
 import { startTour } from './screens/tour.js';
 import { maybeWeeklyReport } from './screens/progress-ui.js';
-import './screens/player.js';
-import './screens/theory.js';
 import './screens/learn.js';
-import './screens/library.js';
 import './screens/profile.js';
 import './screens/practice.js';
-import './screens/free.js';
 import './screens/onboarding.js';
-import './screens/longtone.js';
 import './screens/tuningmap.js';
-import './screens/chord.js';
-import './screens/chords.js';
 import './screens/gym.js';
 import './screens/study.js';
 import './screens/social.js';
-import './screens/rhythm.js';
 import './screens/perc-tools.js';
 import './growth.js';
 import { accountGate } from './screens/account.js';
@@ -48,6 +40,29 @@ lazy('rhythmbook', () => import('./screens/rhythm-book.js'));
 lazy('bookpage', () => import('./screens/book-page.js'));
 lazy('tips', () => import('./screens/tips.js'));
 lazy('pro', () => import('./screens/pro.js'));
+
+// Momento libre del hilo principal (o un poco después, si el navegador no tiene requestIdleCallback)
+const IDLE_TIMEOUT_MS = 3000;
+const whenIdle = fn => (typeof requestIdleCallback === 'function'
+  ? requestIdleCallback(() => fn(), { timeout: IDLE_TIMEOUT_MS }) : setTimeout(fn, 300));
+
+// Pantallas que no se ven al abrir la app: no entran en el arranque. Se cargan en ratos libres justo después,
+// una a una, y si se piden antes, al abrirlas (el router espera a que se registren).
+const DEFERRED_SCREENS = {
+  lesson: () => import('./screens/player.js'),
+  theory: () => import('./screens/theory.js'),
+  songs: () => import('./screens/library.js'),
+  free: () => import('./screens/free.js'),
+  longtone: () => import('./screens/longtone.js'),
+  chord: () => import('./screens/chord.js'),
+  chords: () => import('./screens/chords.js'),
+  rhythm: () => import('./screens/rhythm.js'),
+};
+Object.entries(DEFERRED_SCREENS).forEach(([id, load]) => lazy(id, load));
+function preloadDeferredScreens(queue = Object.values(DEFERRED_SCREENS)) {
+  if (!queue.length) return;
+  whenIdle(() => queue[0]().catch(() => {}).then(() => preloadDeferredScreens(queue.slice(1))));
+}
 // Los enlaces de invitación y el de métricas se atienden al arrancar, como antes
 const launchParams = new URLSearchParams(location.search);
 if (['banda', 'grupo', 'escuela'].some(k => launchParams.has(k))) import('./screens/band.js');
@@ -169,8 +184,11 @@ if (cloudConfigured() && !getState().onboarded) {
   go('account');
   window.addEventListener('account-ready', startApp, { once: true });
 } else startApp();
-accountGate();
-initAnalytics();
 
+// Lo que no hace falta para el primer pintado va en ratos libres, cada cosa en su propia tarea:
+// la cuenta (restaurar sesión y sincronizar), la analítica, el service worker y las pantallas diferidas
+whenIdle(accountGate);
+whenIdle(initAnalytics);
 // App instalable (icono en la pantalla de inicio) y aviso cuando hay una versión nueva
-registerServiceWorker();
+whenIdle(registerServiceWorker);
+preloadDeferredScreens();

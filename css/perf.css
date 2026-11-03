@@ -1,0 +1,13 @@
+/* Rendimiento: menos trabajo de estilo y maquetación en pantallas largas. Va la última de la cascada. */
+
+/* Aprender (js/screens/learn.js): una unidad sin montar reserva ~76 px por lección para que el scroll no salte */
+.unit[data-lazy-unit] .path { min-height: calc(var(--n, 10) * 4.75rem - 6px); }
+
+/* Unidades fuera de la pantalla: no se maquetan ni se pintan hasta que se acercan.
+   El relleno con margen negativo deja sitio a sombras y anillos de foco sin cambiar el diseño. */
+.unit {
+  content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--n, 10) * 4.75rem + 6rem);
+  padding: 8px;
+  margin: -8px;
+}

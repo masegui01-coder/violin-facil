@@ -26,7 +26,17 @@ test('medallas: bronce al pasarla, plata repitiéndola y oro dominándola', () =
   assert.equal(medalOf(p, 'notes'), 'silver');
   p = recordPlay(p, { stars: 3, perfect: true, at: 6 });
   assert.equal(medalOf(p, 'notes'), 'gold');
-  assert.equal(medalOf(recordPlay(null, { stars: 3, at: 1 }), 'theory'), 'gold');
+  // la teoría no da medalla: queda leída
+  assert.equal(medalOf(recordPlay(null, { stars: 3, at: 1 }), 'theory'), 'read');
+});
+
+test('la teoría leída no impide el sello de oro del capítulo ni cuenta como medalla', () => {
+  const gold = [1, 2, 3, 4, 5].reduce(p => recordPlay(p, { stars: 3, perfect: true, at: 1 }), null);
+  const chapter = { pages: [{ lesson: { id: 't', kind: 'theory' } }, { lesson: { id: 'a', kind: 'notes' } }] };
+  const stats = chapterStats(chapter, { t: recordPlay(null, { stars: 1, at: 1 }), a: gold });
+  assert.equal(stats.stamp, 'gold');
+  assert.equal(stats.gold, 1);
+  assert.match(nextGoal(null, 'theory'), /leída/);
 });
 
 test('dice qué falta para la siguiente medalla', () => {

@@ -5,7 +5,7 @@
 //   módulos de js/. index.src.html funciona sin compilar (ábrelo con un servidor local para desarrollar).
 // - Este script genera:
 //     dist/main-HASH.js y dist/chunk-HASH.js  código empaquetado y minificado; cada import() dinámico es un trozo aparte
-//     dist/app-HASH.css                       las 19 hojas de css/ en el orden de cascada de index.src.html, minificadas
+//     dist/app-HASH.css                       las hojas de css/ en el orden de cascada de index.src.html, minificadas
 //     dist/build-manifest.json                huella de las fuentes (tests/build.test.js falla si dist/ está desactualizado)
 //     index.html                              la plantilla con los marcadores sustituidos (theme-boot va en línea)
 //     sw.js                                   sw.src.js con la versión (= hash del build) y la lista de precarga
@@ -76,13 +76,18 @@ async function buildCss(template) {
 
 async function buildIndex(template, { entry, initial, css }) {
   const boot = (await transform(read('js/theme-boot.js'), { minify: true, target: TARGET })).code.trim();
+  // Se precargan solo los trozos estáticos de main (los que necesita la primera pantalla); las pantallas que no se
+  // ven al abrir son import() dinámicos (js/main.js) y no entran aquí
   const preload = [entry, ...initial].map(f => `<link rel="modulepreload" href="${f}">`).join('\n');
+  // «async»: main se ejecuta en su propia tarea, no en la que cierra el análisis del HTML y maqueta la página
+  // (así no se juntan en una tarea larga). Es seguro porque el script es lo último del <body>: el DOM ya está entero.
+  if (!/<!-- \/build:js -->\s*<\/body>/.test(template)) throw new Error('index.src.html: el bloque build:js debe ir justo antes de </body>');
   const html = template
     .replace('<!doctype html>', '<!doctype html>\n<!-- GENERADO por `npm run build` a partir de index.src.html: no editar a mano -->')
     .replace(block(template, 'note').re, '')
     .replace(block(template, 'boot').re, `<script>${boot}</script>\n`)
     .replace(block(template, 'css').re, `<link rel="stylesheet" href="${css}">\n${preload}\n`)
-    .replace(block(template, 'js').re, `<script type="module" src="${entry}"></script>\n`);
+    .replace(block(template, 'js').re, `<script type="module" async src="${entry}"></script>\n`);
   writeFileSync(at('index.html'), html);
 }
 

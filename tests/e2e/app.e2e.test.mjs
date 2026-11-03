@@ -62,7 +62,7 @@ function fakeMic() {
   };
 }
 
-async function openApp({ seeded = true, path = '' } = {}) {
+async function openApp({ seeded = true, path = '', seed = {} } = {}) {
   // Contexto aparte en cada prueba: almacenamiento, service worker y cachés limpios
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
@@ -71,7 +71,7 @@ async function openApp({ seeded = true, path = '' } = {}) {
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   await page.setViewport(VIEWPORT);
   await page.evaluateOnNewDocument(fakeMic);
-  if (seeded) await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), SEED);
+  if (seeded) await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), { ...SEED, ...seed });
   await page.goto(server.url + path, { waitUntil: 'networkidle0' });
   // El aviso para crear usuario se abre a los 600 ms: se espera y se cierra
   if (seeded) await page.waitForSelector('#sheet[open]', { timeout: SHEET_WAIT_MS }).catch(() => {});
@@ -153,6 +153,75 @@ async function reachLesson(page) {
 }
 
 const doneCount = page => page.$eval('#lessonCount', el => Number(el.textContent.split('/')[0]) || 0);
+
+test('el curso empieza tocando: «Continuar» abre directamente el reproductor', async () => {
+  const { page, errors, close } = await openApp();
+  await tap(page, '#continueBtn');
+  await waitVisible(page, 'lesson');
+  assert.equal(await visible(page, 'theory'), false);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('axe: sin violaciones graves ni críticas en el reproductor (lección abierta)', async () => {
+  const { page, close } = await openApp();
+  await reachLesson(page);
+  if (await visible(page, 'micGate')) await tap(page, '#startMic');
+  await page.waitForFunction(() => document.getElementById('micGate').hidden, { timeout: 5000 });
+  await sleep(400);
+  assert.ok(await page.$eval('#lesson h1', el => el.textContent.trim().length > 0), 'el reproductor tiene h1');
+  assert.deepEqual(await axeViolations(page), [], 'Reproductor');
+  await close();
+});
+
+test('axe: sin violaciones graves ni críticas en Metrónomo y Notas tenidas', async () => {
+  const { page, close } = await openApp();
+  for (const tool of ['metro', 'longtone']) {
+    await tap(page, '[data-tab="practice"]');
+    await waitVisible(page, 'practice');
+    await tap(page, `[data-go="${tool}"]`);
+    await waitVisible(page, tool);
+    await sleep(400);
+    assert.equal(await page.$$eval(`#${tool} h1`, els => els.length), 1, `${tool}: un h1`);
+    assert.deepEqual(await axeViolations(page), [], tool);
+    await tap(page, `#${tool} [data-back]`);
+    await page.waitForFunction(id => document.getElementById(id).hidden, { timeout: 5000 }, tool);
+  }
+  await close();
+});
+
+test('axe: sin violaciones graves ni críticas en Aprender en modo oscuro', async () => {
+  const { page, close } = await openApp({ seed: { appearance: 'dark' } });
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  await sleep(400);
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+  assert.deepEqual(await axeViolations(page), [], 'Aprender (oscuro)');
+  await close();
+});
+
+test('la semana: el día de hoy va marcado con is-today y cada día tiene su etiqueta', async () => {
+  const { page, close } = await openApp();
+  const labels = await page.$$eval('.week-dots [role="listitem"]', els => els.map(el => el.getAttribute('aria-label')));
+  assert.equal(labels.length, 7);
+  assert.equal(await page.$$eval('.week-dots .is-today', els => els.length), 1);
+  assert.equal(await page.$$eval('.week-dots .today', els => els.length), 0, 'sin choque con la tarjeta .today');
+  assert.ok(labels.some(l => /, hoy, /.test(l)), labels.join(' | '));
+  await close();
+});
+
+test('acceso: al enviar vacío marca el campo y lleva el foco; cambiar de modo conserva el correo', async t => {
+  const { page, close } = await openApp({ seeded: false });
+  if (!(await visible(page, 'account'))) { await close(); t.skip('sin Firebase configurado no hay pantalla de acceso'); return; }
+  await page.$eval('#acForm', f => f.requestSubmit());
+  assert.equal(await page.$eval('#acError', el => el.getAttribute('role')), 'alert');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'acName');
+  assert.equal(await page.$eval('#acName', el => el.getAttribute('aria-invalid')), 'true');
+  assert.equal(await page.$eval('#acName', el => el.getAttribute('aria-describedby')), 'acError');
+  await page.type('#acEmail', 'ana@example.com');
+  await page.$eval('#acMode', el => el.click());
+  assert.equal(await page.$eval('#acEmail', el => el.value), 'ana@example.com');
+  await close();
+});
 
 test('una lección con micrófono simulado avanza de nota al tocar la que pide', async () => {
   const { page, errors, close } = await openApp();

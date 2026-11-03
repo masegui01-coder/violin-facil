@@ -22,7 +22,7 @@ export function finishLesson({ lesson, mode, from, stars: played, text: playedTe
   const text = read ? 'Marcada como completada: ya puedes seguir con la siguiente.' : playedText;
   const before = getState().xp;
   if (record && !lesson.noRecord && stars > 0) recordResult(lessonKey(lesson), stars, minutes);
-  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed, missed, read } }));
+  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, from, stars, accuracy, minutes, speed, missed, read } }));
   go('result', { lesson, mode, from, stars, text, title, review, take, speed, read, xp: getState().xp - before });
 }
 

@@ -18,6 +18,7 @@ export const EXACT = {
   'Puedes repetirla si quieres': 'You can repeat it if you like', 'Sonido, técnica y repertorio, con cofre sorpresa': 'Sound, technique and repertoire, with a surprise chest',
   'Reto del día': 'Daily challenge', 'Una toma · igual para todos': 'One take · the same for everyone', 'Clasificación del reto': 'Challenge ranking',
   'Liga semanal': 'Weekly league', '¡Semana completa!': 'Full week!', 'Ver clasificación': 'See ranking',
+  'Días con práctica esta semana': 'Days with practice this week',
   'Tu música': 'Your music', 'Unidad': 'Unit',
   // ---------- Modo libro ----------
   'Modo libro': 'Book mode', 'Libro 1': 'Book 1', 'Libro 2': 'Book 2', 'Libro 3': 'Book 3',
@@ -25,7 +26,7 @@ export const EXACT = {
   'Libro 1 · Iniciación': 'Book 1 · Beginner', 'Libro 2 · Elemental': 'Book 2 · Elementary', 'Libro 3 · Intermedio': 'Book 3 · Intermediate',
   'Libro en PDF': 'Book as PDF', 'Abrirlo ya': 'Open it now', 'Concierto': 'Concert', 'Repaso': 'Review', 'Examen': 'Exam',
   'Lenguaje musical': 'Music theory', 'Acordes': 'Chords', 'Partitura': 'Score', 'Ejercicio': 'Exercise',
-  'Bronce': 'Bronze', 'Plata': 'Silver', 'Oro': 'Gold', 'Sin empezar': 'Not started',
+  'Bronce': 'Bronze', 'Plata': 'Silver', 'Oro': 'Gold', 'Sin empezar': 'Not started', 'Leída': 'Read', 'Lección leída': 'Lesson read', 'Lección': 'Lesson',
   'Escuchar con la banda': 'Listen with the band', 'Volver al libro': 'Back to the book', 'Consejo': 'Tip',
   'Las notas de esta página': 'Notes on this page', 'Leer y responder': 'Read and answer', 'Tocar': 'Play',
   'Este libro es de un curso más avanzado': 'This book belongs to a more advanced year',
@@ -171,6 +172,9 @@ export const EXACT = {
   'La app te escucha por el micrófono, te dice si vas afinado y te lleva paso a paso desde las primeras notas hasta las obras de tu banda.': 'The app listens through the microphone, tells you whether you are in tune and takes you step by step from your first notes to your band pieces.',
   'Tu progreso queda guardado en tu cuenta.': 'Your progress is saved in your account.',
   'Crea tu usuario y no pierdas tu avance': "Create your user and don't lose your progress", 'Nuevo en la beta': 'New in the beta',
+  'Escribe tu nombre.': 'Type your name.', 'Escribe tu correo.': 'Type your email.', 'Ese correo no parece válido.': "That email doesn't look valid.",
+  'Escribe una contraseña.': 'Type a password.', 'La contraseña necesita al menos 6 caracteres.': 'The password needs at least 6 characters.',
+  'Todo lo que toques desde hoy (puntos, racha y lecciones) se guardará en tu cuenta. Así no se pierde si cambias de móvil o borras el navegador.': 'Everything you play from today (points, streak and lessons) will be saved to your account, so it is not lost if you change phone or clear the browser.',
   'Continuar con Google': 'Continue with Google', 'o con tu correo': 'or with your email', 'Correo': 'Email', 'Contraseña': 'Password',
   'Crear cuenta': 'Create account', 'Ya tengo cuenta': 'I already have an account', 'Entrar': 'Sign in', '¿Has olvidado la contraseña?': 'Forgot your password?',
   'Mínimo 6 caracteres': 'At least 6 characters', 'Crear una cuenta nueva': 'Create a new account', 'Crea tu usuario para seguir': 'Create your user to continue',
@@ -221,7 +225,7 @@ export const EXACT = {
   'lectura': 'reading', 'lectura rítmica': 'rhythm reading', 'ritmo nuevo': 'new rhythm', 'saltos': 'leaps', 'notas largas': 'long notes',
   'con corcheas': 'with eighth notes', 'eco': 'echo', 'dos acordes por compás': 'two chords per bar', 'en tres por cuatro': 'in three-four',
   'jazz en Do': 'jazz in C', 'jazz en Sol': 'jazz in G', 'blues en La': 'blues in A', 'suspendidos en Re': 'suspended chords in D', 'andaluza en Mi': 'Andalusian in E',
-  'Léela para conseguir el oro': 'Read it to earn gold', 'Tócala para conseguir el bronce': 'Play it to earn bronze',
+  'Léela para marcarla como leída': 'Read it to mark it as read', 'Leída. Puedes repasarla cuando quieras': 'Read. You can review it whenever you like', 'Tócala para conseguir el bronce': 'Play it to earn bronze',
   'Sácala perfecta (3 estrellas al 100 %) para el oro': 'Play it perfectly (3 stars at 100 %) for gold',
   'Es una página nueva hecha con lo que ya sabes: léela despacio, sin miedo a fallar. Vuelve mañana y verás cómo sale mejor.': "It's a new page made from what you already know: read it slowly, without fear of mistakes. Come back tomorrow and you'll see it goes better.",
   'Cuenta los cambios en voz alta. Cada día que repites, la cifra sube: es la mejor prueba de que avanzas.': 'Count the changes out loud. Every day you repeat it the number goes up: the best proof that you are improving.',
@@ -304,6 +308,14 @@ const tr = text => (deep ? deep(text) : text);
 
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
+  // Fila de días de la semana (tarjeta Hoy)
+  [/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo)(, hoy)?, (practicado|sin práctica)$/, (m, d, hoy, p) => `${({ lunes: 'Monday', martes: 'Tuesday', miércoles: 'Wednesday', jueves: 'Thursday', viernes: 'Friday', sábado: 'Saturday', domingo: 'Sunday' })[d]}${hoy ? ', today' : ''}, ${p === 'practicado' ? 'practised' : 'no practice'}`],
+  [/^(\d) de 5 días esta semana$/, (m, n) => `${n} of 5 days this week`],
+  [/^Tus (\d+) puntos, tu racha y tus lecciones se guardarán en tu cuenta\. Así no se pierden si cambias de móvil o borras el navegador\.$/, (m, n) => `Your ${n} points, your streak and your lessons will be saved to your account, so they are not lost if you change phone or clear the browser.`],
+  // Reproductor: lo que oye el micrófono
+  [/^Oigo (\S+), ([+-]\d+) cents, (afinado|un poco alto|un poco bajo|alto|bajo)$/, (m, n, c, w) => `I hear ${n}, ${c} cents, ${({ afinado: 'in tune', 'un poco alto': 'a little sharp', 'un poco bajo': 'a little flat', alto: 'sharp', bajo: 'flat' })[w]}`],
+  [/^Oigo (\S+) · te pide (\S+)$/, (m, a, b) => `I hear ${a} · it asks for ${b}`],
+  [/^Oigo (\S+)$/, (m, n) => `I hear ${n}`],
   [/^Lámina (\d+) desde la izquierda$/, (m, n) => `Bar ${n} from the left`],
   [/^Lámina (\d+): la segunda octava$/, (m, n) => `Bar ${n}: the second octave`],
   [/^Fila de atrás, entre las láminas (\d+) y (\d+)$/, (m, a, b) => `Back row, between bars ${a} and ${b}`],

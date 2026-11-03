@@ -173,3 +173,12 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 .kd-chip { font: 800 10px var(--f-body); fill: var(--accent-ink); text-anchor: middle; }
 .kd-caption { font: 700 12px var(--f-body); fill: var(--muted); text-anchor: middle; }
 .kd-beta { font: 800 14px var(--f-body); fill: var(--warn); }
+
+/* Contraste del reproductor (≥ 4,5:1 en ambos temas): «Ahora» algo más oscuro que el acento, la tarjeta
+   «Siguiente» sin transparencia (sigue siendo discreta por el borde discontinuo y el gris) y el nombre del acompañamiento en tinta */
+#lesson .now > .nn-label { color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+#lesson .next-card { opacity: 1; }
+#lesson .next-card .nn-label, #lesson #tNextHint { color: var(--muted); }
+#lesson #mixAccompName { color: inherit; }
+/* Título de las herramientas de Estudio: es el h1 de su pantalla, con el tamaño de antes */
+.lesson-screen > .bar > h1, #tips > .bar > h1 { font-size: 1.3rem; }

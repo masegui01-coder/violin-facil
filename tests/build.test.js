@@ -23,7 +23,8 @@ test('dist/ solo tiene los archivos de la última compilación', () => {
 test('index.html carga el código y los estilos compilados, con el tema antes de pintar', () => {
   const { entry, css } = manifest();
   const html = read('index.html');
-  assert.match(html, new RegExp(`<script type="module" src="${entry}"></script>`));
+  // async es seguro solo si el script es lo último del <body> (tools/build.mjs)
+  assert.match(html, new RegExp(`<script type="module" async src="${entry}"></script>\\s*</body>`));
   assert.match(html, new RegExp(`<link rel="stylesheet" href="${css}">`));
   assert.doesNotMatch(html, /href="css\/|src="js\//, 'index.html no debe cargar fuentes sueltas');
   assert.ok(html.indexOf('violin-facil-v2') < html.indexOf(css), 'el tema se aplica antes de la hoja de estilos');

@@ -2,22 +2,64 @@
 import { FIREBASE_CONFIG } from './firebase-config.js';
 
 export const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-let cloud = null;
+let cloudLoad = null;
 
 export const cloudConfigured = () => !!FIREBASE_CONFIG;
 
-export async function getCloud() {
-  if (!FIREBASE_CONFIG) throw new Error('El servidor de bandas todavía no está conectado.');
-  if (cloud) return cloud;
+// Ventanas de Google (popup). getAuth() las prepara al arrancar en móviles y Safari: descarga apis.google.com/js/api.js
+// y un iframe (~650 ms de CPU) aunque nadie vaya a pulsar. Aquí Auth se crea SIN ese resolutor, con la misma
+// persistencia que getAuth (la sesión guardada se restaura igual), y el resolutor se pasa solo en las llamadas
+// *WithPopup. warmPopups() lo prepara antes del clic, cuando el usuario se acerca al botón o al formulario.
+// La clase devuelve siempre la misma instancia: es la que la SDK usará en signInWithPopup (la guarda por clase).
+function popupResolverFor(authFns) {
+  const Base = authFns.browserPopupRedirectResolver;
+  const instance = new Base();
+  function PopupResolver() { return instance; }
+  PopupResolver.prototype = Base.prototype;
+  PopupResolver.instance = instance;
+  return PopupResolver;
+}
+
+// Las funciones de Auth con el resolutor ya puesto: quien llame a c.authFns.signInWithPopup(…) no cambia nada
+const WITH_PROVIDER = ['signInWithPopup', 'linkWithPopup', 'reauthenticateWithPopup', 'signInWithRedirect', 'linkWithRedirect', 'reauthenticateWithRedirect'];
+function withPopupResolver(authFns, resolver) {
+  const fns = { ...authFns };
+  WITH_PROVIDER.forEach(name => { fns[name] = (target, provider, r) => authFns[name](target, provider, r || resolver); });
+  fns.getRedirectResult = (a, r) => authFns.getRedirectResult(a, r || resolver);
+  return fns;
+}
+
+async function loadCloud() {
   const [{ initializeApp }, auth, fs] = await Promise.all([
     import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-firestore.js'),
   ]);
   const app = initializeApp(FIREBASE_CONFIG);
-  const a = auth.getAuth(app);
+  const a = auth.initializeAuth(app, {
+    persistence: [auth.indexedDBLocalPersistence, auth.browserLocalPersistence, auth.browserSessionPersistence],
+  });
   await new Promise(resolve => { const off = auth.onAuthStateChanged(a, () => { off(); resolve(); }); });
-  cloud = { app, auth: a, authFns: auth, db: fs.getFirestore(app), fs };
-  return cloud;
+  const popupResolver = popupResolverFor(auth);
+  return { app, auth: a, authFns: withPopupResolver(auth, popupResolver), popupResolver, db: fs.getFirestore(app), fs };
 }
+
+export function getCloud() {
+  if (!FIREBASE_CONFIG) return Promise.reject(new Error('El servidor de bandas todavía no está conectado.'));
+  // Una sola carga aunque la pidan varios a la vez; si falla (sin conexión), se reintenta en la siguiente llamada
+  cloudLoad ||= loadCloud().catch(e => { cloudLoad = null; throw e; });
+  return cloudLoad;
+}
+
+// Prepara la ventana de Google para que se abra al momento al pulsar (si falla, se prepara al pulsar)
+let popupsWarm = null;
+let popupsReadyNow = false;
+export function warmPopups() {
+  if (!FIREBASE_CONFIG) return Promise.resolve(false);
+  popupsWarm ||= getCloud()
+    .then(c => c.popupResolver.instance._initialize(c.auth))
+    .then(() => { popupsReadyNow = true; return true; }, () => { popupsWarm = null; return false; });
+  return popupsWarm;
+}
+export const popupsReady = () => popupsReadyNow;
 
 export async function currentUser() {
   const c = await getCloud();

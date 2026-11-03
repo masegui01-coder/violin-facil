@@ -9,6 +9,10 @@
 .tip-coach.ok { border-color: var(--ok); }
 .tip-advice { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .tip-evidence { display: flex; flex-wrap: wrap; gap: 6px; }
+.tip-empty { flex-direction: row; align-items: center; gap: 14px; }
+.tip-empty > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tip-empty-art { flex: none; width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; padding: 12px; background: var(--accent-soft); color: var(--accent); }
+.tip-empty-art svg { width: 100%; height: 100%; }
 .tip-coach .bar-track { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
 .tip-coach .bar-track i { display: block; height: 100%; background: var(--accent); }
 .tip-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 14px; }

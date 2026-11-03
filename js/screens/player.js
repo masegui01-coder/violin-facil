@@ -15,6 +15,7 @@ import { finishLesson } from './result.js';
 import { showPulse, drawPulse } from './pulse.js';
 import { decodeScore } from '../passage.js';
 import { playHints } from '../coach.js';
+import { heardText } from '../heard.js';
 
 const TICK_MS = 30;
 const HOLD_MS = 250;
@@ -113,7 +114,7 @@ function showHeard(p, target) {
   if (!p || p.freq === null) { $('heard').innerHTML = '&nbsp;'; setMeter(null); return null; }
   const detected = target ? foldOctave(p.midi, target.midi, inst()) : p.midi;
   const cents = target ? (detected - target.midi) * 100 : 0;
-  $('heard').textContent = 'Oigo ' + noteLabel({ midi: Math.round(detected) }, getState().nom, !isBowed(getState().instrument)) + (target ? ` (${cents >= 0 ? '+' : ''}${Math.round(cents)} cents)` : '');
+  $('heard').textContent = heardText(detected, target ? target.midi : null, { nom: getState().nom, flats: !isBowed(getState().instrument), tolerance: tolerance() });
   setMeter(target ? (Math.abs(cents) <= 100 ? cents : Math.sign(cents) * 50) : null);
   return cents;
 }

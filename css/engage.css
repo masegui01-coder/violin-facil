@@ -80,7 +80,7 @@
 .week-dots .dots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .week-dots span { height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: .75rem; font-weight: 800; background: var(--surface-2); color: var(--muted); }
 .week-dots span.on { background: var(--ok); color: #fff; }
-.week-dots span.today { outline: 2px solid var(--accent); }
+.week-dots span.is-today { outline: 2px solid var(--accent); }
 .chest { align-items: center; text-align: center; }
 .chest-ic { width: 84px; height: 84px; color: var(--gold); animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
 .chest-ic svg { width: 100%; height: 100%; }

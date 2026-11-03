@@ -34,10 +34,21 @@ export function weekDays(practiceLog, day = today()) {
   });
 }
 
+const DAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+// Etiqueta accesible de cada día: «martes, hoy, sin práctica» / «lunes, practicado»
+export function dayLabel(x, i) {
+  return `${DAY_NAMES[i]}${x.today ? ', hoy' : ''}, ${x.done ? 'practicado' : 'sin práctica'}`;
+}
+
 function weekDots() {
   const days = weekDays(getState().practiceLog);
   const count = days.filter(x => x.done).length;
-  return `<div class="week-dots" title="Días con práctica esta semana"><div class="dots">${days.map((x, i) => `<span class="${x.done ? 'on' : ''}${x.today ? ' today' : ''}">${'LMXJVSD'[i]}</span>`).join('')}</div>
+  const dot = (x, i) => {
+    const cls = [x.done && 'on', x.today && 'is-today'].filter(Boolean).join(' ');
+    return `<span role="listitem" class="${cls}" aria-label="${dayLabel(x, i)}">${'LMXJVSD'[i]}</span>`;
+  };
+  return `<div class="week-dots" title="Días con práctica esta semana"><div class="dots" role="list" aria-label="Días con práctica esta semana">${days.map(dot).join('')}</div>
     <small>${count >= 5 ? '¡Semana completa!' : `${count} de 5 días esta semana`}</small></div>`;
 }
 

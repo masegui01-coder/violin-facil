@@ -1,7 +1,7 @@
 // Pestaña Aprender: «Tu siguiente paso» (tarea de la banda que vence pronto o la próxima lección) y mapa del curso.
 import { $, esc, icon, starsHtml, toast } from '../ui.js';
 import { register, go } from '../router.js';
-import { lessonKey, lessonTitle, lessonSong, chordText, isReadingLesson } from '../course.js';
+import { lessonKey, lessonTitle, lessonSong, chordText, isReadingLesson, isCourseLevel } from '../course.js';
 import { styleById } from '../songs.js';
 import { getState, instrumentProgress, today, update } from '../store.js';
 import { soonBandTask } from '../next-step.js';
@@ -26,8 +26,8 @@ function bandStepCard(task) {
     <button type="button" class="btn" id="bandStepBtn"><span class="ic">${icon('play')}</span>Ir a ensayarla</button></div>`;
 }
 
-// Niveles del curso: todo lo que se toca (sin la teoría ni los calentamientos opcionales)
-const isLevel = l => l.kind !== 'theory' && !l.optional;
+// Niveles del curso: todo el camino salvo los calentamientos opcionales (la teoría leída cuenta)
+const isLevel = isCourseLevel;
 function levelsDone() {
   const levels = course.flatMap(u => u.lessons).filter(isLevel);
   return { total: levels.length, done: levels.filter(l => states[l.id] === 'done').length, index: id => levels.findIndex(l => l.id === id) + 1 };
@@ -68,15 +68,48 @@ function nodeHtml(lesson, unit) {
   </button>`;
 }
 
-function unitHtml(unit, ui) {
+// Rendimiento: solo se pinta el camino de la unidad actual y sus vecinas; el resto (cientos de nodos)
+// se monta al acercarse con el scroll. Mientras, la unidad reserva su altura aproximada (--n, css/perf.css).
+const EAGER_AROUND = 1;
+const MOUNT_MARGIN = '900px 0px';
+const pathHtml = unit => unit.lessons.map(l => nodeHtml(l, unit)).join('');
+
+function unitHtml(unit, ui, eager) {
   const done = unit.lessons.filter(l => states[l.id] === 'done').length;
-  return `<section class="unit">
+  return `<section class="unit"${eager ? '' : ` data-lazy-unit="${ui}"`} style="--n:${unit.lessons.length}">
     <div class="unit-banner" style="--unit:${unit.color}">
       <div><p class="eyebrow">Unidad ${ui + 1}</p><h2>${esc(unit.title)}</h2><p>${esc(unit.sub)}</p></div>
       <span class="unit-pct">${done}/${unit.lessons.length}</span>
     </div>
-    <div class="path">${unit.lessons.map(l => nodeHtml(l, unit)).join('')}</div>
+    <div class="path">${eager ? pathHtml(unit) : ''}</div>
   </section>`;
+}
+
+function mountUnit(section) {
+  const unit = course[Number(section.dataset.lazyUnit)];
+  section.removeAttribute('data-lazy-unit');
+  if (unit) section.querySelector('.path').innerHTML = pathHtml(unit);
+}
+
+let unitObserver = null;
+function watchLazyUnits() {
+  if (unitObserver) unitObserver.disconnect();
+  const lazy = $('courseMap').querySelectorAll('[data-lazy-unit]');
+  if (!lazy.length) return;
+  // Sin IntersectionObserver (navegadores muy viejos): se monta todo, como antes
+  if (typeof IntersectionObserver !== 'function') { lazy.forEach(mountUnit); return; }
+  unitObserver = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    unitObserver.unobserve(e.target);
+    mountUnit(e.target);
+  }), { rootMargin: MOUNT_MARGIN });
+  lazy.forEach(el => unitObserver.observe(el));
+}
+
+function courseMapHtml() {
+  const unit = currentId ? unitOf(currentId, course) : null;
+  const at = unit ? course.indexOf(unit) : course.length - 1;
+  return course.map((u, i) => unitHtml(u, i, Math.abs(i - at) <= EAGER_AROUND)).join('');
 }
 
 // «Más»: reto del día, clasificación, liga, amigos y test de nivel, plegados bajo el objetivo de hoy
@@ -148,7 +181,8 @@ function render() {
   $('placementCard').innerHTML = placementCardHtml();
   bindPlacementCard();
   fillMore();
-  $('courseMap').innerHTML = course.map(unitHtml).join('');
+  $('courseMap').innerHTML = courseMapHtml();
+  watchLazyUnits();
   celebrateUnlock();
   const btn = $('continueBtn');
   if (btn && next) btn.addEventListener('click', () => launch(next, { from: 'course' }));

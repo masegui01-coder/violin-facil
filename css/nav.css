@@ -31,4 +31,4 @@
 .tabbar button .ic { width: 64px; height: 32px; padding: 4px 20px; border-radius: 16px; transition: background .2s, color .2s; }
 .tabbar button[aria-current="page"] { color: var(--ink); font-weight: 800; }
 .tabbar button[aria-current="page"] .ic { background: var(--accent-soft); color: var(--accent); }
-.tab-badge { position: absolute; top: 8px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad, #c0392b); color: #fff; font-size: .68rem; line-height: 18px; text-align: center; }
+.tab-badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--bad, #c0392b); color: #fff; font-size: .75rem; font-weight: 800; line-height: 20px; text-align: center; }

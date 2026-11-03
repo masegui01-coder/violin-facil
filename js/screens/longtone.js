@@ -28,14 +28,16 @@ function draw() {
   const total = Math.round(secs * 1000 / TICK_MS);
   const y = c => H / 2 - (Math.max(-RANGE_CENTS, Math.min(RANGE_CENTS, c)) / RANGE_CENTS) * (H / 2 - 12);
   g.clearRect(0, 0, W, H);
-  g.font = '600 18px Figtree, sans-serif';
+  // las etiquetas se dibujan a 13 px de pantalla sea cual sea la escala del lienzo (a 360 px salían de unos 8 px)
+  const scale = W / (cv.clientWidth || W);
+  g.font = `700 ${Math.round(13 * scale)}px Figtree, sans-serif`;
   [[0, 0.55], [10, 0.25], [-10, 0.25], [25, 0.15], [-25, 0.15]].forEach(([c, a]) => {
     g.globalAlpha = a;
     g.strokeStyle = css('--ink');
     g.beginPath(); g.moveTo(0, y(c)); g.lineTo(W, y(c)); g.stroke();
-    g.globalAlpha = 0.6;
+    g.globalAlpha = 1;
     g.fillStyle = css('--muted');
-    if (c) g.fillText((c > 0 ? '+' : '') + c, 6, y(c) - 4);
+    if (c) g.fillText((c > 0 ? '+' : '') + c, 6 * scale, y(c) - 4 * scale);
   });
   g.globalAlpha = 0.35;
   g.fillStyle = css('--u2');

@@ -14,7 +14,8 @@
   .tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inst-grid { grid-template-columns: repeat(4, 1fr); }
   .style-grid { grid-template-columns: repeat(3, 1fr); }
-  .path { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+  /* Aprender: el camino sigue en una sola columna (el orden de las lecciones se lee de arriba abajo), centrada */
+  #casualView { max-width: 600px; margin-inline: auto; width: 100%; }
   .book-pages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .today { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .today-routine, .today-daily { grid-column: span 2; }
@@ -37,6 +38,25 @@
   .tour-card { max-width: 520px; }
 }
 
+/* Entre 700 y 899 px el selector Casual/Libro/Pro se alinea con la columna centrada */
+@media (min-width: 700px) and (max-width: 899px) { .learn-mode { max-width: 600px; width: 100%; margin-inline: auto; } }
+
+/* ---------- Aprender desde 900 px: camino en una columna y panel lateral fijo ---------- */
+/* El camino (zigzag de una sola columna) a la izquierda y, a la derecha, «Tu siguiente paso», el objetivo de hoy y «Más»
+   en un panel que se queda a la vista (sticky) mientras se baja por el camino. */
+@media (min-width: 900px) {
+  #casualView { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); column-gap: 32px; align-items: start; }
+  #casualView > #courseMap { grid-column: 1; grid-row: 1; }
+  #casualView > .learn-side {
+    grid-column: 2; grid-row: 1; position: sticky; top: 12px;
+    max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: 4px; margin: -4px; /* que el anillo de foco no se recorte con el desplazamiento interno */
+  }
+  #casualView .path { max-width: 520px; width: 100%; margin-inline: auto; }
+  #casualView .today { grid-template-columns: 1fr 1fr; }
+  #casualView .today-routine, #casualView .today-daily { grid-column: 1 / -1; }
+}
+
 /* ---------- Tableta horizontal, portátil y ordenador (desde 1024 px): menú lateral ---------- */
 @media (min-width: 1024px) {
   :root { --rail: 108px; }
@@ -45,13 +65,6 @@
 
   /* sin menú (lecciones, bienvenida…): sin hueco a la izquierda */
   body:has(#tabbar[hidden]) .shell { padding-left: 40px; }
-
-  /* Aprender en modo casual: el mapa del curso a la izquierda y «tu día» a la derecha */
-  #casualView { display: grid; grid-template-columns: minmax(0, 1fr) 360px; column-gap: 28px; align-items: start; }
-  #casualView > * { grid-column: 2; }
-  #casualView > #courseMap { grid-column: 1; grid-row: 1 / span 6; }
-  #casualView .today { grid-template-columns: 1fr 1fr; }
-  #casualView .today-routine, #casualView .today-daily { grid-column: 1 / -1; }
 
   .tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .inst-grid { grid-template-columns: repeat(6, 1fr); }
@@ -104,6 +117,64 @@
   .lesson-title h2 { font-size: 1.05rem; }
   .target .name { font-size: 2.4rem; }
   .sheet { max-height: 92vh; }
+}
+
+/* ---------- Reproductor en ordenador (≥ 1024 × 700): partitura a la izquierda, «Ahora», medidor y diapasón fijos a la derecha ---------- */
+/* La columna derecha abarca todas las filas; la última fila (1fr) absorbe su altura para que no separe las de la izquierda. */
+@media (min-width: 1024px) and (min-height: 700px) {
+  #lesson.lesson-screen {
+    max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 360px);
+    grid-template-rows: repeat(12, auto) 1fr; column-gap: 28px; row-gap: 14px; align-items: start;
+  }
+  #lesson > * { grid-column: 1; }
+  #lesson > .target-row {
+    grid-column: 2; grid-row: 1 / 14; position: sticky; top: 16px; align-self: start;
+    grid-template-columns: 1fr; gap: 14px; justify-items: center;
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 18px 16px;
+  }
+  #lesson .target { width: 100%; }
+  #lesson .board { max-height: calc(100vh - 380px); min-height: 160px; width: auto; max-width: 100%; }
+  #lesson .staff { max-height: min(46vh, 380px); }
+  #lesson .mic-gate { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  #lesson .mic-gate > p:first-child { flex: 1 1 260px; }
+}
+
+/* ---------- Reproductor en móvil horizontal: lo esencial (partitura, «Ahora», medidor y diapasón) sin bajar ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  #lesson.lesson-screen { grid-template-rows: repeat(12, auto) 1fr; row-gap: 6px; padding-block: 4px; }
+  #lesson > .target-row { grid-row: 1 / 14; position: sticky; top: 4px; }
+  #lesson .bar { gap: 8px; }
+  #lesson .lesson-title h2 { font-size: .98rem; }
+  #lesson .staff { max-height: 38vh; }
+  /* el aviso del micrófono, en una sola fila */
+  #lesson .mic-gate { flex-direction: row; align-items: center; padding: 8px 12px; gap: 10px; }
+  #lesson .mic-gate > p:first-child { flex: 1; font-size: .85rem; line-height: 1.3; }
+  #lesson .mic-gate .btn { flex: none; padding-block: 8px; }
+  #lesson .controls { gap: 6px; }
+  #lesson .board { max-height: 34vh; }
+  #lesson .now-next { gap: 6px; }
+}
+
+/* ---------- Acceso en móvil horizontal: argumentos a la izquierda y botones/formulario a la derecha ---------- */
+/* Varias columnas con salto forzado antes de «Continuar con Google»: lo de la app queda en la primera y el acceso en la segunda,
+   sin depender de contenedores nuevos en el HTML (lo genera js/screens/account.js). */
+@media (orientation: landscape) and (max-height: 520px) {
+  #account.onboarding { min-height: 0; padding-block: 8px; }
+  .account-step { display: block; max-width: none; columns: 2; column-gap: 28px; padding-block: 0 12px; }
+  .account-step > * { break-inside: avoid; margin: 0 0 10px; }
+  .account-step > .google-btn { break-before: column; }
+  .account-step form, .account-step .google-btn, .account-step .or { max-width: none; }
+  .account-step .ac-brand { justify-content: flex-start; }
+  .account-step .ac-brand img { width: 40px; height: 40px; border-radius: 12px; }
+  .account-step .ac-name { font-size: 1.3rem; }
+  .account-step .ac-hero { text-align: left; align-items: flex-start; gap: 4px; }
+  .account-step .ac-hero h1 { font-size: 1.3rem; }
+  .account-step .ac-features { grid-template-columns: 1fr; gap: 6px; }
+  .account-step .ac-features li { grid-template-columns: 36px 1fr; padding: 8px 12px; }
+  .account-step .ac-ic { width: 36px; height: 36px; padding: 8px; }
+  .account-step .ac-why { font-size: .85rem; }
+  .account-step .form { gap: 6px; }
+  .account-step > .text-link { display: flex; width: max-content; }
 }
 
 /* ---------- Ratón y trackpad: indicar lo que se puede pulsar ---------- */

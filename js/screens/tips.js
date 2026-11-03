@@ -1,6 +1,6 @@
 // Consejos de técnica: arriba los personalizados (lo que el detector ve en lo que tocas) y debajo todos los del
 // instrumento, cada uno con su ilustración por pasos, cómo comprobarlo, errores típicos y la bibliografía.
-import { $, esc } from '../ui.js';
+import { $, esc, icon } from '../ui.js';
 import { register, go } from '../router.js';
 import { getState } from '../store.js';
 import { instrumentById } from '../instruments.js';
@@ -13,9 +13,15 @@ const GOTO = { tuner: 'Abrir el afinador', longtone: 'Hacer notas tenidas', metr
 
 function adviceHtml(advice, instId) {
   if (!advice.ready) {
+    const pct = Math.round(Math.min(1, advice.progress || 0) * 100);
+    // Estado vacío: sin nada tocado aún, una ilustración y una frase (no una barra vacía)
+    if (!pct) {
+      return `<div class="panel tip-box tip-coach tip-empty"><span class="tip-empty-art" aria-hidden="true">${icon('tips')}</span>
+        <div><h2>Consejos para ti</h2><p class="muted">Toca tus primeras lecciones y aquí aparecerán consejos de técnica hechos a tu medida.</p></div></div>`;
+    }
     return `<div class="panel tip-box tip-coach"><h2>Consejos para ti</h2>
       <p class="muted">Toca unas cuantas lecciones más y aquí te diré qué detalle de técnica puede estar haciendo que se te vayan las notas.</p>
-      <div class="bar-track"><i style="width:${Math.round(Math.min(1, advice.progress) * 100)}%"></i></div></div>`;
+      <div class="bar-track" role="progressbar" aria-label="Datos para tus consejos" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div></div>`;
   }
   if (!advice.items.length) {
     return `<div class="panel tip-box tip-coach ok"><h2>Consejos para ti</h2><p>No veo ningún fallo que se repita: sigue así. Revisa de vez en cuando los básicos de abajo.</p></div>`;

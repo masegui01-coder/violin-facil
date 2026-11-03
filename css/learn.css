@@ -46,7 +46,7 @@
 .node-text b { font-weight: 700; line-height: 1.25; }
 .node-text small { color: var(--muted); font-size: .82rem; }
 .node.locked .node-text b { color: var(--muted); }
-.tag { display: inline-block; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-radius: 6px; padding: 1px 6px; margin-right: 4px; vertical-align: 1px; color: var(--on-color); background: var(--slot, var(--accent)); }
+.tag { display: inline-block; font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-radius: 6px; padding: 1px 6px; margin-right: 4px; vertical-align: 1px; color: var(--on-color); background: var(--slot, var(--accent)); }
 .stars { color: var(--line); letter-spacing: 1px; font-size: .9rem; white-space: nowrap; }
 .stars i { font-style: normal; }
 .stars i.on { color: var(--gold); }
