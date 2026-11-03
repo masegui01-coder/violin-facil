@@ -97,9 +97,25 @@ export function stopSync() {
   active = null;
 }
 
+// Administrador según el servidor (no hay correos en el cliente): admins/{uid} existe o, si no, las reglas le dejan
+// leer adminData/probe (respaldo por correo verificado en firestore.rules). Se recuerda por uid durante la sesión.
+const adminCache = new Map();
 export async function isAdmin(uid) {
-  const { db, fs } = await getCloud();
-  try { return (await fs.getDoc(fs.doc(db, 'admins', uid))).exists(); } catch (e) { return false; }
+  if (!uid) return false;
+  if (!adminCache.has(uid)) adminCache.set(uid, checkAdmin(uid));
+  return adminCache.get(uid);
+}
+
+async function checkAdmin(uid) {
+  try {
+    const { db, fs } = await getCloud();
+    if ((await fs.getDoc(fs.doc(db, 'admins', uid))).exists()) return true;
+    await fs.getDoc(fs.doc(db, 'adminData', 'probe')); // sin permiso lanza «permission-denied»
+    return true;
+  } catch (e) {
+    if (!String(e && e.code).includes('permission')) adminCache.delete(uid); // un fallo de red se reintenta la próxima vez
+    return false;
+  }
 }
 
 export async function listTesters() {

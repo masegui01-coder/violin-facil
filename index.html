@@ -1,18 +1,44 @@
 <!doctype html>
+<!-- GENERADO por `npm run build` a partir de index.src.html: no editar a mano -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#B4461F">
+<meta name="theme-color" content="#B4461F" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="Aprende y ensaya tu instrumento con una app que te escucha: violín, trompeta, clarinete, saxofón, flauta y oboe. Con tareas de banda para directores y músicos.">
 <title>Band Flow</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23B4461F'/%3E%3Cpath d='M19 6v14' stroke='white' stroke-width='3'/%3E%3Cellipse cx='14' cy='21' rx='6' ry='4.5' transform='rotate(-20 14 21)' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap">
-<link rel="stylesheet" href="css/app.css">
-<link rel="stylesheet" href="css/responsive.css">
+<!-- Fuentes sin bloquear el primer pintado (display=swap: mientras llegan se ve la del sistema) -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap"></noscript>
+<!-- Tema elegido en Perfil (claro, oscuro o el del sistema) antes de pintar, para que no parpadee -->
+<script>(function(){try{var e=JSON.parse(localStorage.getItem("violin-facil-v2"))||{};if(e.appearance!=="light"&&e.appearance!=="dark")return;document.documentElement.dataset.theme=e.appearance;var t=e.appearance==="dark"?"#0F141B":"#B4461F";document.querySelectorAll('meta[name="theme-color"]').forEach(function(a){a.content=t})}catch{}})();</script>
+<!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
+     base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion -->
+<link rel="stylesheet" href="dist/app-31ad3d0156.css">
+<link rel="modulepreload" href="dist/main-VV7IY5ZX.js">
+<link rel="modulepreload" href="dist/chunk-6VHXOMQP.js">
+<link rel="modulepreload" href="dist/chunk-MCAZ6DMO.js">
+<link rel="modulepreload" href="dist/chunk-PP7HGLDG.js">
+<link rel="modulepreload" href="dist/chunk-7AFRWHEC.js">
+<link rel="modulepreload" href="dist/chunk-7TV5NQYS.js">
+<link rel="modulepreload" href="dist/chunk-ELYABSSX.js">
+<link rel="modulepreload" href="dist/chunk-PWTI5GYQ.js">
+<link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
+<link rel="modulepreload" href="dist/chunk-EBCR7F4X.js">
+<link rel="modulepreload" href="dist/chunk-PG7IQEUN.js">
+<link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
+<link rel="modulepreload" href="dist/chunk-3YDS737I.js">
+<link rel="modulepreload" href="dist/chunk-WTOLQYBJ.js">
+<link rel="modulepreload" href="dist/chunk-I3MRFXCP.js">
+<link rel="modulepreload" href="dist/chunk-VMKWKMUY.js">
+<link rel="modulepreload" href="dist/chunk-GQBTUJTD.js">
+<link rel="modulepreload" href="dist/chunk-EDKYZXAT.js">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -21,9 +47,9 @@
 
   <!-- Barra superior de las pestañas -->
   <header id="topbar" class="topbar" hidden>
-    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span>Band Flow</span><span class="beta-pill" title="Versión de prueba: seguimos desarrollando la app">Beta</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">𝄞</span><span class="brand-name">Band Flow</span><span class="beta-pill" title="Versión de prueba: seguimos desarrollando la app">Beta</span></div>
     <div class="chips">
-      <button type="button" id="instChip" class="chip-stat inst" aria-label="Cambiar de instrumento"><span id="instChipIcon" class="ic"></span><b id="instChipName"></b><span aria-hidden="true">▾</span></button>
+      <button type="button" id="instChip" class="chip-stat inst"><span id="instChipIcon" class="ic"></span><b id="instChipName"></b> <span class="sr-only">Cambiar de instrumento</span><span aria-hidden="true">▾</span></button>
       <span class="chip-stat streak" title="Días seguidos practicando"><span id="streakIcon" class="ic"></span><b id="streakCount">0</b></span>
       <span class="chip-stat xp" title="Puntos"><b id="xpCount">0</b> pts</span>
     </div>
@@ -47,6 +73,7 @@
 
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
+      <h1 class="sr-only">Aprender</h1>
       <div class="seg three learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="pro">Pro</button></div>
       <div id="casualView">
         <div id="continueCard"></div>
@@ -61,6 +88,7 @@
 
     <!-- Nivel del método Pro: Libro, Relax y Práctica -->
     <section id="pro" class="screen lesson-screen" hidden>
+      <h1 class="sr-only">Método Pro</h1>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><div class="pro-head"><p id="proEyebrow" class="eyebrow"></p><h2 id="proTitle"></h2></div></div>
       <div class="seg three pro-tabs" role="group" aria-label="Pestañas del nivel"><button type="button" data-pro-tab="book">Libro</button><button type="button" data-pro-tab="relax">Relax</button><button type="button" data-pro-tab="play">Práctica</button></div>
       <div id="proBody" class="pro-body"></div>
@@ -187,6 +215,9 @@
         <div class="setting"><label class="switch-row" for="setClick"><span>Clic del metrónomo al tocar a tempo</span><input id="setClick" type="checkbox" class="switch"></label>
           <small class="muted">La cuenta previa siempre suena y el péndulo siempre se ve encima de la partitura. El clic durante la canción es opcional: la app no lo confunde con tu instrumento, pero con auriculares te escuchará mejor. También puedes cambiarlo en cada lección.</small></div>
         <label class="switch-row" for="setBoard"><span>Mostrar la digitación en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
+        <div class="setting"><span id="setAppearanceLabel">Apariencia</span>
+          <div class="seg three" role="group" aria-labelledby="setAppearanceLabel"><button type="button" data-set-appearance="light">Claro</button><button type="button" data-set-appearance="dark">Oscuro</button><button type="button" data-set-appearance="system">Sistema</button></div>
+          <small class="muted">«Sistema» sigue el modo claro u oscuro de tu móvil.</small></div>
         <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
       </div>
@@ -196,6 +227,7 @@
         <small class="muted">Para menores de 14: oculta las clasificaciones públicas, la liga y la red de amigos. La banda sigue funcionando.</small>
         <label class="switch-row" for="setPublic"><span>Aparecer en las clasificaciones públicas</span><input id="setPublic" type="checkbox" class="switch"></label>
         <small class="muted" id="setPublicText">Con tu apodo público, nunca con tu nombre.</small>
+        <a class="text-link" href="privacy.html" target="_blank" rel="noopener">Política de privacidad</a>
       </div>
       <div class="panel account" id="accountPanel"></div>
       <div class="panel">
@@ -540,8 +572,9 @@
   <div id="tourCard" class="tour-card" role="dialog" aria-modal="true" aria-label="Recorrido por la app" aria-live="polite"></div>
 </div>
 <div id="toast" class="toast off" role="status" aria-live="polite"></div>
+<div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="dist/main-VV7IY5ZX.js"></script>
 </body>
 </html>

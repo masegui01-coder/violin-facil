@@ -45,3 +45,12 @@ de cada instrumento (no se han inventado):
 - Poner el `measurementId` de Google Analytics en `js/firebase-config.js` (hay que activarlo antes en Firebase).
 - Simplificar los premios (una sola moneda para la liga) y el resto de ajustes de los cursos: octava de la tuba,
   digitaciones del oboe, técnica de la rutina según el nivel y notas que salen antes de explicarse.
+
+## Cerrar el contenido de pago (2026-11-03)
+
+Durante la beta todas las cuentas son testers y ven todo (lecciones, los tres libros, Pro y libro de ritmo):
+`BETA_ALL_TESTERS = true` en `js/metrics.js`. El panel de administrador, las métricas y los testers solo los ve el
+administrador, que lo decide el servidor (`admins/{uid}` o el respaldo por correo verificado de `firestore.rules`).
+Ojo: ponerlo a `false` solo esconde los botones. Todo el contenido (lecciones, libros, Pro) va hoy dentro del JS
+público de GitHub Pages, así que cualquiera puede leerlo. El día que haya pagos, el contenido de pago tendrá que
+servirse desde Firestore (o similar) con reglas por rol o pago (`roles/{uid}` o una compra verificada en el servidor).

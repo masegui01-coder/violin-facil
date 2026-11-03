@@ -28,7 +28,7 @@ const warmup = (id, title, list) => ({ ...notes(id, title, 'Calentamiento opcion
 export const UNITS = [
   { id: 'u1', title: 'Primeros sonidos', sub: 'Las cuatro cuerdas al aire', color: 'var(--u1)', lessons: [
     theory('u1-intro', 'Conoce tu violín', [
-      { title: 'Cuatro cuerdas', text: 'De grave a aguda: Sol, Re, La y Mi. Mirando el violín desde tu barbilla, la cuerda Sol queda a la izquierda y la Mi a la derecha.', board: [55, 62, 69, 76] },
+      { title: 'Cuatro cuerdas', text: 'De grave a aguda: Sol, Re, La y Mi. Mirando el violín desde tu barbilla, la cuerda Sol queda a la izquierda y la Mi a la derecha.', board: [55, 62, 69, 76], art: 'violin-strings' },
       { title: 'El arco', text: 'Pulgar doblado entre la nuez y el cuero, dedos relajados y meñique curvo sobre la vara. Toca a medio camino entre el puente y el diapasón.' },
       { title: 'Cómo te escucha la app', text: 'Deja el móvil a medio metro, en un sitio silencioso. Haz notas largas: cuando suene afinada, la nota se pondrá verde y pasarás a la siguiente.' },
     ]),
@@ -168,6 +168,12 @@ function withPills(lessons, pills) {
 
 export function lessonKey(lesson) {
   return lesson.songId ? 'song:' + lesson.songId : 'lesson:' + lesson.id;
+}
+
+// Ficha solo de lectura (teoría sin preguntas ni examen): se marca como leída, sin estrellas por rendimiento
+export const READ_STARS = 1;
+export function isReadingLesson(lesson) {
+  return !!lesson && lesson.kind === 'theory' && !lesson.exam && !(lesson.quiz && lesson.quiz.length);
 }
 
 export function lessonSong(lesson) {

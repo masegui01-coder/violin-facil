@@ -2,7 +2,6 @@
 // (textos, etiquetas de accesibilidad y marcadores) a partir del diccionario de i18n-en.js, también lo que
 // aparece después gracias a un observador del DOM. Al volver al español se recupera el texto original.
 import { EXACT, INSTRUMENT_NAMES, PATTERNS, setDeepTranslate } from './i18n-en.js';
-import { CONTENT } from './i18n-en-content.js';
 import { TIPS_EN } from './tips-l10n.js';
 
 export const LANGS = [['es', 'Español'], ['en', 'English']];
@@ -12,6 +11,19 @@ const INSTRUMENT_RE = new RegExp(Object.keys(INSTRUMENT_NAMES).sort((a, b) => b.
 const INSTRUMENT_LOWER = Object.fromEntries(Object.entries(INSTRUMENT_NAMES).map(([es, en]) => [es.toLowerCase(), en]));
 
 let lang = 'es';
+// El contenido de cursos y libros en inglés (el diccionario más grande) solo se descarga para quien usa la app en inglés
+let CONTENT = {};
+let contentLoad = null;
+function loadContent() {
+  contentLoad ||= import('./i18n-en-content.js').then(m => {
+    CONTENT = m.CONTENT;
+    if (lang !== 'en' || typeof document === 'undefined') return;
+    walk(document.body);
+    translateTitle();
+    window.dispatchEvent(new CustomEvent('lang-content-ready')); // para volver a pintar lo calculado con t()
+  }, () => { contentLoad = null; }); // sin conexión: se reintenta al volver a elegir el idioma
+  return contentLoad;
+}
 let observer = null;
 const originalText = new WeakMap(); // nodo de texto → texto en español
 const shownText = new WeakMap(); // nodo de texto → lo último que pusimos
@@ -100,7 +112,7 @@ export function setLang(next) {
   document.documentElement.lang = lang;
   walk(document.body);
   translateTitle();
-  if (lang === 'en') observe();
+  if (lang === 'en') { observe(); loadContent(); }
   else if (observer) { observer.disconnect(); observer = null; }
 }
 

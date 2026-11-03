@@ -1,7 +1,7 @@
 // Pestaña Aprender: «Tu siguiente paso» (tarea de la banda que vence pronto o la próxima lección) y mapa del curso.
-import { $, esc, icon, starsHtml } from '../ui.js';
+import { $, esc, icon, starsHtml, toast } from '../ui.js';
 import { register, go } from '../router.js';
-import { lessonKey, lessonTitle, lessonSong, chordText } from '../course.js';
+import { lessonKey, lessonTitle, lessonSong, chordText, isReadingLesson } from '../course.js';
 import { styleById } from '../songs.js';
 import { getState, instrumentProgress, today, update } from '../store.js';
 import { soonBandTask } from '../next-step.js';
@@ -10,7 +10,6 @@ import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../lau
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
 import { renderBook } from './book.js';
-import { renderPro } from './pro.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -33,7 +32,7 @@ function levelsDone() {
   const levels = course.flatMap(u => u.lessons).filter(isLevel);
   return { total: levels.length, done: levels.filter(l => states[l.id] === 'done').length, index: id => levels.findIndex(l => l.id === id) + 1 };
 }
-const progressBar = ({ done, total }) => `<div class="level-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}">
+const progressBar = ({ done, total }) => `<div class="level-progress" role="progressbar" aria-label="Niveles superados del curso" aria-valuetext="${done} de ${total}" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}">
   <span style="width:${Math.round(100 * done / Math.max(1, total))}%"></span></div><p class="small muted">${done} de ${total} niveles superados</p>`;
 
 function continueCard() {
@@ -64,7 +63,7 @@ function nodeHtml(lesson, unit) {
   const sub = lesson.slot ? (song.by || '') : chordText(lesson.sub || KIND_NAME[lesson.kind]);
   return `<button type="button" class="${cls}" data-lesson="${lesson.id}" style="--unit:${unit.color}${slotColor ? ';--slot:' + slotColor : ''}">
     <span class="bubble"><span class="ic">${icon(glyph)}</span></span>
-    <span class="node-text"><b>${tag}${esc(lessonTitle(lesson))}</b><small>${esc(sub)}</small>${st === 'done' ? starsHtml(best) : ''}</span>
+    <span class="node-text"><b>${tag}${esc(lessonTitle(lesson))}</b><small>${esc(sub)}</small>${st !== 'done' ? '' : isReadingLesson(lesson) ? '<span class="read-tag">Leída</span>' : starsHtml(best)}</span>
     <span class="sr-only">${st === 'locked' ? ', bloqueada' : st === 'done' ? ', hecha' : lesson.id === currentId ? ', siguiente lección' : ''}</span>
   </button>`;
 }
@@ -80,7 +79,55 @@ function unitHtml(unit, ui) {
   </section>`;
 }
 
-// Casual: siguiente paso, retos y mapa. Libro: el método página a página con medallas. Pro: el método de viento
+// «Más»: reto del día, clasificación, liga, amigos y test de nivel, plegados bajo el objetivo de hoy
+// para que arriba solo queden el siguiente paso, el objetivo y el camino. Los contenedores conservan su id,
+// así que sus módulos (amigos, test de nivel) siguen pintando en ellos.
+const MORE_FROM_TODAY = ['dailyBtn', 'dailyBoardBtn', 'leagueBtn'];
+function moreBox() {
+  let box = $('learnMore');
+  if (box) return box;
+  box = document.createElement('details');
+  box.id = 'learnMore';
+  box.className = 'learn-more';
+  box.innerHTML = `<summary><span class="learn-more-title">Más</span><small id="learnMoreHint"></small></summary>
+    <div class="learn-more-body"><div id="learnMoreDaily" class="learn-more-daily"></div></div>`;
+  $('todayCard').after(box);
+  const body = box.querySelector('.learn-more-body');
+  body.append($('friendsCard'), $('placementCard'));
+  return box;
+}
+
+function fillMore() {
+  const box = moreBox();
+  const slot = $('learnMoreDaily');
+  slot.replaceChildren(...MORE_FROM_TODAY.map(id => $(id)).filter(Boolean));
+  const s = getState();
+  const day = today();
+  const parts = [s.dailyDone[day] !== undefined ? 'Reto hecho' : 'Reto del día'];
+  if (!s.kidMode) parts.push('liga', 'amigos');
+  if ($('placementCard').innerHTML.trim()) parts.push('test de nivel');
+  $('learnMoreHint').textContent = parts.join(' · ');
+  return box;
+}
+
+// Nodo recién desbloqueado: si la siguiente lección cambió desde la última vez, se anima (ver css/motion.css)
+let seenNext = {};
+function celebrateUnlock() {
+  const inst = getState().instrument;
+  const prev = seenNext[inst];
+  seenNext = { ...seenNext, [inst]: currentId };
+  if (!prev || !currentId || prev === currentId) return;
+  const node = $('courseMap').querySelector(`[data-lesson="${CSS.escape(currentId)}"]`);
+  if (node) node.classList.add('just-unlocked');
+}
+
+// Pro (con el método completo de cada instrumento) se descarga al elegir esa vista
+function renderProView() {
+  import('./pro.js').then(m => { if ((getState().learnView || 'casual') === 'pro') m.renderPro(); },
+    () => toast('No se ha podido abrir Pro. Revisa la conexión.'));
+}
+
+// Casual: siguiente paso, objetivo de hoy y camino (lo demás, plegado en «Más»). Libro: el método página a página con medallas. Pro: el método de viento
 // con Libro, Relax y Práctica en cada nivel (opcional, aparte del curso).
 function render() {
   const view = getState().learnView || 'casual';
@@ -89,7 +136,7 @@ function render() {
   $('bookView').hidden = view !== 'book';
   $('proView').hidden = view !== 'pro';
   if (view === 'book') { renderBook(); return; }
-  if (view === 'pro') { renderPro(); return; }
+  if (view === 'pro') { renderProView(); return; }
   course = currentCourse();
   states = currentStates(course);
   const next = nextLesson(null, course);
@@ -100,7 +147,9 @@ function render() {
   if (task) $('bandStepBtn').addEventListener('click', () => go('band'));
   $('placementCard').innerHTML = placementCardHtml();
   bindPlacementCard();
+  fillMore();
   $('courseMap').innerHTML = course.map(unitHtml).join('');
+  celebrateUnlock();
   const btn = $('continueBtn');
   if (btn && next) btn.addEventListener('click', () => launch(next, { from: 'course' }));
 }

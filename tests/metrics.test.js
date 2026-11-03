@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { userMetrics, groupMetrics, weekStart, isAdminEmail, isProTesterEmail, accountEmails } from '../js/metrics.js';
+import { readFileSync, readdirSync } from 'node:fs';
+import { userMetrics, groupMetrics, weekStart, BETA_ALL_TESTERS, hasFullContent } from '../js/metrics.js';
 
 const now = new Date(2026, 9, 26, 12).getTime();
 const day = 864e5;
@@ -36,21 +37,17 @@ test('grupos: canciones, pistas y espacio', () => {
   assert.deepEqual(g, { groups: 2, members: 5, songs: 1, tracks: 2, megabytes: 1 });
 });
 
-test('administrador por correo', () => {
-  assert.equal(isAdminEmail('Masegui01@gmail.com'), true);
-  assert.equal(isAdminEmail('otro@gmail.com'), false);
-  assert.equal(isAdminEmail(''), false);
+test('beta: cualquier cuenta iniciada ve todo el contenido; sin cuenta, no', () => {
+  assert.equal(BETA_ALL_TESTERS, true);
+  assert.equal(hasFullContent({ signedIn: true }), true);
+  assert.equal(hasFullContent({ signedIn: false }), false);
+  assert.equal(hasFullContent({ signedIn: false, admin: true, proRole: true }), false);
 });
 
-test('tester pro por correo, que no es administrador', () => {
-  assert.equal(isProTesterEmail('Fran-Saxo@hotmail.com'), true);
-  assert.equal(isAdminEmail('fran-saxo@hotmail.com'), false);
-  assert.equal(isProTesterEmail('otro@hotmail.com'), false);
-});
-
-test('accountEmails reúne el correo principal y los de cada proveedor, sin repetir y en minúsculas', () => {
-  const acc = { email: null, providerData: [{ email: 'Fran-Saxo@Hotmail.com ' }, { email: 'fran-saxo@hotmail.com' }, null] };
-  assert.deepEqual(accountEmails(acc), ['fran-saxo@hotmail.com']);
-  assert.ok(accountEmails(acc).some(isProTesterEmail));
-  assert.deepEqual(accountEmails(null), []);
+test('el JS público no lleva correos de administradores ni de testers', () => {
+  const files = ['js', 'js/screens'].flatMap(dir => readdirSync(new URL(`../${dir}/`, import.meta.url))
+    .filter(f => f.endsWith('.js')).map(f => readFileSync(new URL(`../${dir}/${f}`, import.meta.url), 'utf8')));
+  const all = files.join('\n');
+  for (const email of ['masegui01@gmail.com', 'fran-saxo@hotmail.com']) assert.ok(!all.toLowerCase().includes(email), email);
+  assert.ok(!/ADMIN_EMAILS|PRO_TESTER_EMAILS|isAdminEmail|isProTesterEmail/.test(all));
 });

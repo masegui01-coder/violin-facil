@@ -172,3 +172,37 @@ export const VIOLIN_ART = {
       ${bad(222, 120)}${label(222, 96, L('plano', 'flat'), { color: C.red, size: 12, anchor: 'middle' })}`),
   ],
 };
+
+// ---------- Curso de violín: «Cuatro cuerdas» ----------
+// El violín entero (izquierda) y una lupa sobre el diapasón (derecha) con cada cuerda en su color y su nombre:
+// de grave a aguda, Sol, Re, La y Mi, igual que se ven mirando el violín desde la barbilla.
+const STRING_COLORS = ['#D2552B', '#3B7BD8', '#2E9A5E', '#9B5FD0'];
+const STRING_NAMES = { eu: ['Sol', 'Re', 'La', 'Mi'], us: ['G', 'D', 'A', 'E'] };
+const NUT_X = [-4.5, -1.5, 1.5, 4.5];      // en la cejilla (unidades del violinTop)
+const BRIDGE_X = [-12, -4, 4, 12];         // sobre el puente, más abiertas
+const NUT_Y = -150, BRIDGE_Y = 23, TAIL_Y = 44;
+const ZOOM_Y = -95;                         // tramo del diapasón que se ve en la lupa
+const LUPA = { x: 118, y: 26, w: 142, h: 180 };
+const LUPA_TOP = [146, 174, 202, 230], LUPA_BOTTOM = [140, 170, 206, 236];
+
+export function violinStringsArt(nom = 'eu') {
+  const names = STRING_NAMES[nom === 'us' ? 'us' : 'eu'];
+  const strings = NUT_X.map((x, i) => `<path d="M${x} ${NUT_Y} L${BRIDGE_X[i]} ${BRIDGE_Y} L${x * 1.1} ${TAIL_Y}" fill="none" stroke="${STRING_COLORS[i]}" stroke-width="${1.9 - i * 0.3}" stroke-linecap="round"/>`).join('');
+  const [vx, vy, vs] = [62, 152, 0.8];
+  const mark = [vx, vy + ZOOM_Y * vs];
+  const { x, y, w, h } = LUPA;
+  const top = y + 40, bottom = y + h - 30;
+  const lupa = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="#FBF8F4" stroke="#E2D7CB" stroke-width="1.5"/>
+    <path d="M132 ${top} L244 ${top} L250 ${bottom} L126 ${bottom} Z" fill="${V.board}"/>
+    ${LUPA_TOP.map((sx, i) => `<line x1="${sx}" y1="${top}" x2="${LUPA_BOTTOM[i]}" y2="${bottom}" stroke="${STRING_COLORS[i]}" stroke-width="${4.4 - i * 0.8}" stroke-linecap="round"/>
+      ${label(sx, top - 12, names[i], { color: STRING_COLORS[i], anchor: 'middle', size: 15 })}`).join('')}
+    ${label(LUPA_BOTTOM[0], bottom + 18, L('grave', 'low'), { color: C.muted, size: 11, weight: 700, anchor: 'middle' })}
+    ${label(LUPA_BOTTOM[3], bottom + 18, L('aguda', 'high'), { color: C.muted, size: 11, weight: 700, anchor: 'middle' })}
+    <path d="M${LUPA_BOTTOM[0] + 20} ${bottom + 14} L${LUPA_BOTTOM[3] - 22} ${bottom + 14} m-6 -4 l6 4 l-6 4" fill="none" stroke="${C.muted}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const guides = `${dashed(`M${mark[0] + 8} ${mark[1] - 5} L${x} ${y + 10}`, C.muted)}${dashed(`M${mark[0] + 8} ${mark[1] + 5} L${x} ${y + h - 10}`, C.muted)}
+    <circle cx="${mark[0]}" cy="${mark[1]}" r="10" fill="none" stroke="${C.muted}" stroke-width="2"/>`;
+  return panel(`<g transform="translate(${vx} ${vy}) scale(${vs})">${violinTop()}${strings}</g>${guides}${lupa}`);
+}
+
+// Dibujos de las fichas de teoría del curso (card.art)
+export const COURSE_ART = { 'violin-strings': violinStringsArt };

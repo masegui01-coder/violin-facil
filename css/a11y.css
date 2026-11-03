@@ -1,0 +1,40 @@
+/* Accesibilidad: zonas táctiles de 48 px y contraste de al menos 4,5:1 en claro y oscuro.
+   Va después de las hojas de cada pantalla para corregirlas sin tocar su diseño. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* ---------- Zonas táctiles de al menos 48 × 48 px (Material y WCAG 2.5.5) ---------- */
+.btn, .btn.small, .chip-btn, .seg button, .filter button, .subtabs button, .theme-opt, .check-chip, .react, .code-chip,
+.dir-nav button, .quiz-opt, .zt-labels .zt-label, .chord-chip, .string-pick button, .fig-btn { min-height: 48px; }
+.theme-opt { min-width: 48px; display: inline-flex; align-items: center; justify-content: center; }
+.text-link, .today-link { min-height: 48px; display: inline-flex; align-items: center; }
+.panel > .text-link { align-self: flex-start; }
+.icon-btn { width: 48px; height: 48px; }
+.input, .select, .title-input { min-height: 48px; }
+.switch-row { min-height: 48px; }
+details > summary.muted { display: flex; align-items: center; min-height: 48px; padding-block: 0; }
+/* Botones que deben verse pequeños: el dibujo sigue igual y la zona que se puede tocar crece */
+.round.mini { position: relative; }
+.round.mini::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+/* Interruptores: se pulsa toda la fila (etiqueta de 48 px); el propio interruptor también crece hacia fuera */
+.switch::before { content: ""; position: absolute; inset: -9px -4px; }
+
+/* ---------- Contraste del texto ---------- */
+/* Texto claro sobre color: sin transparencias que lo apaguen */
+.continue .eyebrow, .continue .level-progress + p, .unit-banner p, .unit-banner .eyebrow, .band-hero .eyebrow,
+.today-routine small, .notice small { opacity: 1; }
+/* Acento sobre su fondo suave: algo más oscuro (o más claro en oscuro) para los textos pequeños */
+.mode-chip, .pill.warn, .chord-chip.current { color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+.pro-pill.on { color: color-mix(in srgb, var(--ok) 80%, var(--ink)); }
+/* Texto sobre los colores de las unidades, insignias y avisos: el color de texto de cada tema */
+.book-text .tag, .book-chap-num, .bp-num, .week-dots span.on, .tab-badge, .badge-dot { color: var(--on-color); }
+.combo-badge { color: #141B26; }
+/* Bloqueado o pasado: se distingue por el borde discontinuo y el texto apagado, no con transparencia */
+.book-page.locked, .pro-level.locked, .song.locked, .badge, .task.past, .event-card.past { opacity: 1; }
+.book-page.locked, .pro-level.locked, .song.locked { border-style: dashed; background: var(--surface); }
+.book-page.locked .book-text b, .pro-level.locked .pro-level-text b, .song.locked b { color: var(--muted); }
+.pro-level.locked .pro-num { background: var(--surface-2); color: var(--muted); }
+
+/* Insignias del perfil: dos columnas que no empujan el ancho a 360 px */
+.badges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.badge { min-width: 0; }
+.badge b, .badge small { overflow-wrap: anywhere; }
+.pro-hero .unit-pct { background: var(--surface-2); }

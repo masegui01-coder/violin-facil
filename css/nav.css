@@ -1,0 +1,34 @@
+/* Barra superior (marca, instrumento, racha) y barra de pestañas. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* Barra superior: marca, instrumento, racha y puntos */
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-block: 12px 4px; }
+.brand { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 1.25rem; white-space: nowrap; min-width: 0; }
+.brand-mark { font-family: var(--f-music); font-size: 1.6rem; line-height: 1; color: var(--accent); }
+.chips { display: flex; gap: 8px; flex: none; }
+.chip-stat { display: inline-flex; align-items: center; gap: 5px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 11px; font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip-stat.streak { color: var(--accent); }
+.chip-stat.streak.cold { color: var(--muted); }
+.chip-stat b { color: var(--ink); }
+/* Chips de 48 px de alto: el del instrumento es un botón y los demás van a juego */
+.chip-stat { min-height: 48px; }
+/* Móvil estrecho: solo el icono de la marca (el nombre sigue para lectores de pantalla) y chips más justos */
+@media (max-width: 379px) {
+  .brand { gap: 4px; }
+  .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .brand .beta-pill { margin-left: 0; }
+  .chips { gap: 6px; }
+  .chip-stat { padding: 4px 9px; gap: 4px; }
+}
+
+/* Barra de pestañas al estilo Material 3: 80 px, píldora de 64 × 32 tras el icono activo y etiqueta de 12 px */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--surface); border-top: 1.5px solid var(--line);
+  min-height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
+}
+.tabbar button { position: relative; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 12px 0 14px; min-height: var(--tabbar-h); font-size: .75rem; font-weight: 600; line-height: 1.33; color: var(--muted); border-radius: 12px; }
+.tabbar button .ic { width: 64px; height: 32px; padding: 4px 20px; border-radius: 16px; transition: background .2s, color .2s; }
+.tabbar button[aria-current="page"] { color: var(--ink); font-weight: 800; }
+.tabbar button[aria-current="page"] .ic { background: var(--accent-soft); color: var(--accent); }
+.tab-badge { position: absolute; top: 8px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad, #c0392b); color: #fff; font-size: .68rem; line-height: 18px; text-align: center; }

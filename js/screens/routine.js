@@ -14,7 +14,7 @@ import { lessonKey } from '../course.js';
 import { launch, nextLesson } from '../launch.js';
 import { RUDIMENTS, rudimentLesson } from './perc-tools.js';
 import { tuningStats } from './tuningmap.js';
-import { pendingBandLesson } from './band.js';
+import { pendingBandLesson } from './band-sync.js';
 
 const KINDS = ['scale', 'arpeggio', 'thirds'];
 const KIND_NAME = { scale: 'Escala', arpeggio: 'Arpegio', thirds: 'Terceras' };

@@ -6,9 +6,10 @@ import { BADGES } from '../engage.js';
 import { renderProgress } from './progress-ui.js';
 import { renderAccountPanel } from './account-panel.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
-import { getState, update, resetProgress, currentStreak, instrumentProgress } from '../store.js';
+import { getState, update, subscribe, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 import { openPlacementIntro } from './placement-ui.js';
 import { setLang } from '../i18n.js';
+import { applyAppearance } from '../appearance.js';
 
 export { instrumentGridHtml };
 
@@ -42,6 +43,7 @@ function render() {
   document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
   document.querySelectorAll('[data-set-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setLang === (s.lang || 'es')));
   document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
+  document.querySelectorAll('[data-set-appearance]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setAppearance === (s.appearance || 'system')));
   $('setClick').checked = s.metroClick;
   $('setBig').checked = s.bigText;
   $('setBoard').checked = s.showBoard;
@@ -85,6 +87,14 @@ document.querySelectorAll('[data-set-lang]').forEach(b => b.addEventListener('cl
   render();
 }));
 document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
+// Apariencia: se guarda en el estado (y en la nube con el resto); se aplica también si llega de otro móvil
+let shownAppearance = getState().appearance;
+applyAppearance(shownAppearance);
+subscribe(s => { if (s.appearance !== shownAppearance) { shownAppearance = s.appearance; applyAppearance(s.appearance); } });
+document.querySelectorAll('[data-set-appearance]').forEach(b => b.addEventListener('click', () => {
+  update({ appearance: b.dataset.setAppearance });
+  render();
+}));
 $('setClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
 $('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
 $('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));

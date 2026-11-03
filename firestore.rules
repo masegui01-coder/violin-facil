@@ -17,7 +17,8 @@ service cloud.firestore {
     function isMember(bandId) { return signedIn() && exists(/databases/$(db)/documents/bands/$(bandId)/members/$(request.auth.uid)); }
 
     // Cuentas: el progreso de cada usuario solo lo lee y escribe él mismo
-    // Administrador: dado de alta en admins/{uid} o con este correo verificado (también en js/metrics.js)
+    // Administrador: dado de alta en admins/{uid} o con este correo verificado (respaldo solo aquí: este archivo no se publica en la web)
+    // El cliente lo comprueba leyendo admins/{uid} o, si no existe, adminData/probe (solo lo permite isAdmin())
     function isAdmin() {
       return signedIn() && (exists(/databases/$(db)/documents/admins/$(request.auth.uid))
         || (request.auth.token.email == 'masegui01@gmail.com' && request.auth.token.email_verified == true));
@@ -133,12 +134,19 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if signedIn() && uid == request.auth.uid && validName() && validAccuracy();
     }
-    // Liga semanal: puntos acumulados (como mucho 40 por lección)
+    // Liga semanal: puntos acumulados (como mucho 40 por lección y una suma cada 10 s, con la hora del servidor en «at»)
+    function validLeague() {
+      return validName() && request.resource.data.score is number && request.resource.data.at == request.time
+        && request.resource.data.keys().hasOnly(['name', 'instrument', 'score', 'stars', 'at']);
+    }
     match /leagues/{board}/results/{uid} {
       allow read: if signedIn();
-      allow create: if signedIn() && uid == request.auth.uid && validName() && request.resource.data.score is number && request.resource.data.score <= 40;
-      allow update: if signedIn() && uid == request.auth.uid && validName() && request.resource.data.score is number
-        && request.resource.data.score <= resource.data.score + 40;
+      allow create: if signedIn() && uid == request.auth.uid && validLeague()
+        && request.resource.data.score >= 0 && request.resource.data.score <= 40;
+      allow update: if signedIn() && uid == request.auth.uid && validLeague()
+        && request.resource.data.score >= resource.data.score
+        && request.resource.data.score <= resource.data.score + 40
+        && request.time > resource.data.get('at', timestamp.value(0)) + duration.value(10, 's');
     }
 
     match /bands/{bandId} {
@@ -155,7 +163,7 @@ service cloud.firestore {
       }
       match /members/{uid} {
         allow read: if isMember(bandId) || isDirector(bandId) || isAdmin();
-        allow create: if signedIn() && uid == request.auth.uid && (
+        allow create: if signedIn() && uid == request.auth.uid && validMember(request.resource.data) && (
           (request.resource.data.role == 'director' && isDirectorAfter(bandId)) ||
           (request.resource.data.role == 'member'
             && get(/databases/$(db)/documents/bandCodes/$(request.resource.data.code)).data.bandId == bandId)
@@ -230,17 +238,35 @@ service cloud.firestore {
         allow delete: if (signedIn() && uid == request.auth.uid) || groupOwner(gid);
       }
       match /songs/{sid} {
+        // Autor de la canción (createdBy) o dueño del grupo: la borran y cambian título y tempo.
+        // El resto de músicos solo toca las partes de la canción y su propia pista (o la maqueta) en «parts».
+        function songAuthorOrOwner() { return resource.data.createdBy == request.auth.uid || groupOwner(gid); }
         allow read: if inGroup(gid) || isAdmin();
-        allow delete: if inGroup(gid);
+        allow delete: if inGroup(gid) && songAuthorOrOwner();
         allow create: if inGroup(gid) && request.resource.data.createdBy == request.auth.uid && validGroupSong(request.resource.data);
-        allow update: if inGroup(gid) && validGroupSong(request.resource.data) && request.resource.data.createdBy == resource.data.createdBy;
+        allow update: if inGroup(gid) && validGroupSong(request.resource.data) && request.resource.data.createdBy == resource.data.createdBy
+          && (songAuthorOrOwner()
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['parts', 'sections', 'updatedAt'])
+              && request.resource.data.parts.diff(resource.data.parts).affectedKeys().hasOnly([request.auth.uid, 'demo'])));
+        // Pista: la del músico (tid = su uid) solo la sube él; la maqueta, quien la subió («by»), el autor de la canción
+        // o el dueño del grupo (o cualquiera si aún no hay). El dueño del grupo puede borrar cualquier pista.
+        function trackPath(tid) { return /databases/$(db)/documents/groups/$(gid)/songs/$(sid)/tracks/$(tid); }
+        function songAuthor() { return get(/databases/$(db)/documents/groups/$(gid)/songs/$(sid)).data.createdBy == request.auth.uid; }
+        function trackAuthor(tid) {
+          return tid == request.auth.uid
+            || (tid == 'demo' && (!exists(trackPath(tid)) || get(trackPath(tid)).data.get('by', null) == request.auth.uid
+              || songAuthor() || groupOwner(gid)));
+        }
         match /tracks/{tid} {
-          allow read, delete: if inGroup(gid);
-          allow create, update: if inGroup(gid) && ownTrack(tid) && shortText(request.resource.data.nickname, 30)
+          allow read: if inGroup(gid);
+          allow delete: if inGroup(gid) && (trackAuthor(tid) || groupOwner(gid));
+          allow create, update: if inGroup(gid) && ownTrack(tid) && trackAuthor(tid) && request.resource.data.by == request.auth.uid
+            && shortText(request.resource.data.nickname, 30)
             && request.resource.data.duration is number && request.resource.data.duration <= 330;
           match /chunks/{n} {
-            allow read, delete: if inGroup(gid);
-            allow create, update: if inGroup(gid) && ownTrack(tid)
+            allow read: if inGroup(gid);
+            allow delete: if inGroup(gid) && (trackAuthor(tid) || groupOwner(gid));
+            allow create, update: if inGroup(gid) && ownTrack(tid) && trackAuthor(tid)
               && request.resource.data.data is bytes && request.resource.data.data.size() <= 720000;
           }
         }

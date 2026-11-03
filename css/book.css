@@ -1,0 +1,94 @@
+/* Modo libro, estantería, página del libro y lecturas rítmicas. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* ---------- Modo libro ---------- */
+.learn-mode { margin-bottom: 14px; }
+.book { display: flex; flex-direction: column; gap: 12px; }
+.book-head h1 { margin: 2px 0 6px; }
+.book-tally { display: flex; gap: 12px; align-items: center; font-weight: 800; flex-wrap: wrap; }
+.book-review { display: flex; gap: 12px; align-items: center; text-align: left; border: 2px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: var(--r); padding: 12px 14px; font: inherit; }
+.book-review .ic { font-size: 1.6rem; color: var(--accent); }
+.book-review div { display: flex; flex-direction: column; }
+.book-review small { color: var(--muted); }
+.book-chapter { background: var(--surface); border: 1.5px solid var(--line); border-left: 6px solid var(--unit); border-radius: var(--r); }
+.book-chapter summary { display: flex; gap: 12px; align-items: center; padding: 12px 14px; cursor: pointer; list-style: none; min-height: 48px; }
+.book-chapter summary::-webkit-details-marker { display: none; }
+.book-chap-num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--unit); color: #fff; font-weight: 800; }
+.book-chap-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.book-chap-text small { color: var(--muted); }
+.book-stamp { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 2px dashed var(--ok); color: var(--ok); font-weight: 900; transform: rotate(-12deg); }
+.book-stamp.gold { border-color: var(--gold); color: var(--gold); }
+.book-pages { display: flex; flex-direction: column; gap: 6px; padding: 0 10px 12px; }
+.book-page { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; text-align: left; background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font: inherit; color: var(--ink); min-height: 48px; }
+.book-page.locked { opacity: .7; }
+.book-page.gold { border-color: var(--gold); }
+.book-num { font-family: var(--f-display); font-size: 1.15rem; color: var(--unit); text-align: center; }
+.book-text { display: flex; flex-direction: column; min-width: 0; }
+.book-text small { color: var(--muted); font-size: .8rem; }
+.book-text .tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 999px; background: var(--unit); color: #fff; font-size: .68rem; vertical-align: middle; }
+.book-text .tag.review { background: var(--accent); }
+.book-medal { font-size: 1.3rem; }
+.book-medals { display: flex; gap: 14px; justify-content: center; }
+.book-medals span { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; opacity: .3; filter: grayscale(1); }
+.book-medals span.on { opacity: 1; filter: none; }
+.book-medals small { font-size: .75rem; font-weight: 700; }
+
+/* ---------- Estantería de libros ---------- */
+.book-shelf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.book-spine { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font: inherit; color: var(--ink); min-height: 64px; }
+.book-spine small { color: var(--muted); font-size: .75rem; }
+.book-spine.on { border-color: var(--accent); background: var(--accent-soft); }
+.book-locked { gap: 6px; border-color: var(--warn); }
+
+/* ---------- Página del libro ---------- */
+.bp-where { flex: 1; font-weight: 700; font-size: .9rem; color: var(--muted); }
+.bp-medal { font-size: 1.4rem; }
+.book-sheet { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 0 var(--line); }
+.bp-opener { border-bottom: 3px solid var(--unit); padding-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.bp-opener h1 { margin: 0; }
+.bp-head { display: flex; gap: 12px; align-items: flex-start; }
+.bp-head h2 { margin: 0; }
+.bp-head p { margin: 2px 0 0; }
+.bp-num { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--unit); color: #fff; font-family: var(--f-display); font-size: 1.2rem; }
+.bp-system { display: flex; flex-direction: column; gap: 2px; }
+.bp-system svg { width: 100%; height: auto; }
+.bp-chords { font-weight: 800; font-size: .85rem; color: var(--accent); white-space: pre; min-height: 1.1em; padding-left: 64px; }
+.bp-notes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.bp-notes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bp-notes svg { width: 96px; height: auto; }
+.bp-notes .chord-board { width: 110px; }
+.bp-notes figcaption { font-weight: 800; }
+.bp-chart { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 2px solid var(--ink); }
+.bp-chart span { border-right: 2px solid var(--ink); padding: 8px 6px; font-weight: 800; text-align: center; }
+.bp-card { display: flex; flex-direction: column; gap: 6px; }
+.bp-card h3 { margin: 0; }
+.bp-card p { margin: 0; }
+.bp-card svg { width: 160px; height: auto; align-self: center; }
+.bp-tip { display: flex; flex-direction: column; gap: 3px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; font-size: .9rem; }
+.bp-medals { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.bp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; position: sticky; bottom: 0; background: var(--bg); padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 2; }
+.bp-nav { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; }
+.book-print { display: none; }
+.bp-print-foot { font-size: .8rem; color: #555; border-top: 1px solid #ccc; padding-top: 6px; }
+.bp-cover { text-align: center; }
+.bp-index { text-align: left; padding: 0; list-style: none; }
+.bp-index li { display: flex; justify-content: space-between; border-bottom: 1px dotted #999; padding: 4px 0; }
+@media print {
+  body.print-book > *:not(#bookPrint) { display: none !important; }
+  body.print-book { background: #fff; color: #000; }
+  body.print-book #bookPrint { display: block; }
+  .bp-print-page { break-after: page; padding: 8mm 4mm; display: flex; flex-direction: column; gap: 10px; }
+  .bp-print-page .staff { width: 100%; height: auto; }
+}
+
+/* ---------- Lecturas rítmicas ---------- */
+.rb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
+.rb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 700; min-width: 0; }
+.rb-grid .select, .rb-grid .input { width: 100%; min-width: 0; box-sizing: border-box; }
+.rb-label { font-weight: 700; font-size: .9rem; }
+.rb-preview { margin-top: 12px; }
+.rb-offscreen { position: absolute; left: -10000px; top: 0; width: 900px; }
+.rb-export { flex-wrap: wrap; gap: 6px; }
+.rb-wa { border-color: #25D366; color: #128C7E; }
+.ob-lang { max-width: 260px; margin: 14px auto 0; }
+.ob-sub { font-family: var(--f-body); font-size: .85rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.choice.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

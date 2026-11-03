@@ -1,0 +1,28 @@
+/* Mi banda: tareas, tablas y formularios. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* Mi banda */
+.band { display: flex; flex-direction: column; gap: 16px; }
+.band-hero { border-radius: 22px; padding: 18px; background: var(--u6); color: var(--on-color); display: flex; flex-direction: column; gap: 8px; position: relative; overflow: hidden; }
+.band-hero .eyebrow { color: inherit; opacity: .85; }
+.band-code { font-family: var(--f-display); font-size: 1.8rem; letter-spacing: .12em; }
+.task { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; }
+.task-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.task-head > div { min-width: 0; }
+.task small { color: var(--muted); }
+.pill { display: inline-block; font-size: .72rem; font-weight: 800; border-radius: 999px; padding: 2px 9px; background: var(--surface-2); border: 1px solid var(--line); white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.pill.warn { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.pill.late { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.prog-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.prog-table th, .prog-table td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+.prog-table th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.prog-table td.num { font-variant-numeric: tabular-nums; text-align: right; }
+.table-wrap { overflow-x: auto; }
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form label { font-weight: 700; font-size: .88rem; }
+.input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.member-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.check-chip { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: .88rem; font-weight: 600; cursor: pointer; }
+.check-chip input { accent-color: var(--accent); }
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+.spark i { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .8; }

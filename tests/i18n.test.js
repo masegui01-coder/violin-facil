@@ -19,3 +19,12 @@ test('traduce frases con números e instrumentos', () => {
 test('el diccionario no deja traducciones vacías', () => {
   Object.entries(EXACT).forEach(([es, en]) => assert.ok(en && en.trim(), es));
 });
+
+test('la pantalla de acceso, «Apariencia» de Perfil y el aviso de versión nueva tienen su texto en inglés', () => {
+  [
+    'Aprende tu instrumento con una app que te escucha', 'Te escucha mientras tocas', 'Un curso a tu ritmo', 'Ensaya con tu banda',
+    '¿Por qué pedimos una cuenta?', 'Política de privacidad', 'Tu progreso de este móvil se guardará en tu cuenta: no pierdes nada.',
+    'Apariencia', 'Claro', 'Oscuro', 'Sistema', '«Sistema» sigue el modo claro u oscuro de tu móvil.',
+    'Hay una versión nueva', 'Actualizar',
+  ].forEach(es => assert.notEqual(translate(es), es, es));
+});

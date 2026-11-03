@@ -1,0 +1,49 @@
+/* Grupos y nota que suena. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* ---------- Grupos: canción ---------- */
+.gs-where { background: var(--ink); color: var(--bg); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.gs-where b { font-size: 1.6rem; font-family: 'Young Serif', serif; }
+.gs-where small { opacity: .75; }
+.gs-where p { margin: 4px 0 0; min-height: 1.2em; }
+.gs-timeline { position: relative; height: 36px; margin-top: 12px; border-radius: 10px; background: var(--surface-2); border: 1.5px solid var(--line); cursor: pointer; overflow: hidden; }
+.gs-timeline .gs-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); }
+#gsHead { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--ink); left: 0; }
+.gs-transport { flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.gs-rec { gap: 8px; }
+.gs-track { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.gs-track > div:first-child { display: flex; flex-direction: column; }
+.gs-track small { color: var(--muted); }
+.gs-track-ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gs-track-ctl input[type=range] { flex: 1; min-width: 100px; }
+.chips-row.wrap { flex-wrap: wrap; }
+.placement-card { gap: 8px; margin-top: 12px; border-color: var(--accent); }
+.check-row { grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.check-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.check-side .check-chip { font-size: .8rem; }
+.pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.check-row > span:first-child { flex: 1; min-width: 0; }
+.check-row b, .check-row small { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* Nota que suena: su valor con una barra que se llena y la siguiente en pequeño */
+.note-value { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+.note-fill { display: block; width: 120px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.note-fill i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .08s linear; }
+/* «Ahora» en grande y, a su lado, la tarjeta «Siguiente» con flecha */
+/* La nota de ahora manda: tarjeta sólida y grande; la siguiente, más pequeña y discreta a su lado */
+.now-next { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+.now { display: flex; flex-direction: column; align-items: center; padding: 8px 18px 10px; border-radius: 18px;
+  border: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent); }
+.now .nn-label { color: var(--accent); }
+.now .name { font-size: 3.8rem; }
+.nn-label { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.next-card { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label label" "arrow name" "hint hint";
+  align-items: center; column-gap: 5px; min-width: 88px; max-width: 42%; padding: 6px 10px; border-radius: 14px;
+  border: 1.5px dashed var(--line); background: var(--surface); text-align: left; opacity: .8; }
+.next-card .nn-arrow { grid-area: arrow; font-size: 1.1rem; font-weight: 800; color: var(--muted); line-height: 1; }
+.next-card .nn-label { grid-area: label; }
+.next-card b { grid-area: name; font-family: var(--f-display); font-size: 1.4rem; line-height: 1.05; color: var(--muted); }
+.next-card small { grid-area: hint; font-size: .7rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
+.next-card.last { border-style: solid; }
+.next-card.last b { font-size: 1.1rem; }
+.st-note.next { color: var(--accent); opacity: .35; }
+.mix-row { gap: 8px; }

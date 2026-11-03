@@ -7,7 +7,7 @@ import { flushPush, stopSync, deleteCloudData, isAdmin, listTesters } from '../s
 import { analyticsAvailable, setAnalyticsConsent } from '../analytics.js';
 import { getState, replaceState } from '../store.js';
 import { openAccountReminder } from './account.js';
-import { isAdminEmail, isProTesterEmail } from '../metrics.js';
+import { BETA_ALL_TESTERS } from '../metrics.js';
 import { listProTesters, setProTester } from '../roles-api.js';
 
 const DAY_MS = 86400000;
@@ -28,12 +28,12 @@ export async function renderAccountPanel() {
     box.innerHTML = `<h2>Tu cuenta</h2><p>Has entrado como <b>${esc(acc.displayName || acc.email)}</b>${acc.displayName && acc.email ? ` (${esc(acc.email)})` : ''}. Tu progreso se guarda en tu cuenta y lo recuperas en cualquier dispositivo.</p>
       <p class="muted small">Las grabaciones y las partituras importadas se quedan en este dispositivo.</p>
       ${consent}
-      ${getState().proTester ? '<p><span class="pill ok">Tester pro</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>' : ''}
+      ${getState().proTester ? `<p><span class="pill ok">${BETA_ALL_TESTERS ? 'Tester de la beta' : 'Tester pro'}</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>` : ''}
       <div id="accAdmin"></div>
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
     $('accSignOut').addEventListener('click', signOut);
     $('accDelete').addEventListener('click', removeAccount);
-    if (isAdminEmail(acc.email) || await isAdmin(acc.uid)) {
+    if (await isAdmin(acc.uid)) {
       $('accAdmin').innerHTML = '<div class="row"><button type="button" class="btn small" id="accMetrics">Métricas de la app</button><button type="button" class="btn ghost small" id="accTesters">Panel de testers</button></div>';
       $('accMetrics').addEventListener('click', () => go('metrics'));
       $('accTesters').addEventListener('click', openTesters);
@@ -87,9 +87,9 @@ export async function openTesters() {
     <div class="table-wrap"><table class="prog-table testers-table"><thead><tr><th>Tester</th><th>Instrumento</th><th>Último uso</th><th class="num">Días</th><th class="num">Min.</th><th class="num">Lecc.</th><th>Pro</th></tr></thead><tbody>
     ${list.map(t => `<tr><td><b>${esc(t.name)}</b><br><small>${esc(t.email)}</small></td><td>${esc(t.instrument || '')}<br><small>${esc(t.level || '')}</small></td>
       <td>${fmtDay(t.lastSeen)}<br><small>${esc(t.platform || '')}</small></td><td class="num">${num(t.daysPracticed)}</td><td class="num">${num(t.minutes)}</td><td class="num">${num(t.lessons)}</td>
-      <td><label class="check-chip" title="Tester pro: todo abierto menos el panel de administrador"><input type="checkbox" data-pro="${esc(t.id)}" ${pros[t.id] || isProTesterEmail(t.email) ? 'checked' : ''} ${isProTesterEmail(t.email) ? 'disabled' : ''}> Pro</label></td></tr>`).join('')}
+      <td><label class="check-chip" title="Tester pro: todo abierto menos el panel de administrador"><input type="checkbox" data-pro="${esc(t.id)}" ${pros[t.id] ? 'checked' : ''}> Pro</label></td></tr>`).join('')}
     </tbody></table></div>
-    <p class="muted small">Marca «Pro» para que ese tester vea todo (lecciones, libros, libro de lecturas…) menos este panel y las métricas. Se aplica la próxima vez que abra la app.</p>
+    <p class="muted small">${BETA_ALL_TESTERS ? 'Durante la beta todas las cuentas ven todo el contenido (menos este panel y las métricas). «Pro» queda guardado para cuando se cierre el contenido.' : 'Marca «Pro» para que ese tester vea todo (lecciones, libros, libro de lecturas…) menos este panel y las métricas. Se aplica la próxima vez que abra la app.'}</p>
     <div class="row"><button type="button" class="btn small" id="testersCsv">Descargar (CSV)</button><button type="button" class="btn ghost small" data-close>Cerrar</button></div></div>`;
   $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
   $('sheetBody').querySelectorAll('[data-pro]').forEach(box => box.addEventListener('change', async () => {

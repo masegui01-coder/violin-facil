@@ -1,17 +1,13 @@
 // Métricas de la app para el administrador, calculadas a partir del resumen de cada tester (sin DOM ni red).
-export const ADMIN_EMAILS = ['masegui01@gmail.com']; // también en firestore.rules (isAdmin)
+// Los roles no van por correo en el cliente (este JS es público): el administrador lo decide el servidor (sync.js → isAdmin).
 const DAY_MS = 864e5;
 const WEEKS = 8;
 
-export const isAdminEmail = email => !!email && ADMIN_EMAILS.includes(String(email).toLowerCase());
-
-// Testers pro: ven todo el contenido abierto (lecciones y los tres libros), pero no el panel de administrador
-export const PRO_TESTER_EMAILS = ['fran-saxo@hotmail.com'];
-export const isProTesterEmail = email => !!email && PRO_TESTER_EMAILS.includes(String(email).toLowerCase());
-
-// Todos los correos de una cuenta (el principal y los de Google, correo…), en minúsculas
-export const accountEmails = acc => [...new Set([acc && acc.email, ...((acc && acc.providerData) || []).map(p => p && p.email)]
-  .filter(Boolean).map(e => String(e).trim().toLowerCase()))];
+// Beta: toda cuenta iniciada es tester y ve todo el contenido (lecciones, los tres libros, Pro, libro de ritmo).
+// Ponerlo a false el día que haya pagos: entonces solo lo verán los que tengan el rol (roles/{uid}) o el administrador.
+export const BETA_ALL_TESTERS = true;
+export const hasFullContent = ({ signedIn, admin = false, proRole = false }) =>
+  !!signedIn && (BETA_ALL_TESTERS || admin || proRole);
 
 const activeIn = (list, days, now) => list.filter(t => now - (t.lastSeen || 0) < days * DAY_MS).length;
 const countBy = (list, key) => Object.entries(list.reduce((m, t) => {

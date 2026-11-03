@@ -1,0 +1,56 @@
+/* Guitarra, piano, acordes y preguntas de teoría. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* Guitarra y piano: mástil, caja de acorde y teclado */
+.gb-neck { fill: var(--wood); stroke: var(--wood-edge); stroke-width: 1; }
+.gb-fret { stroke: var(--wood-edge); stroke-width: 2; }
+.gb-nut { stroke: var(--ink); stroke-width: 5; }
+.gb-string { stroke: var(--staff); }
+.gb-inlay { fill: var(--wood-edge); opacity: .6; }
+.gb-open { fill: none; stroke: var(--accent); stroke-width: 2; }
+.gb-mute { font: 800 14px var(--f-body); fill: var(--muted); text-anchor: middle; }
+.gb-title { font: 800 17px var(--f-body); fill: var(--ink); text-anchor: middle; }
+.pk-white { fill: #FFFFFF; stroke: var(--staff); stroke-width: 1.2; }
+.pk-black { fill: #1F2733; }
+.pk-white.on, .pk-black.on { fill: var(--accent); }
+.pk-dot { fill: var(--muted); } .pk-dot.on { fill: var(--accent-ink); }
+
+/* Pantalla de acordes */
+.chord-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; }
+.chord-chip { flex: none; min-width: 52px; text-align: center; font-weight: 800; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
+.chord-chip.current { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.chord-chip.done { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chord-chip.miss { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.chord-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; }
+.chord-stage .board { max-height: 220px; }
+.chord-board { max-width: 170px; justify-self: center; }
+.chord-now { display: flex; flex-direction: column; gap: 6px; }
+.chord-now b { font-family: var(--f-display); font-size: 2.4rem; line-height: 1; }
+.chord-meter { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.chord-meter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .08s linear; }
+.chord-meter i.ok { background: var(--ok); }
+.changes-box { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: end; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 16px; }
+.changes-box b { grid-row: span 2; font-size: 3.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.changes-box b.pop { animation: bump .25s ease; }
+.changes-box small:last-child { grid-column: 2; }
+@keyframes bump { 50% { transform: scale(1.18); color: var(--ok); } }
+@media (max-width: 420px) { .chord-stage { grid-template-columns: 1fr; } .chord-now { align-items: center; text-align: center; } }
+.songbook { display: flex; flex-direction: column; gap: 8px; }
+.songbook-head { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; }
+.songbook-head > div:first-child { display: flex; flex-direction: column; }
+.songbook-head small { color: var(--muted); }
+.known-chords { display: flex; flex-wrap: wrap; gap: 6px; }
+.song.locked { opacity: .75; }
+.changes-list { display: flex; flex-direction: column; gap: 6px; }
+.changes-row { display: grid; grid-template-columns: 1fr 90px 36px; gap: 10px; align-items: center; font-weight: 600; }
+.changes-row b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Preguntas de las píldoras de teoría */
+.quiz-play { align-self: flex-start; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt { text-align: left; font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.quiz-opt.right { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.quiz-opt.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.quiz-opt:disabled { opacity: 1; }
+.quiz-why { border-radius: 12px; padding: 10px 12px; font-size: .98rem; }
+.quiz-why.right { background: var(--ok-soft); }
+.quiz-why.wrong { background: var(--accent-soft); }

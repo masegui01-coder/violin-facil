@@ -1,0 +1,40 @@
+/* Banda: pestañas del director, agenda, avisos y premios. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* Banda: pestañas del director, semáforo, agenda, avisos, premios y sellos */
+.subtabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.subtabs button { flex: none; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 7px 13px; font-weight: 700; font-size: .88rem; }
+.subtabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.band-view { display: flex; flex-direction: column; gap: 12px; }
+.light { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+.light.green { background: var(--ok); } .light.amber { background: var(--warn); } .light.red { background: var(--bad); }
+.lights { display: flex; flex-wrap: wrap; gap: 14px; font-size: .86rem; font-weight: 600; }
+.prog-bar { display: block; height: 8px; border-radius: 6px; background: var(--surface-2); overflow: hidden; min-width: 60px; }
+.prog-bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+.event { display: grid; grid-template-columns: 1fr auto; gap: 10px; background: var(--surface); border: 1.5px solid var(--line); border-left: 5px solid var(--u6); border-radius: var(--r); padding: 14px; }
+.event > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.event small { color: var(--muted); }
+.event-count { text-align: center; display: flex; flex-direction: column; justify-content: center; }
+.event-count b { font-size: 1.8rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.event-prep { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+.notice, .week-star { display: flex; flex-direction: column; gap: 4px; border-radius: var(--r); padding: 12px 14px; }
+.notice { background: var(--accent-soft); }
+.notice small, .week-star small { font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
+.notice .btn { align-self: flex-end; }
+.week-star { background: var(--surface); border: 1.5px solid var(--gold); }
+.week-star b { font-size: 1.2rem; }
+.week-star .btn { align-self: flex-start; }
+.stamp { display: flex; flex-direction: column; gap: 2px; background: var(--ok-soft); color: var(--ok); border-radius: 12px; padding: 8px 12px; font-size: .9rem; }
+.stamp span { color: var(--ink); }
+.reward { display: grid; grid-template-columns: 1fr 90px; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.reward > div { display: flex; flex-direction: column; }
+.reward small { color: var(--muted); }
+.reward.won { border-color: var(--ok); }
+.reward.won .prog-bar i { background: var(--ok); }
+.duel-row { display: grid; grid-template-columns: 110px 1fr 60px; gap: 10px; align-items: center; font-weight: 600; }
+.duel-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.voice-pick { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .9rem; }
+.select.small { padding: 5px 8px; font-size: .85rem; }
+.input.narrow { width: 5.5em; }
+.task.past { opacity: .75; }
+b.link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.st-clef.bass { font-size: 50px; }

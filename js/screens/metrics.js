@@ -5,7 +5,7 @@ import { currentAccount, onAccount } from '../account.js';
 import { isAdmin, listTesters } from '../sync.js';
 import { cloudErrorText } from '../cloud.js';
 import { instrumentById } from '../instruments.js';
-import { userMetrics, groupMetrics, isAdminEmail } from '../metrics.js';
+import { userMetrics, groupMetrics } from '../metrics.js';
 import { listBandsWithMembers, listGroupsWithSongs, getChecklist, setChecked } from '../admin-api.js';
 import { coverage, untested } from '../test-coverage.js';
 import { listSchools, setPremium } from '../school-api.js';
@@ -18,7 +18,7 @@ const CONSOLE = 'https://console.firebase.google.com/project/band-flow-83d4b';
 const body = html => { $('metricsBody').innerHTML = html; };
 
 async function adminCheck(acc) {
-  return !!acc && (isAdminEmail(acc.email) || await isAdmin(acc.uid));
+  return !!acc && await isAdmin(acc.uid); // lo decide el servidor (admins/{uid} o las reglas)
 }
 
 async function enter() {

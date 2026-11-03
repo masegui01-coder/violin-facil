@@ -1,13 +1,13 @@
 // Pantalla de resultado: estrellas, puntos ganados, partitura revisada y qué hacer después.
 import { $, icon, esc } from '../ui.js';
 import { register, go, ORIGIN_TAB } from '../router.js';
-import { lessonKey } from '../course.js';
+import { lessonKey, isReadingLesson, READ_STARS } from '../course.js';
 import { createStaff } from '../staff.js';
 import { getState, recordResult, update } from '../store.js';
 import { launch, nextLesson } from '../launch.js';
 import { saveTake } from '../takes.js';
 import { nextBookPage, openPage } from './book.js';
-import { freshAdvice, markAdviceSeen } from './tips.js';
+import { freshAdvice, markAdviceSeen } from './tips-advice.js';
 
 const FIRST_TAKE_MIN_DAYS = 7;
 
@@ -15,11 +15,15 @@ const reviewStaff = createStaff($('resStaff'));
 let ctx = null;
 
 // Cierra una lección: guarda estrellas, minutos y avisa (evento «lesson-finished») a quien escuche, por ejemplo «Mi banda»
-export function finishLesson({ lesson, mode, from, stars, text, title, record = true, review = null, minutes = 0, accuracy = null, take = null, speed = 1, missed = null }) {
+// Las fichas solo de lectura no puntúan rendimiento: quedan leídas con una recompensa fija (READ_STARS)
+export function finishLesson({ lesson, mode, from, stars: played, text: playedText, title, record = true, review = null, minutes = 0, accuracy = null, take = null, speed = 1, missed = null }) {
+  const read = isReadingLesson(lesson);
+  const stars = read ? READ_STARS : played;
+  const text = read ? 'Marcada como completada: ya puedes seguir con la siguiente.' : playedText;
   const before = getState().xp;
   if (record && !lesson.noRecord && stars > 0) recordResult(lessonKey(lesson), stars, minutes);
-  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed, missed } }));
-  go('result', { lesson, mode, from, stars, text, title, review, take, speed, xp: getState().xp - before });
+  window.dispatchEvent(new CustomEvent('lesson-finished', { detail: { lesson, mode, stars, accuracy, minutes, speed, missed, read } }));
+  go('result', { lesson, mode, from, stars, text, title, review, take, speed, read, xp: getState().xp - before });
 }
 
 const backToOrigin = () => go(ORIGIN_TAB[ctx.from] || 'learn');
@@ -64,11 +68,11 @@ function renderReview(review) {
 
 function enter(params) {
   ctx = params;
-  const { stars, text, title, xp, mode } = params;
+  const { stars, text, title, xp, mode, read } = params;
   const passText = mode === 'compare' || mode === 'memory' ? 'Necesitas acertar al menos la mitad de las notas en orden.' : 'Necesitas acertar al menos la mitad para ganar una estrella.';
-  $('resEyebrow').textContent = mode === 'compare' ? 'Comparación' : stars === 0 ? 'Casi lo tienes' : stars === 3 ? '¡Perfecto!' : 'Lección terminada';
+  $('resEyebrow').textContent = read ? 'Lección leída' : mode === 'compare' ? 'Comparación' : stars === 0 ? 'Casi lo tienes' : stars === 3 ? '¡Perfecto!' : 'Lección terminada';
   $('resTitle').textContent = title;
-  $('resStars').innerHTML = [1, 2, 3].map(i => `<span class="${i <= stars ? 'on' : ''}">${icon('star')}</span>`).join('');
+  renderStars(stars, read);
   $('resText').textContent = stars === 0 ? `${text}. ${passText}` : text;
   $('resXp').textContent = xp > 0 ? `+${xp} puntos` : '';
   renderReview(params.review);
@@ -94,6 +98,24 @@ function enter(params) {
   $('resPrimary').textContent = action.label;
   $('resPrimary').onclick = action.run;
   $('resRetry').hidden = stars === 0 || mode === 'compare';
+}
+
+// Estrellas que entran una a una (css/motion.css); una ficha leída lleva un sello de «leída» en su lugar
+function renderStars(stars, read) {
+  const box = $('resStars');
+  box.classList.toggle('read', !!read);
+  if (read) {
+    box.innerHTML = `<span class="on read-seal">${icon('theory')}</span>`;
+    box.setAttribute('aria-label', 'Lección leída');
+  } else {
+    box.innerHTML = [1, 2, 3].map(i => `<span class="${i <= stars ? 'on' : ''}" style="--i:${i}">${icon('star')}</span>`).join('');
+    box.setAttribute('aria-label', `${stars} de 3 estrellas`);
+  }
+  box.setAttribute('role', 'img');
+  // reinicia la animación aunque se repita la misma pantalla
+  box.classList.remove('pop');
+  void box.offsetWidth;
+  box.classList.add('pop');
 }
 
 // Consejo para ti: si el detector ve un fallo de técnica que se repite (y no lo has visto estos días)

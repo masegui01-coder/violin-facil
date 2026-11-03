@@ -2,6 +2,7 @@
   "name": "Band Flow",
   "short_name": "Band Flow",
   "description": "Aprende y ensaya tu instrumento con una app que te escucha.",
+  "id": "./",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
@@ -13,13 +14,57 @@
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Afinador",
+      "short_name": "Afinador",
+      "description": "Abre el afinador directamente",
+      "url": "./?go=tuner",
+      "icons": [{ "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Metrónomo",
+      "short_name": "Metrónomo",
+      "description": "Abre el metrónomo directamente",
+      "url": "./?go=metro",
+      "icons": [{ "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "img/screenshots/aprender.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Aprender: tu siguiente lección y el camino del curso"
+    },
+    {
+      "src": "img/screenshots/leccion.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Una lección: la app te escucha y marca cada nota"
     }
   ],
   "orientation": "any",

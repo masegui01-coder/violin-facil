@@ -89,6 +89,8 @@ function render() {
   const len = Math.max(1, mixer.length());
   const sections = [...(song.sections || [])].sort((a, b) => a.at - b.at);
   const hasDemo = !!parts.demo;
+  // Las reglas solo dejan cambiar la maqueta a quien la subió, al autor de la canción o a quien creó el grupo
+  const canChangeDemo = !hasDemo || [parts.demo.by, song.createdBy, ctx.group.ownerUid].includes(myId());
   $('gsBody').innerHTML = `
     <div class="gs-where" aria-live="polite"><small>Ahora suena</small><b id="gsSection">—</b><p id="gsNotes" class="small"></p><small id="gsNext"></small></div>
     <div class="gs-timeline" id="gsTimeline" role="slider" aria-label="Posición en la canción" aria-valuemin="0" aria-valuemax="${Math.round(len)}" tabindex="0">
@@ -99,7 +101,7 @@ function render() {
       <button type="button" class="btn ghost small" id="gsStart">Al principio</button>
       <button type="button" class="btn ghost small" id="gsMark">Marcar parte aquí</button>
     </div>
-    ${takePanel(hasDemo)}
+    ${takePanel(hasDemo, canChangeDemo)}
     <h2>Pistas</h2>
     ${Object.keys(parts).length ? Object.entries(parts).sort(([a], [b]) => (a === 'demo' ? -1 : b === 'demo' ? 1 : 0)).map(([tid, p]) => trackRow(tid, p)).join('') : '<p class="empty">Todavía no hay pistas. Sube la maqueta o graba la primera parte.</p>'}
     <p class="muted small">Pon en «Solo» a quien quieras escuchar, o silencia tu instrumento para tocar encima de los demás como en un ensayo.</p>
@@ -109,7 +111,7 @@ function render() {
   bind();
 }
 
-function takePanel(hasDemo) {
+function takePanel(hasDemo, canChangeDemo) {
   if (!gaudio.recordingSupported()) return '<p class="warn small">Este navegador no permite grabar. Prueba con Chrome o Safari actualizados.</p>';
   if (take && take.phase === 'recording') {
     return `<div class="panel gs-rec"><b>● Grabando…</b><span class="muted small">Toca tu parte. Pulsa «Parar» al terminar (máximo 5 minutos).</span>
@@ -127,8 +129,8 @@ function takePanel(hasDemo) {
     <span class="muted small">${hasDemo ? 'Ponte auriculares (mejor con cable): oirás la cuenta previa y a los demás, y el micrófono solo te grabará a ti.' : 'Sube la grabación del ensayo o graba una versión sencilla (voz y guitarra, por ejemplo) para que el resto toque encima.'}</span>
     <div class="row">
       ${hasDemo ? '<button type="button" class="btn" id="gsRecord">Grabar mi parte</button>' : '<button type="button" class="btn" id="gsRecordDemo">Grabar la maqueta</button>'}
-      <label class="btn ghost small" for="gsFile">${hasDemo ? 'Cambiar la maqueta' : 'Subir un audio'}</label>
-      <input type="file" id="gsFile" accept="audio/*" hidden>
+      ${canChangeDemo ? `<label class="btn ghost small" for="gsFile">${hasDemo ? 'Cambiar la maqueta' : 'Subir un audio'}</label>
+      <input type="file" id="gsFile" accept="audio/*" hidden>` : ''}
     </div>
     ${getState().percLatency ? '' : '<p class="muted small">Consejo: en Estudio → «Calibrar el micrófono» mides el retraso de tu móvil y las tomas cuadrarán mejor.</p>'}</div>`;
 }

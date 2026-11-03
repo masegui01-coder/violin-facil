@@ -1,5 +1,6 @@
 // Navegación entre pantallas. Las pestañas muestran la barra superior y la inferior.
-import { $ } from './ui.js';
+import { $, toast } from './ui.js';
+import { stopMic, resumeMic } from './audio.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
 const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro'];
@@ -47,21 +48,71 @@ export function register(id, { enter, leave } = {}) {
   hooks[id] = { enter, leave };
 }
 
+// Pantallas que se descargan al abrirlas por primera vez (su módulo llama a register al cargarse)
+const loaders = {};
+export function lazy(id, load) {
+  if (!hooks[id]) loaders[id] = load;
+}
+
+// Pantallas que escuchan: al entrar se reabre el micrófono si ya se había concedido
+const MIC_SCREENS = new Set(['lesson', 'tuner', 'free', 'longtone', 'chord', 'chords', 'rhythm', 'groupsong']);
+
+// Transiciones: View Transitions si el navegador las tiene y no se pide reducir el movimiento.
+// El estado (pantalla actual, salida y micrófono) cambia al momento; solo el cambio visible va en la transición.
+let switchToken = 0;
+let switching = false;
+let pendingTransition = false;
+function canAnimate() {
+  if (typeof document === 'undefined' || typeof document.startViewTransition !== 'function') return false;
+  return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+// Sentido del movimiento: entrar en una pantalla de detalle avanza, volver a una pestaña retrocede
+function direction(prev, id) {
+  if (TABS.includes(id)) return TABS.includes(prev) ? 'tab' : 'back';
+  return 'forward';
+}
+
 export function go(id, params = {}) {
+  const load = !hooks[id] && loaders[id];
+  if (load) {
+    // Sin conexión y sin copia guardada no se cambia de pantalla: se avisa y se puede reintentar
+    load().then(() => { delete loaders[id]; go(id, params); }, () => toast('No se ha podido abrir. Revisa la conexión.'));
+    return;
+  }
+  const prev = current;
   if (current && hooks[current] && hooks[current].leave) hooks[current].leave();
+  if (prev !== id) stopMic();
+  current = id;
+  if (TABS.includes(id)) lastTab = id;
+  const token = ++switchToken;
+  const swap = () => {
+    if (token !== switchToken) return;
+    switching = true;
+    try { show(id, params); } finally { switching = false; }
+  };
+  if (prev && prev !== id && !switching && !pendingTransition && canAnimate()) {
+    document.documentElement.dataset.nav = direction(prev, id);
+    pendingTransition = true;
+    const t = document.startViewTransition(() => { pendingTransition = false; swap(); });
+    t.finished.catch(() => {}).then(() => { delete document.documentElement.dataset.nav; });
+    return;
+  }
+  swap();
+}
+
+function show(id, params) {
   SCREENS.forEach(s => { $(s).hidden = s !== id; });
   const isTab = TABS.includes(id);
   $('topbar').hidden = !isTab;
   $('tabbar').hidden = !isTab;
-  if (isTab) lastTab = id;
   document.querySelectorAll('[data-tab]').forEach(b => {
     if (b.dataset.tab === id) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
-  current = id;
   arm();
   window.scrollTo(0, 0);
   if (hooks[id] && hooks[id].enter) hooks[id].enter(params);
+  if (MIC_SCREENS.has(id)) resumeMic();
   announce(id);
   window.dispatchEvent(new CustomEvent('screen-change', { detail: { id } }));
 }

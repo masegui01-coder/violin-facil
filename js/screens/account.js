@@ -1,6 +1,6 @@
 // Acceso obligatorio en la beta. Quien llega nuevo crea su usuario antes de la bienvenida.
 // Quien ya usaba la app ve un aviso para crearlo sin perder su avance; durante una semana puede posponerlo.
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, icon } from '../ui.js';
 import { register, go, currentScreen, TABS } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, accountErrorText } from '../account.js';
@@ -13,6 +13,22 @@ let mode = 'signup';
 let syncing = false;
 
 const PRIVACY = 'Guardamos tu nombre, tu correo y tu progreso para que no lo pierdas al cambiar de móvil y para mejorar la beta. Puedes borrar tu cuenta cuando quieras desde Perfil.';
+const PRIVACY_LINK = '<a class="text-link" href="privacy.html" target="_blank" rel="noopener">Política de privacidad</a>';
+
+// Lo que hace la app, en tres puntos, para quien aún no la conoce
+const FEATURES = [
+  ['audition', 'Te escucha mientras tocas', 'Afinación y ritmo en vivo, nota a nota, con tu micrófono.'],
+  ['learn', 'Un curso a tu ritmo', 'Lecciones cortas, canciones de tu estilo y un libro con medallas.'],
+  ['band', 'Ensaya con tu banda', 'Tareas del director, grupos y grabaciones para tocar juntos.'],
+];
+
+function welcomeHtml(late) {
+  return `<div class="ac-brand"><img src="icons/icon-192.png" alt="" width="56" height="56"><p><span class="ac-name">Band Flow</span><span class="beta-pill">Beta</span></p></div>
+    <div class="ob-hero ac-hero"><h1>${late ? 'Crea tu usuario para seguir' : 'Aprende tu instrumento con una app que te escucha'}</h1>
+    <p class="muted">${late ? 'Tu progreso de este móvil se guardará en tu cuenta: no pierdes nada.' : 'Violín, viento, piano, guitarra, percusión y más.'}</p></div>
+    ${late ? '' : `<ul class="ac-features">${FEATURES.map(([ic, title, text]) => `<li><span class="ac-ic" aria-hidden="true">${icon(ic)}</span><span><b>${title}</b><small>${text}</small></span></li>`).join('')}</ul>`}
+    <div class="ac-why"><b>¿Por qué pedimos una cuenta?</b><p>Band Flow está en beta. Con tu cuenta tu progreso se guarda en la nube (no lo pierdes al cambiar de móvil) y el equipo sabe quién la está probando para pedirte opinión y arreglar lo que falle. No publicamos nada tuyo.</p></div>`;
+}
 
 function formHtml(prefix, intro) {
   const signup = mode === 'signup';
@@ -28,7 +44,8 @@ function formHtml(prefix, intro) {
     </form>
     <div class="row spread"><button type="button" class="text-link" id="${prefix}Mode">${signup ? 'Ya tengo cuenta' : 'Crear una cuenta nueva'}</button>
       ${signup ? '' : `<button type="button" class="text-link" id="${prefix}Reset">¿Has olvidado la contraseña?</button>`}</div>
-    <p class="muted small">${PRIVACY}</p>`;
+    <p class="muted small">${PRIVACY}</p>
+    ${PRIVACY_LINK}`;
 }
 
 function bindForm(prefix, rerender, done) {
@@ -85,8 +102,7 @@ async function beginSync(account) {
 // ---------- Pantalla obligatoria ----------
 function renderScreen() {
   const late = getState().onboarded;
-  $('accountBody').innerHTML = formHtml('ac', `<div class="ob-hero"><h1>${late ? 'Crea tu usuario para seguir' : 'Bienvenido a Band Flow'}</h1>
-    <p class="muted">${late ? 'Tu progreso de este móvil se guardará en tu cuenta: no pierdes nada.' : 'Crea tu usuario para guardar tu progreso. Así podrás seguir en cualquier móvil o tableta.'}</p></div>`);
+  $('accountBody').innerHTML = formHtml('ac', welcomeHtml(late));
   bindForm('ac', renderScreen, afterSignIn);
 }
 

@@ -3,13 +3,12 @@
 
 /* ---------- Tableta vertical y pantallas medianas (desde 700 px) ---------- */
 @media (min-width: 700px) {
-  html { font-size: 17px; }
+  html { font-size: 106.25%; }
   .shell { max-width: 860px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
   .screen { gap: 22px; }
 
   /* barra inferior: los botones juntos en el centro, no repartidos por toda la anchura */
   .tabbar { padding-left: max(8px, calc((100vw - 620px) / 2)); padding-right: max(8px, calc((100vw - 620px) / 2)); }
-  .tabbar button { font-size: .76rem; }
 
   /* rejillas con más columnas */
   .tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -44,16 +43,6 @@
   .shell { max-width: 1120px; padding-left: calc(var(--rail) + 40px); padding-right: 40px; }
   main { padding-bottom: 48px; }
 
-  .tabbar {
-    top: 0; right: auto; width: var(--rail); grid-template-columns: 1fr; grid-auto-rows: min-content; align-content: start; gap: 6px;
-    padding: 96px 10px 20px max(10px, env(safe-area-inset-left, 0px)); border-top: 0; border-right: 1.5px solid var(--line);
-  }
-  .tabbar button { padding: 12px 4px; font-size: .8rem; gap: 4px; }
-  .tabbar button .ic { width: 28px; height: 28px; }
-  .tabbar button[aria-current="page"] { background: var(--accent-soft); }
-  .toast { bottom: 28px; }
-  .consent { bottom: 24px; }
-
   /* sin menú (lecciones, bienvenida…): sin hueco a la izquierda */
   body:has(#tabbar[hidden]) .shell { padding-left: 40px; }
 
@@ -82,12 +71,29 @@
   .book-pages { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
-/* ---------- Móvil en horizontal (poca altura): más compacto para que quepa la partitura ---------- */
+/* ---------- Menú lateral (rail de Material 3): ordenador y móvil en horizontal ---------- */
+@media (min-width: 1024px), (orientation: landscape) and (max-height: 520px) {
+  .tabbar {
+    top: 0; right: auto; width: var(--rail); min-height: 0; grid-template-columns: 1fr; grid-auto-rows: min-content; align-content: start; gap: 12px;
+    padding: 96px 4px 20px max(4px, env(safe-area-inset-left, 0px)); border-top: 0; border-right: 1.5px solid var(--line);
+  }
+  .tabbar button { min-height: 56px; padding: 0; gap: 4px; }
+  .tabbar button .ic { width: 56px; height: 32px; padding: 4px 16px; }
+  .toast { bottom: 28px; }
+  .consent { bottom: 24px; left: calc(var(--rail) + 12px); }
+}
+
+/* ---------- Móvil en horizontal (poca altura): menú lateral y todo más compacto para que quepa la partitura ---------- */
 @media (orientation: landscape) and (max-height: 520px) {
-  :root { --tabbar-h: 50px; }
-  .tabbar { padding-top: 2px; padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)); }
-  .tabbar button { flex-direction: row; justify-content: center; gap: 6px; padding: 4px; }
-  .tabbar button .ic { width: 20px; height: 20px; }
+  :root { --rail: 80px; }
+  .shell { max-width: none; padding-left: calc(var(--rail) + max(16px, env(safe-area-inset-left, 0px))); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  body:has(#tabbar[hidden]) .shell { padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  main { padding-bottom: 24px; }
+  .tabbar { padding-top: 12px; gap: 4px; overflow-y: auto; }
+  .tabbar button { min-height: 52px; font-size: .7rem; }
+  .topbar { padding-block: 6px 0; }
+  .brand { font-size: 1.1rem; }
+  .brand-mark { font-size: 1.35rem; }
   .screen { gap: 12px; padding-block: 8px 4px; }
   /* lección: partitura y controles a la izquierda, la nota y el diagrama a la derecha (todo a la vista sin bajar) */
   .lesson-screen { display: grid; grid-template-columns: minmax(0, 1fr) 230px; column-gap: 14px; row-gap: 8px; align-content: start; }

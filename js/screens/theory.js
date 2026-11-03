@@ -4,6 +4,7 @@ import { isFretted } from '../chords.js';
 import { $, esc, icon } from '../ui.js';
 import { register, go, originTab } from '../router.js';
 import { renderDiagram } from '../keydiagram.js';
+import { COURSE_ART } from '../tips-art-violin.js';
 import { drawChord } from '../boards.js';
 import { chordText, lessonTitle } from '../course.js';
 import { resolveQuestion } from '../theory-pills.js';
@@ -30,8 +31,11 @@ function playQuestion(play) {
 
 function renderCard(card) {
   const { instrument, nom } = getState();
+  // Ilustración propia de la ficha (p. ej. el violín con sus cuatro cuerdas) en lugar del diagrama
+  const art = card.art && instrument === 'violin' ? COURSE_ART[card.art] : null;
   $('theoryCard').innerHTML = `<p class="eyebrow">${esc(ctx.eyebrow || lessonTitle(ctx.lesson))} · ${page + 1} de ${total()}</p>
-    <h1>${esc(chordText(card.title))}</h1><p>${esc(chordText(card.text))}</p>${card.board || card.chord ? `<svg class="board${card.chord && isFretted(instrument) ? ' chord-board' : ''}" id="theoryBoard" role="img" aria-label="Diagrama"></svg>` : ''}`;
+    <h1>${esc(chordText(card.title))}</h1><p>${esc(chordText(card.text))}</p>${art ? `<div class="theory-art" role="img" aria-label="${esc(chordText(card.title))}">${art(nom)}</div>` : card.board || card.chord ? `<svg class="board${card.chord && isFretted(instrument) ? ' chord-board' : ''}" id="theoryBoard" role="img" aria-label="Diagrama"></svg>` : ''}`;
+  if (art) return;
   if (card.chord) drawChord($('theoryBoard'), card.chord, instrument, nom);
   else if (card.board) renderDiagram($('theoryBoard'), instrument, card.board, nom);
 }

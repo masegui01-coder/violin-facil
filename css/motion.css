@@ -1,0 +1,100 @@
+/* Movimiento y retoques de Aprender: transiciones entre pantallas, nodo desbloqueado, estrellas del resultado,
+   bloque «Más» plegable y fondo tras el título de «continuar». Va la última: sobrescribe sin tocar las demás hojas.
+   Todo el movimiento se apaga con prefers-reduced-motion (al final). */
+
+/* ---------- Continuar: las líneas de pentagrama no cruzan el texto ---------- */
+/* Las líneas quedan a la derecha, junto a la nota, y el texto lleva detrás el color de la tarjeta (un «hueco»)
+   por si un título largo llega hasta ellas. Lo mismo en la cabecera de cada unidad. */
+.continue::before, .unit-banner::before { left: auto; width: 46%; }
+.continue-meta > div, .unit-banner > div {
+  position: relative; min-width: 0;
+  background: var(--unit, var(--accent));
+  box-shadow: 0 0 0 8px var(--unit, var(--accent));
+  border-radius: 6px;
+}
+.unit-banner > .unit-pct { position: relative; }
+/* Separación entre bloques de Aprender (el test de nivel, que antes iba en medio, ahora está en «Más») */
+#casualView > #todayCard { margin-top: 14px; }
+
+/* ---------- Aprender (Casual): «Más» plegado bajo el objetivo de hoy ---------- */
+.learn-more { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); margin: 10px 0 22px; }
+.learn-more > summary {
+  list-style: none; cursor: pointer; min-height: 48px; padding: 8px 14px; border-radius: var(--r);
+  display: flex; align-items: center; gap: 10px; font-weight: 800;
+}
+.learn-more > summary::-webkit-details-marker { display: none; }
+.learn-more > summary::after {
+  content: ""; margin-left: auto; flex: none; width: 9px; height: 9px;
+  border-right: 2.5px solid var(--muted); border-bottom: 2.5px solid var(--muted);
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform .2s ease;
+}
+.learn-more[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.learn-more > summary small { color: var(--muted); font-weight: 600; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.learn-more > summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.learn-more-body { display: flex; flex-direction: column; gap: 10px; padding: 0 12px 12px; }
+.learn-more-daily { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.learn-more-daily:empty, .learn-more-body > :empty { display: none; }
+.learn-more-daily > * {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--ink);
+}
+.learn-more-daily b { display: block; }
+.learn-more-daily small { color: var(--muted); font-size: .78rem; }
+.learn-more-daily > .today-link { justify-content: center; font-weight: 700; font-size: .88rem; color: var(--accent); padding: 8px; }
+.learn-more .today-friends { margin-top: 0; }
+.learn-more .placement-card { margin: 0; }
+@media (min-width: 900px) {
+  #casualView > .learn-more { grid-column: 2; }
+}
+
+/* Lección de lectura hecha: «Leída» en vez de estrellas */
+.read-tag { font-size: .74rem; font-weight: 800; color: var(--ok); letter-spacing: .02em; }
+
+/* Ficha de teoría con ilustración propia (el violín y sus cuatro cuerdas) */
+.theory-art { width: 100%; max-width: 300px; align-self: center; }
+.theory-art .tip-art { display: block; width: 100%; height: auto; }
+
+/* Resultado de una ficha leída: un sello en lugar de las tres estrellas */
+.big-stars.read .read-seal { width: 72px; height: 72px; color: var(--ok); }
+
+/* ---------- Transiciones entre pantallas (View Transitions) ---------- */
+#topbar { view-transition-name: topbar; }
+#tabbar { view-transition-name: tabbar; }
+::view-transition-old(root) { animation: vt-fade-out .16s ease-in both; }
+::view-transition-new(root) { animation: vt-fade-in .22s ease-out both; }
+:root[data-nav="forward"]::view-transition-new(root) { animation: vt-in-right .26s cubic-bezier(.2, .8, .2, 1) both; }
+:root[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .26s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes vt-in-right { from { opacity: 0; transform: translateX(28px); } }
+@keyframes vt-in-left { from { opacity: 0; transform: translateX(-28px); } }
+
+/* ---------- Nodo recién desbloqueado en el camino ---------- */
+.node.just-unlocked .bubble { animation: unlock-pop .7s cubic-bezier(.3, 1.6, .5, 1) both, pulse 1.8s ease-in-out .8s infinite; }
+.node.just-unlocked .bubble::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 3px solid var(--unit);
+  animation: unlock-ring .9s ease-out .15s both; pointer-events: none;
+}
+@keyframes unlock-pop {
+  0% { transform: scale(.6) rotate(-12deg); filter: grayscale(1); }
+  60% { transform: scale(1.15) rotate(4deg); filter: none; }
+  100% { transform: scale(1); }
+}
+@keyframes unlock-ring { from { transform: scale(.8); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+
+/* ---------- Estrellas del resultado: entran una a una ---------- */
+.big-stars.pop span { animation: star-in .55s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: calc((var(--i, 1) - 1) * .18s); }
+.big-stars.pop span:not(.on) { animation-name: star-dim; }
+@keyframes star-in {
+  0% { transform: scale(.2) rotate(-40deg); opacity: 0; }
+  70% { transform: scale(1.2) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes star-dim { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- Sin movimiento si se pide ---------- */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  .node.just-unlocked .bubble, .node.just-unlocked .bubble::after, .big-stars span, .big-stars.pop span { animation: none !important; }
+  .learn-more > summary::after { transition: none; }
+}

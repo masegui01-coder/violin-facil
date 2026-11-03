@@ -14,7 +14,8 @@ const SCHED_MS = 25;
 const CHORD_FFT = 16384;       // resolución fina para separar notas graves de guitarra y piano
 const CHORD_SMOOTHING = 0.5;
 
-const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600, timbre: null };
+const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600, timbre: null,
+  stream: null, source: null, chordAnalyser: null, spectrum: null, wanted: false, opening: null, micGen: 0 };
 
 // Instrumento activo: registro del detector y transposición (las notas que entran y salen son ESCRITAS)
 export function setInstrument(inst) {
@@ -30,24 +31,49 @@ export function ctx() {
   return state.ctx;
 }
 
-export function micReady() { return !!state.analyser; }
+// El micrófono se suelta al salir de la pantalla o al ocultar la app; «wanted» recuerda que ya se concedió
+// para volver a abrirlo solo (sin la puerta de «Activar micrófono») la próxima vez que haga falta.
+export function micReady() { return !!state.analyser || !!state.wanted; }
 export function micStream() { return state.stream || null; }
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') stopMic();
     if (!state.ctx) return;
     if (document.visibilityState === 'hidden') state.ctx.suspend().catch(() => {});
     else state.ctx.resume().catch(() => {});
   });
 }
 
-export async function startMic() {
-  if (state.analyser) return;
+const MIC_CONSTRAINTS = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } };
+
+export function startMic() {
+  if (state.analyser) return Promise.resolve();
+  if (!state.opening) {
+    state.opening = openMic().finally(() => { state.opening = null; });
+  }
+  return state.opening;
+}
+
+async function openMic() {
   const c = ctx();
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('Este navegador no permite usar el micrófono. Prueba con Chrome o Safari actualizados.');
   }
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  const gen = state.micGen;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
+  } catch (err) {
+    state.wanted = false;
+    throw err;
+  }
+  state.wanted = true;
+  // Se salió de la pantalla mientras se abría: no lo dejamos encendido
+  if (gen !== state.micGen) {
+    stream.getTracks().forEach(t => t.stop());
+    throw Object.assign(new Error('Micrófono cerrado'), { name: 'AbortError' });
+  }
   const analyser = c.createAnalyser();
   analyser.fftSize = 2048;
   const source = c.createMediaStreamSource(stream);
@@ -56,11 +82,35 @@ export async function startMic() {
   chordAnalyser.fftSize = CHORD_FFT;
   chordAnalyser.smoothingTimeConstant = CHORD_SMOOTHING;
   source.connect(chordAnalyser);
+  state.source = source;
   state.chordAnalyser = chordAnalyser;
   state.spectrum = new Float32Array(chordAnalyser.frequencyBinCount);
   state.stream = stream;
   state.analyser = analyser;
   state.buf = new Float32Array(analyser.fftSize);
+}
+
+// Vuelve a abrir el micrófono si ya se había concedido (al entrar en una pantalla que escucha)
+export function resumeMic() {
+  if (!state.wanted || state.analyser) return;
+  startMic().catch(() => {});
+}
+
+// Suelta el micrófono: para las pistas (se apaga el indicador del sistema) y desconecta los analizadores.
+// El AudioContext sigue vivo: las notas de referencia y el metrónomo usan el mismo.
+export function stopMic() {
+  state.micGen += 1;
+  stopOnsetCapture();
+  pendingRecord = false;
+  [state.source, state.analyser, state.chordAnalyser].forEach(node => {
+    if (node) { try { node.disconnect(); } catch (e) { /* ya desconectado */ } }
+  });
+  if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+  state.source = null;
+  state.analyser = null;
+  state.chordAnalyser = null;
+  state.stream = null;
+  state.recent = [];
 }
 
 export function micErrorText(err) {
@@ -73,7 +123,7 @@ export function micErrorText(err) {
 
 // Lectura del tono actual: null si la app está sonando; {freq:null} si hay silencio
 export function readPitch() {
-  if (!state.analyser) return null;
+  if (!state.analyser) { resumeMic(); return null; }
   if (performance.now() < state.muteUntil) { state.recent = []; return null; }
   state.analyser.getFloatTimeDomainData(state.buf);
   const level = rms(state.buf);
@@ -89,7 +139,8 @@ export function readPitch() {
 
 // Cromagrama actual (12 valores) para reconocer acordes; null si la app está sonando
 export function readChroma() {
-  if (!state.chordAnalyser || performance.now() < state.muteUntil) return null;
+  if (!state.chordAnalyser) { resumeMic(); return null; }
+  if (performance.now() < state.muteUntil) return null;
   state.analyser.getFloatTimeDomainData(state.buf);
   const level = rms(state.buf);
   if (level < MIN_RMS) return { chroma: null, level };
@@ -239,9 +290,20 @@ const CAPTURE_BUFFER = 1024;
 let capture = null;
 
 // Escucha golpes en el micrófono y llama a onHits([{time, strength}]) con tiempos del reloj de audio
+// Si el micrófono se soltó al cambiar de pantalla, se vuelve a abrir y la escucha empieza en cuanto llega.
+let pendingCapture = null;
 export function startOnsetCapture(onHits) {
-  if (!state.stream) return false;
   stopOnsetCapture();
+  if (state.stream) { attachCapture(onHits); return true; }
+  if (!state.wanted) return false;
+  pendingCapture = onHits;
+  startMic().then(() => {
+    if (pendingCapture === onHits) { pendingCapture = null; attachCapture(onHits); }
+  }).catch(() => { if (pendingCapture === onHits) pendingCapture = null; });
+  return true;
+}
+
+function attachCapture(onHits) {
   const c = ctx();
   const src = c.createMediaStreamSource(state.stream);
   const proc = c.createScriptProcessor(CAPTURE_BUFFER, 1, 1);
@@ -256,10 +318,10 @@ export function startOnsetCapture(onHits) {
   src.connect(proc);
   proc.connect(sink).connect(c.destination);
   capture = { src, proc, sink };
-  return true;
 }
 
 export function stopOnsetCapture() {
+  pendingCapture = null;
   if (!capture) return;
   capture.proc.onaudioprocess = null;
   capture.src.disconnect();
@@ -351,10 +413,19 @@ export function playAccompaniment(parts, t0, spb) {
 // ---------- Grabación de la toma ----------
 let recorder = null;
 let chunks = [];
+let pendingRecord = false;
 
 export function startRecording() {
   stopRecording();
-  if (!state.stream || typeof MediaRecorder === 'undefined') return;
+  if (typeof MediaRecorder === 'undefined') return;
+  if (state.stream) { beginRecording(); return; }
+  if (!state.wanted) return;
+  // El micrófono se está volviendo a abrir: la toma empieza en cuanto esté listo
+  pendingRecord = true;
+  startMic().then(() => { if (pendingRecord) { pendingRecord = false; beginRecording(); } }).catch(() => { pendingRecord = false; });
+}
+
+function beginRecording() {
   try {
     chunks = [];
     recorder = new MediaRecorder(state.stream);
@@ -365,6 +436,7 @@ export function startRecording() {
 
 // Para la grabación y devuelve una promesa con {url, blob} del audio (o null si no había)
 export function stopRecording() {
+  pendingRecord = false;
   if (!recorder || recorder.state === 'inactive') { recorder = null; return Promise.resolve(null); }
   const rec = recorder;
   recorder = null;

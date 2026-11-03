@@ -15,6 +15,7 @@ import { MAX_LEVEL, LEVELS, FAMILIES, FAMILY_IDS, METERS, KEYS, generateReading,
 import * as audio from '../audio.js';
 import { scoresPdf, sharePdf, downloadPdf, openPdf } from '../pdf-export.js';
 import { L } from '../tips-l10n.js';
+import { canUseRhythmBook } from './rhythm-book-tool.js';
 
 // Textos de la pantalla con su traducción
 [
@@ -87,7 +88,6 @@ const DEFAULTS = { bars: 16, meter: 'var', bpm: 72, level: 3, key: 'random', sca
 let preview = null; // { song, seed }
 let stopListen = null;
 
-export const canUseRhythmBook = () => !!(getState().proTester || getState().adminUser);
 const inst = () => instrumentById(getState().instrument);
 // Opciones guardadas (las de la versión anterior tenían dificultad 1-5: se pasa a nivel)
 function opts() {
@@ -279,10 +279,3 @@ $('rbBody').addEventListener('click', e => {
     t.textContent = 'Parar';
   }
 });
-
-// Botón en Estudio, solo para quien puede usarlo
-export function refreshRhythmBookTool() {
-  const tool = $('toolRhythmBook');
-  if (tool) tool.hidden = !canUseRhythmBook();
-}
-$('toolRhythmBook').addEventListener('click', () => go('rhythmbook'));

@@ -1,6 +1,6 @@
 // Arranque de la app: iconos, barra superior, pestañas y comentarios.
 import { $, icon, toast } from './ui.js';
-import { go, currentScreen } from './router.js';
+import { go, lazy, currentScreen, TABS } from './router.js';
 import { getState, subscribe, currentStreak, update } from './store.js';
 import { TRACKED_SCREENS } from './test-coverage.js';
 import { setInstrument } from './audio.js';
@@ -24,24 +24,34 @@ import './screens/chord.js';
 import './screens/chords.js';
 import './screens/gym.js';
 import './screens/study.js';
-import './screens/band.js';
 import './screens/social.js';
 import './screens/rhythm.js';
 import './screens/perc-tools.js';
 import './growth.js';
 import { accountGate } from './screens/account.js';
 import './screens/friends.js';
-import './screens/group-song.js';
-import './screens/metrics.js';
 import { onAccount, currentAccount } from './account.js';
-import { isProTesterEmail, isAdminEmail, accountEmails } from './metrics.js';
+import { BETA_ALL_TESTERS, hasFullContent } from './metrics.js';
 import { isProTesterUid } from './roles-api.js';
+import { isAdmin } from './sync.js';
 import { setLang, defaultLang } from './i18n.js';
-import { refreshRhythmBookTool } from './screens/rhythm-book.js';
-import './screens/book-page.js';
-import './screens/tips.js';
+import { refreshRhythmBookTool } from './screens/rhythm-book-tool.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
+import { registerServiceWorker } from './sw-update.js';
+
+// Pantallas pesadas o poco usadas: se descargan al abrirlas por primera vez
+lazy('band', () => import('./screens/band.js'));
+lazy('groupsong', () => import('./screens/group-song.js'));
+lazy('metrics', () => import('./screens/metrics.js'));
+lazy('rhythmbook', () => import('./screens/rhythm-book.js'));
+lazy('bookpage', () => import('./screens/book-page.js'));
+lazy('tips', () => import('./screens/tips.js'));
+lazy('pro', () => import('./screens/pro.js'));
+// Los enlaces de invitación y el de métricas se atienden al arrancar, como antes
+const launchParams = new URLSearchParams(location.search);
+if (['banda', 'grupo', 'escuela'].some(k => launchParams.has(k))) import('./screens/band.js');
+if (launchParams.get('panel') === 'metricas') import('./screens/metrics.js');
 
 function hydrateIcons(root = document) {
   root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
@@ -68,12 +78,12 @@ function renderTopbar(s) {
 hydrateIcons();
 if (!getState().lang) update({ lang: defaultLang(), ...(defaultLang() === 'en' && !getState().onboarded ? { nom: 'us' } : {}) });
 setLang(getState().lang);
-// Tester pro: todo el contenido abierto mientras esté su cuenta en este móvil
-// (por la lista de correos de metrics.js o porque el administrador le ha dado el rol en el panel de testers)
+// Tester: todo el contenido abierto mientras esté su cuenta en este móvil (en la beta, cualquier cuenta: BETA_ALL_TESTERS).
+// El administrador lo dice el servidor (admins/{uid} o las reglas), nunca una lista de correos en el cliente.
 const applyRole = async acc => {
-  const emails = accountEmails(acc);
-  const admin = emails.some(isAdminEmail);
-  const pro = emails.some(isProTesterEmail) || (!!acc && !admin && await isProTesterUid(acc.uid));
+  const admin = !!acc && await isAdmin(acc.uid);
+  const proRole = !!acc && !BETA_ALL_TESTERS && !admin && await isProTesterUid(acc.uid);
+  const pro = hasFullContent({ signedIn: !!acc, admin, proRole });
   if (acc !== currentAccount()) return; // cambió la cuenta mientras se comprobaba
   if (pro !== !!getState().proTester || admin !== !!getState().adminUser) update({ proTester: pro, adminUser: admin });
   refreshRhythmBookTool();
@@ -105,6 +115,8 @@ document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', 
 const refreshScreen = () => go(currentScreen());
 $('instChip').addEventListener('click', () => openInstrumentPicker({ onPicked: refreshScreen }));
 window.addEventListener('pick-instrument', () => openInstrumentPicker({ onPicked: refreshScreen }));
+// Llegó el contenido en inglés de cursos y libros: se vuelve a pintar lo que ya estaba en pantalla
+window.addEventListener('lang-content-ready', () => { if (TABS.includes(currentScreen())) refreshScreen(); });
 
 // ---------- Comentarios ----------
 function feedbackText() {
@@ -131,7 +143,12 @@ const maybeTour = () => { if (!getState().tourDone) startTour(); };
 window.addEventListener('onboarding-done', maybeTour);
 $('replayTour').addEventListener('click', startTour);
 
+// Accesos directos del icono instalado (manifest «shortcuts»): ?go=tuner o ?go=metro
+const SHORTCUT_SCREENS = ['tuner', 'metro'];
+const shortcut = SHORTCUT_SCREENS.includes(launchParams.get('go')) ? launchParams.get('go') : null;
+
 function startApp() {
+  if (shortcut && getState().onboarded && getState().instrumentChosen) { go(shortcut); return; }
   go(getState().onboarded ? 'learn' : 'onboarding');
   // Quien ya usaba la app (solo violín) elige ahora su instrumento una vez y después ve el tutorial
   if (getState().onboarded && !getState().instrumentChosen) {
@@ -155,5 +172,5 @@ if (cloudConfigured() && !getState().onboarded) {
 accountGate();
 initAnalytics();
 
-// App instalable (icono en la pantalla de inicio)
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// App instalable (icono en la pantalla de inicio) y aviso cuando hay una versión nueva
+registerServiceWorker();

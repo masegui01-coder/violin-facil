@@ -1,4 +1,5 @@
-// Testers pro dados de alta por el administrador (roles/{uid}), además de la lista fija de correos de metrics.js.
+// Testers pro dados de alta por el administrador (roles/{uid}). Mientras BETA_ALL_TESTERS (metrics.js) esté activo,
+// cualquier cuenta ve todo y este rol solo queda guardado para cuando se cierre el contenido.
 import { getCloud } from './cloud.js';
 
 export async function isProTesterUid(uid) {

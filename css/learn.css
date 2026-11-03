@@ -1,0 +1,52 @@
+/* Aprender: tarjeta de continuar y mapa del curso. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
+
+/* Tarjeta de continuar */
+.continue {
+  border-radius: 22px; padding: 18px; color: var(--on-color); display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden;
+  background: var(--unit, var(--accent));
+}
+.continue::before, .unit-banner::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .18;
+  background: repeating-linear-gradient(180deg, transparent 0 13px, #fff 13px 14.5px) 0 18px / 100% 74px no-repeat;
+}
+.continue .eyebrow { color: inherit; opacity: .85; }
+.level-progress { height: 8px; border-radius: 99px; background: rgba(255,255,255,.3); overflow: hidden; position: relative; }
+.level-progress span { display: block; height: 100%; border-radius: inherit; background: currentColor; transition: width .4s ease; }
+.continue .level-progress + p { margin: -4px 0 0; opacity: .85; color: inherit; }
+.continue h2 { font-size: 1.5rem; }
+.continue .btn { background: var(--surface); color: var(--ink); box-shadow: 0 3px 0 rgba(0,0,0,.25); align-self: flex-start; }
+.continue-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; position: relative; }
+.continue-note { font-family: var(--f-music); font-size: 3.6rem; line-height: .8; opacity: .9; }
+
+/* Mapa del curso */
+.course { display: flex; flex-direction: column; gap: 26px; }
+.unit { display: flex; flex-direction: column; gap: 14px; }
+.unit-banner { position: relative; overflow: hidden; border-radius: var(--r); padding: 14px 16px; color: var(--on-color); background: var(--unit); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.unit-banner h2 { font-size: 1.2rem; }
+.unit-banner p { font-size: .88rem; opacity: .9; }
+.unit-banner .eyebrow { color: inherit; opacity: .8; }
+.unit-pct { font-weight: 800; font-variant-numeric: tabular-nums; background: rgba(255,255,255,.2); border-radius: 999px; padding: 4px 10px; font-size: .85rem; white-space: nowrap; }
+.path { display: flex; flex-direction: column; gap: 6px; padding-inline: 4px; }
+.node { display: flex; align-items: center; gap: 14px; border: 0; background: transparent; text-align: left; padding: 4px 0; width: 100%; }
+.node:nth-child(4n+2) { padding-left: 34px; }
+.node:nth-child(4n+3) { padding-left: 62px; }
+.node:nth-child(4n+4) { padding-left: 34px; }
+.bubble {
+  width: 62px; height: 62px; border-radius: 50%; flex: none; display: grid; place-items: center; position: relative;
+  background: var(--unit); color: var(--on-color); box-shadow: 0 5px 0 color-mix(in srgb, var(--unit) 55%, #000);
+}
+.bubble .ic { width: 28px; height: 28px; }
+.node.locked .bubble { background: var(--line); color: var(--muted); box-shadow: 0 5px 0 color-mix(in srgb, var(--line) 70%, #000); }
+.node.done .bubble { background: var(--surface); color: var(--unit); border: 3px solid var(--unit); box-shadow: 0 5px 0 color-mix(in srgb, var(--unit) 35%, var(--line)); }
+.node.current .bubble { animation: pulse 1.8s ease-in-out infinite; }
+.node.slot:not(.locked) .bubble { background: var(--slot, var(--unit)); }
+.node.slot.done .bubble { background: var(--surface); color: var(--slot); border-color: var(--slot); }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+.node-text { min-width: 0; display: flex; flex-direction: column; }
+.node-text b { font-weight: 700; line-height: 1.25; }
+.node-text small { color: var(--muted); font-size: .82rem; }
+.node.locked .node-text b { color: var(--muted); }
+.tag { display: inline-block; font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-radius: 6px; padding: 1px 6px; margin-right: 4px; vertical-align: 1px; color: var(--on-color); background: var(--slot, var(--accent)); }
+.stars { color: var(--line); letter-spacing: 1px; font-size: .9rem; white-space: nowrap; }
+.stars i { font-style: normal; }
+.stars i.on { color: var(--gold); }
