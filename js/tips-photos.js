@@ -5,7 +5,7 @@ import { L } from './tips-l10n.js';
 
 // art → { paso (0, 1, 2): { src, marks } }. Se rellena según llegan las imágenes (tools/foto-consejo.py).
 export const PHOTOS = {
-  'brass-buzz': { 0: { src: 'img/consejos/fotos/brass-buzz-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-buzz-3.webp', marks: [] } },
+  'brass-buzz': { 0: { src: 'img/consejos/fotos/brass-buzz-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/brass-buzz-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-buzz-3.webp', marks: [] } },
   'brass-placement': { 0: { src: 'img/consejos/fotos/brass-placement-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-placement-3.webp', marks: [] } },
   'brass-posture': { 0: { src: 'img/consejos/fotos/brass-posture-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/brass-posture-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/brass-posture-3.webp', marks: [] } },
   'breath': { 1: { src: 'img/consejos/fotos/breath-2.webp', marks: [] } },
@@ -31,7 +31,7 @@ export const PHOTOS = {
   'recorder-holes': { 0: { src: 'img/consejos/fotos/recorder-holes-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/recorder-holes-2.webp', marks: [] } },
   'sax-neck': { 0: { src: 'img/consejos/fotos/sax-neck-1.webp', marks: [] } },
   'sax-posture': { 0: { src: 'img/consejos/fotos/sax-posture-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/sax-posture-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/sax-posture-3.webp', marks: [] } },
-  'stick-grip': { 2: { src: 'img/consejos/fotos/stick-grip-3.webp', marks: [] } },
+  'stick-grip': { 0: { src: 'img/consejos/fotos/stick-grip-1.webp', marks: [] }, 2: { src: 'img/consejos/fotos/stick-grip-3.webp', marks: [] } },
   'trombone-slide': { 0: { src: 'img/consejos/fotos/trombone-slide-1.webp', marks: [] } },
   'uke-hold': { 0: { src: 'img/consejos/fotos/uke-hold-1.webp', marks: [] }, 1: { src: 'img/consejos/fotos/uke-hold-2.webp', marks: [] }, 2: { src: 'img/consejos/fotos/uke-hold-3.webp', marks: [] } },
   'violin-bow': { 0: { src: 'img/consejos/fotos/violin-bow-1.webp', marks: [] } },
