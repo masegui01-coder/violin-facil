@@ -1,6 +1,11 @@
 // Traducción al inglés de la interfaz (fase 1). Clave: el texto en español tal cual aparece en pantalla.
 // El contenido de los cursos y libros (teoría, títulos de lecciones) sigue en español por ahora.
+// Los avisos y errores viven en i18n-en-messages.js; la lección, el afinador y Perfil, en i18n-en-practice.js.
+import { MESSAGES_EXACT, messagePatterns } from './i18n-en-messages.js';
+import { PRACTICE_EXACT, practicePatterns } from './i18n-en-practice.js';
+
 export const EXACT = {
+  ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
   'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
   'Fila de atrás, antes de la lámina 1 (xilófono grande)': 'Back row, before bar 1 (big xylophone)',
   // ---------- Barra y pestañas ----------
@@ -39,7 +44,7 @@ export const EXACT = {
   'Importa un archivo MusicXML (.musicxml, .xml o .mxl) desde MuseScore u otro programa.': 'Import a MusicXML file (.musicxml, .xml or .mxl) from MuseScore or another program.',
   '¿Cómo consigo una?': 'How do I get one?', 'Tu cancionero': 'Your songbook', 'Ver cómo conseguir un MusicXML': 'See how to get a MusicXML file',
   'Aprende tu primer acorde en la pestaña Aprender.': 'Learn your first chord in the Learn tab.',
-  'No has elegido estilos todavía. Elígelos en tu perfil o mira «Todas».': "You haven't chosen styles yet. Pick them in your profile or see «All».",
+  'No has elegido estilos todavía. Elígelos en tu perfil o mira «Todas».': "You haven't chosen styles yet. Pick them in your profile or see “All”.",
   'Clásica': 'Classical', 'Folk': 'Folk', 'Jazz': 'Jazz', 'Rock': 'Rock', 'Navidad': 'Christmas', 'Populares': 'Popular', 'Flamenco': 'Flamenco', 'Mis partituras': 'My scores',
   // ---------- Estudio ----------
   'Herramientas para mejorar cada día, también si ya tienes nivel.': 'Tools to improve every day, even if you already play well.',
@@ -114,7 +119,7 @@ export const EXACT = {
   'Necesitas acertar al menos la mitad para ganar una estrella.': 'You need at least half right to earn a star.',
   // ---------- Banda, grupos y escuela ----------
   'Mi banda': 'My band', 'Mis grupos': 'My groups', 'Escuela': 'School', 'Banda, grupos o escuela': 'Band, groups or school',
-  '«Mi banda», «Grupos» y «Escuela» están en pruebas: puede haber fallos y seguimos añadiendo cosas. Cuéntanos qué echas en falta desde Perfil.': '«My band», «Groups» and «School» are in testing: there may be bugs and we keep adding things. Tell us what you miss from Profile.',
+  '«Mi banda», «Grupos» y «Escuela» están en pruebas: puede haber fallos y seguimos añadiendo cosas. Cuéntanos qué echas en falta desde Perfil.': '“My band”, “Groups” and “School” are in testing: there may be bugs and we keep adding things. Tell us what you miss from Profile.',
   'Soy músico': "I'm a musician", 'Soy director': "I'm the conductor", 'Soy alumno': "I'm a student", 'Soy profesor': "I'm a teacher",
   'Código de la banda': 'Band code', 'Tu nombre o apodo': 'Your name or nickname', 'Instrumento': 'Instrument', 'Unirme': 'Join',
   'Nombre de la banda': 'Band name', 'Tu nombre': 'Your name', 'Crear banda': 'Create band', 'Salir de la banda': 'Leave the band',
@@ -134,9 +139,12 @@ export const EXACT = {
   'Tu perfil': 'Your profile', 'Tu progreso': 'Your progress', 'Esta semana': 'This week', 'Informe semanal': 'Weekly report', 'Nivel': 'Level',
   'El curso, las digitaciones y el detector se adaptan. Tu progreso se guarda por instrumento.': 'The course, fingerings and detector adapt. Your progress is saved per instrument.',
   'Muchas bandas y orquestas afinan a 442.': 'Many bands and orchestras tune to 442.', 'Hacer el test de nivel de este instrumento': 'Take the level test for this instrument',
-  'Las lecciones «Tu música» del curso usan canciones de estos estilos. Cámbialos cuando quieras.': 'The «Your music» lessons use songs in these styles. Change them whenever you like.',
+  'Las lecciones «Tu música» del curso usan canciones de estos estilos. Cámbialos cuando quieras.': 'The “Your music” lessons use songs in these styles. Change them whenever you like.',
   'Objetivo e insignias': 'Goal and badges', 'Minutos de práctica al día': 'Practice minutes per day',
   'Cada 7 días seguidos ganas un protector de racha (máximo 2): si un día no practicas, se gasta y tu racha sigue.': 'Every 7 days in a row you earn a streak shield (2 at most): if you skip a day, it is used up and your streak survives.',
+  // ---------- Ajustes ----------
+  'Idioma, apariencia, privacidad y tu cuenta': 'Language, appearance, privacy and your account', '¿Borrar tu cuenta?': 'Delete your account?',
+  'Se borrarán para siempre tu usuario, tu progreso guardado en la nube y lo que hayas compartido. No se puede deshacer.': 'Your user, your progress saved in the cloud and anything you have shared will be deleted forever. This cannot be undone.',
   'Ajustes': 'Settings', 'Nombre de las notas': 'Note names', 'Do · Re · Mi': 'Do · Re · Mi', 'G3 · A4 · E5': 'G3 · A4 · E5',
   'Exigencia de afinación': 'Tuning strictness', 'Fácil': 'Easy', 'Normal': 'Normal', 'Exigente': 'Strict',
   'Clic del metrónomo al tocar a tempo': 'Metronome click when playing in time',
@@ -242,7 +250,7 @@ export const EXACT = {
   'Cuenta los cambios en voz alta. Cada día que repites, la cifra sube: es la mejor prueba de que avanzas.': 'Count the changes out loud. Every day you repeat it the number goes up: the best proof that you are improving.',
   'Escucha primero el ritmo, luego toca solo el primer pulso de cada compás y, cuando salga, el rasgueo completo.': 'Listen to the rhythm first, then play only the first beat of each bar and, when that works, the full strum.',
   'Pon los dedos sin prisa, rasguea y deja sonar. Si una cuerda no suena, apoya la yema justo detrás del traste.': "Place your fingers without rushing, strum and let it ring. If a string doesn't sound, put your fingertip just behind the fret.",
-  'Cuenta en voz alta «1, 2, 3, 4» antes de empezar y mantén el pulso aunque falles un golpe.': 'Count out loud «1, 2, 3, 4» before starting and keep the pulse even if you miss a stroke.',
+  'Cuenta en voz alta «1, 2, 3, 4» antes de empezar y mantén el pulso aunque falles un golpe.': 'Count out loud “1, 2, 3, 4” before starting and keep the pulse even if you miss a stroke.',
   'Primero nota a nota: la app espera a que cada nota suene bien. Cuando salga sin fallos, pásate a tempo.': 'First note by note: the app waits for each note to sound right. When it goes without mistakes, switch to timed mode.',
   'Escúchala con la banda antes de tocar. Empieza al 60 % y sube la velocidad cuando salga limpia.': 'Listen to it with the band before playing. Start at 60 % and raise the speed when it comes out clean.',
   'Notas nuevas:': 'New notes:', 'Acordes nuevos:': 'New chords:', 'Teoría con preguntas': 'Theory with questions',
@@ -285,7 +293,7 @@ export const EXACT = {
   'Teórico': 'Theorist', '8 píldoras de teoría': '8 theory bites', 'Pasaje dominado': 'Passage mastered', 'Un pasaje al 100 % del tempo': 'A passage at 100 % tempo',
   'Multiinstrumentista': 'Multi-instrumentalist', 'Lecciones con dos instrumentos': 'Lessons on two instruments',
   'Píldora de teoría · 1 min': 'Theory bite · 1 min', ', siguiente lección': ', next lesson', ', bloqueada': ', locked', ', hecha': ', done',
-  'días seguidos': 'days in a row', 'Tu estilo (temas que has ganado)': 'Your style (themes you have won)', 'Original de Violin Flow': 'Band Flow original',
+  'días seguidos': 'days in a row', 'Tu estilo (temas que has ganado)': 'Your style (themes you have won)', 'Original de Band Flow': 'Band Flow original', 'Original de Violin Flow': 'Band Flow original', // las tareas antiguas guardan la marca anterior
   'Para escuelas de música y conservatorios: cada alumno tiene el libro de su curso y lo completa jugando; el profesor ve el progreso de todos y los pasa de curso cada año.': "For music schools and conservatoires: each student gets the book for their year and completes it as a game; the teacher sees everyone's progress and moves them up each year.",
   'Tu profesor verá tu progreso en el libro de tu curso.': "Your teacher will see your progress in your year's book.",
   // Canciones conocidas con nombre en inglés
@@ -342,6 +350,9 @@ const tr = text => (deep ? deep(text) : text);
 
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
+  // Avisos, errores y pistas de práctica: van delante de los patrones genéricos («… · 3 de 5», glosario)
+  ...messagePatterns({ tr }),
+  ...practicePatterns({ tr, noteEn, notesEn }),
   // Fila de días de la semana (tarjeta Hoy)
   [/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo)(, hoy)?, (practicado|sin práctica)$/, (m, d, hoy, p) => `${({ lunes: 'Monday', martes: 'Tuesday', miércoles: 'Wednesday', jueves: 'Thursday', viernes: 'Friday', sábado: 'Saturday', domingo: 'Sunday' })[d]}${hoy ? ', today' : ''}, ${p === 'practicado' ? 'practised' : 'no practice'}`],
   [/^(\d) de 5 días esta semana$/, (m, n) => `${n} of 5 days this week`],
@@ -434,7 +445,7 @@ export const PATTERNS = [
   [new RegExp(`^${KEY_RE} · (\\d)/4 · dificultad (\\d)( · tempo (\\d+))?$`), (m, n, mode, t, d, tp, bpm) => `${keyEn(n, mode)} · ${t}/4 · difficulty ${d}${tp ? ` · tempo ${bpm}` : ''}`],
   [/^(\d+) puntos para (.+)$/, (m, n, lvl) => `${n} points to ${lvl}`],
   [/^(Afinación|Técnica|Lectura|Ritmo|Acordes) (\d+)$/, (m, k, n) => `${({ Afinación: 'Tuning', Técnica: 'Technique', Lectura: 'Reading', Ritmo: 'Rhythm', Acordes: 'Chords' })[k]} ${n}`],
-  [/^(.+) · (Clásica|Folk y country|Jazz y blues|Rock y pop|Navidad|Populares|Mis partituras|Flamenco)$/, (m, by, st) => `${by === 'Original de Violin Flow' ? 'Band Flow original' : tr(by)} · ${({ Clásica: 'Classical', 'Folk y country': 'Folk and country', 'Jazz y blues': 'Jazz and blues', 'Rock y pop': 'Rock and pop', Navidad: 'Christmas', Populares: 'Popular', 'Mis partituras': 'My scores', Flamenco: 'Flamenco' })[st]}`],
+  [/^(.+) · (Clásica|Folk y country|Jazz y blues|Rock y pop|Navidad|Populares|Mis partituras|Flamenco)$/, (m, by, st) => `${tr(by)} · ${({ Clásica: 'Classical', 'Folk y country': 'Folk and country', 'Jazz y blues': 'Jazz and blues', 'Rock y pop': 'Rock and pop', Navidad: 'Christmas', Populares: 'Popular', 'Mis partituras': 'My scores', Flamenco: 'Flamenco' })[st]}`],
   [/^(\d+) de (\d+) alumnos$/, (m, a, b) => `${a} of ${b} students`],
   // Textos que quedaban en español (revisión en inglés)
   [/^Unidad (\d+)$/, (m, n) => `Unit ${n}`],

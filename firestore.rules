@@ -3,6 +3,8 @@ rules_version = '2';
 // Band Flow · «Mi banda»
 // - El director crea la banda y su código de invitación.
 // - Los músicos entran con el código. Solo ven su propio progreso; el director ve el de todos y el jefe de cuerda el de su sección.
+// - De los compañeros solo se ve la ficha: apodo, instrumento, voz, nivel y minutos de práctica de las dos últimas semanas.
+//   Racha, afinación, puntos, minutos del trimestre y último ensayo van en members/{uid}/private/stats (él y el director).
 service cloud.firestore {
   match /databases/{db}/documents {
 
@@ -112,7 +114,7 @@ service cloud.firestore {
     match /bandCodes/{code} {
       allow get: if signedIn();
       allow list: if false;
-      allow create: if isDirectorAfter(request.resource.data.bandId);
+      allow create: if validCode(code) && isDirectorAfter(request.resource.data.bandId);
       allow delete: if isDirector(resource.data.bandId);
     }
 
@@ -178,26 +180,43 @@ service cloud.firestore {
           && shortText(request.resource.data.directorName, 60)));
       allow delete: if isDirector(bandId);
 
-      // Ficha de músico: voz 1-4 o vacía, textos cortos y números de verdad
+      // Ficha de músico (la ve toda la banda): voz 1-4 o vacía, textos cortos, nivel y minutos de 14 días como mucho
       function validMember(d) {
         return (!('voice' in d) || d.voice == null || d.voice in [1, 2, 3, 4])
           && shortText(d.nickname, 60) && (!('instrument' in d) || shortText(d.instrument, 24))
-          && optNumber(d, 'points') && optNumber(d, 'streak') && optNumber(d, 'xp');
+          && (!('level' in d) || shortText(d.level, 40))
+          && (!('minutes' in d) || (d.minutes is map && d.minutes.size() <= 14))
+          && optNumber(d, 'syncedAt');
       }
-      // Lo que el músico sube de sí mismo (band-sync.js y la voz en band-member.js); nunca papel, código ni apodo
+      // Lo que el músico sube de sí mismo a su ficha (band-api.js publishActivity y la voz en band-member.js);
+      // nunca papel, código ni apodo
       function ownMemberKeys() {
-        return ['voice', 'instrument', 'days', 'xp', 'points', 'level', 'streak', 'tuning', 'lastPractice', 'syncedAt'];
+        return ['voice', 'instrument', 'minutes', 'level', 'syncedAt'];
+      }
+      // Lo que las fichas antiguas tenían a la vista de todos: ya solo se puede borrar (va en private/stats)
+      function legacyMemberKeys() {
+        return ['days', 'xp', 'points', 'streak', 'tuning', 'lastPractice'];
+      }
+      function ownMemberChange(d, old) {
+        return d.diff(old).affectedKeys().hasOnly(ownMemberKeys().concat(legacyMemberKeys()))
+          && !d.diff(old).addedKeys().hasAny(legacyMemberKeys()) && !d.diff(old).changedKeys().hasAny(legacyMemberKeys());
       }
       // Un jefe de cuerda no se cambia de instrumento (vería el progreso de otra sección); un músico sí
       function keepsSection(d, old) {
         return old.get('role', 'member') != 'leader' || d.get('instrument', null) == old.get('instrument', null);
       }
-      // Puntos = xp − xp al entrar: nunca más que la xp; suben como mucho 2000 por escritura (días sin conexión)
-      // y solo bajan a 0 (al reiniciar el progreso)
-      function validMemberPoints(d, old) {
-        return d.get('points', 0) >= 0 && d.get('points', 0) <= d.get('xp', 0)
-          && (d.get('points', 0) == 0
-            || (d.get('points', 0) >= old.get('points', 0) && d.get('points', 0) <= old.get('points', 0) + 2000));
+      // Estadísticas privadas: solo estos campos, con tamaño acotado y «at» con la hora del servidor
+      function validStats(d) {
+        return d.keys().hasOnly(['days', 'points', 'streak', 'tuning', 'lastPractice', 'at'])
+          && d.at == request.time && d.points is number && d.points >= 0 && optNumber(d, 'streak')
+          && (!('days' in d) || (d.days is map && d.days.size() <= 92))
+          && (!('tuning' in d) || (d.tuning is map && d.tuning.size() <= 128))
+          && (!('lastPractice' in d) || d.lastPractice == null || shortText(d.lastPractice, 10));
+      }
+      // Puntos de la banda (premios y clasificación) = xp − xp al entrar. Como en la liga: una escritura por minuto y
+      // como mucho 120 puntos más cada vez (lo acumulado sin conexión entra en varias); solo bajan a 0 (al reiniciar)
+      function validStatsPoints(d, before) {
+        return d.points == 0 || (d.points >= before && d.points <= before + 120);
       }
       match /members/{uid} {
         allow read: if isMember(bandId) || isDirector(bandId) || isAdmin();
@@ -210,9 +229,8 @@ service cloud.firestore {
         // Cada uno su ficha (solo sus campos de actividad, sin cambiarse el papel); el director solo la voz y el papel
         allow update: if validMember(request.resource.data) && (
           (signedIn() && uid == request.auth.uid && request.resource.data.role == resource.data.role
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(ownMemberKeys())
-            && keepsSection(request.resource.data, resource.data)
-            && validMemberPoints(request.resource.data, resource.data))
+            && ownMemberChange(request.resource.data, resource.data)
+            && keepsSection(request.resource.data, resource.data))
           || (isDirector(bandId) && resource.data.role != 'director'
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'voice'])
               && request.resource.data.role in ['member', 'leader'])
@@ -221,6 +239,20 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
               && request.resource.data.role == 'director'));
         allow delete: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
+
+        // Estadísticas privadas del músico: las lee él y el director (nunca el resto de la banda); solo las escribe él
+        match /private/{docId} {
+          allow read: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
+          // La primera vez parten de los puntos que tenía a la vista la ficha antigua (se borran en la misma escritura)
+          allow create: if signedIn() && uid == request.auth.uid && docId == 'stats' && isMember(bandId)
+            && validStats(request.resource.data)
+            && validStatsPoints(request.resource.data, get(/databases/$(db)/documents/bands/$(bandId)/members/$(uid)).data.get('points', 0));
+          allow update: if signedIn() && uid == request.auth.uid && docId == 'stats' && isMember(bandId)
+            && validStats(request.resource.data)
+            && validStatsPoints(request.resource.data, resource.data.get('points', 0))
+            && request.time > resource.data.get('at', timestamp.value(0)) + duration.value(60, 's');
+          allow delete: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
+        }
       }
 
       match /tasks/{taskId} {
@@ -246,6 +278,7 @@ service cloud.firestore {
           && request.resource.data.attempts is number && request.resource.data.minutes is number
           && request.resource.data.bestStars is number && request.resource.data.bestStars <= 3
           && shortText(request.resource.data.nickname, 60)
+          && (!('instrument' in request.resource.data) || request.resource.data.instrument == null || shortText(request.resource.data.instrument, 24))
           && (resource == null || (request.resource.data.get('stamp', null) == resource.data.get('stamp', null)
               && request.resource.data.get('comment', null) == resource.data.get('comment', null)));
         // El director solo pone su sello y su comentario

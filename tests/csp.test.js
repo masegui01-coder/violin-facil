@@ -23,11 +23,13 @@ test('index.src.html: CSP sin scripts en línea, con los orígenes que usa la ap
   assert.deepEqual(p['base-uri'], ["'none'"]);
   assert.ok(!p['script-src'].includes("'unsafe-inline'") && !p['script-src'].includes("'unsafe-eval'"));
   assert.ok(!('frame-ancestors' in p), 'frame-ancestors no funciona en una meta');
-  // Firebase desde gstatic, la ventana de Google y la librería del QR
+  // Firebase desde gstatic y la ventana de Google; el QR va copiado en el sitio (nada de CDN de terceros)
   const cloud = read('js/cloud.js');
   assert.ok(p['script-src'].includes(hostOf(cloud.match(/SDK = '([^']+)'/)[1])));
-  assert.ok(p['script-src'].includes(hostOf(read('js/screens/band-director.js').match(/QR_LIB = '([^']+)'/)[1])));
   assert.ok(p['script-src'].includes('https://apis.google.com'));
+  assert.deepEqual(p['script-src'].filter(s => s.startsWith('https:')).sort(), ['https://apis.google.com', 'https://www.gstatic.com']);
+  // El aviso gen_204 de la ventana de Google se manda con fetch(): connect-src
+  assert.ok(p['connect-src'].includes('https://apis.google.com'), 'gen_204 de apis.google.com');
   const authDomain = read('js/firebase-config.js').match(/authDomain: "([^"]+)"/)[1];
   assert.ok(p['frame-src'].includes(`https://${authDomain}`), 'ventana de Google (iframe de Firebase Auth)');
   for (const host of ['https://firestore.googleapis.com', 'https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com']) assert.ok(p['connect-src'].includes(host), host);
@@ -60,4 +62,14 @@ test('privacy.html: CSP sencilla sin scripts en línea', () => {
   assert.deepEqual(p['script-src'], ["'self'"]);
   assert.deepEqual(p['object-src'], ["'none'"]);
   assert.equal(inlineScripts(html).length, 0);
+});
+
+test('el QR del director se carga del propio sitio, sin CDN externo', () => {
+  const dir = read('js/screens/band-director.js');
+  assert.match(dir, /import\('\.\.\/vendor\/qrcode\.js'\)/);
+  assert.doesNotMatch(dir, /https?:\/\//);
+  const lib = read('js/vendor/qrcode.js');
+  assert.match(lib, /Licensed under the MIT license/, 'conserva la licencia');
+  assert.match(lib, /export default qrcode;\s*$/);
+  for (const f of ['index.src.html', 'index.html', 'js/screens/band-director.js']) assert.doesNotMatch(read(f), /jsdelivr/, f);
 });

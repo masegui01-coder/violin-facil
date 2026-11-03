@@ -3,7 +3,7 @@ import { $, toast } from './ui.js';
 import { stopMic, resumeMic } from './audio.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro', 'settings'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';
@@ -42,6 +42,22 @@ if (typeof window !== 'undefined') {
     if (handleBack()) arm();
     else history.back();
   });
+  window.addEventListener('keydown', onEscape);
+}
+
+// Escape (teclado de ordenador): sale de la lección o de la pantalla de detalle con su botón de salir, como el ✕.
+// No actúa mientras se escribe en un campo ni con una ventana abierta (el <dialog> se cierra solo con Escape).
+const TYPING = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+const overlayOpen = () => !!document.querySelector('dialog[open]') || !!(document.getElementById('tour') && !document.getElementById('tour').hidden);
+function onEscape(e) {
+  if (e.key !== 'Escape' || e.defaultPrevented || e.repeat) return;
+  if (overlayOpen()) return;
+  if (e.target && e.target.closest && e.target.closest(TYPING)) return;
+  if (!current || TABS.includes(current) || current === 'onboarding' || current === 'account') return;
+  const exit = $(current).querySelector(EXIT_BUTTONS);
+  if (!exit || exit.disabled || !exit.getClientRects().length) return;
+  e.preventDefault();
+  exit.click();
 }
 
 export function register(id, { enter, leave } = {}) {
@@ -53,6 +69,8 @@ const loaders = {};
 export function lazy(id, load) {
   if (!hooks[id]) loaders[id] = load;
 }
+// Ajustes (se abre desde Perfil): idioma, apariencia, privacidad y la cuenta
+lazy('settings', () => import('./screens/settings.js'));
 
 // Pantallas que escuchan: al entrar se reabre el micrófono si ya se había concedido
 const MIC_SCREENS = new Set(['lesson', 'tuner', 'free', 'longtone', 'chord', 'chords', 'rhythm', 'groupsong']);
@@ -94,6 +112,7 @@ export function go(id, params = {}) {
     document.documentElement.dataset.nav = direction(prev, id);
     pendingTransition = true;
     const t = document.startViewTransition(() => { pendingTransition = false; swap(); });
+    t.ready.catch(() => {}); // si el navegador la cancela (p. ej. cambia el tamaño de la ventana) se cambia sin animación
     t.finished.catch(() => {}).then(() => { delete document.documentElement.dataset.nav; });
     return;
   }

@@ -123,3 +123,60 @@ test('task status splits musicians into done, started and not started', () => {
   assert.equal(st.state, 'late');
   assert.equal(Math.round(st.avgAccuracy * 100), 70);
 });
+
+// ---------- Ficha pública (la ve la banda) y estadísticas privadas (el músico y el director) ----------
+import { sharedActivity, privateActivity, cappedPoints, statsDue, memberWithStats, SHARED_DAYS } from '../js/band-stats.js';
+
+test('a la ficha pública solo van los minutos de las dos últimas semanas y el nivel', () => {
+  const summary = activitySummary({ practiceLog: { '2026-11-03': 10, '2026-10-21': 5, '2026-10-20': 7, '2026-09-01': 30 }, xp: 900, streak: 6,
+    tuning: { 69: { n: 5, sum: 25 } }, level: 'Músico' }, '2026-11-03', 300);
+  const shared = sharedActivity(summary, '2026-11-03');
+  assert.deepEqual(Object.keys(shared).sort(), ['level', 'minutes']);
+  assert.deepEqual(shared.minutes, { '2026-11-03': 10, '2026-10-21': 5 }); // 14 días contando hoy
+  assert.equal(SHARED_DAYS, 14);
+  assert.equal(shared.level, 'Músico');
+  const priv = privateActivity(summary);
+  assert.deepEqual(Object.keys(priv).sort(), ['days', 'lastPractice', 'points', 'streak', 'tuning']);
+  assert.equal(priv.points, 600);
+  assert.equal(priv.streak, 6);
+  assert.equal(Object.keys(priv.days).length, 4);
+});
+
+test('los puntos suben como mucho 120 por escritura, no bajan salvo a 0 y la primera vez parten de los antiguos', () => {
+  assert.equal(cappedPoints(600, 0), 120);
+  assert.equal(cappedPoints(600, 500), 600);
+  assert.equal(cappedPoints(50, 0), 50);
+  assert.equal(cappedPoints(0, 400), 0); // progreso reiniciado
+  assert.equal(cappedPoints(300, 400), 400); // otro dispositivo con menos: se queda como estaba
+  assert.equal(cappedPoints(undefined, 10), 0);
+});
+
+test('las estadísticas se escriben como mucho una vez por minuto (hora del servidor, con margen)', () => {
+  const at = { toMillis: () => 1_000_000 };
+  assert.ok(statsDue(null, 0));
+  assert.ok(!statsDue({ at }, 1_000_000 + 30_000));
+  assert.ok(!statsDue({ at }, 1_000_000 + 61_000));
+  assert.ok(statsDue({ at }, 1_000_000 + 70_000));
+});
+
+test('las pantallas reciben la ficha con las estadísticas si se pueden leer, y toleran las fichas antiguas', () => {
+  // Compañero: solo lo público; el último ensayo sale de sus minutos recientes
+  const mate = memberWithStats({ id: 'b', nickname: 'Ana', minutes: { '2026-11-01': 5, '2026-10-30': 0 }, level: 'Aprendiz' });
+  assert.deepEqual(mate.days, { '2026-11-01': 5, '2026-10-30': 0 });
+  assert.equal(mate.lastPractice, '2026-11-01');
+  assert.equal(mate.points, undefined);
+  assert.equal(trafficLight(mate, '2026-11-02'), 'green');
+  // Director: el trimestre, puntos, racha y afinación de las estadísticas privadas
+  const full = memberWithStats({ id: 'b', minutes: { '2026-11-01': 5 } }, { days: { '2026-11-01': 5, '2026-09-10': 20 }, points: 80, streak: 2, tuning: { 69: 4 }, lastPractice: '2026-11-01', at: { toMillis: () => 0 } });
+  assert.equal(Object.keys(full.days).length, 2);
+  assert.equal(full.points, 80);
+  assert.equal(full.at, undefined);
+  // Ficha antigua, con todo a la vista y sin estadísticas: se sigue viendo como antes
+  const old = memberWithStats({ id: 'c', days: { '2026-10-01': 9 }, points: 300, lastPractice: '2026-10-01' });
+  assert.deepEqual(old.days, { '2026-10-01': 9 });
+  assert.equal(old.points, 300);
+  assert.equal(old.lastPractice, '2026-10-01');
+  // Ficha sin nada
+  assert.deepEqual(memberWithStats({ id: 'd' }).days, {});
+  assert.equal(memberWithStats({ id: 'd' }).lastPractice, null);
+});

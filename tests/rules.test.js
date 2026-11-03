@@ -90,7 +90,7 @@ test('el cliente de la liga escribe «at» con la hora del servidor, espera al m
 test('jefe de cuerda: no puede cambiarse de instrumento (vería otra sección); un músico sí', () => {
   assert.match(flat, /function keepsSection\(d, old\) \{ return old\.get\('role', 'member'\) != 'leader' \|\| d\.get\('instrument', null\) == old\.get\('instrument', null\); \}/);
   const upd = rule(block('members/{uid}'), 'update');
-  assert.match(upd, /hasOnly\(ownMemberKeys\(\)\) && keepsSection\(request\.resource\.data, resource\.data\)/);
+  assert.match(upd, /ownMemberChange\(request\.resource\.data, resource\.data\) && keepsSection\(request\.resource\.data, resource\.data\)/);
   assert.ok(flat.match(/function ownMemberKeys\(\) \{ return \[([^\]]*)\]/)[1].includes("'instrument'"), 'el músico normal sigue pudiendo');
 });
 
@@ -196,29 +196,81 @@ test('retos y partituras compartidas: su autor los puede listar (para borrarlos)
 test('el borrado de la cuenta recorre todo lo del usuario', () => {
   const sync = readFileSync(new URL('../js/sync.js', import.meta.url), 'utf8');
   for (const piece of ["'friends', uid, 'list'", "'activity', uid, 'events'", "'inbox', uid, 'items'", "'requests', uid, 'in'", "'friendCodes'",
-    "'results', uid", "'bands', band.bandId, 'progress'", "'bands', band.bandId, 'members', uid", "'groups', gid, 'members', uid", 'deleteTrack(gid',
+    "'results', uid", "'bands', band.bandId, 'progress'", "'bands', band.bandId, 'members', uid", "'bands', band.bandId, 'members', uid, 'private', 'stats'", "'groups', gid, 'members', uid", 'deleteTrack(gid',
     "'schools', school.schoolId, 'members', uid", "'schools', school.schoolId, 'progress', uid", "['profiles', 'users', 'testers', 'roles']"]) {
     assert.ok(sync.includes(piece), piece);
   }
 });
 
-// ---------- Fichas de banda, canciones de grupo, solicitudes y avisos ----------
-test('ficha de músico: cada uno solo cambia sus campos de actividad y los puntos no se inventan', async () => {
+// ---------- Ficha pública y estadísticas privadas de la banda ----------
+const memberKeys = name => flat.match(new RegExp(String.raw`function ${name}\(\) \{ return \[([^\]]*)\]`))[1].split(',').map(k => k.trim().replace(/'/g, ''));
+const privateStats = () => block('private/{docId}');
+
+test('ficha de músico: solo sus campos públicos (minutos recientes y nivel); los datos antiguos solo se pueden borrar', async () => {
   const members = block('members/{uid}');
   assert.match(rule(members, 'create'), /!\('points' in request\.resource\.data\) && !\('xp' in request\.resource\.data\)/);
-  const upd = rule(members, 'update');
-  assert.match(upd, /affectedKeys\(\)\.hasOnly\(ownMemberKeys\(\)\)/);
-  assert.match(upd, /validMemberPoints\(request\.resource\.data, resource\.data\)/);
-  assert.match(flat, /d\.get\('points', 0\) <= d\.get\('xp', 0\)/);
-  assert.match(flat, /d\.get\('points', 0\) >= old\.get\('points', 0\) && d\.get\('points', 0\) <= old\.get\('points', 0\) \+ 2000/);
-  // Lo que sube el cliente cabe en la lista (y no incluye papel, código ni apodo)
-  const keys = flat.match(/function ownMemberKeys\(\) \{ return \[([^\]]*)\]/)[1].split(',').map(k => k.trim().replace(/'/g, ''));
-  for (const forbidden of ['role', 'code', 'nickname', 'joinedAt']) assert.ok(!keys.includes(forbidden), forbidden);
-  const { activitySummary } = await import('../js/band-stats.js');
-  const sent = [...Object.keys(activitySummary({}, '2026-11-03', 0)), 'instrument', 'syncedAt', 'voice'];
-  for (const k of sent) assert.ok(keys.includes(k), `el cliente sube «${k}»`);
+  assert.match(rule(members, 'update'), /ownMemberChange\(request\.resource\.data, resource\.data\)/);
+  const own = memberKeys('ownMemberKeys');
+  const legacy = memberKeys('legacyMemberKeys');
+  for (const forbidden of ['role', 'code', 'nickname', 'joinedAt', ...legacy]) assert.ok(!own.includes(forbidden), forbidden);
+  for (const k of ['streak', 'tuning', 'days', 'xp', 'points', 'lastPractice']) assert.ok(legacy.includes(k), k);
+  assert.match(flat, /function ownMemberChange\(d, old\) \{ return d\.diff\(old\)\.affectedKeys\(\)\.hasOnly\(ownMemberKeys\(\)\.concat\(legacyMemberKeys\(\)\)\) && !d\.diff\(old\)\.addedKeys\(\)\.hasAny\(legacyMemberKeys\(\)\) && !d\.diff\(old\)\.changedKeys\(\)\.hasAny\(legacyMemberKeys\(\)\); \}/);
+  assert.match(flat, /\(!\('minutes' in d\) \|\| \(d\.minutes is map && d\.minutes\.size\(\) <= 14\)\)/);
+  assert.match(flat, /\(!\('level' in d\) \|\| shortText\(d\.level, 40\)\)/);
+  // Lo que sube el cliente a la ficha cabe en la lista y coincide con la ventana de minutos de las reglas
+  const S = await import('../js/band-stats.js');
+  const summary = S.activitySummary({}, '2026-11-03', 0);
+  const sent = [...Object.keys(S.sharedActivity(summary, '2026-11-03')), 'instrument', 'syncedAt', 'voice'];
+  for (const k of sent) assert.ok(own.includes(k), `el cliente sube «${k}» a la ficha`);
+  assert.equal(S.SHARED_DAYS, 14);
+  assert.deepEqual([...S.LEGACY_SHARED_KEYS].sort(), [...legacy].sort());
+  for (const k of Object.keys(S.privateActivity(summary))) assert.ok(!own.includes(k), `«${k}» no va en la ficha pública`);
 });
 
+test('estadísticas privadas: solo las leen el músico y el director, y solo las escribe el músico', () => {
+  const p = privateStats();
+  assert.match(rule(p, 'read'), /allow read: if \(signedIn\(\) && uid == request\.auth\.uid\) \|\| isDirector\(bandId\);/);
+  assert.ok(!rule(p, 'read').includes('isMember'), 'el resto de la banda no las lee');
+  for (const verb of ['create', 'update']) {
+    assert.match(rule(p, verb), /signedIn\(\) && uid == request\.auth\.uid && docId == 'stats' && isMember\(bandId\) && validStats\(request\.resource\.data\)/, verb);
+  }
+  assert.match(rule(p, 'delete'), /\(signedIn\(\) && uid == request\.auth\.uid\) \|\| isDirector\(bandId\)/);
+  assert.match(flat, /function validStats\(d\) \{ return d\.keys\(\)\.hasOnly\(\['days', 'points', 'streak', 'tuning', 'lastPractice', 'at'\]\) && d\.at == request\.time && d\.points is number && d\.points >= 0/);
+  assert.match(flat, /d\.days is map && d\.days\.size\(\) <= 92/);
+});
+
+test('puntos de la banda: como en la liga, 120 por escritura como mucho y una escritura por minuto (con la hora del servidor)', async () => {
+  const p = privateStats();
+  assert.match(flat, /function validStatsPoints\(d, before\) \{ return d\.points == 0 \|\| \(d\.points >= before && d\.points <= before \+ 120\); \}/);
+  assert.match(rule(p, 'update'), /validStatsPoints\(request\.resource\.data, resource\.data\.get\('points', 0\)\)/);
+  assert.match(rule(p, 'update'), /request\.time > resource\.data\.get\('at', timestamp\.value\(0\)\) \+ duration\.value\(60, 's'\)/);
+  // La primera vez parten de los puntos de la ficha antigua (nunca de lo que diga el cliente)
+  assert.match(rule(p, 'create'), /validStatsPoints\(request\.resource\.data, get\(\/databases\/\$\(db\)\/documents\/bands\/\$\(bandId\)\/members\/\$\(uid\)\)\.data\.get\('points', 0\)\)/);
+  assert.ok(!/\+ 2000/.test(flat), 'ya no se aceptan 2000 puntos de golpe');
+  // El cliente respeta los mismos topes
+  const S = await import('../js/band-stats.js');
+  assert.equal(S.BAND_POINTS_MAX_WRITE, 120);
+  assert.ok(S.BAND_STATS_INTERVAL_MS >= 60000);
+  const api = readFileSync(new URL('../js/band-api.js', import.meta.url), 'utf8');
+  assert.match(api, /points: cappedPoints\(summary\.points, before\), at: fs\.serverTimestamp\(\)/);
+  assert.match(api, /if \(prev && !statsDue\(prev, now\)\)/);
+});
+
+test('códigos de banda con el formato de siempre; el instrumento del progreso es un texto corto', () => {
+  assert.match(rule(block('bandCodes/{code}'), 'create'), /allow create: if validCode\(code\) && isDirectorAfter\(request\.resource\.data\.bandId\);/);
+  const prog = rule(block('progress/{docId}'), 'create, update');
+  assert.match(prog, /\(!\('instrument' in request\.resource\.data\) \|\| request\.resource\.data\.instrument == null \|\| shortText\(request\.resource\.data\.instrument, 24\)\)/);
+});
+
+test('al quitar o borrar una ficha de la banda también se borran sus estadísticas privadas', () => {
+  const api = readFileSync(new URL('../js/band-api.js', import.meta.url), 'utf8');
+  const fn = name => { const i = api.indexOf(`export async function ${name}(`); return api.slice(i, api.indexOf('\n}\n', i)); };
+  for (const name of ['leaveBand', 'removeMember']) assert.match(fn(name), /batch\.delete\(statsRef\(/, name);
+  const spaces = readFileSync(new URL('../js/spaces-api.js', import.meta.url), 'utf8');
+  assert.match(spaces, /'members', m\.id, 'private', 'stats'/);
+});
+
+// ---------- Canciones de grupo, solicitudes y avisos ----------
 test('partes de una canción de grupo: los músicos añaden de una en una y solo autor o dueño quitan', () => {
   const upd = rule(block('songs/{sid}'), 'update');
   assert.match(upd, /request\.resource\.data\.sections\.size\(\) >= resource\.data\.sections\.size\(\)/);

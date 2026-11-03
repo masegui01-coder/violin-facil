@@ -33,6 +33,9 @@ const originalAttrs = new WeakMap(); // elemento → { atributo: texto en españ
 
 export const currentLang = () => lang;
 
+// En inglés no se usan las comillas españolas: «Todas» → “Todas”. Una « suelta (la flecha de «« Un compás atrás») se queda.
+const englishQuotes = text => text.replace(/«([^«»]*)»/g, '“$1”');
+
 const instrumentsIn = text => text.replace(INSTRUMENT_RE, m => INSTRUMENT_LOWER[m.toLowerCase()] || m);
 
 // Traduce una frase (si no la conoce, la deja como está). Respeta los espacios de alrededor.
@@ -43,10 +46,11 @@ export function translate(es) {
   if (out === undefined) {
     for (const [re, fn] of PATTERNS) {
       const m = re.exec(trimmed);
-      if (m) { out = instrumentsIn(fn(...m)); break; }
+      const found = m ? fn(...m) : undefined; // un patrón puede renunciar devolviendo undefined
+      if (found !== undefined) { out = instrumentsIn(found); break; }
     }
   }
-  return out === undefined ? es : String(es).replace(trimmed, out);
+  return out === undefined ? es : String(es).replace(trimmed, () => englishQuotes(out));
 }
 
 export const t = es => (lang === 'en' ? translate(es) : es);

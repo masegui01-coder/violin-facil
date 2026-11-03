@@ -20,7 +20,6 @@ import { openLibraryUpload } from './band-library.js';
 const NAV = [['home', 'Inicio'], ['tasks', 'Tareas'], ['members', 'Músicos'], ['agenda', 'Agenda'], ['more', 'Más']];
 const VIEWS = { home: homeView, tasks: tasksView, members: membersView, agenda: agendaView, more: moreView };
 const ALIAS = { musicos: 'members', agenda: 'agenda', tareas: 'tasks' };
-const QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
 let tab = 'home';
 
 export function directorView(ctx) {
@@ -73,16 +72,9 @@ async function shareInvite(b) {
   try { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } catch (e) { toast(link); }
 }
 
-function loadQrLib() {
-  if (window.qrcode) return Promise.resolve(window.qrcode);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = QR_LIB;
-    s.onload = () => resolve(window.qrcode);
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
+// El generador de QR va copiado en el propio sitio (js/vendor/qrcode.js): sin CDN externo y, al compilar, es un trozo
+// más de dist/ que el service worker precarga, así funciona sin conexión. Se pide solo al abrir el QR.
+const loadQrLib = () => import('../vendor/qrcode.js').then(m => m.default);
 
 async function showQr(b) {
   const box = $('qrBox');

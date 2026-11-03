@@ -1,4 +1,5 @@
 // Utilidades de interfaz compartidas por todas las pantallas.
+import { t } from './i18n.js';
 
 export const $ = id => document.getElementById(id);
 
@@ -18,7 +19,7 @@ export function starsHtml(raw, max = 3) {
 let toastTimer = 0;
 export function toast(msg) {
   const el = $('toast');
-  el.textContent = msg;
+  el.textContent = t(msg); // en inglés, el aviso sale ya traducido
   el.classList.remove('off');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.classList.add('off'); el.textContent = ''; }, 2400);

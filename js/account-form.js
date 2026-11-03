@@ -1,14 +1,16 @@
 // Formulario de acceso sin DOM: qué campo está mal (para marcarlo y llevar el foco) y textos del aviso.
+import { t } from './i18n.js';
+
 const MIN_PASS = 6;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Primer fallo del formulario, en el orden en que se ven los campos: { field, message } o null
 export function validateAccountForm({ signup, name = '', email = '', pass = '' }) {
-  if (signup && !name.trim()) return { field: 'Name', message: 'Escribe tu nombre.' };
-  if (!email.trim()) return { field: 'Email', message: 'Escribe tu correo.' };
-  if (!EMAIL_RE.test(email.trim())) return { field: 'Email', message: 'Ese correo no parece válido.' };
-  if (!pass) return { field: 'Pass', message: 'Escribe una contraseña.' };
-  if (signup && pass.length < MIN_PASS) return { field: 'Pass', message: 'La contraseña necesita al menos 6 caracteres.' };
+  if (signup && !name.trim()) return { field: 'Name', message: t('Escribe tu nombre.') };
+  if (!email.trim()) return { field: 'Email', message: t('Escribe tu correo.') };
+  if (!EMAIL_RE.test(email.trim())) return { field: 'Email', message: t('Ese correo no parece válido.') };
+  if (!pass) return { field: 'Pass', message: t('Escribe una contraseña.') };
+  if (signup && pass.length < MIN_PASS) return { field: 'Pass', message: t('La contraseña necesita al menos 6 caracteres.') };
   return null;
 }
 

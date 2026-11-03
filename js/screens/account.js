@@ -3,6 +3,7 @@
 import { $, toast, icon } from '../ui.js';
 import { register, go, currentScreen, TABS } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
+import { t } from '../i18n.js';
 import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, accountErrorText, warmPopupsSoon } from '../account.js';
 import { startSync, stopSync, schedulePush, flushPush, armSync } from '../sync.js';
 import { getState, update, replaceState, subscribe, today } from '../store.js';
@@ -60,7 +61,7 @@ function restoreDraft(prefix, draft) {
 // Mensaje de error (role="alert") y campos marcados con aria-invalid y aria-describedby; el foco va al primero
 function showError(prefix, msg, fields = []) {
   const box = $(prefix + 'Error');
-  box.textContent = msg;
+  box.textContent = t(msg);
   box.hidden = !msg;
   FIELDS.forEach(f => {
     const input = $(prefix + f);

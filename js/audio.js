@@ -3,6 +3,7 @@ import { detectPitch, barPitch, rms } from './pitch.js';
 import { midiToFreq, freqToMidi } from './music.js';
 import { createOnsetDetector } from './onsets.js';
 import { chromaFromSpectrum } from './chroma.js';
+import { isPermissionError } from './tuner-state.js';
 
 const MIN_RMS = 0.01;
 const MIN_RMS_BARS = 0.004; // la lámina se apaga poco a poco: se sigue oyendo más tiempo
@@ -15,7 +16,7 @@ const CHORD_FFT = 16384;       // resolución fina para separar notas graves de 
 const CHORD_SMOOTHING = 0.5;
 
 const state = { ctx: null, analyser: null, buf: null, muteUntil: 0, recent: [], transpose: 0, minHz: 180, maxHz: 1600, timbre: null,
-  stream: null, source: null, chordAnalyser: null, spectrum: null, wanted: false, opening: null, micGen: 0 };
+  stream: null, source: null, chordAnalyser: null, spectrum: null, wanted: false, denied: false, opening: null, micGen: 0 };
 
 // Instrumento activo: registro del detector y transposición (las notas que entran y salen son ESCRITAS)
 export function setInstrument(inst) {
@@ -35,6 +36,8 @@ export function ctx() {
 // para volver a abrirlo solo (sin la puerta de «Activar micrófono») la próxima vez que haga falta.
 export function micReady() { return !!state.analyser || !!state.wanted; }
 export function micStream() { return state.stream || null; }
+// El navegador negó el permiso en el último intento (se borra en cuanto se concede)
+export function micDenied() { return state.denied; }
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
@@ -66,9 +69,11 @@ async function openMic() {
     stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
   } catch (err) {
     state.wanted = false;
+    state.denied = isPermissionError(err);
     throw err;
   }
   state.wanted = true;
+  state.denied = false;
   // Se salió de la pantalla mientras se abría: no lo dejamos encendido
   if (gen !== state.micGen) {
     stream.getTracks().forEach(t => t.stop());
@@ -114,7 +119,7 @@ export function stopMic() {
 }
 
 export function micErrorText(err) {
-  if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+  if (isPermissionError(err)) {
     return 'Permiso denegado. Actívalo en los ajustes del navegador (el candado junto a la dirección) y vuelve a intentarlo.';
   }
   if (err && err.name === 'NotFoundError') return 'No encuentro ningún micrófono en este dispositivo.';

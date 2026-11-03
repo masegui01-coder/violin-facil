@@ -1,6 +1,15 @@
 /* Band Flow en todos los formatos: móvil (base, en app.css), móvil en horizontal, tableta vertical,
    tableta horizontal y ordenador. Se carga después de app.css y solo amplía el diseño del móvil. */
 
+/* ---------- Texto grande del sistema (125–200 %): las rejillas de Perfil pasan a menos columnas antes que salirse ----------
+   El ancho mínimo de cada ficha va en rem: con la letra normal caben las mismas columnas que antes; con letra grande, menos. */
+.stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr)); }
+.style-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
+.stat, .style-opt { min-width: 0; overflow-wrap: break-word; }
+/* Segmentados: con letra grande las palabras se parten (con guion si el navegador sabe) en vez de montarse unas en otras */
+.seg button { overflow-wrap: anywhere; hyphens: auto; }
+@container (max-width: 20rem) { .seg button { padding-inline: 4px; } }
+
 /* ---------- Tableta vertical y pantallas medianas (desde 700 px) ---------- */
 @media (min-width: 700px) {
   html { font-size: 106.25%; }

@@ -18,16 +18,25 @@ export const myBand = () => {
   return b ? { ...b, instrument: b.instrument || getState().instrument } : null;
 };
 
-// Sube mi actividad a mi ficha de la banda (minutos por día, puntos, nivel, racha y afinación)
-export async function syncActivity(force = false) {
+// Sube mi actividad a la banda: minutos recientes y nivel a mi ficha (la ve la banda); minutos del trimestre, puntos,
+// racha, afinación y último ensayo a mis estadísticas privadas (solo yo y el director). Ver band-api.js publishActivity.
+// Dos sincronizaciones a la vez chocarían con el límite de una escritura por minuto: la segunda espera a la primera
+let syncing = null;
+export function syncActivity(force = false) {
+  syncing ||= runSync(force).finally(() => { syncing = null; });
+  return syncing;
+}
+
+async function runSync(force) {
   const b = myBand();
   if (!b || !cloudConfigured() || (!force && Date.now() - lastSync < SYNC_EVERY_MS)) return;
   lastSync = Date.now();
   const s = getState();
   const joinXp = b.joinXp ?? s.xp;
   if (b.joinXp === undefined) update({ band: { ...s.band, joinXp } });
-  const summary = activitySummary({ practiceLog: s.practiceLog, xp: s.xp, streak: currentStreak(s.streak), tuning: s.tuning[b.instrument] || {}, level: levelFor(s.xp).name }, today(), joinXp);
-  await api.updateMyMember(b, { ...summary, instrument: b.instrument, syncedAt: Date.now() });
+  const day = today();
+  const summary = activitySummary({ practiceLog: s.practiceLog, xp: s.xp, streak: currentStreak(s.streak), tuning: s.tuning[b.instrument] || {}, level: levelFor(s.xp).name }, day, joinXp);
+  await api.publishActivity(b, summary, { today: day, extra: { instrument: b.instrument, syncedAt: Date.now() } });
 }
 
 // Las otras partichelas de la tarea suenan como banda virtual

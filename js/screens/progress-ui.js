@@ -1,5 +1,6 @@
 // Perfil: nivel, perfil de habilidades, informe semanal, cromos, temas de color y diploma.
 import { $, esc, toast, icon } from '../ui.js';
+import { t, currentLang } from '../i18n.js';
 import { skills, radarPoints, compareWeeks } from '../report.js';
 import { levelFor, CARDS, THEMES } from '../rewards.js';
 import { weekId } from '../engage.js';
@@ -105,16 +106,17 @@ function downloadDiploma() {
   g.lineWidth = 3; g.strokeRect(56, 56, 1088, 738);
   g.textAlign = 'center'; g.fillStyle = '#141B26';
   g.font = '700 30px Figtree, sans-serif'; g.fillText('BAND FLOW', 600, 150);
-  g.font = '64px "Young Serif", Georgia, serif'; g.fillText('Diploma de constancia', 600, 250);
-  g.font = '30px Figtree, sans-serif'; g.fillText('Se concede a', 600, 330);
-  g.font = '56px "Young Serif", Georgia, serif'; g.fillText(s.nickname || (s.band && s.band.nickname) || 'Músico de Band Flow', 600, 420);
+  g.font = '64px "Young Serif", Georgia, serif'; g.fillText(t('Diploma de constancia'), 600, 250);
+  g.font = '30px Figtree, sans-serif'; g.fillText(t('Se concede a'), 600, 330);
+  g.font = '56px "Young Serif", Georgia, serif'; g.fillText(s.nickname || (s.band && s.band.nickname) || t('Músico de Band Flow'), 600, 420);
   const days = Object.values(s.practiceLog).filter(m => m > 0).length;
   const minutes = Math.round(Object.values(s.practiceLog).reduce((a, b) => a + b, 0));
   g.font = '30px Figtree, sans-serif';
-  g.fillText(`${instrumentById(s.instrument).name} · nivel ${levelFor(s.xp).name}`, 600, 500);
-  g.fillText(`${days} días de práctica · ${minutes} minutos · ${s.badges.length} insignias`, 600, 560);
+  // El lienzo no pasa por el traductor del DOM: cada línea se traduce aquí
+  g.fillText(t(`${instrumentById(s.instrument).name} · nivel ${levelFor(s.xp).name}`), 600, 500);
+  g.fillText(t(`${days} días de práctica · ${minutes} minutos · ${s.badges.length} insignias`), 600, 560);
   g.font = '24px Figtree, sans-serif'; g.fillStyle = '#5A6678';
-  g.fillText(new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), 600, 700);
+  g.fillText(new Date().toLocaleDateString(currentLang() === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), 600, 700);
   const a = document.createElement('a');
   a.href = cv.toDataURL('image/png');
   a.download = 'diploma-band-flow.png';

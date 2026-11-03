@@ -1,4 +1,4 @@
-// Perfil → Tu cuenta: sesión, estadísticas, borrar la cuenta y, para el administrador, el panel de testers.
+// Ajustes → Tu cuenta: sesión, estadísticas, borrar la cuenta y, para el administrador, el panel de testers.
 import { $, esc, toast, num } from '../ui.js';
 import { go } from '../router.js';
 import { cloudConfigured, getCloud } from '../cloud.js';
@@ -15,12 +15,10 @@ import { DELETE, defaultChoice, spaceKey, choicesValid, stateAfterSpaces } from 
 
 const DAY_MS = 86400000;
 const CANCELLED = 'auth/user-cancelled';
-let confirmDelete = false;
 
 const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—');
 
 export async function renderAccountPanel() {
-  confirmDelete = false;
   const box = $('accountPanel');
   const acc = cloudConfigured() ? currentAccount() : null;
   const consent = analyticsAvailable() ? `<label class="switch-row" for="setAnalytics"><span>Estadísticas de uso (Google Analytics)</span><input id="setAnalytics" type="checkbox" class="switch" ${getState().analyticsConsent ? 'checked' : ''}></label>` : '';
@@ -36,7 +34,7 @@ export async function renderAccountPanel() {
       <div id="accAdmin"></div>
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
     $('accSignOut').addEventListener('click', signOut);
-    $('accDelete').addEventListener('click', removeAccount);
+    $('accDelete').addEventListener('click', () => { removeAccount().catch(e => toast(accountErrorText(e))); });
     if (await isAdmin(acc.uid)) {
       $('accAdmin').innerHTML = '<div class="row"><button type="button" class="btn small" id="accMetrics">Métricas de la app</button><button type="button" class="btn ghost small" id="accTesters">Panel de testers</button></div>';
       $('accMetrics').addEventListener('click', () => go('metrics'));
@@ -138,12 +136,47 @@ async function settleSpaces(spaces, choices, uid) {
   }
 }
 
+// Confirmación antes de borrar la cuenta: <dialog> modal (MD3) con aviso claro, «Cancelar» con el foco al abrir
+// y el botón de borrar en rojo. Escape o «Cancelar» la cierran sin borrar nada. Devuelve true solo si se confirma.
+const DELETE_DIALOG = `<form method="dialog" class="sheet-body">
+  <span class="confirm-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+  <h2 id="delConfirmTitle">¿Borrar tu cuenta?</h2>
+  <p id="delConfirmText">Se borrarán para siempre tu usuario, tu progreso guardado en la nube y lo que hayas compartido. No se puede deshacer.</p>
+  <div class="row confirm-actions"><button type="submit" class="btn ghost" value="cancel" id="delConfirmCancel" autofocus>Cancelar</button><button type="submit" class="btn danger-fill" value="delete" id="delConfirmOk">Borrar mi cuenta</button></div>
+</form>`;
+
+function deleteDialog() {
+  let dlg = $('delConfirm');
+  if (dlg) return dlg;
+  dlg = document.createElement('dialog');
+  dlg.id = 'delConfirm';
+  dlg.className = 'sheet confirm-dialog';
+  dlg.setAttribute('aria-labelledby', 'delConfirmTitle');
+  dlg.setAttribute('aria-describedby', 'delConfirmText');
+  dlg.innerHTML = DELETE_DIALOG;
+  document.body.append(dlg);
+  return dlg;
+}
+
+export function confirmDeletion() {
+  const dlg = deleteDialog();
+  const opener = document.activeElement;
+  return new Promise(resolve => {
+    dlg.addEventListener('close', () => {
+      // El foco vuelve al botón que la abrió (si sigue en pantalla)
+      if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
+      resolve(dlg.returnValue === 'delete');
+    }, { once: true });
+    dlg.returnValue = '';
+    dlg.showModal();
+    $('delConfirmCancel').focus();
+  });
+}
+
 // Orden: 0) qué hacer con lo que dirige; 1) confirmar que eres tú (si hace falta); 2) traspasar o borrar sus espacios;
 // 3) borrar los datos; 4) borrar el usuario. Si se cancela 0 o falla 1, no se borra nada.
 async function removeAccount() {
-  if (!confirmDelete) { confirmDelete = true; $('accDelete').textContent = '¿Seguro? Se borra todo tu progreso'; return; }
-  confirmDelete = false;
-  $('accDelete').textContent = 'Borrar mi cuenta';
+  if (!(await confirmDeletion())) return;
   const c = await getCloud();
   const user = c.auth.currentUser;
   if (!user || user.isAnonymous) return;

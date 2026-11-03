@@ -26,3 +26,13 @@
 .check-chip input { accent-color: var(--accent); }
 .spark { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
 .spark i { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .8; }
+
+/* Unirse / crear banda en pantallas anchas: formularios de ancho cómodo (no de 800 px) y botones a su medida */
+.band > form.form { width: 100%; max-width: 480px; }
+@media (min-width: 600px) {
+  .band .form > .btn { align-self: flex-start; }
+}
+@media (min-width: 960px) {
+  .band:has(> #joinForm) { display: grid; grid-template-columns: repeat(2, minmax(0, 480px)); align-items: start; column-gap: 20px; }
+  .band:has(> #joinForm) > .screen-head { grid-column: 1 / -1; }
+}

@@ -47,6 +47,8 @@ const listDocs = async (fs, db, ...path) => (await fs.getDocs(fs.collection(db, 
 async function deleteBand(fs, db, space, uid) {
   for (const sub of BAND_SUBS) await deleteAll(fs, await listDocs(fs, db, 'bands', space.id, sub));
   const members = await listDocs(fs, db, 'bands', space.id, 'members');
+  // Las estadísticas privadas de cada músico (members/{uid}/private/stats) no se borran solas con su ficha
+  await Promise.all(members.map(m => fs.deleteDoc(fs.doc(db, 'bands', space.id, 'members', m.id, 'private', 'stats'))));
   await deleteAll(fs, members.filter(m => m.id !== uid));
   if (space.code) await fs.deleteDoc(fs.doc(db, 'bandCodes', space.code));
   await fs.deleteDoc(fs.doc(db, 'bands', space.id, 'members', uid));

@@ -19,11 +19,12 @@ export function minutesInLast(member, today, n) {
   return daysBack(today, n).reduce((s, d) => s + ((member.days || {})[d] || 0), 0);
 }
 
-// Racha de banda: días seguidos (hasta hoy o ayer) en los que practicó al menos el 70 % de los músicos
+// Racha de banda: días seguidos (hasta hoy o ayer) en los que practicó al menos el 70 % de los músicos.
+// Se cuenta solo en los días que comparte la ficha pública, para que director y músicos vean la misma cifra.
 export function bandStreak(members, today, threshold = 0.7) {
   if (!members.length) return 0;
   const ok = d => members.filter(m => ((m.days || {})[d] || 0) > 0).length / members.length >= threshold;
-  const days = daysBack(today, 60);
+  const days = daysBack(today, SHARED_DAYS);
   let i = ok(days[0]) ? 0 : 1;
   let streak = 0;
   for (; i < days.length && ok(days[i]); i++) streak++;
@@ -76,12 +77,62 @@ export function bandCsv(members, tasks, progress, today, nameOf) {
 const SYNC_DAYS = 92; // un trimestre, para el informe
 const MIN_TUNING_SAMPLES = 3;
 
-// Lo que cada músico comparte con su banda: minutos del último trimestre, puntos desde que entró, nivel, racha y afinación media
+// Resumen de la actividad del músico: minutos del último trimestre, puntos desde que entró, nivel, racha y afinación media.
+// No se sube tal cual: sharedActivity() es lo que ven los compañeros y privateActivity() lo que solo ven él y el director.
 export function activitySummary({ practiceLog = {}, xp = 0, streak = 0, tuning = {}, level = '' }, today, joinXp = 0) {
   const days = Object.fromEntries(daysBack(today, SYNC_DAYS).filter(d => practiceLog[d] > 0).map(d => [d, Math.round(practiceLog[d] * 10) / 10]));
   const tune = Object.fromEntries(Object.entries(tuning).filter(([, t]) => t.n >= MIN_TUNING_SAMPLES).map(([midi, t]) => [midi, Math.round(t.sum / t.n * 10) / 10]));
   const practised = Object.keys(practiceLog).filter(d => practiceLog[d] > 0).sort();
-  return { days, xp, points: Math.max(0, xp - joinXp), level, streak, tuning: tune, lastPractice: practised[practised.length - 1] || null };
+  return { days, points: Math.max(0, xp - joinXp), level, streak, tuning: tune, lastPractice: practised[practised.length - 1] || null };
+}
+
+// ---------- Ficha pública y estadísticas privadas ----------
+// Ficha del músico (bands/{id}/members/{uid}), la ve toda la banda: apodo, instrumento, voz, nivel y los minutos de
+// práctica de las últimas dos semanas (semáforo, racha de banda y duelo de secciones).
+// Estadísticas privadas (bands/{id}/members/{uid}/private/stats), solo el músico y el director: el trimestre de minutos
+// por día, puntos, racha, afinación y último ensayo.
+export const SHARED_DAYS = 14;
+export const STATS_DOC = ['private', 'stats'];
+// Lo que las fichas antiguas guardaban a la vista de todos; el cliente lo borra de la ficha al sincronizar
+export const LEGACY_SHARED_KEYS = ['days', 'xp', 'points', 'streak', 'tuning', 'lastPractice'];
+// Topes de firestore.rules para los puntos de la banda: como mucho 120 por escritura y una escritura por minuto
+export const BAND_POINTS_MAX_WRITE = 120;
+export const BAND_STATS_INTERVAL_MS = 60000;
+const STATS_MARGIN_MS = 5000; // el reloj del móvil y el del servidor no van exactos
+
+export function sharedActivity(summary, today) {
+  const recent = new Set(daysBack(today, SHARED_DAYS));
+  return { minutes: Object.fromEntries(Object.entries(summary.days || {}).filter(([d]) => recent.has(d))), level: summary.level || '' };
+}
+
+export function privateActivity(summary) {
+  const { days = {}, points = 0, streak = 0, tuning = {}, lastPractice = null } = summary;
+  return { days, points, streak, tuning, lastPractice };
+}
+
+// Puntos que aceptan las reglas: suben como mucho 120 por escritura (el resto entra en las siguientes),
+// nunca bajan salvo a 0 (al reiniciar el progreso)
+export function cappedPoints(points, before = 0) {
+  if (!(points > 0)) return 0;
+  if (points < before) return before;
+  return Math.min(points, before + BAND_POINTS_MAX_WRITE);
+}
+
+// ¿Ha pasado el minuto desde la última escritura de las estadísticas? («at» es la hora del servidor)
+export function statsDue(prev, now = Date.now()) {
+  if (!prev) return true;
+  const at = prev.at && prev.at.toMillis ? prev.at.toMillis() : Number(prev.at) || 0;
+  return now - at >= BAND_STATS_INTERVAL_MS + STATS_MARGIN_MS;
+}
+
+// La ficha tal como la usan las pantallas: la pública más las estadísticas privadas si se han podido leer.
+// Tolera las fichas antiguas (con «days», «points»… en la pública) y las nuevas sin estadísticas.
+export function memberWithStats(member, stats = null) {
+  const recent = member.minutes || member.days || {};
+  const practised = Object.keys(recent).filter(d => recent[d] > 0).sort();
+  const { at, ...own } = stats || {};
+  const merged = { ...member, ...own };
+  return { ...merged, days: (stats && stats.days) || recent, lastPractice: merged.lastPractice || practised[practised.length - 1] || null };
 }
 
 // Preparación para un concierto o ensayo: parte de las tareas vinculadas que ya están hechas (por músico y tarea)

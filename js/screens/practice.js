@@ -5,6 +5,7 @@ import { STRINGS, CELLO_STRINGS, noteLabel, spell, bandTuningNotes } from '../mu
 import { instrumentById } from '../instruments.js';
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
+import { tunerMode } from '../tuner-state.js';
 
 const TICK_MS = 30;
 const IN_TUNE_CENTS = 5;
@@ -12,6 +13,9 @@ const BPM_MIN = 30, BPM_MAX = 220, TAP_RESET_MS = 2000;
 const TEMPO_NAMES = [[60, 'Largo'], [66, 'Larghetto'], [76, 'Adagio'], [108, 'Andante'], [120, 'Moderato'], [156, 'Allegro'], [176, 'Vivace'], [200, 'Presto'], [Infinity, 'Prestissimo']];
 
 let timer = 0;
+let lastSignalAt = -Infinity;
+let tunerMood = '';
+let permDenied = false; // el navegador ya tiene el micrófono bloqueado (API de permisos)
 
 export async function withMic(gateId, errId) {
   try {
@@ -47,10 +51,29 @@ function showTuning(name, cents, sub) {
   return ok;
 }
 
+const tunerPrompt = () => (isViolin() ? 'Toca una cuerda al aire' : 'Toca cualquier nota');
+
+// Aguja neutra (gris, centrada, sin «Afinada») cuando no hay lectura: sin permiso o sin señal
+function setTunerMood(mode) {
+  if (mode === tunerMood) return;
+  tunerMood = mode;
+  $('tuner').querySelector('.dial').dataset.mode = mode;
+  if (mode !== 'idle' && mode !== 'denied') return;
+  $('needle').style.transform = 'rotate(0deg)';
+  $('tunerName').textContent = '–';
+  $('tunerName').style.color = '';
+  $('tunerCents').textContent = mode === 'denied' ? 'Micrófono sin permiso' : tunerPrompt();
+  $('stringPick').querySelectorAll('button').forEach(b => b.classList.remove('on'));
+}
+
 function tunerTick() {
   const p = audio.readPitch();
+  const now = performance.now();
+  if (p && p.freq !== null) lastSignalAt = now;
+  const mode = tunerMode({ denied: permDenied || audio.micDenied(), ready: audio.micReady(), pitch: p, msSinceSignal: now - lastSignalAt });
+  setTunerMood(mode);
+  if (mode !== 'live') return;
   const btns = $('stringPick').querySelectorAll('button');
-  if (!p || p.freq === null) { btns.forEach(b => b.classList.remove('on')); return; }
   const nom = getState().nom;
   const inst = instrumentById(getState().instrument);
   if (!isViolin()) {
@@ -78,14 +101,30 @@ register('tuner', {
   enter() {
     $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi + instrumentById(getState().instrument).transpose, !isViolin()), 'us')}</small></button>`).join('');
     $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : instrumentById(getState().instrument).polyphonic ? `Afinador cromático (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
-    $('tunerCents').textContent = isViolin() ? 'Toca una cuerda al aire' : 'Toca cualquier nota';
+    tunerMood = '';
+    lastSignalAt = -Infinity;
+    setTunerMood('idle');
     $('tunerGate').hidden = audio.micReady();
     $('tunerMicError').hidden = true;
+    checkMicPermission();
     timer = setInterval(tunerTick, TICK_MS);
   },
   leave() { clearInterval(timer); },
 });
-$('tunerStart').addEventListener('click', () => withMic('tunerGate', 'tunerMicError'));
+$('tunerStart').addEventListener('click', async () => {
+  permDenied = false;
+  await withMic('tunerGate', 'tunerMicError');
+  checkMicPermission();
+});
+
+// Si el navegador ya bloquea el micrófono se avisa sin esperar al botón (no todos tienen esta API)
+function checkMicPermission() {
+  const perms = typeof navigator !== 'undefined' && navigator.permissions;
+  if (!perms || !perms.query) return;
+  perms.query({ name: 'microphone' })
+    .then(status => { permDenied = status.state === 'denied'; })
+    .catch(() => { permDenied = false; /* «microphone» no admitido: decide el intento de getUserMedia */ });
+}
 $('stringPick').addEventListener('click', e => {
   const b = e.target.closest('[data-midi]');
   if (b) audio.playTone(Number(b.dataset.midi), 1.6);

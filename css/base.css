@@ -73,6 +73,24 @@ main { padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,
 .lesson-screen { gap: 14px; }
 .screen-head { display: flex; flex-direction: column; gap: 4px; }
 
+/* Desplegables (Material 3, campo con contorno): radio, relleno, flecha propia y anillo de foco con los colores del tema.
+   «select.select» gana a la regla .select de study.css; el .small de director.css sigue mandando en el relleno. */
+select.select, select.input {
+  appearance: none; -webkit-appearance: none; font: inherit; font-weight: 600; color: var(--ink);
+  min-height: 48px; padding: 10px 40px 10px 14px; border-radius: 12px; border: 1.5px solid var(--ctl-outline, var(--line));
+  background-color: var(--surface); max-width: 100%; text-overflow: ellipsis; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 21px) 52%, calc(100% - 15px) 52%; background-size: 6px 6px; background-repeat: no-repeat;
+  transition: border-color .15s, box-shadow .15s;
+}
+select.select:hover, select.input:hover { border-color: var(--muted); }
+select.select:focus-visible, select.input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+select.select:disabled, select.input:disabled { opacity: .5; cursor: default; }
+.form select { width: 100%; }
+select.select.small { padding: 5px 30px 5px 10px; background-position: calc(100% - 17px) 52%, calc(100% - 11px) 52%; background-size: 5px 5px; }
+/* El texto de ejemplo no hereda las mayúsculas del campo (p. ej. el código de banda) */
+.input::placeholder { text-transform: none; letter-spacing: normal; color: var(--muted); opacity: 1; }
+
 /* Botones (Material 3): relleno plano sin sombra dura; la elevación tonal solo aparece al pasar el ratón.
    El relieve «3D» queda únicamente en el botón principal de «Continuar» (learn.css). */
 .btn {

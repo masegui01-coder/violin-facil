@@ -186,3 +186,33 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
 #lesson #mixAccompName { color: inherit; }
 /* Título de las herramientas de Estudio: es el h1 de su pantalla, con el tamaño de antes */
 .lesson-screen > .bar > h1, #tips > .bar > h1 { font-size: 1.3rem; }
+/* Sin permiso o sin señal: aguja gris y zona verde apagada (nunca parece «afinada») */
+.dial[data-mode="idle"] .needle line, .dial[data-mode="denied"] .needle line { stroke: var(--muted); }
+.dial[data-mode="idle"] path:nth-of-type(2), .dial[data-mode="denied"] path:nth-of-type(2) { stroke: var(--line); }
+.dial[data-mode="denied"] { opacity: .6; }
+
+/* Lección en móvil horizontal: «Melodía/Acompañamiento» y «Pulso» comparten fila y todo se compacta
+   para que los controles quepan en pantalla (gana a responsive.css por especificidad, no por orden) */
+@media (orientation: landscape) and (max-height: 520px) {
+  /* sin hueco entre filas: la columna derecha abarca 13 filas y las vacías también sumaban su hueco */
+  main #lesson.lesson-screen { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 230px; grid-template-rows: repeat(12, max-content) auto; row-gap: 0; max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
+  #lesson.lesson-screen > * { grid-column: 1 / 3; margin-top: 4px; }
+  #lesson.lesson-screen > :first-child, #lesson.lesson-screen > .target-row { margin-top: 0; }
+  #lesson.lesson-screen > .target-row { grid-column: 3; }
+  /* si algo no cabe (aviso del micrófono, barra de velocidad) baja la lección, no la página */
+  main:has(> #lesson:not([hidden])) { padding-bottom: 0; }
+  #lesson.lesson-screen > .mix-row { grid-column: 1; justify-content: flex-end; flex-wrap: nowrap; }
+  #lesson.lesson-screen > .metro-group { grid-column: 2; justify-content: flex-start; gap: 4px; }
+  #lesson.lesson-screen .icon-btn { width: 40px; height: 40px; }
+  #lesson.lesson-screen .lesson-title { margin: 0; }
+  #lesson.lesson-screen .staff { max-height: 32vh; }
+  #lesson.lesson-screen .status { min-height: 1.2em; margin: 0; }
+  #lesson.lesson-screen .controls .btn.small, #lesson.lesson-screen .mix-row .chip-btn { min-height: 40px; padding-block: 6px; }
+  #lesson.lesson-screen .mix-row .chip-btn { padding-inline: 10px; }
+  #lesson.lesson-screen .round.mini { width: 40px; height: 40px; }
+  #lesson.lesson-screen #lessonMetro { white-space: nowrap; }
+}
+/* móvil horizontal estrecho: no caben en una fila; cada grupo en la suya (la lección baja por dentro) */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 759px) {
+  #lesson.lesson-screen > .mix-row, #lesson.lesson-screen > .metro-group { grid-column: 1 / 3; justify-content: center; }
+}

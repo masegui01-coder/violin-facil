@@ -4,6 +4,7 @@ import { songScore, octaveShiftFor } from './songs.js';
 import { transposeScore } from './music.js';
 import { instrumentById } from './instruments.js';
 import { encodeScore, decodeScore } from './passage.js';
+import { STATS_DOC, LEGACY_SHARED_KEYS, sharedActivity, privateActivity, cappedPoints, statsDue, memberWithStats } from './band-stats.js';
 
 const MAX_CODE_TRIES = 5;
 const MODE_RANK = { learn: 1, tempo: 2, memory: 3 };
@@ -11,6 +12,9 @@ const MODE_RANK = { learn: 1, tempo: 2, memory: 3 };
 const refs = async () => { const c = await getCloud(); return { db: c.db, fs: c.fs }; };
 const toMillis = t => (t && t.toMillis ? t.toMillis() : t || 0);
 const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+const isDenied = e => String(e && e.code).includes('permission');
+// Estadísticas privadas de un músico (las reglas solo dejan leerlas a él y al director)
+const statsRef = (fs, db, bandId, uid) => fs.doc(db, 'bands', bandId, 'members', uid, ...STATS_DOC);
 
 export async function createBand(name, nickname, instrument) {
   const user = await signInDirector();
@@ -50,7 +54,10 @@ export async function joinBand(code, nickname, instrument) {
 
 export async function leaveBand(band) {
   const { db, fs } = await refs();
-  await fs.deleteDoc(fs.doc(db, 'bands', band.bandId, 'members', band.uid));
+  const batch = fs.writeBatch(db);
+  batch.delete(statsRef(fs, db, band.bandId, band.uid));
+  batch.delete(fs.doc(db, 'bands', band.bandId, 'members', band.uid));
+  await batch.commit();
 }
 
 // Código nuevo para la banda (p. ej. si el antiguo circula por donde no debe): el viejo deja de servir
@@ -72,9 +79,52 @@ export async function updateMyMember(band, patch) {
   await fs.setDoc(fs.doc(db, 'bands', band.bandId, 'members', band.uid), patch, { merge: true });
 }
 
+// Fichas de la banda. El director las recibe con las estadísticas privadas de cada músico; los demás, solo con las suyas
+// (sus puntos para los premios). Una ficha sin estadísticas (antigua o aún sin sincronizar) se queda con lo público.
 export async function listMembers(bandId) {
+  const { db, fs, auth } = await getCloud();
+  const list = rows(await fs.getDocs(fs.collection(db, 'bands', bandId, 'members')));
+  const uid = auth.currentUser && auth.currentUser.uid;
+  const me = list.find(m => m.id === uid);
+  const readable = new Set(me && me.role === 'director' ? list.map(m => m.id) : me ? [uid] : []);
+  const readStats = async m => {
+    if (!readable.has(m.id)) return null;
+    try {
+      const snap = await fs.getDoc(statsRef(fs, db, bandId, m.id));
+      return snap.exists() ? snap.data() : null;
+    } catch (e) {
+      if (isDenied(e)) return null; // p. ej. justo después de un traspaso de la dirección
+      throw e;
+    }
+  };
+  const stats = await Promise.all(list.map(readStats));
+  return list.map((m, i) => memberWithStats(m, stats[i]));
+}
+
+// Sube mi actividad: a la ficha, lo que ve la banda (minutos recientes y nivel); a las estadísticas privadas, el resto.
+// Las reglas dejan escribir las estadísticas una vez por minuto y subir 120 puntos cada vez: si aún no toca, solo se
+// actualiza la ficha. En la misma escritura se borran de la ficha los datos que las versiones antiguas dejaban a la vista.
+export async function publishActivity(band, summary, { today, extra = {}, now = Date.now() }) {
   const { db, fs } = await refs();
-  return rows(await fs.getDocs(fs.collection(db, 'bands', bandId, 'members')));
+  const memberRef = fs.doc(db, 'bands', band.bandId, 'members', band.uid);
+  const ref = statsRef(fs, db, band.bandId, band.uid);
+  const legacy = Object.fromEntries(LEGACY_SHARED_KEYS.map(k => [k, fs.deleteField()]));
+  const shared = { ...sharedActivity(summary, today), ...extra, ...legacy };
+  const prevSnap = await fs.getDoc(ref);
+  const prev = prevSnap.exists() ? prevSnap.data() : null;
+  if (prev && !statsDue(prev, now)) { await fs.setDoc(memberRef, shared, { merge: true }); return; }
+  // La primera vez se parte de los puntos que la ficha antigua tenía a la vista (las reglas lo comprueban igual)
+  const before = prev ? prev.points || 0 : ((await fs.getDoc(memberRef)).data() || {}).points || 0;
+  const batch = fs.writeBatch(db);
+  batch.set(ref, { ...privateActivity(summary), points: cappedPoints(summary.points, before), at: fs.serverTimestamp() });
+  batch.set(memberRef, shared, { merge: true });
+  try {
+    await batch.commit();
+  } catch (e) {
+    // Con el reloj del móvil adelantado puede no haber pasado el minuto para el servidor: se sube al menos la ficha
+    if (!prev || !isDenied(e)) throw e;
+    await fs.setDoc(memberRef, shared, { merge: true });
+  }
 }
 
 export async function listTasks(bandId) {
@@ -143,7 +193,10 @@ export async function updateMember(bandId, uid, patch) {
 // El director quita a un músico de la banda (puede volver a unirse con el código)
 export async function removeMember(bandId, uid) {
   const { db, fs } = await refs();
-  await fs.deleteDoc(fs.doc(db, 'bands', bandId, 'members', uid));
+  const batch = fs.writeBatch(db);
+  batch.delete(statsRef(fs, db, bandId, uid));
+  batch.delete(fs.doc(db, 'bands', bandId, 'members', uid));
+  await batch.commit();
 }
 
 // Sello y comentario del director en el progreso de un músico

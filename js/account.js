@@ -1,6 +1,7 @@
 // Cuentas de usuario (obligatorias en la beta): Google o correo y contraseña.
 // Si ya había una sesión anónima (por ejemplo, de una banda), se vincula a la cuenta nueva para no perder nada.
 import { getCloud, warmPopups, popupsReady } from './cloud.js';
+import { currentLang, t } from './i18n.js';
 
 // La ventana de Google no se prepara al arrancar (ver cloud.js): se prepara cuando el usuario se acerca a un botón
 // «Continuar con Google» o al formulario que lo acompaña (toque, puntero encima o foco), antes de que llegue el clic.
@@ -111,7 +112,7 @@ export async function signInWithEmail(email, password) {
 
 export async function resetPassword(email) {
   const c = await getCloud();
-  c.auth.languageCode = 'es';
+  c.auth.languageCode = currentLang(); // el correo llega en el idioma de la interfaz
   await c.authFns.sendPasswordResetEmail(c.auth, email);
 }
 
@@ -146,5 +147,5 @@ export function accountErrorText(err) {
     'auth/requires-recent-login': 'Por seguridad, cierra sesión, vuelve a entrar y repite la acción.',
     'auth/network-request-failed': 'No hay conexión. Inténtalo cuando tengas internet.',
   };
-  return map[code] || `No se ha podido completar el acceso${code ? ` (${code.replace('auth/', '')})` : ''}. Inténtalo otra vez y, si sigue, mándanos este mensaje.`;
+  return t(map[code] || `No se ha podido completar el acceso${code ? ` (${code.replace('auth/', '')})` : ''}. Inténtalo otra vez y, si sigue, mándanos este mensaje.`);
 }

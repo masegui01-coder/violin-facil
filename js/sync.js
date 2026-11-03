@@ -202,12 +202,13 @@ async function deleteSocialData(d, uid, state) {
   await Promise.all(owned.flat().map(x => d.del(x.ref)));
 }
 
-// Banda: su progreso en cada tarea y su ficha. La banda que dirige se queda (es de todos sus músicos).
+// Banda: su progreso en cada tarea, sus estadísticas privadas y su ficha. La banda que dirige se queda (es de todos sus músicos).
 async function deleteBandData(d, uid, band) {
   if (!band || !band.bandId) return;
   const { db, fs } = d;
   const progress = await d.docs('band progress', fs.query(fs.collection(db, 'bands', band.bandId, 'progress'), fs.where('uid', '==', uid)));
   await Promise.all(progress.map(x => d.del(x.ref)));
+  await d.del(fs.doc(db, 'bands', band.bandId, 'members', uid, 'private', 'stats'));
   await d.del(fs.doc(db, 'bands', band.bandId, 'members', uid));
 }
 

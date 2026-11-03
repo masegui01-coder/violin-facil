@@ -3,9 +3,10 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<!-- Política de seguridad (CSP): solo los orígenes que usa la app (Firebase, Google Fonts, el QR del director).
+<!-- Política de seguridad (CSP): solo los orígenes que usa la app (Firebase y Google Fonts; el QR del director va en js/vendor/).
+     connect-src incluye apis.google.com por el aviso gen_204 (fetch) de la ventana de Google al iniciar sesión.
      El build añade a script-src el hash sha256 de theme-boot.js, que va en línea en index.html (nunca 'unsafe-inline'). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-FtrnWvIZwjbxYkRYZgQgMtdLp4qlPJToq58F7l0hBWk=' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data: mediastream:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-FtrnWvIZwjbxYkRYZgQgMtdLp4qlPJToq58F7l0hBWk=' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data: mediastream:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B4461F" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
@@ -19,37 +20,34 @@
 <!-- Fuentes sin bloquear el primer pintado (display=swap: mientras llegan se ve la del sistema); theme-boot.js las activa -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap" data-fonts>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap"></noscript>
-
 <!-- Tema elegido en Perfil (claro, oscuro o el del sistema) antes de pintar, para que no parpadee -->
 <script>(function(){document.querySelectorAll("link[data-fonts]").forEach(function(a){var t=document.createElement("link");t.rel="stylesheet",t.href=a.href,document.head.appendChild(t)});try{var e=JSON.parse(localStorage.getItem("violin-facil-v2"))||{};if(e.appearance!=="light"&&e.appearance!=="dark")return;document.documentElement.dataset.theme=e.appearance;var n=e.appearance==="dark"?"#0F141B":"#B4461F";document.querySelectorAll('meta[name="theme-color"]').forEach(function(a){a.content=n})}catch{}})();</script>
-
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
      base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
-<link rel="stylesheet" href="dist/app-e0315bb108.css">
-<link rel="modulepreload" href="dist/main-RX3ERZYH.js">
-<link rel="modulepreload" href="dist/chunk-6J54URUL.js">
-<link rel="modulepreload" href="dist/chunk-OKFE2TKN.js">
-<link rel="modulepreload" href="dist/chunk-MYUHIMJ6.js">
-<link rel="modulepreload" href="dist/chunk-NTOPSF27.js">
-<link rel="modulepreload" href="dist/chunk-NEED5LWC.js">
-<link rel="modulepreload" href="dist/chunk-X222PP65.js">
-<link rel="modulepreload" href="dist/chunk-45EJ5E5Z.js">
-<link rel="modulepreload" href="dist/chunk-GJUJSYKC.js">
-<link rel="modulepreload" href="dist/chunk-GLQBNJ53.js">
-<link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
-<link rel="modulepreload" href="dist/chunk-5R5M6KG3.js">
+<link rel="stylesheet" href="dist/app-b28cd8c1f1.css">
+<link rel="modulepreload" href="dist/main-2TALL7CY.js">
+<link rel="modulepreload" href="dist/chunk-Q3GWOFJA.js">
+<link rel="modulepreload" href="dist/chunk-QWQ3QH3G.js">
+<link rel="modulepreload" href="dist/chunk-3T5UAB75.js">
+<link rel="modulepreload" href="dist/chunk-EPMOY22M.js">
+<link rel="modulepreload" href="dist/chunk-OS336ZTM.js">
 <link rel="modulepreload" href="dist/chunk-SJWVOYGB.js">
-<link rel="modulepreload" href="dist/chunk-A6PF44CZ.js">
-<link rel="modulepreload" href="dist/chunk-CTDBFEL2.js">
-<link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
-<link rel="modulepreload" href="dist/chunk-QGAOWZM6.js">
-<link rel="modulepreload" href="dist/chunk-TSAECV4D.js">
+<link rel="modulepreload" href="dist/chunk-PFWXDCLI.js">
+<link rel="modulepreload" href="dist/chunk-27EL4QTU.js">
+<link rel="modulepreload" href="dist/chunk-NZF5EKIU.js">
+<link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
 <link rel="modulepreload" href="dist/chunk-3GV7AFFR.js">
-<link rel="modulepreload" href="dist/chunk-L4BCYJBU.js">
+<link rel="modulepreload" href="dist/chunk-F2OF2RWG.js">
+<link rel="modulepreload" href="dist/chunk-IUZDJQJZ.js">
+<link rel="modulepreload" href="dist/chunk-K6TXCEWK.js">
+<link rel="modulepreload" href="dist/chunk-OUHRGTUX.js">
 <link rel="modulepreload" href="dist/chunk-UEVO3H7G.js">
-<link rel="modulepreload" href="dist/chunk-TLMYMYPT.js">
-<link rel="modulepreload" href="dist/chunk-6WMIATDG.js">
-
+<link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
+<link rel="modulepreload" href="dist/chunk-BHSJMTGE.js">
+<link rel="modulepreload" href="dist/chunk-PQD24AEF.js">
+<link rel="modulepreload" href="dist/chunk-ZDXWSMKA.js">
+<link rel="modulepreload" href="dist/chunk-FNCYJKSD.js">
+<link rel="modulepreload" href="dist/chunk-Y37MHN2P.js">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -194,11 +192,16 @@
     <section id="profile" class="screen" hidden>
       <div class="screen-head"><h1>Tu perfil</h1></div>
       <div id="stats" class="stats"></div>
+      <button type="button" class="list-row settings-entry" id="openSettings" data-go="settings">
+        <span class="settings-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+        <span><b>Ajustes</b><small>Idioma, apariencia, privacidad y tu cuenta</small></span>
+        <span class="settings-chev" aria-hidden="true">›</span>
+      </button>
       <div id="progressPanel" class="panel"></div>
       <div class="panel">
         <h2>Tu instrumento</h2>
         <p class="muted">El curso, las digitaciones y el detector se adaptan. Tu progreso se guarda por instrumento.</p>
-        <div id="profileInstruments" class="inst-grid"></div>
+        <details class="inst-more"><summary class="btn ghost small">Cambiar de instrumento</summary><div id="profileInstruments" class="inst-grid"></div></details>
         <button type="button" class="btn ghost small" id="profilePlacement">Hacer el test de nivel de este instrumento</button>
         <div class="setting"><span id="setA4Label">La de referencia</span>
           <div class="seg three" role="group" aria-labelledby="setA4Label"><button type="button" data-set-a4="440">440 Hz</button><button type="button" data-set-a4="441">441 Hz</button><button type="button" data-set-a4="442">442 Hz</button></div>
@@ -216,11 +219,28 @@
           <small class="muted">Cada 7 días seguidos ganas un protector de racha (máximo 2): si un día no practicas, se gasta y tu racha sigue.</small></div>
         <div id="profileBadges" class="badges"></div>
       </div>
+      <div class="panel">
+        <h2>Beta</h2>
+        <p class="muted">Tu opinión decide qué viene después.</p>
+        <div class="row">
+          <button id="openFeedback" class="btn" type="button">Enviar comentarios</button>
+          <button id="replayTour" class="btn ghost" type="button">Ver el tutorial</button>
+          <button id="resetProgress" class="btn ghost danger" type="button">Borrar progreso</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ajustes (desde Perfil): idioma, apariencia, lecciones, privacidad y la cuenta -->
+    <section id="settings" class="screen settings-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">←</button><h1>Ajustes</h1></div>
       <div class="panel settings">
-        <h2>Ajustes</h2>
         <div class="setting"><span id="setLangLabel">Idioma</span>
           <div class="seg" role="group" aria-labelledby="setLangLabel"><button type="button" data-set-lang="es">Español</button><button type="button" data-set-lang="en">English</button></div>
           <small class="muted">English: the whole app, lessons, theory and books included.</small></div>
+        <div class="setting"><span id="setAppearanceLabel">Apariencia</span>
+          <div class="seg three" role="group" aria-labelledby="setAppearanceLabel"><button type="button" data-set-appearance="light">Claro</button><button type="button" data-set-appearance="dark">Oscuro</button><button type="button" data-set-appearance="system">Sistema</button></div>
+          <small class="muted">«Sistema» sigue el modo claro u oscuro de tu móvil.</small></div>
+        <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <div class="setting"><span id="setNomLabel">Nombre de las notas</span>
           <div class="seg" role="group" aria-labelledby="setNomLabel"><button type="button" data-set-nom="eu">Do · Re · Mi</button><button type="button" data-set-nom="us">G3 · A4 · E5</button></div></div>
         <div class="setting"><span id="setTolLabel">Exigencia de afinación</span>
@@ -228,10 +248,6 @@
         <div class="setting"><label class="switch-row" for="setClick"><span>Clic del metrónomo al tocar a tempo</span><input id="setClick" type="checkbox" class="switch"></label>
           <small class="muted">La cuenta previa siempre suena y el péndulo siempre se ve encima de la partitura. El clic durante la canción es opcional: la app no lo confunde con tu instrumento, pero con auriculares te escuchará mejor. También puedes cambiarlo en cada lección.</small></div>
         <label class="switch-row" for="setBoard"><span>Mostrar la digitación en las lecciones</span><input id="setBoard" type="checkbox" class="switch"></label>
-        <div class="setting"><span id="setAppearanceLabel">Apariencia</span>
-          <div class="seg three" role="group" aria-labelledby="setAppearanceLabel"><button type="button" data-set-appearance="light">Claro</button><button type="button" data-set-appearance="dark">Oscuro</button><button type="button" data-set-appearance="system">Sistema</button></div>
-          <small class="muted">«Sistema» sigue el modo claro u oscuro de tu móvil.</small></div>
-        <label class="switch-row" for="setBig"><span>Texto grande</span><input id="setBig" type="checkbox" class="switch"></label>
         <label class="switch-row" for="setUnlock"><span>Desbloquear todas las lecciones</span><input id="setUnlock" type="checkbox" class="switch"></label>
       </div>
       <div class="panel settings">
@@ -243,15 +259,6 @@
         <a class="text-link" href="privacy.html" target="_blank" rel="noopener">Política de privacidad</a>
       </div>
       <div class="panel account" id="accountPanel"></div>
-      <div class="panel">
-        <h2>Beta</h2>
-        <p class="muted">Tu opinión decide qué viene después.</p>
-        <div class="row">
-          <button id="openFeedback" class="btn" type="button">Enviar comentarios</button>
-          <button id="replayTour" class="btn ghost" type="button">Ver el tutorial</button>
-          <button id="resetProgress" class="btn ghost danger" type="button">Borrar progreso</button>
-        </div>
-      </div>
     </section>
 
     <!-- Lección de teoría -->
@@ -554,11 +561,11 @@
   </main>
 
   <nav id="tabbar" class="tabbar" hidden>
-    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span>Aprender</button>
-    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span>Canciones</button>
-    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span>Estudio</button>
-    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span>Banda<span id="bandBadge" class="tab-badge" hidden></span></button>
-    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span>Perfil</button>
+    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span><span class="tab-label">Aprender</span></button>
+    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span><span class="tab-label">Canciones</span></button>
+    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span><span class="tab-label">Estudio</span></button>
+    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span><span class="tab-label">Banda</span><span id="bandBadge" class="tab-badge" hidden></span></button>
+    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span><span class="tab-label">Perfil</span></button>
   </nav>
 </div>
 
@@ -589,7 +596,6 @@
 <div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" async src="dist/main-RX3ERZYH.js"></script>
-
+<script type="module" async src="dist/main-2TALL7CY.js"></script>
 </body>
 </html>

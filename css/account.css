@@ -57,3 +57,24 @@
   .account-step { max-width: 640px; }
   .account-step form, .account-step .google-btn, .account-step .or { max-width: 460px; width: 100%; align-self: center; }
 }
+
+/* Ajustes: entrada desde Perfil (fila con engranaje) y la pantalla propia */
+.settings-entry { grid-template-columns: 44px 1fr auto; padding: 12px 14px; border-radius: var(--r); min-height: 64px; }
+.settings-entry b { font-size: 1.05rem; }
+.settings-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; padding: 10px; background: var(--accent-soft); color: var(--accent); }
+.settings-ic svg { width: 100%; height: 100%; }
+.settings-chev { font-size: 1.6rem; line-height: 1; color: var(--muted); }
+.settings-screen > .bar > h1 { font-size: 1.3rem; }
+
+/* Confirmación de borrar la cuenta (diálogo de Material 3): icono, título centrado, aviso y acciones a la derecha */
+.confirm-dialog { width: min(420px, calc(100vw - 32px)); border-radius: 28px; padding: 24px; }
+.confirm-dialog .sheet-body { gap: 16px; }
+.confirm-dialog h2 { text-align: center; font-size: 1.4rem; }
+.confirm-ic { align-self: center; width: 24px; height: 24px; color: var(--bad); }
+.confirm-ic svg { width: 100%; height: 100%; display: block; }
+.confirm-actions { justify-content: flex-end; }
+.btn.danger-fill { background: var(--bad); color: var(--on-color); }
+/* Perfil: la rejilla de instrumentos va plegada tras «Cambiar de instrumento» (el chip de arriba también lo cambia) */
+.inst-more > summary { list-style: none; width: max-content; max-width: 100%; }
+.inst-more > summary::-webkit-details-marker { display: none; }
+.inst-more[open] > summary { margin-bottom: 12px; }

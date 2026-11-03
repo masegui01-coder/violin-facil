@@ -1,14 +1,13 @@
-// Pestaña Perfil: estadísticas, estilos de música y ajustes.
+// Pestaña Perfil: estadísticas, instrumento, estilos de música, objetivo e insignias.
+// Los ajustes (idioma, apariencia, privacidad y la cuenta) tienen su propia pantalla: settings.js.
 import { $, esc, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { STYLES } from '../songs.js';
 import { BADGES } from '../engage.js';
 import { renderProgress } from './progress-ui.js';
-import { renderAccountPanel } from './account-panel.js';
 import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.js';
 import { getState, update, subscribe, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 import { openPlacementIntro } from './placement-ui.js';
-import { setLang } from '../i18n.js';
 import { applyAppearance } from '../appearance.js';
 
 export { instrumentGridHtml };
@@ -40,21 +39,8 @@ function render() {
   $('profileBadges').innerHTML = BADGES.map(b => `<div class="badge${s.badges.includes(b.id) ? ' on' : ''}" title="${esc(b.desc)}"><span>${s.badges.includes(b.id) ? '★' : '·'}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('');
   $('profileInstruments').innerHTML = instrumentGridHtml(s.instrument);
   document.querySelectorAll('[data-set-a4]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setA4) === s.a4));
-  document.querySelectorAll('[data-set-nom]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setNom === s.nom));
-  document.querySelectorAll('[data-set-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setLang === (s.lang || 'es')));
-  document.querySelectorAll('[data-set-tol]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setTol === s.tolerance));
-  document.querySelectorAll('[data-set-appearance]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setAppearance === (s.appearance || 'system')));
-  $('setClick').checked = s.metroClick;
-  $('setBig').checked = s.bigText;
-  $('setBoard').checked = s.showBoard;
-  $('setUnlock').checked = s.unlockAll;
-  $('setKid').checked = !!s.kidMode;
-  $('setPublic').checked = !!(s.publicBoards && s.publicName) && !s.kidMode;
-  $('setPublic').disabled = !!s.kidMode;
-  $('setPublicText').textContent = s.publicName ? `Tu apodo público: ${s.publicName}. Nunca se usa tu nombre.` : 'Se te pedirá un apodo la primera vez que entres en una clasificación.';
   confirmReset = false;
   $('resetProgress').textContent = 'Borrar progreso';
-  renderAccountPanel();
 }
 
 register('profile', { enter: render });
@@ -78,34 +64,12 @@ $('profileInstruments').addEventListener('click', e => {
 });
 document.querySelectorAll('[data-set-goal]').forEach(b => b.addEventListener('click', () => { update({ dailyGoal: Number(b.dataset.setGoal) }); render(); }));
 document.querySelectorAll('[data-set-a4]').forEach(b => b.addEventListener('click', () => { update({ a4: Number(b.dataset.setA4) }); render(); }));
-document.querySelectorAll('[data-set-nom]').forEach(b => b.addEventListener('click', () => { update({ nom: b.dataset.setNom }); render(); }));
-// En inglés, las notas por defecto con letras (C, D, E…); se puede cambiar justo debajo
-document.querySelectorAll('[data-set-lang]').forEach(b => b.addEventListener('click', () => {
-  const lang = b.dataset.setLang;
-  update({ lang, ...(lang === 'en' && getState().nom === 'eu' ? { nom: 'us' } : {}) });
-  setLang(lang);
-  render();
-}));
-document.querySelectorAll('[data-set-tol]').forEach(b => b.addEventListener('click', () => { update({ tolerance: b.dataset.setTol }); render(); }));
-// Apariencia: se guarda en el estado (y en la nube con el resto); se aplica también si llega de otro móvil
+// Apariencia: se guarda en el estado (y en la nube con el resto); se aplica al arrancar y también si llega de otro móvil.
+// Va aquí y no en Ajustes (que se descarga al abrirla) para que el tema elegido se vea desde el principio.
 let shownAppearance = getState().appearance;
 applyAppearance(shownAppearance);
 subscribe(s => { if (s.appearance !== shownAppearance) { shownAppearance = s.appearance; applyAppearance(s.appearance); } });
-document.querySelectorAll('[data-set-appearance]').forEach(b => b.addEventListener('click', () => {
-  update({ appearance: b.dataset.setAppearance });
-  render();
-}));
-$('setClick').addEventListener('change', e => update({ metroClick: e.target.checked }));
-$('setBoard').addEventListener('change', e => update({ showBoard: e.target.checked }));
-$('setBig').addEventListener('change', e => update({ bigText: e.target.checked }));
 $('profilePlacement').addEventListener('click', openPlacementIntro);
-$('setUnlock').addEventListener('change', e => update({ unlockAll: e.target.checked }));
-$('setKid').addEventListener('change', e => { update({ kidMode: e.target.checked, ...(e.target.checked ? { publicBoards: false } : {}) }); render(); });
-$('setPublic').addEventListener('change', e => {
-  if (e.target.checked && !getState().publicName) { e.target.checked = false; toast('Entra en una clasificación y elige tu apodo'); return; }
-  update({ publicBoards: e.target.checked });
-  render();
-});
 $('resetProgress').addEventListener('click', () => {
   if (!confirmReset) {
     confirmReset = true;

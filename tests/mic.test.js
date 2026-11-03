@@ -51,6 +51,7 @@ globalThis.document = fakeDocument;
 Object.defineProperty(globalThis.navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true });
 
 const audio = await import('../js/audio.js');
+const { tunerMode, isPermissionError, SIGNAL_HOLD_MS } = await import('../js/tuner-state.js');
 const tick = () => new Promise(r => setTimeout(r, 0));
 const lastStream = () => gum.streams[gum.streams.length - 1];
 
@@ -134,9 +135,31 @@ test('a denied permission brings the gate back', async () => {
   gum.deny = true;
   await assert.rejects(audio.startMic(), { name: 'NotAllowedError' });
   assert.equal(audio.micReady(), false);
+  assert.equal(audio.micDenied(), true);
   assert.equal(audio.readPitch(), null);
   await tick();
   gum.deny = false;
+  await audio.startMic();
+  assert.equal(audio.micDenied(), false, 'granting it later clears the denied state');
+});
+
+test('the tuner needle stays neutral without permission or signal', () => {
+  assert.equal(tunerMode({ denied: true, ready: false, pitch: null }), 'denied');
+  assert.equal(tunerMode({ denied: true, ready: true, pitch: { freq: 440, midi: 69 }, msSinceSignal: 0 }), 'denied');
+  assert.equal(tunerMode({ ready: false, pitch: null }), 'idle', 'no mic yet');
+  assert.equal(tunerMode({ ready: true, pitch: { freq: null, midi: null } }), 'idle', 'silence before any note');
+  assert.equal(tunerMode({ ready: true, pitch: { freq: 440, midi: 69 }, msSinceSignal: 0 }), 'live');
+  assert.equal(tunerMode({ ready: true, pitch: { freq: null }, msSinceSignal: SIGNAL_HOLD_MS - 1 }), 'hold', 'short gap keeps the reading');
+  assert.equal(tunerMode({ ready: true, pitch: null, msSinceSignal: SIGNAL_HOLD_MS + 1 }), 'idle', 'long silence goes neutral');
+  assert.equal(tunerMode(), 'idle');
+});
+
+test('only permission errors count as denied', () => {
+  assert.equal(isPermissionError({ name: 'NotAllowedError' }), true);
+  assert.equal(isPermissionError({ name: 'SecurityError' }), true);
+  assert.equal(isPermissionError({ name: 'NotFoundError' }), false);
+  assert.equal(isPermissionError({ name: 'AbortError' }), false);
+  assert.equal(isPermissionError(null), false);
 });
 
 test('stopMic is safe to call when the mic was never open', () => {
