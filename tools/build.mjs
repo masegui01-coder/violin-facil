@@ -82,7 +82,12 @@ async function buildIndex(template, { entry, initial, css }) {
   // «async»: main se ejecuta en su propia tarea, no en la que cierra el análisis del HTML y maqueta la página
   // (así no se juntan en una tarea larga). Es seguro porque el script es lo último del <body>: el DOM ya está entero.
   if (!/<!-- \/build:js -->\s*<\/body>/.test(template)) throw new Error('index.src.html: el bloque build:js debe ir justo antes de </body>');
+  // CSP: el único script en línea es theme-boot; se autoriza por su hash (tests/csp.test.js lo comprueba)
+  const bootHash = `'sha256-${createHash('sha256').update(boot).digest('base64')}'`;
+  const CSP_SCRIPT = /(<meta http-equiv="Content-Security-Policy" content="[^"]*script-src 'self')/;
+  if (!CSP_SCRIPT.test(template)) throw new Error("index.src.html: falta la meta Content-Security-Policy con script-src 'self'");
   const html = template
+    .replace(CSP_SCRIPT, `$1 ${bootHash}`)
     .replace('<!doctype html>', '<!doctype html>\n<!-- GENERADO por `npm run build` a partir de index.src.html: no editar a mano -->')
     .replace(block(template, 'note').re, '')
     .replace(block(template, 'boot').re, `<script>${boot}</script>\n`)

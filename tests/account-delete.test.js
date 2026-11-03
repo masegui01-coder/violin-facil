@@ -55,16 +55,22 @@ test('un fallo de red corta el borrado de la cuenta; uno de permisos no', () => 
   assert.equal(isNetworkFailure({ code: 'permission-denied' }), false);
 });
 
-test('orden al borrar la cuenta: reautenticar, después datos y por último el usuario', () => {
+test('orden al borrar la cuenta: qué hacer con lo que dirige, reautenticar, espacios, datos y por último el usuario', () => {
   const ui = readFileSync(new URL('../js/screens/account-panel.js', import.meta.url), 'utf8');
   const body = ui.slice(ui.indexOf('async function removeAccount'));
+  const ask = body.indexOf('await askSpaces(');
   const reauth = body.indexOf('await reauthenticate(');
+  const spaces = body.indexOf('await settleSpaces(');
   const data = body.indexOf('await deleteCloudData(');
   const user = body.indexOf('await deleteAccount(');
-  assert.ok(reauth > 0 && reauth < data && data < user, 'reautenticar → datos → usuario');
+  assert.ok(ask > 0 && ask < reauth && reauth < spaces && spaces < data && data < user, 'hoja → reautenticar → espacios → datos → usuario');
+  // Si falla el traspaso o el borrado de un espacio, la cuenta no se borra
+  assert.match(body.slice(spaces, data), /catch \(e\) \{[\s\S]*No se ha borrado tu cuenta[\s\S]*return;/);
+  // Cancelar la hoja cuenta como cancelar: no se borra nada
+  assert.ok(ui.slice(ui.indexOf('function askSpaces')).includes("addEventListener('close', () => { if (!done) reject(Object.assign(new Error('cancel'), { code: CANCELLED })); }"));
   // Si falla la reautenticación se sale sin borrar nada
-  assert.match(body.slice(reauth, data), /catch \(e\) \{[\s\S]*No se ha borrado nada[\s\S]*return;/);
+  assert.match(body.slice(reauth, spaces), /catch \(e\) \{[\s\S]*No se ha borrado nada[\s\S]*return;/);
   assert.match(ui, /reauthenticateWithPopup\(user, provider\)/);
   assert.match(ui, /reauthenticateWithCredential\(user, c\.authFns\.EmailAuthProvider\.credential\(user\.email, pass\)\)/);
-  assert.match(ui, /deleteCloudData\(user\.uid, getState\(\)\)/);
+  assert.match(ui, /deleteCloudData\(user\.uid, stateAfterSpaces\(getState\(\), spaces, choices\)\)/);
 });

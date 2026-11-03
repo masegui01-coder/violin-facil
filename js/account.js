@@ -46,6 +46,12 @@ export async function watchAccount() {
 
 export const currentAccount = () => (isAccount(user) ? user : null);
 
+// Nombre para rellenar «Tu nombre» (banda, grupo, escuela): texto SIN escapar (se escapa una vez al meterlo en HTML).
+// Nunca el correo: el apodo lo ven otros músicos.
+export const NICK_MAX = 30;
+export const nicknameOf = acc => String((acc && acc.displayName) || '').slice(0, NICK_MAX);
+export const accountName = () => nicknameOf(currentAccount());
+
 export function onAccount(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);

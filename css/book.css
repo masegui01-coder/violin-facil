@@ -55,6 +55,7 @@
 .bp-notes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .bp-notes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .bp-notes svg { width: 96px; height: auto; }
+.bp-notes svg.board-wide { width: 240px; } /* mástil o teclado apaisado: más ancho para que se lean las letras */
 .bp-notes .chord-board { width: 110px; }
 .bp-notes figcaption { font-weight: 800; }
 .bp-chart { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 2px solid var(--ink); }

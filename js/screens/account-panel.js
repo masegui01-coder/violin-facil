@@ -10,6 +10,8 @@ import { openAccountReminder } from './account.js';
 import { BETA_ALL_TESTERS } from '../metrics.js';
 import { listProTesters, setProTester } from '../roles-api.js';
 import { sheet } from './band-ui.js';
+import { loadOwnedSpaces, transferSpace, deleteSpace } from '../spaces-api.js';
+import { DELETE, defaultChoice, spaceKey, choicesValid, stateAfterSpaces } from '../spaces.js';
 
 const DAY_MS = 86400000;
 const CANCELLED = 'auth/user-cancelled';
@@ -90,7 +92,54 @@ async function reauthenticate(c, user) {
   throw Object.assign(new Error('reauth'), { code: 'auth/requires-recent-login' });
 }
 
-// Orden: 1) confirmar que eres tú (si hace falta); 2) borrar los datos; 3) borrar el usuario. Si falla 1, no se borra nada.
+// ---------- Bandas, grupos y escuela que dirige: traspasar o borrar antes de borrar la cuenta ----------
+const SPACE_TEXT = {
+  band: { eyebrow: 'Banda que diriges', to: 'Pasar la dirección a', del: 'Nadie: borrar la banda entera' },
+  group: { eyebrow: 'Grupo que creaste', to: 'Pasar el grupo a', del: 'Nadie: borrar el grupo entero' },
+  school: { eyebrow: 'Escuela de la que eres profesor', to: 'Pasar la escuela a', del: 'Nadie: borrar la escuela entera' },
+};
+
+function spaceHtml(space, i) {
+  const t = SPACE_TEXT[space.kind];
+  const pick = space.candidates.length
+    ? `<label for="delSpace${i}">${t.to}</label><select id="delSpace${i}" class="input" data-space="${esc(spaceKey(space))}">
+        ${space.candidates.map(m => `<option value="${esc(m.id)}">${esc(m.nickname)}</option>`).join('')}<option value="${DELETE}">${t.del}</option></select>`
+    : '<p class="muted small">No hay más miembros: se borrará con todo su contenido.</p>';
+  return `<div class="panel"><p class="eyebrow">${t.eyebrow}</p><h3>${esc(space.name)}</h3>${pick}</div>`;
+}
+
+// Hoja con cada espacio y qué hacer con él. Devuelve las elecciones; cancelar (o cerrar) rechaza y no se borra nada.
+function askSpaces(spaces) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    sheet(`<h2>Antes de borrar tu cuenta</h2>
+      <p>Diriges o has creado estos espacios. Si se quedan sin responsable, nadie podrá gestionarlos. Elige qué hacer con cada uno.</p>
+      ${spaces.map(spaceHtml).join('')}
+      <div class="row"><button type="button" class="btn danger" id="delSpacesOk">Continuar y borrar mi cuenta</button><button type="button" class="btn ghost small" data-close>Cancelar</button></div>`, box => {
+      box.querySelector('#delSpacesOk').addEventListener('click', () => {
+        const choices = Object.fromEntries(spaces.map(sp => [spaceKey(sp), defaultChoice(sp)]));
+        box.querySelectorAll('[data-space]').forEach(sel => { choices[sel.dataset.space] = sel.value; });
+        if (!choicesValid(spaces, choices)) { toast('Elige qué hacer con cada espacio'); return; }
+        done = true;
+        $('sheet').close();
+        resolve(choices);
+      });
+    });
+    $('sheet').addEventListener('close', () => { if (!done) reject(Object.assign(new Error('cancel'), { code: CANCELLED })); }, { once: true });
+  });
+}
+
+// Aplica cada elección; al primer fallo para (y la cuenta no se borra)
+async function settleSpaces(spaces, choices, uid) {
+  for (const space of spaces) {
+    const choice = choices[spaceKey(space)];
+    if (choice === DELETE) await deleteSpace(space, uid);
+    else await transferSpace(space, choice);
+  }
+}
+
+// Orden: 0) qué hacer con lo que dirige; 1) confirmar que eres tú (si hace falta); 2) traspasar o borrar sus espacios;
+// 3) borrar los datos; 4) borrar el usuario. Si se cancela 0 o falla 1, no se borra nada.
 async function removeAccount() {
   if (!confirmDelete) { confirmDelete = true; $('accDelete').textContent = '¿Seguro? Se borra todo tu progreso'; return; }
   confirmDelete = false;
@@ -98,18 +147,28 @@ async function removeAccount() {
   const c = await getCloud();
   const user = c.auth.currentUser;
   if (!user || user.isAnonymous) return;
+  let spaces = [];
+  let choices = {};
   try {
+    spaces = await loadOwnedSpaces(user.uid, getState());
+    if (spaces.length) choices = await askSpaces(spaces);
     if (!signedInRecently(user)) await reauthenticate(c, user);
   } catch (e) {
     toast(e.code === CANCELLED || e.code === 'auth/popup-closed-by-user' ? 'No se ha borrado nada.' : `No se ha borrado nada. ${accountErrorText(e)}`);
     return;
   }
   try {
-    const failed = await deleteCloudData(user.uid, getState());
+    await settleSpaces(spaces, choices, user.uid);
+  } catch (e) {
+    toast(`No se ha borrado tu cuenta: no he podido traspasar o borrar uno de tus espacios. ${accountErrorText(e)}`);
+    return;
+  }
+  try {
+    const failed = await deleteCloudData(user.uid, stateAfterSpaces(getState(), spaces, choices));
     if (failed.some(isNetworkFailure)) { toast('Sin conexión: la cuenta no se ha borrado. Vuelve a intentarlo con internet.'); return; }
     await deleteAccount();
     replaceState({});
-    toast(failed.length ? 'Cuenta borrada. Algún dato compartido no se ha podido borrar: escríbenos si quieres que lo quitemos.' : 'Cuenta borrada');
+    toast(failed.length ? 'Cuenta borrada. Algún dato compartido no se ha podido borrar: escríbenos a tizaestudiogames+violin@gmail.com y lo quitamos.' : 'Cuenta borrada');
     go('account');
   } catch (e) { toast(accountErrorText(e)); }
 }

@@ -1,6 +1,6 @@
 // Acceso obligatorio en la beta. Quien llega nuevo crea su usuario antes de la bienvenida.
 // Quien ya usaba la app ve un aviso para crearlo sin perder su avance; durante una semana puede posponerlo.
-import { $, esc, toast, icon } from '../ui.js';
+import { $, toast, icon } from '../ui.js';
 import { register, go, currentScreen, TABS } from '../router.js';
 import { cloudConfigured } from '../cloud.js';
 import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, accountErrorText, warmPopupsSoon } from '../account.js';
@@ -193,4 +193,3 @@ export { openReminder as openAccountReminder };
 // Cada cambio del progreso se guarda en la nube unos segundos después (y al salir de la app)
 subscribe(() => { if (syncing) schedulePush(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && syncing) flushPush(); });
-export const accountName = () => (currentAccount() ? esc(currentAccount().displayName || currentAccount().email || '') : '');

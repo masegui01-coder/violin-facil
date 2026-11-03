@@ -129,10 +129,12 @@ export function printReport(ctx) {
     <h2>Minutos de práctica por día (30 días)</h2>${chart}
     <h2>Músicos</h2><table><thead><tr><th>Músico</th><th>Instrumento</th><th class="num">Min. 7 d</th><th class="num">Min. 30 d</th><th class="num">Tareas</th><th>Último ensayo</th></tr></thead><tbody>${rows}</tbody></table>
     ${tasks ? `<h2>Tareas</h2><table><thead><tr><th>Tarea</th><th>Fecha</th><th class="num">Hechas</th><th class="num">Acierto medio</th></tr></thead><tbody>${tasks}</tbody></table>` : ''}
-    <p><button onclick="print()">Imprimir o guardar en PDF</button></p></body></html>`;
+    <p><button type="button" id="printReport">Imprimir o guardar en PDF</button></p></body></html>`;
   const win = window.open('', '_blank');
   if (!win) return false;
   win.document.write(html);
   win.document.close();
+  // sin onclick en línea: la ventana hereda la CSP de la app
+  win.document.getElementById('printReport').addEventListener('click', () => win.print());
   return true;
 }

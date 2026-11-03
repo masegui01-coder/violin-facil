@@ -233,10 +233,12 @@ async function deleteSchoolData(d, uid, school) {
   const member = fs.doc(db, 'schools', school.schoolId, 'members', uid);
   const exists = await d.run(member.path, async () => (await fs.getDoc(member)).exists());
   if (!exists) { await d.del(fs.doc(db, 'schools', school.schoolId, 'progress', uid)); return; }
+  const schoolRef = fs.doc(db, 'schools', school.schoolId);
+  const schoolExists = await d.run(schoolRef.path, async () => (await fs.getDoc(schoolRef)).exists());
   const batch = fs.writeBatch(db);
   batch.delete(member);
   batch.delete(fs.doc(db, 'schools', school.schoolId, 'progress', uid));
-  batch.update(fs.doc(db, 'schools', school.schoolId), { students: fs.increment(-1) });
+  if (schoolExists !== false) batch.update(schoolRef, { students: fs.increment(-1) }); // sin escuela no hay contador
   await d.run(`schools/${school.schoolId}`, () => batch.commit());
 }
 

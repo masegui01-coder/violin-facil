@@ -28,3 +28,19 @@ test('la pantalla de acceso, «Apariencia» de Perfil y el aviso de versión nue
     'Hay una versión nueva', 'Actualizar',
   ].forEach(es => assert.notEqual(translate(es), es, es));
 });
+
+test('Aprender, Banda y Perfil: lo que quedaba en español se traduce', () => {
+  assert.equal(translate('Unidad 3'), 'Unit 3');
+  assert.equal(translate('Más'), 'More');
+  assert.equal(translate('Reto del día · liga · amigos · test de nivel'), 'Daily challenge · league · friends · level test');
+  assert.equal(translate('B4, C♯5 y D5'), 'B4, C♯5 and D5');
+  assert.equal(translate('2 de 3 estrellas'), '2 of 3 stars');
+  assert.equal(translate('Dificultad 1 de 3'), 'Difficulty 1 of 3');
+  assert.equal(translate('Ej.: K7P2QX'), 'E.g. K7P2QX');
+  assert.equal(translate('Ej.: Banda Municipal de…'), 'E.g. Town Band of…');
+  assert.equal(translate('Tu apodo público: Lola. Nunca se usa tu nombre.'), 'Your public nickname: Lola. Your name is never used.');
+  [
+    'Ensaya las obras que te pone tu director y comparte tu progreso.', 'Como te conoce tu banda', 'Niveles superados del curso',
+    'Se te pedirá un apodo la primera vez que entres en una clasificación.', 'Practica unos días y aquí verás cómo mejoras.', 'Perfil de habilidades',
+  ].forEach(es => assert.notEqual(translate(es), es, es));
+});

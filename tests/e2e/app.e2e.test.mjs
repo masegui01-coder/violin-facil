@@ -89,7 +89,7 @@ const visible = (page, id) => page.$eval(`#${id}`, el => !el.hidden).catch(() =>
 const waitVisible = (page, id, timeout = 5000) => page.waitForSelector(`#${id}:not([hidden])`, { timeout });
 
 async function axeViolations(page) {
-  if (!(await page.evaluate(() => !!window.axe))) await page.addScriptTag({ content: AXE });
+  if (!(await page.evaluate(() => !!window.axe))) await page.evaluate(AXE); // por CDP: la CSP de la página no admite scripts en línea
   const result = await page.evaluate(() => window.axe.run(document, { resultTypes: ['violations'] }));
   return result.violations
     .filter(v => v.impact === 'serious' || v.impact === 'critical')
@@ -122,6 +122,29 @@ test('se recorren las cinco pestañas (Banda se descarga al abrirla)', async () 
     await waitVisible(page, tab);
     assert.equal(await page.$eval(`[data-tab="${tab}"]`, b => b.getAttribute('aria-current')), 'page', tab);
   }
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+// Palabras españolas frecuentes de la interfaz (no aparecen en nombres de canciones ni de notas)
+const SPANISH_UI = /(?<!\p{L})(Unidad|Lección|Más|Reto|Racha|días|Mi banda|Ajustes|Canciones|Aprender|Perfil|Ensaya|Ej\.|Tu director|esta semana)(?!\p{L})/iu;
+
+test('en inglés no quedan textos de la interfaz en español en las cinco pestañas', async () => {
+  const { page, errors, close } = await openApp({ seed: { lang: 'en' } });
+  for (const tab of TABS) {
+    await tap(page, `[data-tab="${tab}"]`);
+    await waitVisible(page, tab);
+    await sleep(400);
+    const found = await page.$eval(`#${tab}`, (root, src) => {
+      const re = new RegExp(src, 'iu');
+      root.querySelectorAll('details').forEach(d => { d.open = true; });
+      const texts = root.innerText.split('\n');
+      root.querySelectorAll('[placeholder], [aria-label], [title]').forEach(el => ['placeholder', 'aria-label', 'title'].forEach(a => el.hasAttribute(a) && texts.push(el.getAttribute(a))));
+      return texts.map(x => x.trim()).filter(x => re.test(x));
+    }, SPANISH_UI.source);
+    assert.deepEqual(found, [], tab);
+  }
+  assert.equal(await page.$eval('#todayCard .dots', d => d.textContent), 'MTWTFSS', 'iniciales de la semana en inglés');
   assert.deepEqual(errors, []);
   await close();
 });

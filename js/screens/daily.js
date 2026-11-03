@@ -7,6 +7,7 @@ import { instrumentById } from '../instruments.js';
 import { getState, update, today, currentStreak } from '../store.js';
 import { launch } from '../launch.js';
 import { startRoutine, routineDoneToday } from './routine.js';
+import { currentLang } from '../i18n.js';
 
 const GOAL_XP = 10;
 const LEVEL_FOR = { new: 1, basic: 2, fluent: 3 };
@@ -34,6 +35,8 @@ export function weekDays(practiceLog, day = today()) {
   });
 }
 
+// Inicial de cada día (lunes a domingo): no se traduce con el diccionario porque «D» o «S» también son notas
+const DAY_INITIALS = { es: 'LMXJVSD', en: 'MTWTFSS' };
 const DAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 
 // Etiqueta accesible de cada día: «martes, hoy, sin práctica» / «lunes, practicado»
@@ -46,7 +49,7 @@ function weekDots() {
   const count = days.filter(x => x.done).length;
   const dot = (x, i) => {
     const cls = [x.done && 'on', x.today && 'is-today'].filter(Boolean).join(' ');
-    return `<span role="listitem" class="${cls}" aria-label="${dayLabel(x, i)}">${'LMXJVSD'[i]}</span>`;
+    return `<span role="listitem" class="${cls}" aria-label="${dayLabel(x, i)}">${(DAY_INITIALS[currentLang()] || DAY_INITIALS.es)[i]}</span>`;
   };
   return `<div class="week-dots" title="Días con práctica esta semana"><div class="dots" role="list" aria-label="Días con práctica esta semana">${days.map(dot).join('')}</div>
     <small>${count >= 5 ? '¡Semana completa!' : `${count} de 5 días esta semana`}</small></div>`;

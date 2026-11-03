@@ -4,7 +4,7 @@ import { go } from '../router.js';
 import { cloudConfigured, cloudErrorText, ensureSignedIn } from '../cloud.js';
 import * as api from '../groups-api.js';
 import { INSTRUMENTS, instrumentById } from '../instruments.js';
-import { currentAccount } from '../account.js';
+import { accountName } from '../account.js';
 import { getState, update } from '../store.js';
 import { isStale, MAX_MEMBERS, MAX_SONGS } from '../group-mix.js';
 import { sheet } from './band-ui.js';
@@ -17,7 +17,6 @@ let joinCode = new URLSearchParams(location.search).get('grupo') || '';
 
 const body = html => { $('groupBody').innerHTML = html; };
 const myGroups = () => getState().groups || [];
-const accountName = () => String((currentAccount() && currentAccount().displayName) || '').slice(0, 30);
 const instOptions = sel => INSTRUMENTS.map(i => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(i.name)}</option>`).join('')
   + `<option value="voz" ${sel === 'voz' ? 'selected' : ''}>Voz</option><option value="bajo" ${sel === 'bajo' ? 'selected' : ''}>Bajo eléctrico</option><option value="bateria" ${sel === 'bateria' ? 'selected' : ''}>Batería</option><option value="otro" ${sel === 'otro' ? 'selected' : ''}>Otro</option>`;
 export const partName = id => ({ voz: 'Voz', bajo: 'Bajo eléctrico', bateria: 'Batería', otro: 'Otro' }[id] || instrumentById(id).name);

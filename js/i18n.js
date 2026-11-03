@@ -7,6 +7,8 @@ import { TIPS_EN } from './tips-l10n.js';
 export const LANGS = [['es', 'Español'], ['en', 'English']];
 const ATTRS = ['aria-label', 'placeholder', 'title'];
 const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT']);
+// En los campos no se toca lo escrito, pero sí sus atributos (placeholder, aria-label y title)
+const NO_ATTRS = new Set(['SCRIPT', 'STYLE']);
 const INSTRUMENT_RE = new RegExp(Object.keys(INSTRUMENT_NAMES).sort((a, b) => b.length - a.length).join('|'), 'gi');
 const INSTRUMENT_LOWER = Object.fromEntries(Object.entries(INSTRUMENT_NAMES).map(([es, en]) => [es.toLowerCase(), en]));
 
@@ -77,12 +79,13 @@ function translateAttrs(el) {
 
 function walk(root) {
   if (root.nodeType === 3) { translateTextNode(root); return; }
-  if (root.nodeType !== 1 || SKIP.has(root.nodeName)) return;
+  if (root.nodeType !== 1 || NO_ATTRS.has(root.nodeName)) return;
   translateAttrs(root);
+  if (SKIP.has(root.nodeName)) return;
   const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
   for (let n = it.nextNode(); n; n = it.nextNode()) {
     if (n.nodeType === 3) translateTextNode(n);
-    else if (!SKIP.has(n.nodeName)) translateAttrs(n);
+    else if (!NO_ATTRS.has(n.nodeName)) translateAttrs(n);
   }
 }
 

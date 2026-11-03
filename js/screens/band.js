@@ -4,9 +4,8 @@ import { register, go, currentScreen } from '../router.js';
 import { cloudConfigured, cloudErrorText } from '../cloud.js';
 import * as api from '../band-api.js';
 import { INSTRUMENTS, instrumentById } from '../instruments.js';
-import { currentAccount } from '../account.js';
+import { accountName } from '../account.js';
 
-const accountName = () => String((currentAccount() && currentAccount().displayName) || '').slice(0, 30);
 import { getState, update } from '../store.js';
 import { myBand, syncActivity } from './band-sync.js';
 import { directorView, bindDirector } from './band-director.js';
@@ -110,8 +109,10 @@ function show() {
 }
 
 // La ficha de la banda manda: si el director me cambió la voz o me hizo jefe de cuerda, lo guardo aquí
-function adoptMemberDoc(members) {
+function adoptMemberDoc(members, bandDoc) {
   const b = band();
+  // el director anterior me pasó la dirección al borrar su cuenta
+  if (bandDoc && bandDoc.directorUid === b.uid && b.role !== 'director') { update({ band: { ...b, role: 'director', code: bandDoc.code } }); return; }
   const me = members.find(m => m.id === b.uid);
   if (!me || b.role === 'director') return;
   const role = me.role === 'leader' ? 'leader' : 'member';
@@ -128,7 +129,7 @@ async function load() {
       api.listTasks(b.bandId), api.listMembers(b.bandId), api.getBand(b.bandId),
       api.listSub(b.bandId, 'events'), api.listSub(b.bandId, 'notices'), api.listSub(b.bandId, 'rewards'), api.listSub(b.bandId, 'library').catch(() => []),
     ]);
-    adoptMemberDoc(members);
+    adoptMemberDoc(members, bandDoc);
     const progress = await api.listProgress(myBand());
     data = { tasks, members, progress, bandDoc, events, notices, rewards, library: library.sort((a, b) => a.title.localeCompare(b.title)) };
     show();

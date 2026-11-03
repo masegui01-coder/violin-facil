@@ -5,7 +5,7 @@ import { go } from '../router.js';
 import { cloudConfigured, cloudErrorText } from '../cloud.js';
 import * as api from '../school-api.js';
 import { INSTRUMENTS, instrumentById } from '../instruments.js';
-import { currentAccount } from '../account.js';
+import { accountName } from '../account.js';
 import { getState, update } from '../store.js';
 import { schoolYear, nextSchoolYear, premiumActive, studentLimit, promote, pct, TRIAL_STUDENTS, PREMIUM_STUDENTS, MAX_LEVEL } from '../school.js';
 import { BOOK_INFO } from '../books.js';
@@ -16,7 +16,6 @@ let joinCode = new URLSearchParams(location.search).get('escuela') || '';
 export const schoolInviteCode = () => joinCode;
 
 const body = html => { $('schoolBody').innerHTML = html; };
-const accountName = () => String((currentAccount() && currentAccount().displayName) || '').slice(0, 30);
 const instOptions = sel => INSTRUMENTS.map(i => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(i.name)}</option>`).join('');
 const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—');
 const showError = (id, text) => { $(id).textContent = text; $(id).hidden = false; };
@@ -87,6 +86,8 @@ async function studentView(s) {
   body('<p class="empty">Cargando tu escuela…</p>');
   try {
     const [school, me] = await Promise.all([api.getSchool(s.schoolId), api.getMyMember(s.schoolId)]);
+    // el profesor anterior me pasó la escuela al borrar su cuenta
+    if (school && me && school.ownerUid === me.id) { update({ school: { ...getState().school, role: 'teacher' } }); renderSchool(); return; }
     if (!school || !me) { body('<div class="panel"><h2>Ya no estás en esta escuela</h2><p class="muted">Tu profesor te ha dado de baja o la escuela ya no existe.</p><button type="button" class="btn small" id="sForget">Entendido</button></div>'); $('sForget').addEventListener('click', forget); return; }
     if (me.level !== s.level || school.year !== s.year) update({ school: { ...getState().school, level: me.level, year: school.year, name: school.name } });
     const { library } = await import('./book.js');

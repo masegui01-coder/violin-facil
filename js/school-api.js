@@ -48,9 +48,11 @@ export async function joinSchool(code, nickname, instrument) {
 export async function leaveSchool(schoolId) {
   const user = await ensureSignedIn();
   const { db, fs } = await refs();
+  const school = fs.doc(db, 'schools', schoolId);
   const batch = fs.writeBatch(db);
   batch.delete(fs.doc(db, 'schools', schoolId, 'members', user.uid));
-  batch.update(fs.doc(db, 'schools', schoolId), { students: fs.increment(-1) });
+  // ficha y contador van juntos (las reglas lo exigen); si el profesor ya borró la escuela no hay contador
+  if ((await fs.getDoc(school)).exists()) batch.update(school, { students: fs.increment(-1) });
   batch.delete(fs.doc(db, 'schools', schoolId, 'progress', user.uid));
   await batch.commit();
 }
@@ -87,7 +89,8 @@ export async function removeStudent(schoolId, uid) {
   const batch = fs.writeBatch(db);
   batch.delete(fs.doc(db, 'schools', schoolId, 'members', uid));
   batch.delete(fs.doc(db, 'schools', schoolId, 'progress', uid));
-  batch.update(fs.doc(db, 'schools', schoolId), { students: fs.increment(-1) });
+  // las reglas exigen restar uno indicando quién sale, en la misma escritura que borra su ficha
+  batch.update(fs.doc(db, 'schools', schoolId), { students: fs.increment(-1), leftUid: uid });
   await batch.commit();
 }
 

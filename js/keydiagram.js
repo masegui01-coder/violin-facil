@@ -70,8 +70,16 @@ function drawKeys(svg, f, instId) {
   if (!fingeringsReviewed(instId)) el('text', { x: 4, y: 192, class: 'kd-beta' }, svg, 'β');
 }
 
-// Dibuja la digitación de la nota escrita; devuelve false si no hay dato
+// Dibuja la digitación de la nota escrita; devuelve false si no hay dato.
+// Los dibujos apaisados (mástil, teclado, láminas) llevan la clase board-wide para ocupar todo el ancho y que se lean.
 export function renderDiagram(svg, instId, midis, nom) {
+  const ok = drawDiagram(svg, instId, midis, nom);
+  const [, , w, h] = (svg.getAttribute('viewBox') || '').split(' ').map(Number);
+  svg.classList?.toggle('board-wide', w > h * 1.3);
+  return ok;
+}
+
+function drawDiagram(svg, instId, midis, nom) {
   if (instId === 'violin' || instId === 'cello') { renderFingerboard(svg, midis, nom, instId); return true; }
   if (instId === 'guitar' || instId === 'ukulele') { drawFretboard(svg, midis.map(m => fingeringFor(instId, m)).filter(Boolean), instId === 'ukulele' ? 4 : 6, { nom }); return true; }
   if (instId === 'piano') { drawKeyboard(svg, midis); return true; }

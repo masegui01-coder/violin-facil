@@ -11,9 +11,6 @@
 .input, .select, .title-input { min-height: 48px; }
 .switch-row { min-height: 48px; }
 details > summary.muted { display: flex; align-items: center; min-height: 48px; padding-block: 0; }
-/* Botones que deben verse pequeños: el dibujo sigue igual y la zona que se puede tocar crece */
-.round.mini { position: relative; }
-.round.mini::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
 /* Interruptores: se pulsa toda la fila (etiqueta de 48 px); el propio interruptor también crece hacia fuera */
 .switch::before { content: ""; position: absolute; inset: -9px -4px; }
 

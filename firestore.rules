@@ -149,26 +149,33 @@ service cloud.firestore {
       allow create, update: if isOwn(uid) && validName() && validAccuracy();
       allow delete: if isOwn(uid);
     }
-    // Liga semanal: puntos acumulados (como mucho 40 por lección y una suma cada 10 s, con la hora del servidor en «at»)
+    // Liga semanal: puntos acumulados con la hora del servidor en «at». Como mucho una suma por minuto de 120 puntos
+    // (varias lecciones acumuladas en el cliente, league.js) y 5000 en la semana.
     function validLeague() {
       return validName() && request.resource.data.score is number && request.resource.data.at == request.time
+        && request.resource.data.score <= 5000
         && request.resource.data.keys().hasOnly(['name', 'instrument', 'score', 'stars', 'at']);
     }
     match /leagues/{board}/results/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && uid == request.auth.uid && validLeague()
-        && request.resource.data.score >= 0 && request.resource.data.score <= 40;
+        && request.resource.data.score >= 0 && request.resource.data.score <= 120;
       allow update: if signedIn() && uid == request.auth.uid && validLeague()
         && request.resource.data.score >= resource.data.score
-        && request.resource.data.score <= resource.data.score + 40
-        && request.time > resource.data.get('at', timestamp.value(0)) + duration.value(10, 's');
+        && request.resource.data.score <= resource.data.score + 120
+        && request.time > resource.data.get('at', timestamp.value(0)) + duration.value(60, 's');
       allow delete: if isOwn(uid);
     }
 
     match /bands/{bandId} {
       allow read: if isMember(bandId) || isDirector(bandId) || isAdmin();
       allow create: if signedIn() && request.resource.data.directorUid == request.auth.uid;
-      allow update: if isDirector(bandId) && request.resource.data.directorUid == resource.data.directorUid;
+      // El director cambia su banda; al borrar su cuenta puede pasar la dirección a un músico que ya esté en ella
+      allow update: if isDirector(bandId) && (request.resource.data.directorUid == resource.data.directorUid
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['directorUid', 'directorName'])
+          && request.resource.data.directorUid is string && request.resource.data.directorUid != request.auth.uid
+          && exists(/databases/$(db)/documents/bands/$(bandId)/members/$(request.resource.data.directorUid))
+          && shortText(request.resource.data.directorName, 60)));
       allow delete: if isDirector(bandId);
 
       // Ficha de músico: voz 1-4 o vacía, textos cortos y números de verdad
@@ -180,6 +187,10 @@ service cloud.firestore {
       // Lo que el músico sube de sí mismo (band-sync.js y la voz en band-member.js); nunca papel, código ni apodo
       function ownMemberKeys() {
         return ['voice', 'instrument', 'days', 'xp', 'points', 'level', 'streak', 'tuning', 'lastPractice', 'syncedAt'];
+      }
+      // Un jefe de cuerda no se cambia de instrumento (vería el progreso de otra sección); un músico sí
+      function keepsSection(d, old) {
+        return old.get('role', 'member') != 'leader' || d.get('instrument', null) == old.get('instrument', null);
       }
       // Puntos = xp − xp al entrar: nunca más que la xp; suben como mucho 2000 por escritura (días sin conexión)
       // y solo bajan a 0 (al reiniciar el progreso)
@@ -200,10 +211,15 @@ service cloud.firestore {
         allow update: if validMember(request.resource.data) && (
           (signedIn() && uid == request.auth.uid && request.resource.data.role == resource.data.role
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(ownMemberKeys())
+            && keepsSection(request.resource.data, resource.data)
             && validMemberPoints(request.resource.data, resource.data))
           || (isDirector(bandId) && resource.data.role != 'director'
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'voice'])
-              && request.resource.data.role in ['member', 'leader']));
+              && request.resource.data.role in ['member', 'leader'])
+          // Traspaso: el músico que recibe la dirección pasa a «director» en la misma escritura
+          || (isDirector(bandId) && getAfter(bandPath(bandId)).data.directorUid == uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+              && request.resource.data.role == 'director'));
         allow delete: if (signedIn() && uid == request.auth.uid) || isDirector(bandId);
       }
 
@@ -260,7 +276,12 @@ service cloud.firestore {
       allow list: if isAdmin(); // métricas del administrador
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
         && shortText(request.resource.data.name, 60) && validCode(request.resource.data.code);
-      allow update: if groupOwner(gid) && request.resource.data.ownerUid == resource.data.ownerUid && shortText(request.resource.data.name, 60);
+      // El dueño cambia el nombre; al borrar su cuenta puede pasar el grupo a otro miembro
+      allow update: if groupOwner(gid) && shortText(request.resource.data.name, 60)
+        && (request.resource.data.ownerUid == resource.data.ownerUid
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid'])
+            && request.resource.data.ownerUid is string && request.resource.data.ownerUid != request.auth.uid
+            && exists(/databases/$(db)/documents/groups/$(gid)/members/$(request.resource.data.ownerUid))));
       allow delete: if groupOwner(gid);
       match /members/{uid} {
         allow read: if inGroup(gid) || isAdmin();
@@ -315,6 +336,17 @@ service cloud.firestore {
     function schoolOwner(sid) { return signedIn() && get(schoolPath(sid)).data.ownerUid == request.auth.uid; }
     function inSchool(sid) { return signedIn() && exists(schoolMember(sid, request.auth.uid)); }
     function schoolLimit(d) { return ('premium' in d) && d.premium.active == true ? 200 : 5; }
+    // Plazas: la ficha de un alumno solo se crea si en la MISMA escritura la escuela suma exactamente uno y antes cabía
+    // en la licencia; solo se borra si resta exactamente uno sin bajar de 0 (o si la escuela desaparece con ella)
+    function seatTaken(sid) {
+      let before = get(schoolPath(sid)).data;
+      return before.students < schoolLimit(before) && getAfter(schoolPath(sid)).data.students == before.students + 1;
+    }
+    function seatFreed(sid) {
+      return !existsAfter(schoolPath(sid))
+        || (get(schoolPath(sid)).data.students >= 1
+          && getAfter(schoolPath(sid)).data.students == get(schoolPath(sid)).data.students - 1);
+    }
     match /schoolCodes/{code} {
       allow get: if signedIn();
       allow list, update: if false;
@@ -327,27 +359,37 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid && shortText(request.resource.data.name, 80)
         && validCode(request.resource.data.code) && !('premium' in request.resource.data) && request.resource.data.students == 0;
-      // El profesor cambia el nombre, el curso escolar y el número de alumnos (al dar de baja); nunca la licencia
-      allow update: if (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'year', 'students'])
+      // El profesor cambia el nombre y el curso escolar; nunca la licencia. Al dar de baja a un alumno resta uno
+      // indicando quién sale («leftUid»), y su ficha debe borrarse en la misma escritura.
+      allow update: if (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'year'])
             && shortText(request.resource.data.name, 80))
-        // Un alumno que entra suma uno (si cabe en la licencia) y uno que sale resta uno
+        || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students', 'leftUid'])
+            && request.resource.data.students == resource.data.students - 1 && resource.data.students >= 1
+            && request.resource.data.leftUid is string
+            && exists(schoolMember(sid, request.resource.data.leftUid)) && !existsAfter(schoolMember(sid, request.resource.data.leftUid)))
+        // Un alumno que entra suma uno (si cabe en la licencia) y uno que sale resta uno, siempre junto a su ficha
         || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students'])
             && ((request.resource.data.students == resource.data.students + 1 && resource.data.students < schoolLimit(resource.data)
                  && !exists(schoolMember(sid, request.auth.uid)) && existsAfter(schoolMember(sid, request.auth.uid)))
-              || (request.resource.data.students == resource.data.students - 1
+              || (request.resource.data.students == resource.data.students - 1 && resource.data.students >= 1
                  && exists(schoolMember(sid, request.auth.uid)) && !existsAfter(schoolMember(sid, request.auth.uid)))))
+        // Al borrar su cuenta, el profesor puede pasar la escuela a alguien que ya esté en ella
+        || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid', 'ownerName'])
+            && request.resource.data.ownerUid is string && request.resource.data.ownerUid != request.auth.uid
+            && exists(schoolMember(sid, request.resource.data.ownerUid)) && shortText(request.resource.data.ownerName, 60))
         || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium']));
       allow delete: if schoolOwner(sid);
       match /members/{uid} {
         allow read: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid) || isAdmin();
         allow create: if signedIn() && uid == request.auth.uid && shortText(request.resource.data.nickname, 30)
           && shortText(request.resource.data.instrument, 24) && validCode(request.resource.data.code) && request.resource.data.level == 1
-          && getAfter(/databases/$(db)/documents/schoolCodes/$(request.resource.data.code)).data.schoolId == sid;
+          && getAfter(/databases/$(db)/documents/schoolCodes/$(request.resource.data.code)).data.schoolId == sid
+          && seatTaken(sid);
         allow update: if (signedIn() && uid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'instrument'])
             && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24))
           || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['level', 'instrument'])
             && request.resource.data.level in [1, 2, 3]);
-        allow delete: if (signedIn() && uid == request.auth.uid) || schoolOwner(sid);
+        allow delete: if ((signedIn() && uid == request.auth.uid) || schoolOwner(sid)) && seatFreed(sid);
       }
       match /progress/{uid} {
         allow read: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid) || isAdmin();
