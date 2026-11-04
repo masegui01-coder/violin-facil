@@ -11,6 +11,7 @@ import { instrumentById } from '../instruments.js';
 import { lessonTitle } from '../course.js';
 import { getState, subscribe, currentStreak, today } from '../store.js';
 import { sheet } from './band-ui.js';
+import { t } from '../i18n.js';
 
 const PROFILE_DELAY_MS = 8000;
 const MAX_EVENTS_PER_DAY = 12;
@@ -230,7 +231,7 @@ async function shareInvite() {
   const code = data.me && data.me.code;
   if (!code) return;
   const link = `${location.origin}${location.pathname}?${INVITE_PARAM}=${code}`;
-  const text = `¡Practica conmigo en Band Flow! Mi código de amigo es ${code}: ${link}`;
+  const text = t(`¡Practica conmigo en Band Flow! Mi código de amigo es ${code}: ${link}`); // se comparte fuera de la app
   if (navigator.share) { try { await navigator.share({ title: 'Band Flow', text }); return; } catch (err) { if (err.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } catch (err) { toast(link); }
 }

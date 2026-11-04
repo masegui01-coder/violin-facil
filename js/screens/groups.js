@@ -8,9 +8,10 @@ import { accountName } from '../account.js';
 import { getState, update } from '../store.js';
 import { isStale, MAX_MEMBERS, MAX_SONGS } from '../group-mix.js';
 import { sheet } from './band-ui.js';
+import { t } from '../i18n.js';
 
-const BETA_NOTE = `<div class="beta-note"><b>Grupos · beta</b><span>Estamos estrenando esta parte: puede tener fallos y cambiará con lo que nos contéis.
-  Cada uno graba su parte en casa encima de la maqueta y de lo que han subido los demás. Canciones de hasta 5 minutos y hasta ${MAX_MEMBERS} músicos.</span></div>`;
+// En una sola línea: cada texto se traduce entero al inglés
+const BETA_NOTE = `<div class="beta-note"><b>Grupos · beta</b><span>Estamos estrenando esta parte: puede tener fallos y cambiará con lo que nos contéis. Cada uno graba su parte en casa encima de la maqueta y de lo que han subido los demás. Canciones de hasta 5 minutos y hasta ${MAX_MEMBERS} músicos.</span></div>`;
 
 let openGroup = null; // { groupId, name, code }
 let joinCode = new URLSearchParams(location.search).get('grupo') || '';
@@ -116,7 +117,7 @@ function showGroup(group, members, songs, uid) {
     <button type="button" class="btn ghost small" id="gLeave">Salir del grupo</button>`);
   $('gAll').addEventListener('click', () => { openGroup = null; renderGroups(); });
   $('gInvite').addEventListener('click', async () => {
-    const text = `Únete a «${group.name}» en Band Flow para ensayar a distancia: ${link} (código ${group.code})`;
+    const text = t(`Únete a «${group.name}» en Band Flow para ensayar a distancia: ${link} (código ${group.code})`);
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } } catch (e) { /* cancelado */ }
   });
   $('groupBody').querySelectorAll('[data-song]').forEach(b => b.addEventListener('click', () => go('groupsong', { group, songId: b.dataset.song, me: { uid, ...me } })));

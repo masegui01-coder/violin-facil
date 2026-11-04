@@ -116,7 +116,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .mode-btn b { font-size: 1rem; }
 .mode-btn small { color: var(--muted); font-size: .82rem; line-height: 1.3; }
 .mode-btn.primary { border-color: var(--accent); background: var(--accent-soft); }
-textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
+textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 10px 14px; resize: vertical; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: .9rem; z-index: 40; max-width: calc(100vw - 32px); }
 
 /* Pulso visual: un péndulo que va de lado a lado y marca cada pulso en los extremos */
@@ -203,13 +203,13 @@ textarea { width: 100%; min-height: 130px; border-radius: 14px; border: 1.5px so
   main:has(> #lesson:not([hidden])) { padding-bottom: 0; }
   #lesson.lesson-screen > .mix-row { grid-column: 1; justify-content: flex-end; flex-wrap: nowrap; }
   #lesson.lesson-screen > .metro-group { grid-column: 2; justify-content: flex-start; gap: 4px; }
-  #lesson.lesson-screen .icon-btn { width: 40px; height: 40px; }
+  #lesson.lesson-screen .icon-btn { width: 44px; height: 44px; } /* 44 px: el mínimo táctil de WCAG 2.5.5 incluso en horizontal */
   #lesson.lesson-screen .lesson-title { margin: 0; }
   #lesson.lesson-screen .staff { max-height: 32vh; }
   #lesson.lesson-screen .status { min-height: 1.2em; margin: 0; }
-  #lesson.lesson-screen .controls .btn.small, #lesson.lesson-screen .mix-row .chip-btn { min-height: 40px; padding-block: 6px; }
+  #lesson.lesson-screen .controls .btn.small, #lesson.lesson-screen .mix-row .chip-btn { min-height: 44px; padding-block: 6px; }
   #lesson.lesson-screen .mix-row .chip-btn { padding-inline: 10px; }
-  #lesson.lesson-screen .round.mini { width: 40px; height: 40px; }
+  #lesson.lesson-screen .round.mini { width: 44px; height: 44px; }
   #lesson.lesson-screen #lessonMetro { white-space: nowrap; }
 }
 /* móvil horizontal estrecho: no caben en una fila; cada grupo en la suya (la lección baja por dentro) */

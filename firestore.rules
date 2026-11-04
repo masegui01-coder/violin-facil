@@ -26,8 +26,14 @@ service cloud.firestore {
         || request.auth.uid == 'OxA5RXkTzXQ2ggKkzDOlQoEmVGM2');
     }
     function isOwn(uid) { return signedIn() && uid == request.auth.uid; }
+    // Progreso sincronizado (sync.js push): { state, savedAt } y nada más. El documento entero lo acota Firestore (1 MiB);
+    // aquí solo que el estado sea un mapa con un número razonable de claves (hoy unas 75)
+    function validUserDoc(d) {
+      return d.keys().hasOnly(['state', 'savedAt']) && d.state is map && d.state.size() <= 1000 && optNumber(d, 'savedAt');
+    }
     match /users/{uid} {
-      allow read, write: if isOwn(uid);
+      allow read, delete: if isOwn(uid);
+      allow create, update: if isOwn(uid) && validUserDoc(request.resource.data);
     }
     // Roles (tester pro): los da el administrador desde el panel de testers; cada uno solo lee el suyo (y lo borra con su cuenta)
     match /roles/{uid} {
@@ -36,13 +42,25 @@ service cloud.firestore {
       allow delete: if isOwn(uid);
     }
     // Resumen de cada tester: lo escribe él y lo lee el administrador (panel de testers)
+    // Solo los campos de testerSummary() en sync.js (se reescribe entero con setDoc), con textos y listas acotados
+    function optText(d, k, max) { return !(k in d) || d[k] == null || shortText(d[k], max); }
+    function optList(d, k, max) { return !(k in d) || (d[k] is list && d[k].size() <= max); }
+    function testerKeys() {
+      return ['name', 'email', 'instrument', 'instruments', 'xp', 'level', 'lessons', 'minutes', 'daysPracticed', 'firstDay',
+        'lastPractice', 'streak', 'badges', 'features', 'instrumentIds', 'band', 'platform', 'createdAt', 'lastSeen'];
+    }
+    function validTester(d) {
+      return d.keys().hasOnly(testerKeys()) && shortText(d.name, 60)
+        && optText(d, 'email', 320) && optText(d, 'instrument', 24) && optText(d, 'level', 60) && optText(d, 'band', 200)
+        && optText(d, 'platform', 60) && optText(d, 'firstDay', 20) && optText(d, 'lastPractice', 20)
+        && optList(d, 'instruments', 64) && optList(d, 'instrumentIds', 64) && optList(d, 'features', 200)
+        && optNumber(d, 'minutes') && optNumber(d, 'lessons') && optNumber(d, 'daysPracticed') && optNumber(d, 'xp')
+        && optNumber(d, 'streak') && optNumber(d, 'badges') && optNumber(d, 'createdAt') && optNumber(d, 'lastSeen');
+    }
     match /testers/{uid} {
       allow read: if (signedIn() && uid == request.auth.uid) || isAdmin();
       allow delete: if isOwn(uid);
-      allow create, update: if isOwn(uid)
-        && shortText(request.resource.data.name, 60)
-        && optNumber(request.resource.data, 'minutes') && optNumber(request.resource.data, 'lessons')
-        && optNumber(request.resource.data, 'daysPracticed') && optNumber(request.resource.data, 'xp');
+      allow create, update: if isOwn(uid) && validTester(request.resource.data);
     }
     // Administradores: se dan de alta a mano desde la consola; cada uno solo puede comprobar si lo es
     // Datos del panel del administrador (checklist de pruebas)
@@ -121,21 +139,45 @@ service cloud.firestore {
     function validName() { return request.resource.data.name is string && request.resource.data.name.size() <= 30; }
     function validAccuracy() { return request.resource.data.score is number && request.resource.data.score >= 0 && request.resource.data.score <= 1; }
 
+    // Resultado de un reto, de una canción o del reto del día (social-api.js submitScore, que reescribe el documento entero)
+    function validResult() {
+      return validName() && validAccuracy()
+        && request.resource.data.keys().hasOnly(['name', 'score', 'stars', 'instrument', 'at'])
+        && (!('stars' in request.resource.data) || request.resource.data.stars == null || request.resource.data.stars is number)
+        && optText(request.resource.data, 'instrument', 24)
+        && (!('at' in request.resource.data) || request.resource.data.at is timestamp);
+    }
+    // Partitura que viaja en un reto o una partitura compartida (band-api.js songPayload): datos de la canción y las
+    // notas comprimidas { n, b, t }. Los títulos importados de MusicXML pueden ser largos: 200 caracteres
+    function validSongPayload(s) {
+      return s is map && s.keys().hasOnly(['title', 'by', 'key', 'time', 'bpm', 'pickup', 'enc'])
+        && shortText(s.title, 200) && optText(s, 'by', 200)
+        && s.enc is map && s.enc.keys().hasOnly(['n', 'b', 't']);
+    }
+    // social-api.js createWithCode: { song, ownerName, (instrument), ownerUid, createdAt } con la hora del servidor
+    function validShared(d, keys) {
+      return d.keys().hasOnly(keys) && d.ownerUid == request.auth.uid && validSongPayload(d.song)
+        && shortText(d.ownerName, 60) && d.createdAt == request.time;
+    }
+
     // Partituras compartidas y retos: se leen por código; solo su autor los crea, los borra o los lista (para borrarlos con su cuenta)
     match /sharedScores/{code} {
       allow get: if signedIn();
       allow list: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow create: if signedIn() && validCode(code) && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn() && validCode(code)
+        && validShared(request.resource.data, ['song', 'ownerName', 'ownerUid', 'createdAt']);
       allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
     }
     match /challenges/{code} {
       allow get: if signedIn();
       allow list: if signedIn() && resource.data.ownerUid == request.auth.uid;
-      allow create: if signedIn() && validCode(code) && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn() && validCode(code)
+        && validShared(request.resource.data, ['song', 'instrument', 'ownerName', 'ownerUid', 'createdAt'])
+        && optText(request.resource.data, 'instrument', 24);
       allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
       match /results/{uid} {
         allow read: if signedIn();
-        allow create, update: if isOwn(uid) && validName() && validAccuracy();
+        allow create, update: if isOwn(uid) && validResult();
         allow delete: if isOwn(uid);
       }
     }
@@ -143,12 +185,12 @@ service cloud.firestore {
     // Clasificaciones abiertas por canción e instrumento, y del reto del día: cada uno escribe (y borra) solo su resultado
     match /boards/{board}/results/{uid} {
       allow read: if signedIn();
-      allow create, update: if isOwn(uid) && validName() && validAccuracy();
+      allow create, update: if isOwn(uid) && validResult();
       allow delete: if isOwn(uid);
     }
     match /daily/{board}/results/{uid} {
       allow read: if signedIn();
-      allow create, update: if isOwn(uid) && validName() && validAccuracy();
+      allow create, update: if isOwn(uid) && validResult();
       allow delete: if isOwn(uid);
     }
     // Liga semanal: puntos acumulados con la hora del servidor en «at». Como mucho una suma por minuto de 120 puntos

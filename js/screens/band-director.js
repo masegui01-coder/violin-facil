@@ -8,6 +8,7 @@ import { weekId } from '../engage.js';
 import { today, getState, update } from '../store.js';
 import { cloudErrorText } from '../cloud.js';
 import { attachTooltips } from '../charts.js';
+import { t } from '../i18n.js';
 import { openTaskForm } from './band-task.js';
 import { seatName, sheet, fmtDay } from './band-ui.js';
 import { derive, musiciansOf } from './director-common.js';
@@ -67,7 +68,7 @@ function pickStar(ctx, reload, rerender) {
 // ---------- Invitación ----------
 async function shareInvite(b) {
   const link = `${location.origin}${location.pathname}?banda=${b.code}`;
-  const text = `Únete a «${b.name}» en Band Flow con el código ${b.code}: ${link}`;
+  const text = t(`Únete a «${b.name}» en Band Flow con el código ${b.code}: ${link}`); // se comparte fuera de la app: va ya traducido
   if (navigator.share) { try { await navigator.share({ title: 'Band Flow', text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } catch (e) { toast(link); }
 }
@@ -90,7 +91,7 @@ async function showQr(b) {
 }
 
 function downloadCsv(ctx) {
-  const csv = bandCsv(musiciansOf(ctx), ctx.tasks, ctx.progress, today(), id => instrumentById(id).name);
+  const csv = bandCsv(musiciansOf(ctx), ctx.tasks, ctx.progress, today(), id => t(instrumentById(id).name));
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
@@ -130,7 +131,8 @@ async function act(key, el, ctx, reload, rerender) {
       const task = ctx.tasks.find(t => t.id === arg);
       const to = derive(ctx).statusOf(task).notStarted.map(r => r.member.id);
       const name = /[«"]/.test(task.title) ? task.title : `«${task.title}»`;
-      noticeSheet(ctx, to, `Recuerda practicar ${name}${task.due ? ` antes del ${fmtDay(task.due)}` : ''}. ¡Ánimo!`, reload, rerender);
+      // el texto va dentro de un campo editable, que no se traduce solo
+      noticeSheet(ctx, to, t(`Recuerda practicar ${name}${task.due ? ` antes del ${fmtDay(task.due)}` : ''}. ¡Ánimo!`), reload, rerender);
       return;
     }
     case 'notice-to': noticeSheet(ctx, [arg], '', reload, rerender); return;

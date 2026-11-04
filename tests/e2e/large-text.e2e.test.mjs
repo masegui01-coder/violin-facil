@@ -46,6 +46,11 @@ for (const zoom of ZOOMS) {
       return r.width <= 1 || (r.left >= p.left - 0.5 && r.right <= p.right + 0.5);
     }));
     assert.ok(labelsFit, 'etiquetas dentro de su pestaña');
+    // Al 150 % las etiquetas siguen a la vista (con letra más justa o «…»); solo al 200 % se quedan los iconos solos
+    if (zoom === '150%') {
+      const shown = await page.$$eval('#tabbar .tab-label', ls => ls.map(l => l.getBoundingClientRect().width > 1));
+      assert.deepEqual(shown, TABS.map(() => true), 'al 150 % se ven las cinco etiquetas');
+    }
     // Sin desplazamiento horizontal: la cabecera tampoco se sale
     const { scrollWidth, topbarRight } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -72,6 +77,55 @@ test('con la letra al 200 % se puede abrir Perfil (y cada pestaña) pulsando su 
     assert.equal(await page.$eval(`[data-tab="${tab}"]`, b => b.getAttribute('aria-current')), 'page', tab);
   }
   await tap(page, '[data-tab="learn"]');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+// Palabras de un botón que se han partido en dos líneas (cada palabra debe quedar en una sola)
+const brokenWords = page => page.$$eval('.seg button', buttons => buttons.filter(b => b.getClientRects().length).flatMap(b => {
+  const out = [];
+  const walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    for (const m of node.textContent.matchAll(/\S+/g)) {
+      const range = document.createRange();
+      range.setStart(node, m.index);
+      range.setEnd(node, m.index + m[0].length);
+      const tops = new Set([...range.getClientRects()].map(r => Math.round(r.top)));
+      if (tops.size > 1) out.push(m[0]);
+    }
+  }
+  return out;
+}));
+
+test('con la letra al 200 % los segmentados de Ajustes no parten palabras ni se salen', async () => {
+  const { page, errors, close } = await openApp(env, { seed: { lang: 'en' } });
+  await setRootFont(page, '200%');
+  await tap(page, '[data-tab="profile"]');
+  await tap(page, '#openSettings');
+  await waitVisible(page, 'settings');
+  await sleep(300);
+  assert.deepEqual(await brokenWords(page), [], 'ninguna palabra partida');
+  const overflow = await page.$$eval('#settings .seg', segs => segs.filter(s => {
+    const r = s.getBoundingClientRect();
+    return [...s.children].some(b => { const c = b.getBoundingClientRect(); return c.right > r.right + 0.5 || c.left < r.left - 0.5 || b.scrollWidth > b.clientWidth + 1; });
+  }).length);
+  assert.equal(overflow, 0, 'cada segmento cabe dentro de su grupo');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('con la letra al 200 % «Objetivo de hoy» se lee entero dentro de su ficha', async () => {
+  const { page, errors, close } = await openApp(env);
+  await setRootFont(page, '200%');
+  await sleep(300);
+  const fit = await page.$eval('.today-goal', card => {
+    const c = card.getBoundingClientRect();
+    return [...card.querySelectorAll('b, small')].every(el => {
+      const r = el.getBoundingClientRect();
+      return r.left >= c.left - 0.5 && r.right <= c.right + 0.5 && r.bottom <= c.bottom + 0.5 && el.scrollWidth <= el.clientWidth + 1;
+    });
+  });
+  assert.ok(fit, 'el texto de la ficha del objetivo no se corta');
   assert.deepEqual(errors, []);
   await close();
 });

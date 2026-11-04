@@ -30,7 +30,7 @@ export const PERC_LEVELS_1 = [
       { tipo_interaccion: 'marcar_ritmo', enfoque: 'solfeo', compas: 4, bpm: 70, ritmo: '| q q q q | h h |', mensaje_acierto: L('¡Clavado! Pulso firme.', 'Spot on! A steady beat.'), mensaje_error: L('Escucha la cuenta y deja que la blanca dure dos pulsos.', 'Listen to the count-in and let the half note last two beats.') },
     ],
     practica: {
-      instruccion: L('Partitura de caja de cuatro compases: negras alternadas y una redonda final, con las letras D e I debajo de cada golpe.', 'Four-bar snare score: alternating quarter notes and a final whole note, with the letters D and I under each stroke.'),
+      instruccion: L('Partitura de caja de cuatro compases: negras alternadas y una redonda final, con las letras D e I debajo de cada golpe.', 'Four-bar snare score: alternating quarter notes and a final whole note, with the letters R and L under each stroke.'),
       bpm: 70, time: 4, superficie: SURFACE, patron: DI,
       score: '| C5q C5q C5q C5q | C5q C5q C5q C5q | C5q C5q C5q C5q | C5w |',
       rutina_pasos: STEPS(

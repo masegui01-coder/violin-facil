@@ -49,7 +49,7 @@ function welcome() {
       <label for="createName">Nombre de la banda</label>
       <input id="createName" class="input" maxlength="60" placeholder="Ej.: Banda Municipal de…">
       <label for="createNick">Tu nombre</label>
-      <input id="createNick" class="input" maxlength="30" value="${esc(accountName())}">
+      <input id="createNick" class="input" maxlength="30" placeholder="Como te verán tus músicos" value="${esc(accountName())}">
       <p class="muted small">La banda queda en tu cuenta: no la pierdes si cambias de móvil.</p>
       <button class="btn ghost" type="submit">Crear banda</button>
       <p id="createError" class="warn" hidden></p>

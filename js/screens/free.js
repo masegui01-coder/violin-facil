@@ -14,6 +14,7 @@ import * as audio from '../audio.js';
 import { withMic } from './practice.js';
 import { finishLesson } from './result.js';
 import { openSongPicker } from './sheet.js';
+import { dateLocale } from './band-ui.js';
 
 const TICK_MS = 30;
 const TRAIL_SHOWN = 10;
@@ -39,7 +40,7 @@ function renderRecordings() {
   const nom = getState().nom;
   const recs = getState().recordings;
   $('recordings').innerHTML = !free.lesson && recs.length
-    ? '<h2>Guardadas</h2>' + recs.map(r => `<div class="recording"><div><b>${new Date(r.date).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })} · ${r.notes.length} notas</b>
+    ? '<h2>Guardadas</h2>' + recs.map(r => `<div class="recording"><div><b>${new Date(r.date).toLocaleString(dateLocale(), { dateStyle: 'medium', timeStyle: 'short' })} · ${r.notes.length} notas</b>
       <small>${esc(r.notes.slice(0, 12).map(m => noteLabel({ midi: m }, nom)).join(' '))}${r.notes.length > 12 ? '…' : ''}</small></div>
       <div class="row"><button type="button" class="btn ghost small" data-rec-compare="${r.id}">Comparar</button><button type="button" class="btn ghost small" data-rec-delete="${r.id}" aria-label="Borrar grabación">✕</button></div></div>`).join('')
     : '';

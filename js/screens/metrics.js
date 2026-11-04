@@ -13,6 +13,7 @@ import { premiumActive } from '../school.js';
 import { INSTRUMENTS } from '../instruments.js';
 import { columns, hbars, statTile, attachTooltips } from '../charts.js';
 import { openTesters } from './account-panel.js';
+import { dateLocale } from './band-ui.js';
 
 const CONSOLE = 'https://console.firebase.google.com/project/band-flow-83d4b';
 const body = html => { $('metricsBody').innerHTML = html; };
@@ -75,7 +76,7 @@ function render(testers, bands, groups, manual = {}, schools = null) {
   const m = userMetrics(testers.map(t => ({ ...t, instrumentName: t.instrument ? instrumentById(t.instrument).name : '' })));
   const g = groups ? groupMetrics(groups) : null;
   const musicians = bands ? bands.reduce((s, b) => s + Math.max(0, b.members - 1), 0) : 0;
-  body(`<p class="muted small">Datos de los usuarios con cuenta. Se actualizan cada vez que alguien usa la app. ${new Date().toLocaleString('es-ES')}</p>
+  body(`<p class="muted small">Datos de los usuarios con cuenta. Se actualizan cada vez que alguien usa la app. ${new Date().toLocaleString(dateLocale())}</p>
     <div class="tiles">
       ${statTile({ label: 'Usuarios con cuenta', value: m.total, hint: `${m.newThisWeek} nuevos esta semana` })}
       ${statTile({ label: 'Activos hoy', value: m.active1 })}

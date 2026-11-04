@@ -72,7 +72,13 @@
 .confirm-dialog h2 { text-align: center; font-size: 1.4rem; }
 .confirm-ic { align-self: center; width: 24px; height: 24px; color: var(--bad); }
 .confirm-ic svg { width: 100%; height: 100%; display: block; }
-.confirm-actions { justify-content: flex-end; }
+/* Acciones de MD3: una sola fila a la derecha (botón de texto + botón relleno, 8 px entre ellos); solo si no caben
+   (letra muy grande) saltan de línea, y entonces cada una ocupa su fila alineada a la derecha */
+.confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 8px; }
+.confirm-actions .btn { padding-inline: 16px; }
+.btn.text { background: transparent; color: var(--accent); border: 0; box-shadow: none; }
+.btn.text:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); box-shadow: none; }
+.btn.text:active { filter: none; background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .btn.danger-fill { background: var(--bad); color: var(--on-color); }
 /* Perfil: la rejilla de instrumentos va plegada tras «Cambiar de instrumento» (el chip de arriba también lo cambia) */
 .inst-more > summary { list-style: none; width: max-content; max-width: 100%; }

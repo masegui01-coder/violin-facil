@@ -171,7 +171,7 @@ test('ninguna regla que permite borrar valida request.resource (en un borrado no
 });
 
 test('el propio usuario puede borrar cada documento suyo', () => {
-  assert.match(block('users/{uid}'), /allow read, write: if isOwn\(uid\);/);
+  assert.match(block('users/{uid}'), /allow read, delete: if isOwn\(uid\);/);
   for (const path of ['roles/{uid}', 'testers/{uid}', 'profiles/{uid}', 'boards/{board}/results/{uid}', 'daily/{board}/results/{uid}', 'leagues/{board}/results/{uid}']) {
     assert.match(block(path), /allow delete: if isOwn\(uid\);/, path);
   }
@@ -295,5 +295,65 @@ test('solicitudes y avisos: solo los campos que escribe el cliente y textos cort
   for (const m of api.matchAll(/fs\.collection\(db, 'inbox', [^)]*\), \{ ([^}]*) \}/g)) {
     const fields = m[1].split(',').map(f => f.trim().split(':')[0].trim());
     for (const f of fields) assert.ok(['kind', 'emoji', 'fromName', 'text', 'at'].includes(f), f);
+  }
+});
+
+// ---------- Esquemas: solo los campos que escribe el cliente, con textos y listas acotados ----------
+const fieldList = text => text.split(',').map(k => k.trim().replace(/'/g, '')).filter(Boolean);
+
+test('progreso sincronizado (users/{uid}): solo { state, savedAt }, el estado es un mapa acotado', () => {
+  const users = block('users/{uid}');
+  assert.match(rule(users, 'create, update'), /isOwn\(uid\) && validUserDoc\(request\.resource\.data\)/);
+  assert.match(flat, /function validUserDoc\(d\) \{ return d\.keys\(\)\.hasOnly\(\['state', 'savedAt'\]\) && d\.state is map && d\.state\.size\(\) <= 1000 && optNumber\(d, 'savedAt'\); \}/);
+  // Lo que escribe sync.js push() (sin merge: el documento se reescribe entero)
+  const sync = readFileSync(new URL('../js/sync.js', import.meta.url), 'utf8');
+  assert.match(sync, /fs\.setDoc\(fs\.doc\(db, 'users', active\.uid\), \{ state: syncableState\(state\), savedAt: Date\.now\(\) \}\)/);
+});
+
+test('testers: solo los campos de testerSummary(), con textos y listas acotados', async () => {
+  assert.match(rule(block('testers/{uid}'), 'create, update'), /isOwn\(uid\) && validTester\(request\.resource\.data\)/);
+  assert.match(flat, /function validTester\(d\) \{ return d\.keys\(\)\.hasOnly\(testerKeys\(\)\) && shortText\(d\.name, 60\)/);
+  const allowed = fieldList(flat.match(/function testerKeys\(\) \{ return \[([^\]]*)\]/)[1]);
+  const { testerSummary } = await import('../js/sync.js');
+  const sample = testerSummary({ practiceLog: { '2026-11-01': 10 }, progress: { 'flute:song:oda': {} }, instrument: 'flute', xp: 50, badges: ['a'] },
+    { displayName: 'Ana', email: 'ana@example.com', metadata: { creationTime: '2026-10-01T00:00:00Z' } });
+  assert.deepEqual(Object.keys(sample).sort(), [...allowed].sort(), 'la lista de las reglas coincide con lo que sube el cliente');
+  const sync = readFileSync(new URL('../js/sync.js', import.meta.url), 'utf8');
+  assert.match(sync, /fs\.setDoc\(fs\.doc\(db, 'testers', active\.uid\), testerSummary\(state, active\.account\)\)/); // sin merge: sin campos viejos
+  for (const piece of ["optText(d, 'email', 320)", "optList(d, 'features', 200)", "optList(d, 'instruments', 64)", "optNumber(d, 'lastSeen')"]) {
+    assert.ok(flat.includes(piece), piece);
+  }
+});
+
+test('resultados de retos, canciones y reto del día: solo los campos de submitScore', () => {
+  assert.match(flat, /function validResult\(\) \{ return validName\(\) && validAccuracy\(\) && request\.resource\.data\.keys\(\)\.hasOnly\(\['name', 'score', 'stars', 'instrument', 'at'\]\)/);
+  for (const path of ['results/{uid}', 'boards/{board}/results/{uid}', 'daily/{board}/results/{uid}']) {
+    assert.match(rule(block(path), 'create, update'), /isOwn\(uid\) && validResult\(\);/, path);
+  }
+  const api = readFileSync(new URL('../js/social-api.js', import.meta.url), 'utf8');
+  const sent = api.match(/fs\.setDoc\(ref, \{ (name, score, stars, instrument: instrument \|\| null, at: fs\.serverTimestamp\(\)) \}\);/);
+  assert.ok(sent, 'submitScore reescribe el resultado entero');
+  assert.deepEqual(fieldList(sent[1]).map(f => f.split(':')[0].trim()), ['name', 'score', 'stars', 'instrument', 'at']);
+});
+
+test('partituras compartidas y retos: solo la partitura, el apodo, el instrumento y su autor, con la hora del servidor', async () => {
+  assert.match(rule(block('sharedScores/{code}'), 'create'), /validCode\(code\) && validShared\(request\.resource\.data, \['song', 'ownerName', 'ownerUid', 'createdAt'\]\)/);
+  assert.match(rule(block('challenges/{code}'), 'create'), /validCode\(code\) && validShared\(request\.resource\.data, \['song', 'instrument', 'ownerName', 'ownerUid', 'createdAt'\]\) && optText\(request\.resource\.data, 'instrument', 24\)/);
+  assert.match(flat, /function validShared\(d, keys\) \{ return d\.keys\(\)\.hasOnly\(keys\) && d\.ownerUid == request\.auth\.uid && validSongPayload\(d\.song\) && shortText\(d\.ownerName, 60\) && d\.createdAt == request\.time; \}/);
+  const songKeys = fieldList(flat.match(/function validSongPayload\(s\) \{ return s is map && s\.keys\(\)\.hasOnly\(\[([^\]]*)\]/)[1]);
+  assert.match(flat, /s\.enc is map && s\.enc\.keys\(\)\.hasOnly\(\['n', 'b', 't'\]\)/);
+  assert.match(flat, /shortText\(s\.title, 200\)/);
+  // Lo que escribe el cliente: social-api.js y la partitura de band-api.js songPayload (todas las canciones del repertorio)
+  const api = readFileSync(new URL('../js/social-api.js', import.meta.url), 'utf8');
+  assert.match(api, /fs\.setDoc\(ref, \{ \.\.\.data, ownerUid: user\.uid, createdAt: fs\.serverTimestamp\(\) \}\)/);
+  assert.match(api, /createWithCode\('sharedScores', \{ song, ownerName \}\)/);
+  assert.match(api, /createWithCode\('challenges', \{ song, instrument, ownerName \}\)/);
+  const { SONGS } = await import('../js/songs.js');
+  const { songPayload } = await import('../js/band-api.js');
+  for (const song of SONGS) {
+    const p = songPayload(song);
+    for (const k of Object.keys(p)) assert.ok(songKeys.includes(k), `${song.id}: «${k}»`);
+    assert.deepEqual(Object.keys(p.enc).sort(), ['b', 'n', 't']);
+    assert.ok(p.title.length <= 200 && p.by.length <= 200, song.id);
   }
 });

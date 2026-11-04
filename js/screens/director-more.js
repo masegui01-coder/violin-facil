@@ -6,7 +6,8 @@ import { instrumentById } from '../instruments.js';
 import { noteLabel, isBowed } from '../music.js';
 import { getState } from '../store.js';
 import { columns } from '../charts.js';
-import { fmtDate, fmtDay, pct, seatName } from './band-ui.js';
+import { fmtDate, fmtDay, pct, seatName, dateLocale } from './band-ui.js';
+import { t, currentLang } from '../i18n.js';
 import { derive, meter, section } from './director-common.js';
 import { libraryCard } from './band-library.js';
 
@@ -101,6 +102,7 @@ export function moreView(ctx) {
 }
 
 // ---------- Informe para imprimir ----------
+// Se abre en otra ventana, donde no llega la traducción automática: los textos pasan por t() aquí mismo
 const PRINT_CSS = `:root{--accent:#B4461F;--line:#E3DACB;--ink:#141B26;--muted:#5A6678;--ok:#16804F;--bad:#C2372F;--warn:#B47708;--surface-2:#F5EFE4}
 body{font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#141B26;margin:28px}h1{font-size:24px;margin:0}h2{font-size:17px;margin:22px 0 8px}
 .muted{color:#5A6678}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.kpi{border:1px solid #E3DACB;border-radius:10px;padding:10px}
@@ -118,18 +120,18 @@ export function printReport(ctx) {
   const rows = [...d.musicians].sort((a, b) => (a.instrument + a.nickname).localeCompare(b.instrument + b.nickname)).map(m => {
     const mine = ctx.tasks.filter(t => api.assignedTo(t, m));
     const done = mine.filter(t => ctx.progress.some(p => p.taskId === t.id && p.uid === m.id && p.completed)).length;
-    return `<tr><td><span class="dot" style="background:${light[trafficLight(m, d.day)]}"></span> ${esc(m.nickname)}</td><td>${esc(seatName(m))}</td>
+    return `<tr><td><span class="dot" style="background:${light[trafficLight(m, d.day)]}"></span> ${esc(m.nickname)}</td><td>${esc(t(seatName(m)))}</td>
       <td class="num">${Math.round(minutesInLast(m, d.day, 7))}</td><td class="num">${Math.round(minutesInLast(m, d.day, 30))}</td><td class="num">${done}/${mine.length}</td><td>${m.lastPractice ? fmtDay(m.lastPractice) : '—'}</td></tr>`;
   }).join('');
   const tasks = ctx.tasks.map(t => { const st = d.statusOf(t); return `<tr><td>${esc(t.title)}</td><td>${t.due ? fmtDay(t.due) : '—'}</td><td class="num">${st.done.length}/${st.total}</td><td class="num">${st.avgAccuracy === null ? '—' : pct(st.avgAccuracy)}</td></tr>`; }).join('');
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe · ${esc(ctx.band.name)}</title><style>${PRINT_CSS}</style></head><body>
-    <h1>${esc(ctx.band.name)}</h1><p class="muted">Informe de Band Flow · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-    <div class="kpis"><div class="kpi"><span class="muted">Músicos</span><b>${d.musicians.length}</b></div><div class="kpi"><span class="muted">Activos esta semana</span><b>${w.now.active}</b></div>
-      <div class="kpi"><span class="muted">Minutos esta semana</span><b>${w.now.minutes}</b></div><div class="kpi"><span class="muted">Racha de banda</span><b>${bandStreak(d.musicians, d.day)} días</b></div></div>
-    <h2>Minutos de práctica por día (30 días)</h2>${chart}
-    <h2>Músicos</h2><table><thead><tr><th>Músico</th><th>Instrumento</th><th class="num">Min. 7 d</th><th class="num">Min. 30 d</th><th class="num">Tareas</th><th>Último ensayo</th></tr></thead><tbody>${rows}</tbody></table>
-    ${tasks ? `<h2>Tareas</h2><table><thead><tr><th>Tarea</th><th>Fecha</th><th class="num">Hechas</th><th class="num">Acierto medio</th></tr></thead><tbody>${tasks}</tbody></table>` : ''}
-    <p><button type="button" id="printReport">Imprimir o guardar en PDF</button></p></body></html>`;
+  const html = `<!doctype html><html lang="${currentLang()}"><head><meta charset="utf-8"><title>${t(`Informe · ${esc(ctx.band.name)}`)}</title><style>${PRINT_CSS}</style></head><body>
+    <h1>${esc(ctx.band.name)}</h1><p class="muted">${t(`Informe de Band Flow · ${new Date().toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}`)}</p>
+    <div class="kpis"><div class="kpi"><span class="muted">${t('Músicos')}</span><b>${d.musicians.length}</b></div><div class="kpi"><span class="muted">${t('Activos esta semana')}</span><b>${w.now.active}</b></div>
+      <div class="kpi"><span class="muted">${t('Minutos esta semana')}</span><b>${w.now.minutes}</b></div><div class="kpi"><span class="muted">${t('Racha de banda')}</span><b>${t(`${bandStreak(d.musicians, d.day)} días`)}</b></div></div>
+    <h2>${t('Minutos de práctica por día (30 días)')}</h2>${chart}
+    <h2>${t('Músicos')}</h2><table><thead><tr><th>${t('Músico')}</th><th>${t('Instrumento')}</th><th class="num">Min. 7 d</th><th class="num">Min. 30 d</th><th class="num">${t('Tareas')}</th><th>${t('Último ensayo')}</th></tr></thead><tbody>${rows}</tbody></table>
+    ${tasks ? `<h2>${t('Tareas')}</h2><table><thead><tr><th>${t('Tarea')}</th><th>${t('Fecha')}</th><th class="num">${t('Hechas')}</th><th class="num">${t('Acierto medio')}</th></tr></thead><tbody>${tasks}</tbody></table>` : ''}
+    <p><button type="button" id="printReport">${t('Imprimir o guardar en PDF')}</button></p></body></html>`;
   const win = window.open('', '_blank');
   if (!win) return false;
   win.document.write(html);

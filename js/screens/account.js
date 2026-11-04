@@ -15,7 +15,7 @@ let mode = 'signup';
 let syncing = false;
 let draft = {}; // nombre, correo y contraseña escritos (para no perderlos al cambiar de modo)
 
-const PRIVACY = 'Guardamos tu nombre, tu correo y tu progreso para que no lo pierdas al cambiar de móvil y para mejorar la beta. Puedes borrar tu cuenta cuando quieras desde Perfil.';
+const PRIVACY = 'Guardamos tu nombre, tu correo y tu progreso para que no lo pierdas al cambiar de móvil y para mejorar la beta. Puedes borrar tu cuenta cuando quieras desde Ajustes.';
 const PRIVACY_LINK = '<a class="text-link" href="privacy.html" target="_blank" rel="noopener">Política de privacidad</a>';
 
 // Lo que hace la app, en tres puntos, para quien aún no la conoce

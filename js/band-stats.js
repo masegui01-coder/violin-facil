@@ -1,4 +1,5 @@
 // Estadísticas de la banda a partir de los datos que cada músico sincroniza (minutos por día, último ensayo, afinación…).
+import { t as tl } from './i18n.js'; // el CSV sale en el idioma de la interfaz
 
 const DAY_MS = 86400000;
 export const FAMILY_NAME = { cuerda: 'Cuerda', madera: 'Maderas', metal: 'Metales', percusion: 'Percusión', pulsada: 'Guitarras', tecla: 'Teclados', escuela: 'Flautas dulces' };
@@ -63,11 +64,11 @@ export function sectionTuning(members, instrument) {
 
 // Informe en CSV (separado por punto y coma, como lo abre Excel en España)
 export function bandCsv(members, tasks, progress, today, nameOf) {
-  const head = ['Músico', 'Instrumento', 'Voz', 'Minutos 7 días', 'Minutos 30 días', 'Minutos trimestre', 'Último ensayo', ...tasks.map(t => t.title)];
+  const head = [...['Músico', 'Instrumento', 'Voz', 'Minutos 7 días', 'Minutos 30 días', 'Minutos trimestre', 'Último ensayo'].map(tl), ...tasks.map(t => t.title)];
   const rows = members.map(m => {
     const days = Object.keys(m.days || {}).filter(d => m.days[d] > 0).sort();
     return [m.nickname, nameOf(m.instrument), m.voice || '', Math.round(minutesInLast(m, today, 7)), Math.round(minutesInLast(m, today, 30)), Math.round(minutesInLast(m, today, 90)), days[days.length - 1] || '',
-      ...tasks.map(t => { const p = progress.find(x => x.taskId === t.id && x.uid === m.id); return p ? (p.completed ? 'Hecha' : `${p.bestStars}★`) : 'Sin empezar'; })];
+      ...tasks.map(t => { const p = progress.find(x => x.taskId === t.id && x.uid === m.id); return p ? (p.completed ? tl('Hecha') : `${p.bestStars}★`) : tl('Sin empezar'); })];
   });
   const safe = v => (/^[=+\-@\t]/.test(String(v)) ? "'" + v : String(v)); // evita fórmulas maliciosas en Excel
   const cell = raw => { const v = safe(raw); return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };

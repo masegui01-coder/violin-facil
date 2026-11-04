@@ -35,9 +35,11 @@
 
 /* ---------- Texto grande del sistema (125–200 %) ----------
    Barra superior: puede pasar a dos líneas y, si no cabe, la marca queda solo con el icono y los chips se estrechan.
-   Barra de pestañas: cinco columnas que nunca crecen por el texto (minmax(0, 1fr)); cada botón es un contenedor y, si su
-   etiqueta ya no cabe, se queda solo con el icono (la etiqueta sigue para lectores de pantalla). Así las cinco pestañas
-   siguen a la vista y se pueden pulsar con cualquier tamaño de letra. */
+   Barra de pestañas: cinco columnas que nunca crecen por el texto (minmax(0, 1fr)); cada botón es un contenedor. Con letra
+   grande la etiqueta se mantiene todo lo posible: primero su letra deja de crecer al ancho de la pestaña (cqi), con un
+   mínimo, y si aun así no cabe se corta con «…»; solo cuando la pestaña es demasiado estrecha incluso para eso (≈ 200 %)
+   se queda con el icono (la etiqueta sigue para lectores de pantalla). Así las cinco pestañas siguen a la vista y se
+   pueden pulsar con cualquier tamaño de letra. */
 .topbar { flex-wrap: wrap; container: topbar / inline-size; }
 .brand { flex: 0 1 auto; }
 .chips { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
@@ -57,9 +59,14 @@
 
 .tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .tabbar button { min-width: 0; container-type: inline-size; }
-.tab-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 3,75 rem ≈ lo que ocupa «Canciones», la etiqueta más larga: crece con la letra igual que ella */
-@container (max-width: 3.75rem) {
+.tab-label {
+  display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* 18 % del ancho de la pestaña ≈ lo que deja caber «Canciones», la etiqueta más larga; nunca más que la letra del botón (12 px de MD3
+     escalados con la letra) ni menos de 0,55 rem */
+  font-size: clamp(.55rem, 18cqi, 1em); letter-spacing: -.005em;
+}
+/* 2,6 rem: por debajo, ni con la letra mínima cabe una etiqueta legible (con el 200 % en un móvil de 360–412 px) */
+@container (max-width: 2.6rem) {
   .tab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .tabbar .ic { margin-block: auto; }
 }

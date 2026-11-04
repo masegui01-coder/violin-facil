@@ -4,7 +4,7 @@
 // dos pads a tiempo. Cada acierto suma puntos y la racha los multiplica. Los fallos vuelven una vez al final de la ronda.
 import { $, esc, icon, starsHtml } from '../ui.js';
 import { L } from '../tips-l10n.js';
-import { t } from '../i18n.js';
+import { t, currentLang } from '../i18n.js';
 import { parseScore } from '../music.js';
 import { createStaff } from '../staff.js';
 import { createWriter } from '../note-writer.js';
@@ -29,7 +29,7 @@ const TXT = {
   left: L('Izquierda', 'Left'), rightHand: L('Derecha', 'Right'), solution: L('La buena:', 'The answer:'),
   streak: L('Racha', 'Streak'), points: L('Puntos:', 'Points:'), bestStreak: L('Mejor racha:', 'Best streak:'), record: L('¡Nuevo récord!', 'New record!'),
   perfect: L('¡Perfecto!', 'Perfect!'), good: L('¡Bien!', 'Good!'), wrongHand: L('¡Otra mano!', 'Other hand!'),
-  hands: L('Golpes con su mano:', 'Strokes with the right hand:'), wrongHands: L('con la otra mano:', 'with the other hand:'),
+  hands: L('Golpes con su mano:', 'Strokes with the correct hand:'), wrongHands: L('con la otra mano:', 'with the other hand:'),
   keys: L('En el ordenador: tecla F (izquierda) y J (derecha)', 'On a computer: F key (left) and J key (right)'),
 };
 const POINTS = 10;
@@ -216,8 +216,10 @@ function startTaps(item) {
 }
 
 // ---------- Percusión: pads de las dos manos ----------
-const padsHtml = () => `<div class="stick-pads"><button type="button" class="stick-pad I" data-hand="I"><b>I</b><small>${esc(TXT.left)}</small></button>
-  <button type="button" class="stick-pad D" data-hand="D"><b>D</b><small>${esc(TXT.rightHand)}</small></button></div>`;
+const padsHtml = () => `<div class="stick-pads"><button type="button" class="stick-pad I" data-hand="I"><b>${handLabel('I')}</b><small>${esc(TXT.left)}</small></button>
+  <button type="button" class="stick-pad D" data-hand="D"><b>${handLabel('D')}</b><small>${esc(TXT.rightHand)}</small></button></div>`;
+// La letra de cada mano en pantalla: D/I en español, R/L en inglés (el dato sigue siendo D/I)
+export const handLabel = h => (currentLang() === 'en' ? { D: 'R', I: 'L' }[h] || h : h);
 const KEY_HAND = { f: 'I', F: 'I', ArrowLeft: 'I', j: 'D', J: 'D', ArrowRight: 'D' };
 
 // Pulsar un pad (dedo o teclado): se ilumina y avisa con la mano
@@ -238,7 +240,7 @@ function bindPads(onHit) {
 
 function renderSeq() {
   const { slots, picked } = run.seq;
-  $('seqSlots').innerHTML = slots.map((_, i) => `<span class="seq-slot${picked[i] ? ' ' + picked[i] : ''}">${picked[i] || ''}</span>`).join('');
+  $('seqSlots').innerHTML = slots.map((_, i) => `<span class="seq-slot${picked[i] ? ' ' + picked[i] : ''}">${picked[i] ? handLabel(picked[i]) : ''}</span>`).join('');
   setReady(picked.length === slots.length);
 }
 
@@ -333,7 +335,7 @@ const RENDER = {
   },
   tocar_baquetas: item => `<h2>${esc(item.consigna)}</h2>
     <div class="pro-bar-box"><svg id="rhythmStaff" class="staff pro-mini" role="img" aria-label="Ritmo"></svg></div>
-    <div id="stickLane" class="stick-lane">${item.manos.map(h => `<span class="stick-chip ${h}">${h}</span>`).join('')}</div>
+    <div id="stickLane" class="stick-lane">${item.manos.map(h => `<span class="stick-chip ${h}">${handLabel(h)}</span>`).join('')}</div>
     <div class="row"><button type="button" class="btn ghost small" id="rhythmListen" data-keep="1"><span class="ic">${icon('speaker')}</span>${esc(TXT.listen)}</button>
     <button type="button" class="btn small" id="rhythmStart"><span class="ic">${icon('play')}</span>${esc(TXT.start)}</button></div>
     <div class="stick-stage"><span id="stickCall" class="stick-call"></span><span id="stickCombo" class="stick-combo"></span></div>
@@ -472,7 +474,7 @@ const CHECK = {
     if (!ok) {
       const sol = $('seqSolution');
       sol.hidden = false;
-      sol.innerHTML = `<span>${esc(TXT.solution)}</span> <b>${item.secuencia_correcta.join(' ')}</b>`;
+      sol.innerHTML = `<span>${esc(TXT.solution)}</span> <b>${item.secuencia_correcta.map(handLabel).join(' ')}</b>`;
     }
     return ok;
   },

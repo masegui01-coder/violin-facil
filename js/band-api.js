@@ -231,8 +231,10 @@ export async function reportProgress(band, task, { mode, stars, accuracy, minute
 }
 
 // Partitura que se guarda en la nube, comprimida (cabe una obra completa con todas sus voces en una tarea)
+const SONG_TEXT_MAX = 200;
 export function songPayload(song, extra = {}) {
-  return { title: song.title, by: song.by || '', key: song.key, time: song.time, bpm: song.bpm, pickup: song.pickup || 0, enc: encodeScore(songScore(song)), ...extra };
+  // Las reglas limitan título y autor a 200 caracteres; un MusicXML puede traer textos más largos
+  return { title: String(song.title || '').slice(0, SONG_TEXT_MAX), by: String(song.by || '').slice(0, SONG_TEXT_MAX), key: song.key, time: song.time, bpm: song.bpm, pickup: song.pickup || 0, enc: encodeScore(songScore(song)), ...extra };
 }
 
 // La partitura de una parte guardada (formato nuevo comprimido o antiguo)

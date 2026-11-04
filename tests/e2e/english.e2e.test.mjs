@@ -59,7 +59,7 @@ function fakeMic() {
   };
 }
 
-async function openApp() {
+async function openApp({ keepSheet = false, seed = {} } = {}) {
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   const errors = [];
@@ -67,10 +67,10 @@ async function openApp() {
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   await page.setViewport(VIEWPORT);
   await page.evaluateOnNewDocument(fakeMic);
-  await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), SEED);
+  await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), { ...SEED, ...seed });
   await page.goto(server.url, { waitUntil: 'networkidle0' });
   await page.waitForSelector('#sheet[open]', { timeout: SHEET_WAIT_MS }).catch(() => {});
-  await page.evaluate(() => { const d = document.getElementById('sheet'); if (d && d.open) d.close(); });
+  if (!keepSheet) await page.evaluate(() => { const d = document.getElementById('sheet'); if (d && d.open) d.close(); });
   // El diccionario grande (cursos y libros) se descarga aparte: se espera a que llegue
   await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
   return { page, errors, close: () => context.close() };
@@ -90,7 +90,12 @@ async function spanishLines(page) {
   return page.evaluate((src, allowed) => {
     const re = new RegExp(src, 'iu');
     document.querySelectorAll('details').forEach(d => { d.open = true; });
-    return document.body.innerText.split('\n')
+    // innerText no recoge el texto de los SVG (ejes del radar, rótulos) ni las etiquetas de accesibilidad
+    const shown = el => el.getClientRects().length > 0;
+    const svgText = [...document.querySelectorAll('svg text')].filter(shown).map(el => el.textContent);
+    const labels = [...document.querySelectorAll('[aria-label], [placeholder], [title]')].filter(shown)
+      .flatMap(el => ['aria-label', 'placeholder', 'title'].map(a => el.getAttribute(a)).filter(Boolean));
+    return [...document.body.innerText.split('\n'), ...svgText, ...labels]
       .map(line => line.trim())
       .filter(line => re.test(allowed.reduce((text, ok) => text.split(ok).join(' '), line)));
   }, SPANISH_RE.source, ALLOWED);
@@ -165,6 +170,118 @@ test('en inglés: el afinador y el metrónomo sin español visible', async () =>
       await page.waitForFunction(() => document.getElementById('tuner').hidden, { timeout: 5000 });
       await openTool(page, 'metro');
     }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+// ---------- Hojas, diálogos y herramientas fuera de las pestañas principales ----------
+const closeSheet = page => page.evaluate(() => { const d = document.getElementById('sheet'); if (d.open) d.close(); });
+const waitSheet = page => page.waitForSelector('#sheet[open]', { timeout: 5000 });
+
+// Pulsa algo que abre la hoja (#sheet) y espera a que esté abierta
+async function openSheet(page, selector) {
+  await closeSheet(page);
+  await page.$eval(selector, el => el.click());
+  await waitSheet(page);
+}
+
+async function back(page, id) {
+  await tap(page, `#${id} [data-back]`);
+  await page.waitForFunction(i => document.getElementById(i).hidden, { timeout: 5000 }, id);
+}
+
+test('en inglés: Canciones (hoja de la canción, ayuda para importar y Mis partituras vacía) sin español visible', async () => {
+  const { page, errors, close } = await openApp();
+  const found = await collect(page, [
+    ['hoja de la canción', async () => { await openTab(page, 'songs'); await openSheet(page, '#songList [data-song]'); }],
+    ['ayuda para importar', () => openSheet(page, '#importHelp')],
+    ['mis partituras (vacía)', async () => {
+      await closeSheet(page);
+      await tap(page, '[data-filter="mias"]');
+      await page.waitForSelector('#songList .empty', { timeout: 5000 });
+    }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('en inglés: Estudio (para qué sirve cada una, afinar en acorde, gimnasio, toca libre, primera vista) sin español visible', async () => {
+  const { page, errors, close } = await openApp();
+  const found = await collect(page, [
+    ['para qué sirve cada una', async () => { await openTab(page, 'practice'); await openSheet(page, '#studyHelp'); }],
+    ['lectura a primera vista', () => openSheet(page, '#toolSight')],
+    ['afinar en acorde', async () => { await closeSheet(page); await openTool(page, 'chord'); }],
+    // cada grado del acorde con su objetivo en cents
+    ...['root', 'm3', 'P5', 'M6', 'oct'].map(id => [`afinar en acorde: ${id}`, () => tap(page, `#chIntervals [data-int="${id}"]`)]),
+    ['gimnasio', async () => { await back(page, 'chord'); await openTool(page, 'gym'); }],
+    ['toca libre', async () => { await back(page, 'gym'); await openTool(page, 'free'); }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('en inglés: Aprender (hoja de teoría, cambiar de instrumento, test de nivel y rutina) sin español visible', async () => {
+  const { page, errors, close } = await openApp();
+  const found = await collect(page, [
+    ['hoja de teoría', async () => {
+      await openTab(page, 'learn');
+      await closeSheet(page);
+      await page.evaluate(() => {
+        const theory = [...document.querySelectorAll('#courseMap [data-lesson]')].find(b => /-intro$|theory/.test(b.dataset.lesson));
+        (theory || document.querySelector('#courseMap [data-lesson]')).click();
+      });
+      await waitSheet(page);
+      await page.waitForFunction(() => /\b\d+ cards?\b/.test(document.getElementById('sheet').innerText), { timeout: 5000 });
+    }],
+    ['cambiar de instrumento', () => openSheet(page, '#instChip')],
+    ['test de nivel', () => openSheet(page, '#placementGo')],
+    // la rutina avisa con «Paso 1 de 3: …» y abre su primer paso
+    ['rutina', async () => {
+      await closeSheet(page);
+      await page.$eval('#routineBtn', el => el.click());
+      await page.waitForFunction(() => /Step 1 of/.test(document.body.innerText), { timeout: 8000 });
+    }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('en inglés: Banda (Mis grupos y Escuela) sin español visible', async () => {
+  const { page, errors, close } = await openApp();
+  const found = await collect(page, [
+    ['mis grupos', async () => { await openTab(page, 'band'); await tap(page, '[data-band-view="groups"]'); await waitVisible(page, 'groupBody'); }],
+    ['escuela', async () => { await tap(page, '[data-band-view="school"]'); await waitVisible(page, 'schoolBody'); }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('en inglés: el aviso para crear usuario (con la privacidad) sin español visible', async () => {
+  const { page, errors, close } = await openApp({ keepSheet: true });
+  const found = await collect(page, [
+    ['aviso para crear usuario', async () => {
+      await page.waitForSelector('#sheet[open] #arGoogle', { timeout: 5000 });
+    }],
+    ['aviso para crear usuario: ya tengo cuenta', async () => { await tap(page, '#arMode'); await page.waitForSelector('#arReset', { timeout: 5000 }); }],
+    // sin correo, «¿Has olvidado la contraseña?» explica qué falta
+    ['aviso para crear usuario: sin correo', async () => { await tap(page, '#arReset'); await page.waitForSelector('#arError:not([hidden])', { timeout: 5000 }); }],
+  ]);
+  assert.deepEqual(found, {});
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('en inglés: la pantalla de acceso (plazo vencido) sin español visible', async () => {
+  const GRACE_OVER_MS = 8 * 86400000;
+  const { page, errors, close } = await openApp({ seed: { accountPromptSince: Date.now() - GRACE_OVER_MS } });
+  const found = await collect(page, [
+    ['pantalla de acceso', () => waitVisible(page, 'account', 10000)],
   ]);
   assert.deepEqual(found, {});
   assert.deepEqual(errors, []);

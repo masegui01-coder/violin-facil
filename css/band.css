@@ -20,7 +20,10 @@
 .table-wrap { overflow-x: auto; }
 .form { display: flex; flex-direction: column; gap: 10px; }
 .form label { font-weight: 700; font-size: .88rem; }
-.input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
+/* Campos de texto con contorno (Material 3), iguales que los desplegables de base.css: mismo borde, fondo, radio y foco */
+.input { width: 100%; font: inherit; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+.input:hover, textarea:hover { border-color: var(--muted); }
+.input:focus-visible, textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .member-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .check-chip { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: .88rem; font-weight: 600; cursor: pointer; }
 .check-chip input { accent-color: var(--accent); }
@@ -32,7 +35,9 @@
 @media (min-width: 600px) {
   .band .form > .btn { align-self: flex-start; }
 }
+/* Desde 960 px los dos formularios, uno al lado del otro, se reparten todo el ancho de la columna */
 @media (min-width: 960px) {
-  .band:has(> #joinForm) { display: grid; grid-template-columns: repeat(2, minmax(0, 480px)); align-items: start; column-gap: 20px; }
+  .band:has(> #joinForm) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; column-gap: 24px; }
   .band:has(> #joinForm) > .screen-head { grid-column: 1 / -1; }
+  .band:has(> #joinForm) > form.form { max-width: none; }
 }

@@ -13,7 +13,7 @@ import { sliceScore } from '../book.js';
 import { launch } from '../launch.js';
 import { buildMethod, hasMethod, courseIdFor, levelStates, practiceLesson } from '../method.js';
 import * as audio from '../audio.js';
-import { startRelax, stopRelax } from './pro-relax.js';
+import { startRelax, stopRelax, handLabel } from './pro-relax.js';
 import { figureFor } from '../pro-figures.js';
 import { sheet } from './band-ui.js';
 
@@ -34,7 +34,7 @@ const TXT = {
   relaxIntro: L('Retos rápidos de solfeo y técnica: lee, escribe en el pentagrama y marca ritmos. Los fallos vuelven al final para que los repases.', 'Quick reading and technique challenges: read, write on the staff and tap rhythms. Mistakes come back at the end so you can review them.'),
   challenges: L('Retos:', 'Challenges:'), best: L('Tu mejor resultado:', 'Your best result:'), startRelax: L('Empezar', 'Start'),
   tempo: L('Tempo', 'Tempo'), time: L('Compás', 'Time'), routine: L('Rutina', 'Routine'), mic: L('Qué escucha la app', 'What the app listens for'),
-  listen: L('Escuchar', 'Listen'), stop: L('Parar', 'Stop'), learnMode: L('Nota a nota', 'Note by note'), tempoMode: L('Tocar a tempo', 'Play in tempo'),
+  listen: L('Escuchar', 'Listen'), stop: L('Parar', 'Stop'), learnMode: L('Nota a nota', 'Note by note'), tempoMode: L('Tocar a tempo', 'Play in time'),
   done: L('Hecho', 'Done'),
   lockedTitle: L('Este nivel aún está bloqueado', 'This level is still locked'),
   lockedText: L('Lo normal es llegar aquí terminando el nivel anterior, pero puedes verlo ya en modo tester: se abre sin cambiar tu progreso.', 'Normally you get here by finishing the previous level, but you can look at it now in tester mode: it opens without changing your progress.'),
@@ -123,7 +123,7 @@ function render() {
 }
 
 function noteChips() {
-  if (level.patron) return `<div class="pro-chips hands">${level.patron.map(h => `<span class="chip hand ${h}">${h}</span>`).join('')}</div>`;
+  if (level.patron) return `<div class="pro-chips hands">${level.patron.map(h => `<span class="chip hand ${h}">${handLabel(h)}</span>`).join('')}</div>`;
   return `<div class="pro-chips">${level.pestana_practica.notas_usadas.map(n => `<span class="chip">${esc(n)}</span>`).join('')}</div>`;
 }
 

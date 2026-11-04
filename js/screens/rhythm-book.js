@@ -14,64 +14,10 @@ import { engrave, svgElement } from '../engrave.js';
 import { MAX_LEVEL, LEVELS, FAMILIES, FAMILY_IDS, METERS, KEYS, generateReading, generateBook } from '../rhythm-reading.js';
 import * as audio from '../audio.js';
 import { scoresPdf, sharePdf, downloadPdf, openPdf } from '../pdf-export.js';
-import { L } from '../tips-l10n.js';
+import { t } from '../i18n.js';
 import { canUseRhythmBook } from './rhythm-book-tool.js';
 
-// Textos de la pantalla con su traducción
-[
-  ['Iniciación: redondas, blancas y negras', 'Beginner: whole, half and quarter notes'],
-  ['Corcheas y silencios', 'Eighth notes and rests'],
-  ['Puntillo, semicorcheas y ligaduras', 'Dots, sixteenth notes and ties'],
-  ['Síncopas, combinaciones y compás de 6/8', 'Syncopation, combinations and 6/8 time'],
-  ['Tresillos, matices y agógica', 'Triplets, dynamics and tempo changes'],
-  ['Seisillos, cromatismos y cambios de compás', 'Sextuplets, chromaticism and changing meters'],
-  ['Fusas, compases de amalgama y saltos amplios', 'Thirty-second notes, mixed meters and wide leaps'],
-  ['Profesional: adornos, trinos y cambios de tonalidad y de carácter', 'Professional: grace notes, trills and changes of key and character'],
-  ['Prueba de acceso a enseñanzas superiores', 'Conservatory (higher education) entrance exam'],
-  ['Virtuoso: todo a la vez y cambios en cada compás', 'Virtuoso: everything at once, changing every bar'],
-  ['Redondas', 'Whole notes'],
-  ['Blancas', 'Half notes'],
-  ['Negras', 'Quarter notes'],
-  ['Corcheas', 'Eighth notes'],
-  ['Semicorcheas', 'Sixteenth notes'],
-  ['Fusas', 'Thirty-second notes'],
-  ['Puntillos', 'Dots'],
-  ['Tresillos', 'Triplets'],
-  ['Seisillos y quintillos', 'Sextuplets and quintuplets'],
-  ['Síncopas', 'Syncopation'],
-  ['Ligaduras de prolongación', 'Ties'],
-  ['Matices y reguladores', 'Dynamics and hairpins'],
-  ['Articulaciones y ligaduras', 'Articulation and slurs'],
-  ['Agógica (rit., accel., calderones)', 'Tempo changes (rit., accel., fermatas)'],
-  ['Alteraciones accidentales', 'Accidentals'],
-  ['Técnicas extendidas (slap, frulato…)', 'Extended techniques (slap, flutter-tongue…)'],
-  ['Sin cambios de clave', 'No clef changes'],
-  ['Sol y fa', 'Treble and bass'],
-  ['Sol, fa y do (3.ª y 4.ª)', 'Treble, bass, alto and tenor'],
-  ['El 7-8 equivale a una lectura de grado profesional y el 9, a una prueba de acceso a enseñanzas superiores.', 'Levels 7-8 match professional-grade sight-reading and level 9 a conservatory entrance exam.'],
-  ['Compás', 'Time signature'],
-  ['Variable (cambia)', 'Variable (changes)'],
-  ['Tonalidad', 'Key'],
-  ['Aleatoria', 'Random'],
-  ['Modo', 'Mode'],
-  ['Mayor o menor', 'Major or minor'],
-  ['Menor', 'Minor'],
-  ['Cambios de clave', 'Clef changes'],
-  ['Elementos', 'Elements'],
-  ['Lectura generada', 'Generated reading'],
-  ['Tu libro de lecturas', 'Your reading book'],
-  ['Libro de lecturas', 'Reading book'],
-  ['Lecturas a primera vista en 10 niveles, hasta prueba de acceso a superior', 'Sight-reading in 10 levels, up to conservatory entrance'],
-  ['Al tocar a tempo la app mide el ritmo y las notas a pulso constante (sin rit. ni cambios de tempo).', 'When you play in time the app checks rhythm and notes at a steady pulse (no rit. or tempo changes).'],
-  ['Compases variables', 'Changing meters'],
-  ['Blanca con doble puntillo', 'Double-dotted half note'],
-  ['Negra con doble puntillo', 'Double-dotted quarter note'],
-  ['Corchea con doble puntillo', 'Double-dotted eighth note'],
-  ['Semicorchea con puntillo', 'Dotted sixteenth note'],
-  ['Redonda con puntillo', 'Dotted whole note'],
-  ['Fusa', 'Thirty-second note'],
-].forEach(([es, en]) => L(es, en));
-
+// Los textos de esta pantalla en inglés están en i18n-en-course.js
 const SHARE_TEXT = 'Lectura de Band Flow para practicar: https://masegui01-coder.github.io/violin-facil/';
 const EXPORT_BUTTONS = scope => `<div class="row rb-export"><button type="button" class="btn ghost small" data-pdf="${scope}" data-how="print">Imprimir</button>
   <button type="button" class="btn ghost small" data-pdf="${scope}" data-how="download">Descargar PDF</button>
@@ -199,22 +145,24 @@ async function exportPdf(scope, how, btn) {
     let items;
     let name;
     const asSvgs = song => engraveSong(song).map(markup => host.appendChild(svgElement(markup)));
+    // El PDF no pasa por la traducción de la pantalla: sus textos se traducen aquí
+    const item = song => ({ title: t(song.title), sub: t(`${keyText(song.key)} · ${song.by}`), svgs: asSvgs(song) });
     if (scope === 'one') {
-      items = [{ title: preview.song.title, sub: `${keyText(preview.song.key)} · ${preview.song.by}`, svgs: asSvgs(preview.song) }];
+      items = [item(preview.song)];
       name = `lectura-${preview.seed % 1000}.pdf`;
     } else {
       const { book } = savedBook();
-      items = book.map(x => ({ title: x.song.title, sub: `${keyText(x.song.key)} · ${x.song.by}`, svgs: asSvgs(x.song) }));
+      items = book.map(x => item(x.song));
       name = `libro-de-lecturas-${inst().id}.pdf`;
     }
-    const blob = await scoresPdf(items, { footer: `Band Flow · lecturas · ${inst().name}` });
+    const blob = await scoresPdf(items, { footer: t(`Band Flow · lecturas · ${inst().name}`) });
     if (how === 'print') openPdf(blob);
     else if (how === 'download') downloadPdf(blob, name);
     else {
-      const result = await sharePdf(blob, name, SHARE_TEXT);
+      const result = await sharePdf(blob, name, t(SHARE_TEXT));
       if (result === 'downloaded') {
         toast('PDF descargado: adjúntalo en WhatsApp');
-        window.open(`https://wa.me/?text=${encodeURIComponent(SHARE_TEXT)}`, '_blank');
+        window.open(`https://wa.me/?text=${encodeURIComponent(t(SHARE_TEXT))}`, '_blank');
       }
     }
   } catch (err) {

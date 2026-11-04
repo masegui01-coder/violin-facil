@@ -1,6 +1,7 @@
 // Piezas comunes de la pestaña Banda (director y músicos).
 import { esc } from '../ui.js';
 import { instrumentById } from '../instruments.js';
+import { currentLang } from '../i18n.js';
 
 export const MODE_NAME = { learn: 'Nota a nota', tempo: 'A tempo', memory: 'De memoria' };
 export const ROLE_NAME = { member: 'Músico', leader: 'Jefe de cuerda', director: 'Director' };
@@ -8,7 +9,9 @@ export const LIGHT_NAME = { green: 'Al día', amber: 'Hace días', red: 'Sin ens
 const VOICE_NAME = { 1: '1º', 2: '2º', 3: '3º', 4: '4º' };
 const DAY_MS = 86400000;
 
-export const fmtDate = ms => new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+// Fechas en el idioma de la interfaz («5 nov» / «5 Nov»)
+export const dateLocale = () => (currentLang() === 'en' ? 'en-GB' : 'es-ES');
+export const fmtDate = ms => new Date(ms).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' });
 export const fmtDay = day => fmtDate(new Date(day + 'T12:00'));
 export const pct = x => `${Math.round(x * 100)} %`;
 

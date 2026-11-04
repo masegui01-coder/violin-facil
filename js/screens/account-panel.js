@@ -136,13 +136,13 @@ async function settleSpaces(spaces, choices, uid) {
   }
 }
 
-// Confirmación antes de borrar la cuenta: <dialog> modal (MD3) con aviso claro, «Cancelar» con el foco al abrir
-// y el botón de borrar en rojo. Escape o «Cancelar» la cierran sin borrar nada. Devuelve true solo si se confirma.
+// Confirmación antes de borrar la cuenta: <dialog> modal (MD3) con aviso claro, «Cancelar» (botón de texto) con el foco
+// al abrir y el botón de borrar en rojo, los dos en una fila alineada a la derecha. Escape o «Cancelar» la cierran sin borrar nada. Devuelve true solo si se confirma.
 const DELETE_DIALOG = `<form method="dialog" class="sheet-body">
   <span class="confirm-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
   <h2 id="delConfirmTitle">¿Borrar tu cuenta?</h2>
   <p id="delConfirmText">Se borrarán para siempre tu usuario, tu progreso guardado en la nube y lo que hayas compartido. No se puede deshacer.</p>
-  <div class="row confirm-actions"><button type="submit" class="btn ghost" value="cancel" id="delConfirmCancel" autofocus>Cancelar</button><button type="submit" class="btn danger-fill" value="delete" id="delConfirmOk">Borrar mi cuenta</button></div>
+  <div class="confirm-actions"><button type="submit" class="btn text" value="cancel" id="delConfirmCancel" autofocus>Cancelar</button><button type="submit" class="btn danger-fill" value="delete" id="delConfirmOk">Borrar mi cuenta</button></div>
 </form>`;
 
 function deleteDialog() {

@@ -108,5 +108,7 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 /* ---------- Versión de prueba ---------- */
 .beta-pill { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--beta-bg); color: var(--beta-ink); font-size: .75rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; line-height: 1.4; }
 .beta-line { margin: 0 0 10px; font-size: .82rem; color: var(--muted); }
+/* Un solo aviso de pruebas a la vista: si la vista abierta de Banda («Grupos», «Escuela») trae el suyo, el general se oculta */
+#band:has(> .band:not([hidden]) .beta-note) > .beta-line { display: none; }
 .beta-note { display: flex; flex-direction: column; gap: 4px; background: color-mix(in srgb, var(--warn) 12%, var(--surface)); border: 1.5px dashed var(--warn); border-radius: var(--r); padding: 12px 14px; font-size: .88rem; }
 #band > .seg { margin-bottom: 14px; }

@@ -35,6 +35,12 @@ test('index.src.html: CSP sin scripts en línea, con los orígenes que usa la ap
   for (const host of ['https://firestore.googleapis.com', 'https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com']) assert.ok(p['connect-src'].includes(host), host);
   assert.ok(p['style-src'].includes('https://fonts.googleapis.com') && p['font-src'].includes('https://fonts.gstatic.com'));
   assert.ok(p['media-src'].includes('blob:') && p['img-src'].includes('blob:'));
+  // Firestore (WebChannel) comprueba la conexión cargando www.google.com/images/cleardot.gif con new Image(): img-src.
+  // Además, en Chrome se ha visto la misma prueba bloqueada por connect-src, así que el origen va en las dos directivas
+  const firestore = read('js/cloud.js').match(/SDK = '([^']+)'/)[1];
+  assert.match(firestore, /firebasejs\/10\.12\.2\//, 'si cambia la versión del SDK, revisar qué directiva usa la prueba de conexión');
+  assert.ok(p['img-src'].includes('https://www.google.com'), 'cleardot.gif de la prueba de conexión de Firestore');
+  assert.ok(p['connect-src'].includes('https://www.google.com'), 'cleardot.gif también por connect-src');
 });
 
 test('index.html (compilado): conserva la CSP y el hash coincide con el theme-boot en línea', () => {

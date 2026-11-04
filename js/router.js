@@ -148,3 +148,20 @@ function announce(id) {
   heading.focus({ preventScroll: true });
 }
 export function currentScreen() { return current; }
+
+// «Saltar al contenido»: lleva el foco al título de la pantalla actual (o a <main> si no tiene) sin cambiar la dirección
+// (un #ancla nuevo dispararía popstate y, con él, el botón atrás de la app)
+function skipToContent(e) {
+  e.preventDefault();
+  const screen = current && $(current);
+  // El primer h1 visible: en Banda el de «Mi banda» sigue en el DOM, oculto, al pasar a Grupos o Escuela
+  const visible = screen ? [...screen.querySelectorAll('h1')].find(h => h.getClientRects().length) : null;
+  const target = visible || $('main');
+  if (!target) return;
+  if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+  target.focus();
+}
+if (typeof document !== 'undefined') {
+  const skip = document.querySelector('.skip-link');
+  if (skip) skip.addEventListener('click', skipToContent);
+}

@@ -9,7 +9,8 @@ import { accountName } from '../account.js';
 import { getState, update } from '../store.js';
 import { schoolYear, nextSchoolYear, premiumActive, studentLimit, promote, pct, TRIAL_STUDENTS, PREMIUM_STUDENTS, MAX_LEVEL } from '../school.js';
 import { BOOK_INFO } from '../books.js';
-import { sheet } from './band-ui.js';
+import { sheet, dateLocale } from './band-ui.js';
+import { t } from '../i18n.js';
 
 const CONTACT = 'tizaestudiogames+violin@gmail.com';
 let joinCode = new URLSearchParams(location.search).get('escuela') || '';
@@ -17,10 +18,10 @@ export const schoolInviteCode = () => joinCode;
 
 const body = html => { $('schoolBody').innerHTML = html; };
 const instOptions = sel => INSTRUMENTS.map(i => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(i.name)}</option>`).join('');
-const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—');
+const fmtDay = ms => (ms ? new Date(ms).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) : '—');
 const showError = (id, text) => { $(id).textContent = text; $(id).hidden = false; };
-const PREMIUM_NOTE = `<div class="beta-note"><b>Escuelas · premium</b><span>Para escuelas de música y conservatorios: cada alumno tiene el libro de su curso y lo completa jugando; el profesor ve el progreso de todos y los pasa de curso cada año.
-  Sin licencia, la escuela funciona en modo prueba con ${TRIAL_STUDENTS} alumnos. Estamos en beta: la licencia se activa a petición.</span></div>`;
+// En una sola línea: cada texto se traduce entero al inglés
+const PREMIUM_NOTE = `<div class="beta-note"><b>Escuelas · premium</b><span>Para escuelas de música y conservatorios: cada alumno tiene el libro de su curso y lo completa jugando; el profesor ve el progreso de todos y los pasa de curso cada año. Sin licencia, la escuela funciona en modo prueba con ${TRIAL_STUDENTS} alumnos. Estamos en beta: la licencia se activa a petición.</span></div>`;
 
 export function renderSchool() {
   if (!cloudConfigured()) { body('<p class="empty">Las escuelas necesitan conexión con el servidor.</p>'); return; }
@@ -125,8 +126,8 @@ function studentRow(st) {
 
 function csv(students) {
   const cell = v => { const t = String(v ?? ''); const safe = /^[=+\-@\t]/.test(t) ? "'" + t : t; return /[;"\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe; };
-  const head = ['Alumno', 'Instrumento', 'Curso', 'Páginas', 'Total', 'Oros', 'Examen', 'Último uso'];
-  const rows = students.map(s => [s.nickname, instrumentById(s.instrument).name, s.level, s.progress ? s.progress.done : 0, s.progress ? s.progress.total : '', s.progress ? s.progress.gold : 0, s.progress && s.progress.examPassed ? 'Aprobado' : '', fmtDay(s.progress && s.progress.last)]);
+  const head = ['Alumno', 'Instrumento', 'Curso', 'Páginas', 'Total', 'Oros', 'Examen', 'Último uso'].map(t);
+  const rows = students.map(s => [s.nickname, t(instrumentById(s.instrument).name), s.level, s.progress ? s.progress.done : 0, s.progress ? s.progress.total : '', s.progress ? s.progress.gold : 0, s.progress && s.progress.examPassed ? t('Aprobado') : '', fmtDay(s.progress && s.progress.last)]);
   return [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
 }
 
@@ -154,7 +155,7 @@ async function teacherView(s) {
         ${school.year === current ? `<button type="button" class="btn ghost small" id="sNewYear">Pasar de curso (${esc(nextSchoolYear(school.year))})</button>` : ''}</div>
       <p class="muted small">Cada alumno ve solo el libro de su curso y los anteriores. Al empezar el curso siguiente, quien aprobó el examen pasa al libro siguiente; puedes cambiar el curso de cualquier alumno tocando su nombre.</p>`);
     $('sInvite').addEventListener('click', async () => {
-      const text = `Únete a «${school.name}» en Band Flow: ${link} (código ${school.code})`;
+      const text = t(`Únete a «${school.name}» en Band Flow: ${link} (código ${school.code})`);
       try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } } catch (e) { /* cancelado */ }
     });
     $('schoolBody').querySelectorAll('[data-preview]').forEach(b => b.addEventListener('click', () => {

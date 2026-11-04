@@ -1,5 +1,10 @@
 // Pentagrama en SVG: clave de sol o de fa, armadura, compás, figuras, silencios y barras. Se desplaza con la lección.
 import { diatonicStep, keySignature, keyCount, accidentalToShow } from './music.js';
+import { currentLang } from './i18n.js';
+
+// Letra de la mano bajo cada golpe: D/I en español, R/L en inglés
+const HAND_EN = { D: 'R', I: 'L' };
+const handText = h => (currentLang() === 'en' ? HAND_EN[h] || h : h);
 
 const NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 440;
@@ -198,7 +203,7 @@ export function createStaff(svg) {
       }
       if (!n.rest && sticking) {
         const hand = sticking[playIndex++];
-        if (hand) text(g, xOfBeat(n.start) - 5, BOTTOM_Y + 34, hand, { class: 'st-stick' });
+        if (hand) text(g, xOfBeat(n.start) - 5, BOTTOM_Y + 34, handText(hand), { class: 'st-stick' });
       }
       return g;
     });

@@ -5,7 +5,7 @@
 <!-- Política de seguridad (CSP): solo los orígenes que usa la app (Firebase y Google Fonts; el QR del director va en js/vendor/).
      connect-src incluye apis.google.com por el aviso gen_204 (fetch) de la ventana de Google al iniciar sesión.
      El build añade a script-src el hash sha256 de theme-boot.js, que va en línea en index.html (nunca 'unsafe-inline'). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data: mediastream:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://www.google.com; media-src 'self' blob: data: mediastream:; connect-src 'self' https://www.google.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B4461F" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
@@ -55,6 +55,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
+<!-- Teclado: primer elemento con foco; lleva al título de la pantalla actual (router.js) -->
+<a class="skip-link" href="#main">Saltar al contenido</a>
 <div class="shell">
 
   <!-- Barra superior de las pestañas -->
@@ -67,7 +69,16 @@
     </div>
   </header>
 
-  <main>
+  <!-- Menú de pestañas antes del contenido: con el teclado se llega a él enseguida (abajo en el móvil, a la izquierda en el ordenador) -->
+  <nav id="tabbar" class="tabbar" hidden>
+    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span><span class="tab-label">Aprender</span></button>
+    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span><span class="tab-label">Canciones</span></button>
+    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span><span class="tab-label">Estudio</span></button>
+    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span><span class="tab-label">Banda</span><span id="bandBadge" class="tab-badge" hidden></span></button>
+    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span><span class="tab-label">Perfil</span></button>
+  </nav>
+
+  <main id="main" tabindex="-1">
     <!-- Bienvenida -->
     <section id="onboarding" class="screen onboarding" hidden>
       <div class="ob-dots" id="obDots" aria-hidden="true"></div>
@@ -364,7 +375,7 @@
 
     <!-- Afinador -->
     <section id="tuner" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Afinador</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Afinador</h1></div>
       <div id="tunerGate" class="mic-gate" hidden>
         <p><strong>Necesito el micrófono</strong> para escucharte.</p>
         <p id="tunerMicError" class="muted" hidden></p>
@@ -562,14 +573,6 @@
       <div id="gymList" class="gym-list"></div>
     </section>
   </main>
-
-  <nav id="tabbar" class="tabbar" hidden>
-    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span><span class="tab-label">Aprender</span></button>
-    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span><span class="tab-label">Canciones</span></button>
-    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span><span class="tab-label">Estudio</span></button>
-    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span><span class="tab-label">Banda</span><span id="bandBadge" class="tab-badge" hidden></span></button>
-    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span><span class="tab-label">Perfil</span></button>
-  </nav>
 </div>
 
 <dialog id="sheet" class="sheet">

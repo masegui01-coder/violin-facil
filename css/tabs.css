@@ -8,9 +8,19 @@
   border: 1px solid var(--ctl-outline); background: var(--surface); color: var(--ink); border-radius: var(--ctl-r);
   padding: 6px 14px; font-weight: 700; font-size: .88rem;
 }
+/* Elegido: el mismo contenedor tonal que los segmentados y los chips pequeños (--ctl-sel), no un gris */
 .filter button[aria-pressed="true"] {
-  background-color: color-mix(in srgb, var(--chip, var(--accent)) 18%, var(--surface));
-  border-color: color-mix(in srgb, var(--chip, var(--accent)) 70%, var(--ink)); color: var(--ctl-sel-ink); font-weight: 800; padding-left: 10px;
+  background-color: var(--ctl-sel);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--ink)); color: var(--ctl-sel-ink); font-weight: 800; padding-left: 10px;
+}
+/* La fila se desplaza de lado: los bordes se difuminan para que se vea que sigue (el primer chip arranca ya opaco) */
+.filter {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 28px), transparent);
+}
+/* Con sitio de sobra (tableta y ordenador) los chips saltan de línea: todos a la vista, sin desplazamiento ni difuminado */
+@media (min-width: 700px) {
+  .filter { flex-wrap: wrap; overflow-x: visible; margin-inline: 0; padding-inline: 0; -webkit-mask-image: none; mask-image: none; }
 }
 .song-list { display: flex; flex-direction: column; gap: 10px; }
 .song { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 10px 14px 10px 10px; text-align: left; width: 100%; }

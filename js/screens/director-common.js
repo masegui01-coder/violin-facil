@@ -3,7 +3,7 @@ import { esc } from '../ui.js';
 import * as api from '../band-api.js';
 import { taskStatus } from '../band-stats.js';
 import { today } from '../store.js';
-import { fmtDay } from './band-ui.js';
+import { fmtDay, dateLocale } from './band-ui.js';
 
 export const musiciansOf = ctx => ctx.members.filter(m => m.role !== 'director');
 
@@ -15,7 +15,7 @@ export function derive(ctx) {
   return { day, musicians, statusOf };
 }
 
-export const shortDay = day => new Date(day + 'T12:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+export const shortDay = day => new Date(day + 'T12:00').toLocaleDateString(dateLocale(), { weekday: 'short', day: 'numeric' });
 
 // Barra de progreso con su estado (verde terminada, rojo vencida, color de la app en curso)
 export function meter(ratio, state = 'open') {

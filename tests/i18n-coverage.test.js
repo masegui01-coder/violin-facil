@@ -201,3 +201,25 @@ test('Ajustes: el aviso de borrar la cuenta tiene su inglés', () => {
   assert.equal(translate('Se borrarán para siempre tu usuario, tu progreso guardado en la nube y lo que hayas compartido. No se puede deshacer.'),
     'Your user, your progress saved in the cloud and anything you have shared will be deleted forever. This cannot be undone.');
 });
+
+// Textos que una revisión en inglés encontró en español fuera de las pantallas principales (hojas, diálogos, Estudio)
+test('hojas y herramientas: la hoja de la canción, afinar en acorde, la rutina y el radar se traducen', () => {
+  const cases = {
+    'Inicial': 'Beginner', '32 notas': '32 notes', '3 tarjetas': '3 cards', 'De memoria': 'From memory', 'Clasificación': 'Leaderboard',
+    'Retar a un amigo': 'Challenge a friend', 'La partitura espera a que cada nota suene bien.': 'The score waits until each note sounds right.',
+    'Tónica': 'Root', '3.ª mayor': 'Major 3rd', '3.ª menor': 'Minor 3rd', '5.ª': '5th', '6.ª mayor': 'Major 6th', 'Fa': 'F',
+    'Objetivo: -14 cents respecto al afinador': 'Target: -14 cents from the tuner',
+    'Paso 1 de 3: Notas tenidas: Si♭4': 'Step 1 of 3: Long tones: B♭4', 'Constancia 0': 'Consistency 0',
+    'Sin intentar': 'Not tried yet', 'Todavía no has importado ninguna partitura.': "You haven't imported any scores yet.",
+    'Test de nivel · Violín': 'Level test · Violin',
+  };
+  Object.entries(cases).forEach(([es, en]) => assert.equal(translate(es), en, es));
+  assert.match(translate('Tocarás 7 fragmentos, cada uno de una unidad más avanzada. Cuando uno no te salga (menos de 2 estrellas) paramos y te colocamos en esa unidad.'), /^You will play 7 excerpts/);
+  assert.match(translate('Guardamos tu nombre, tu correo y tu progreso para que no lo pierdas al cambiar de móvil y para mejorar la beta. Puedes borrar tu cuenta cuando quieras desde Ajustes.'), /from Settings\.$/);
+});
+
+test('en inglés el director es «conductor» y la clasificación, «leaderboard»', () => {
+  [EXACT, CONTENT, TIPS_EN].forEach(dict => {
+    assert.deepEqual(Object.values(dict).filter(en => /\bdirector\b|\branking/i.test(en) && !/directory/i.test(en)), []);
+  });
+});

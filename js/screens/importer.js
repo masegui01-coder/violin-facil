@@ -17,8 +17,8 @@ const GUIDE = `<div class="guide">
   <p class="muted small">MusicXML es el formato estándar para intercambiar partituras. Casi todos los programas de música lo exportan.</p>
   <h3>Si ya la tienes en un programa de partituras</h3>
   <ol>
-    <li><b>MuseScore</b> (gratis, para ordenador): abre la partitura y ve a <i>Archivo → Exportar</i>. Elige <i>MusicXML</i>; vale tanto .mxl como .musicxml.</li>
-    <li><b>Sibelius, Finale, Dorico, Flat.io o Noteflight</b>: busca <i>Exportar → MusicXML</i>.</li>
+    <li><b>MuseScore</b> (gratis, para ordenador): abre la partitura, ve a Archivo → Exportar y elige MusicXML; vale tanto .mxl como .musicxml.</li>
+    <li><b>Sibelius, Finale, Dorico, Flat.io o Noteflight</b>: busca Exportar → MusicXML.</li>
   </ol>
   <h3>Si la tienes en papel o en PDF</h3>
   <ol>
@@ -28,7 +28,7 @@ const GUIDE = `<div class="guide">
   </ol>
   <h3>Si la tienes en MIDI</h3>
   <ol>
-    <li>Ábrela en MuseScore (<i>Archivo → Abrir</i>), revisa que las figuras estén bien y expórtala como MusicXML.</li>
+    <li>Ábrela en MuseScore (Archivo → Abrir), revisa que las figuras estén bien y expórtala como MusicXML.</li>
   </ol>
   <h3>Partituras gratis y legales</h3>
   <ol>

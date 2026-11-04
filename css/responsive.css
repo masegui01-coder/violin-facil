@@ -6,9 +6,12 @@
 .stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr)); }
 .style-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
 .stat, .style-opt { min-width: 0; overflow-wrap: break-word; }
-/* Segmentados: con letra grande las palabras se parten (con guion si el navegador sabe) en vez de montarse unas en otras */
-.seg button { overflow-wrap: anywhere; hyphens: auto; }
-@container (max-width: 20rem) { .seg button { padding-inline: 4px; } }
+/* Segmentados: nunca se parte una palabra; con letra grande los segmentos que no caben bajan enteros a otra fila
+   (base.css). En un segmentado estrecho se recorta antes el relleno lateral para que quepan en una sola fila. */
+@container (max-width: 20rem) { .seg button { padding-inline: 6px; gap: 4px; } }
+/* Objetivo de hoy y racha: dos fichas por fila mientras quepan (8 rem cada una); con letra grande, una debajo de otra */
+.today { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); }
+.today-goal > div, .today-streak > div { min-width: 0; overflow-wrap: break-word; }
 
 /* ---------- Tableta vertical y pantallas medianas (desde 700 px) ---------- */
 @media (min-width: 700px) {
@@ -49,6 +52,8 @@
 
 /* Entre 700 y 899 px el selector Casual/Libro/Pro se alinea con la columna centrada */
 @media (min-width: 700px) and (max-width: 899px) { .learn-mode { max-width: 600px; width: 100%; margin-inline: auto; } }
+/* Segmentados en pantallas anchas: a la medida de sus opciones (MD3), no estirados de lado a lado de la columna */
+@media (min-width: 700px) { .seg:not(.wrap):not(.rb-levels) { max-width: 34rem; } }
 
 /* ---------- Aprender desde 900 px: camino en una columna y panel lateral fijo ---------- */
 /* El camino (zigzag de una sola columna) a la izquierda y, a la derecha, «Tu siguiente paso», el objetivo de hoy y «Más»

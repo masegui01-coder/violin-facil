@@ -1,11 +1,16 @@
 // Traducción al inglés de la interfaz (fase 1). Clave: el texto en español tal cual aparece en pantalla.
 // El contenido de los cursos y libros (teoría, títulos de lecciones) sigue en español por ahora.
-// Los avisos y errores viven en i18n-en-messages.js; la lección, el afinador y Perfil, en i18n-en-practice.js.
+// Los avisos y errores viven en i18n-en-messages.js; la lección, el afinador y Perfil, en i18n-en-practice.js;
+// la banda, en i18n-en-band.js; los cursos y módulos de js/, en i18n-en-course.js; el resto de pantallas, en i18n-en-screens.js.
 import { MESSAGES_EXACT, messagePatterns } from './i18n-en-messages.js';
 import { PRACTICE_EXACT, practicePatterns } from './i18n-en-practice.js';
+import { BAND_EXACT, bandPatterns, bandFallbackPatterns } from './i18n-en-band.js';
+import { COURSE_EXACT, coursePatterns } from './i18n-en-course.js';
+import { SCREENS_EXACT, screensPatterns } from './i18n-en-screens.js';
 
 export const EXACT = {
   ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
+  ...BAND_EXACT, ...COURSE_EXACT, ...SCREENS_EXACT,
   'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
   'Fila de atrás, antes de la lámina 1 (xilófono grande)': 'Back row, before bar 1 (big xylophone)',
   // ---------- Barra y pestañas ----------
@@ -21,8 +26,8 @@ export const EXACT = {
   'Objetivo de hoy': "Today's goal", '¡Objetivo cumplido!': 'Goal reached!', 'Racha': 'Streak',
   'Mi rutina de hoy · 10 min': "Today's routine · 10 min", 'Rutina de hoy hecha ✓': "Today's routine done ✓",
   'Puedes repetirla si quieres': 'You can repeat it if you like', 'Sonido, técnica y repertorio, con cofre sorpresa': 'Sound, technique and repertoire, with a surprise chest',
-  'Reto del día': 'Daily challenge', 'Una toma · igual para todos': 'One take · the same for everyone', 'Clasificación del reto': 'Challenge ranking',
-  'Liga semanal': 'Weekly league', '¡Semana completa!': 'Full week!', 'Ver clasificación': 'See ranking',
+  'Reto del día': 'Daily challenge', 'Una toma · igual para todos': 'One take · the same for everyone', 'Clasificación del reto': 'Challenge leaderboard',
+  'Liga semanal': 'Weekly league', '¡Semana completa!': 'Full week!', 'Ver clasificación': 'See leaderboard',
   'Días con práctica esta semana': 'Days with practice this week',
   'Tu música': 'Your music', 'Unidad': 'Unit',
   // ---------- Modo libro ----------
@@ -81,7 +86,7 @@ export const EXACT = {
   'Clic del metrónomo (la cuenta previa suena siempre)': 'Metronome click (the count-in always plays)',
   'Banda virtual: suenan las otras voces (con auriculares)': 'Virtual band: the other parts play (use headphones)',
   'Partitura de la lección': 'Lesson score', 'Partitura de percusión': 'Percussion score', 'Escuchar y repetir': 'Listen and repeat',
-  'Golpea en la caja, en un pad o en la mesa. Las letras D e I indican la mano derecha o izquierda.': 'Hit the drum, a pad or the table. The letters D and I mean right or left hand.',
+  'Golpea en la caja, en un pad o en la mesa. Las letras D e I indican la mano derecha o izquierda.': 'Hit the drum, a pad or the table. The letters R and L mean right or left hand.',
   'Pronto': 'Early', 'Tarde': 'Late', 'Ritmo': 'Rhythm', 'Percusión': 'Percussion', 'Toca': 'Play',
   'Toca la nota marcada': 'Play the highlighted note', 'Elige la velocidad y pulsa Empezar': 'Choose the speed and press Start',
   'Sigue la línea y toca cada nota cuando llegue': 'Follow the line and play each note as it arrives',
@@ -151,8 +156,8 @@ export const EXACT = {
   'La cuenta previa siempre suena y el péndulo siempre se ve encima de la partitura. El clic durante la canción es opcional: la app no lo confunde con tu instrumento, pero con auriculares te escuchará mejor. También puedes cambiarlo en cada lección.': 'The count-in always plays and the pendulum is always shown above the score. The click during the song is optional: the app does not mistake it for your instrument, but it will hear you better with headphones. You can also change it in each lesson.',
   'Mostrar la digitación en las lecciones': 'Show fingerings in lessons', 'Texto grande': 'Large text', 'Desbloquear todas las lecciones': 'Unlock all lessons',
   'Idioma': 'Language', 'Privacidad': 'Privacy', 'Modo niño': 'Kids mode',
-  'Para menores de 14: oculta las clasificaciones públicas, la liga y la red de amigos. La banda sigue funcionando.': 'For under-14s: hides public rankings, the league and the friends network. The band keeps working.',
-  'Aparecer en las clasificaciones públicas': 'Appear in public rankings', 'Con tu apodo público, nunca con tu nombre.': 'With your public nickname, never your name.',
+  'Para menores de 14: oculta las clasificaciones públicas, la liga y la red de amigos. La banda sigue funcionando.': 'For under-14s: hides public leaderboards, the league and the friends network. The band keeps working.',
+  'Aparecer en las clasificaciones públicas': 'Appear on public leaderboards', 'Con tu apodo público, nunca con tu nombre.': 'With your public nickname, never your name.',
   'Tu opinión decide qué viene después.': 'Your feedback decides what comes next.', 'Enviar comentarios': 'Send feedback', 'Ver el tutorial': 'Watch the tutorial',
   'Borrar progreso': 'Reset progress', 'Pulsa otra vez para borrar': 'Press again to reset', 'Tu cuenta': 'Your account', 'Cerrar sesión': 'Sign out',
   'Borrar mi cuenta': 'Delete my account', 'Crear mi usuario': 'Create my user', 'Métricas de la app': 'App metrics', 'Panel de testers': 'Testers panel',
@@ -181,7 +186,7 @@ export const EXACT = {
   '¿Qué instrumento quieres aprender o practicar?': 'Which instrument do you want to learn or practise?',
   'Toca uno para elegirlo. Podrás cambiarlo cuando quieras con el botón del instrumento, arriba.': 'Tap one to choose it. You can change it any time with the instrument button at the top.',
   '¿Quién va a tocar?': "Who's going to play?", 'Yo': 'Me', 'Tengo 14 años o más': "I'm 14 or older", 'Un niño o una niña': 'A child',
-  'Menor de 14: sin clasificaciones públicas ni amigos (se puede cambiar en Perfil)': 'Under 14: no public rankings or friends (can be changed in Profile)',
+  'Menor de 14: sin clasificaciones públicas ni amigos (se puede cambiar en Perfil)': 'Under 14: no public leaderboards or friends (can be changed in Profile)',
   '¿Has tocado antes?': 'Have you played before?', 'Nunca he tocado': "I've never played", 'Sé lo básico': 'I know the basics', 'Toco con soltura': 'I play fluently',
   'Empezamos por las primeras notas.': 'We start with the first notes.', 'Leo algo de música y toco algunas notas. Abro las primeras unidades.': 'I read some music and play some notes. I open the first units.',
   'Abro todo el curso para que vayas donde quieras.': 'I open the whole course so you can go wherever you like.',
@@ -202,7 +207,7 @@ export const EXACT = {
   'Tu progreso de este móvil se guardará en tu cuenta: no pierdes nada.': 'The progress on this phone will be saved to your account: you lose nothing.',
   'Te escucha mientras tocas': 'It listens while you play', 'Afinación y ritmo en vivo, nota a nota, con tu micrófono.': 'Live tuning and rhythm, note by note, with your microphone.',
   'Un curso a tu ritmo': 'A course at your pace', 'Lecciones cortas, canciones de tu estilo y un libro con medallas.': 'Short lessons, songs in your style and a book with medals.',
-  'Ensaya con tu banda': 'Rehearse with your band', 'Tareas del director, grupos y grabaciones para tocar juntos.': "Director's tasks, groups and recordings to play together.",
+  'Ensaya con tu banda': 'Rehearse with your band', 'Tareas del director, grupos y grabaciones para tocar juntos.': "Conductor's tasks, groups and recordings to play together.",
   '¿Por qué pedimos una cuenta?': 'Why do we ask for an account?',
   'Band Flow está en beta. Con tu cuenta tu progreso se guarda en la nube (no lo pierdes al cambiar de móvil) y el equipo sabe quién la está probando para pedirte opinión y arreglar lo que falle. No publicamos nada tuyo.': "Band Flow is in beta. With your account your progress is saved in the cloud (you don't lose it when you change phones) and the team knows who is testing it so we can ask for your feedback and fix what fails. We never publish anything of yours.",
   'Recorrido por la app': 'App tour', 'Anterior': 'Previous', 'Siguiente': 'Next', '‹ Anterior': '‹ Previous', 'Siguiente ›': 'Next ›', 'Siguiente paso': 'Next step',
@@ -313,7 +318,7 @@ export const EXACT = {
   'La banda queda en tu cuenta: no la pierdes si cambias de móvil.': "The band is saved to your account: you won't lose it if you change phone.",
   'Como te conoce tu banda': 'What your band calls you', 'Como quieres que te llamemos': 'What should we call you', 'Código de tu amigo': "Your friend's code",
   'Practica unos días y aquí verás cómo mejoras.': "Practise for a few days and you'll see your progress here.",
-  'Se te pedirá un apodo la primera vez que entres en una clasificación.': "You'll be asked for a nickname the first time you join a ranking.",
+  'Se te pedirá un apodo la primera vez que entres en una clasificación.': "You'll be asked for a nickname the first time you join a leaderboard.",
   'Perfil de habilidades': 'Skills profile', 'Se gana en los cofres de la rutina': 'Earned in the routine chests',
   'Tester pro: todo abierto menos el panel de administrador': 'Pro tester: everything open except the admin panel',
   'Invitar': 'Invite', 'Quitar': 'Remove', 'Diagrama': 'Diagram', 'Acorde': 'Chord', 'Libros': 'Books', 'Cerrado': 'Locked',
@@ -353,6 +358,9 @@ export const PATTERNS = [
   // Avisos, errores y pistas de práctica: van delante de los patrones genéricos («… · 3 de 5», glosario)
   ...messagePatterns({ tr }),
   ...practicePatterns({ tr, noteEn, notesEn }),
+  ...bandPatterns({ tr, noteEn, notesEn }),
+  ...coursePatterns({ tr, noteEn, notesEn }),
+  ...screensPatterns({ tr, noteEn, notesEn }),
   // Fila de días de la semana (tarjeta Hoy)
   [/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo)(, hoy)?, (practicado|sin práctica)$/, (m, d, hoy, p) => `${({ lunes: 'Monday', martes: 'Tuesday', miércoles: 'Wednesday', jueves: 'Thursday', viernes: 'Friday', sábado: 'Saturday', domingo: 'Sunday' })[d]}${hoy ? ', today' : ''}, ${p === 'practicado' ? 'practised' : 'no practice'}`],
   [/^(\d) de 5 días esta semana$/, (m, n) => `${n} of 5 days this week`],
@@ -458,4 +466,6 @@ export const PATTERNS = [
   [/^Sabes (\d+) acordes?: puedes tocar (\d+) de (\d+) canciones$/, (m, n, a, b) => `You know ${n} chord${n === '1' ? '' : 's'}: you can play ${a} of ${b} songs`],
   [/^(\d+) acordes · (\d+) de (\d+) canciones del cancionero$/, (m, n, a, b) => `${n} chords · ${a} of ${b} songbook songs`],
   [/^Precisión (\d+)$/, (m, n) => `Accuracy ${n}`],
+  // Asientos e instrumentos de la banda: los más generales, al final
+  ...bandFallbackPatterns({ tr }),
 ];

@@ -8,6 +8,7 @@ import { instrumentById } from '../instruments.js';
 import { weekId } from '../engage.js';
 import { getState, update, today, addImportedSong } from '../store.js';
 import { launch } from '../launch.js';
+import { t } from '../i18n.js';
 
 const LEAGUE_BASE = 5;
 const LEAGUE_PER_STAR = 10;
@@ -70,7 +71,7 @@ async function challengeFriend(song) {
   if (!name) return;
   try {
     const code = await social.createChallenge(songPayload(song), inst(), name);
-    await shareText(`${name} te reta a tocar «${song.title}» (${instName()}) en Band Flow. ¿Quién lo hace mejor?`, linkWith('reto', code));
+    await shareText(t(`${name} te reta a tocar «${song.title}» (${instName()}) en Band Flow. ¿Quién lo hace mejor?`), linkWith('reto', code));
     openChallenge(code);
   } catch (err) { toast(cloudErrorText(err)); }
 }
@@ -80,7 +81,7 @@ async function shareScore(song) {
   if (!name) return;
   try {
     const code = await social.shareScore(songPayload(song), name);
-    await shareText(`${name} te comparte la partitura «${song.title}» para ensayar en Band Flow.`, linkWith('partitura', code));
+    await shareText(t(`${name} te comparte la partitura «${song.title}» para ensayar en Band Flow.`), linkWith('partitura', code));
   } catch (err) { toast(cloudErrorText(err)); }
 }
 
@@ -98,7 +99,7 @@ async function openChallenge(rawCode) {
       <button type="button" class="btn big" id="acceptChallenge">Aceptar el reto</button>
       <button type="button" class="btn ghost small" id="shareChallenge">Invitar a más amigos</button><div id="boardBox"><p class="muted">Cargando…</p></div>`);
     $('acceptChallenge').addEventListener('click', () => { $('sheet').close(); launch(lesson, { mode: 'tempo', from: 'songs' }); });
-    $('shareChallenge').addEventListener('click', () => shareText(`Reto en Band Flow: «${ch.song.title}». ¿Quién lo toca mejor?`, linkWith('reto', code)));
+    $('shareChallenge').addEventListener('click', () => shareText(t(`Reto en Band Flow: «${ch.song.title}». ¿Quién lo toca mejor?`), linkWith('reto', code)));
     $('boardBox').innerHTML = boardHtml(await social.topScores(['challenges', code]));
   } catch (err) { sheet(`<h2>Reto</h2><p class="warn">${esc(cloudErrorText(err))}</p>`); }
 }

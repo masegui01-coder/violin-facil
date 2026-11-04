@@ -1,0 +1,1 @@
+import{Fa as t,jb as e,k as o}from"./chunk-4ICQGMOS.js";var h=()=>!!(t().proTester||t().adminUser);function s(){let r=o("toolRhythmBook");r&&(r.hidden=!h())}o("toolRhythmBook").addEventListener("click",()=>e("rhythmbook"));export{h as a,s as b};

@@ -12,6 +12,7 @@ import { hardPassage, passageLesson } from '../passages.js';
 import { createStaff } from '../staff.js';
 import { getTakes } from '../takes.js';
 import { drawReview } from './result.js';
+import { dateLocale } from './band-ui.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song', chords: 'chord' };
 const CHORD_MODE = { hold: 'Acorde a acorde', strum: 'A tempo, con el cifrado', changes: 'Un minuto de cambios' };
@@ -31,7 +32,7 @@ async function showLastTake(lesson) {
   const takes = await getTakes(`${getState().instrument}:${lessonKey(lesson)}`);
   const body = $('sheetBody').querySelector('.sheet-body');
   if (!takes || !takes.last || !body || !$('sheet').open) return;
-  const when = new Date(takes.last.at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const when = new Date(takes.last.at).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' });
   const box = document.createElement('div');
   box.className = 'take';
   box.innerHTML = `<p class="small muted">Tu última toma · ${when}</p><audio controls></audio>${takes.last.review ? '<div class="review-scroll"><svg class="staff" role="img" aria-label="Partitura de tu última toma"></svg></div><p class="small muted"><span class="dot-ok"></span> bien · <span class="dot-warn"></span> te costó · <span class="dot-bad"></span> fallada</p>' : ''}`;

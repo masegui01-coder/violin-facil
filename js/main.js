@@ -87,7 +87,7 @@ function renderTopbar(s) {
   const pending = s.band && s.band.role !== 'director' ? (s.bandPending || []).length : 0;
   $('bandBadge').hidden = !pending;
   $('bandBadge').textContent = pending;
-  $('bandBadge').setAttribute('aria-label', `${pending} tareas pendientes`);
+  $('bandBadge').setAttribute('aria-label', `${pending} ${pending === 1 ? 'tarea pendiente' : 'tareas pendientes'}`);
 }
 
 hydrateIcons();

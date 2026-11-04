@@ -6,7 +6,7 @@
 <!-- Política de seguridad (CSP): solo los orígenes que usa la app (Firebase y Google Fonts; el QR del director va en js/vendor/).
      connect-src incluye apis.google.com por el aviso gen_204 (fetch) de la ventana de Google al iniciar sesión.
      El build añade a script-src el hash sha256 de theme-boot.js, que va en línea en index.html (nunca 'unsafe-inline'). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-FtrnWvIZwjbxYkRYZgQgMtdLp4qlPJToq58F7l0hBWk=' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data: mediastream:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-FtrnWvIZwjbxYkRYZgQgMtdLp4qlPJToq58F7l0hBWk=' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://www.google.com; media-src 'self' blob: data: mediastream:; connect-src 'self' https://www.google.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://band-flow-83d4b.firebaseapp.com https://accounts.google.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B4461F" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
@@ -20,38 +20,43 @@
 <!-- Fuentes sin bloquear el primer pintado (display=swap: mientras llegan se ve la del sistema); theme-boot.js las activa -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap" data-fonts>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap"></noscript>
+
 <!-- Tema elegido en Perfil (claro, oscuro o el del sistema) antes de pintar, para que no parpadee -->
 <script>(function(){document.querySelectorAll("link[data-fonts]").forEach(function(a){var t=document.createElement("link");t.rel="stylesheet",t.href=a.href,document.head.appendChild(t)});try{var e=JSON.parse(localStorage.getItem("violin-facil-v2"))||{};if(e.appearance!=="light"&&e.appearance!=="dark")return;document.documentElement.dataset.theme=e.appearance;var n=e.appearance==="dark"?"#0F141B":"#B4461F";document.querySelectorAll('meta[name="theme-color"]').forEach(function(a){a.content=n})}catch{}})();</script>
+
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
      base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
-<link rel="stylesheet" href="dist/app-b28cd8c1f1.css">
-<link rel="modulepreload" href="dist/main-2TALL7CY.js">
-<link rel="modulepreload" href="dist/chunk-Q3GWOFJA.js">
-<link rel="modulepreload" href="dist/chunk-QWQ3QH3G.js">
-<link rel="modulepreload" href="dist/chunk-3T5UAB75.js">
-<link rel="modulepreload" href="dist/chunk-EPMOY22M.js">
-<link rel="modulepreload" href="dist/chunk-OS336ZTM.js">
+<link rel="stylesheet" href="dist/app-ef2e27ace5.css">
+<link rel="modulepreload" href="dist/main-NBTKJHN3.js">
+<link rel="modulepreload" href="dist/chunk-LG6AAELJ.js">
+<link rel="modulepreload" href="dist/chunk-ZHERNXJS.js">
+<link rel="modulepreload" href="dist/chunk-FI7F65DT.js">
+<link rel="modulepreload" href="dist/chunk-YT3FSUYA.js">
+<link rel="modulepreload" href="dist/chunk-M6ROD2VY.js">
 <link rel="modulepreload" href="dist/chunk-SJWVOYGB.js">
-<link rel="modulepreload" href="dist/chunk-PFWXDCLI.js">
-<link rel="modulepreload" href="dist/chunk-27EL4QTU.js">
-<link rel="modulepreload" href="dist/chunk-NZF5EKIU.js">
+<link rel="modulepreload" href="dist/chunk-KJ5P3KT2.js">
+<link rel="modulepreload" href="dist/chunk-73PL3Z3Y.js">
+<link rel="modulepreload" href="dist/chunk-CWWBLQZK.js">
 <link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
 <link rel="modulepreload" href="dist/chunk-3GV7AFFR.js">
-<link rel="modulepreload" href="dist/chunk-F2OF2RWG.js">
-<link rel="modulepreload" href="dist/chunk-IUZDJQJZ.js">
-<link rel="modulepreload" href="dist/chunk-K6TXCEWK.js">
+<link rel="modulepreload" href="dist/chunk-C5PDMLS7.js">
+<link rel="modulepreload" href="dist/chunk-KMA2AZSP.js">
+<link rel="modulepreload" href="dist/chunk-3B2WEYBT.js">
 <link rel="modulepreload" href="dist/chunk-OUHRGTUX.js">
 <link rel="modulepreload" href="dist/chunk-UEVO3H7G.js">
 <link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
-<link rel="modulepreload" href="dist/chunk-BHSJMTGE.js">
-<link rel="modulepreload" href="dist/chunk-PQD24AEF.js">
-<link rel="modulepreload" href="dist/chunk-ZDXWSMKA.js">
-<link rel="modulepreload" href="dist/chunk-FNCYJKSD.js">
-<link rel="modulepreload" href="dist/chunk-Y37MHN2P.js">
+<link rel="modulepreload" href="dist/chunk-77WMWVYQ.js">
+<link rel="modulepreload" href="dist/chunk-HYCFYCNJ.js">
+<link rel="modulepreload" href="dist/chunk-GXQLE3BP.js">
+<link rel="modulepreload" href="dist/chunk-7TMXELJE.js">
+<link rel="modulepreload" href="dist/chunk-4ICQGMOS.js">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
+<!-- Teclado: primer elemento con foco; lleva al título de la pantalla actual (router.js) -->
+<a class="skip-link" href="#main">Saltar al contenido</a>
 <div class="shell">
 
   <!-- Barra superior de las pestañas -->
@@ -64,7 +69,16 @@
     </div>
   </header>
 
-  <main>
+  <!-- Menú de pestañas antes del contenido: con el teclado se llega a él enseguida (abajo en el móvil, a la izquierda en el ordenador) -->
+  <nav id="tabbar" class="tabbar" hidden>
+    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span><span class="tab-label">Aprender</span></button>
+    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span><span class="tab-label">Canciones</span></button>
+    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span><span class="tab-label">Estudio</span></button>
+    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span><span class="tab-label">Banda</span><span id="bandBadge" class="tab-badge" hidden></span></button>
+    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span><span class="tab-label">Perfil</span></button>
+  </nav>
+
+  <main id="main" tabindex="-1">
     <!-- Bienvenida -->
     <section id="onboarding" class="screen onboarding" hidden>
       <div class="ob-dots" id="obDots" aria-hidden="true"></div>
@@ -361,7 +375,7 @@
 
     <!-- Afinador -->
     <section id="tuner" class="screen lesson-screen" hidden>
-      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h2>Afinador</h2></div>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Afinador</h1></div>
       <div id="tunerGate" class="mic-gate" hidden>
         <p><strong>Necesito el micrófono</strong> para escucharte.</p>
         <p id="tunerMicError" class="muted" hidden></p>
@@ -559,14 +573,6 @@
       <div id="gymList" class="gym-list"></div>
     </section>
   </main>
-
-  <nav id="tabbar" class="tabbar" hidden>
-    <button type="button" data-tab="learn"><span data-icon="learn" class="ic"></span><span class="tab-label">Aprender</span></button>
-    <button type="button" data-tab="songs"><span data-icon="songs" class="ic"></span><span class="tab-label">Canciones</span></button>
-    <button type="button" data-tab="practice"><span data-icon="practice" class="ic"></span><span class="tab-label">Estudio</span></button>
-    <button type="button" data-tab="band"><span data-icon="band" class="ic"></span><span class="tab-label">Banda</span><span id="bandBadge" class="tab-badge" hidden></span></button>
-    <button type="button" data-tab="profile"><span data-icon="profile" class="ic"></span><span class="tab-label">Perfil</span></button>
-  </nav>
 </div>
 
 <dialog id="sheet" class="sheet">
@@ -596,6 +602,7 @@
 <div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" async src="dist/main-2TALL7CY.js"></script>
+<script type="module" async src="dist/main-NBTKJHN3.js"></script>
+
 </body>
 </html>
