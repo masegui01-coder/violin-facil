@@ -29,6 +29,9 @@ export async function loadOwnedSpaces(uid, state) {
   if (state.band && state.band.bandId && state.band.role === 'director') reads.push(readSpace(fs, db, 'band', 'bands', state.band.bandId));
   (state.groups || []).filter(g => g && g.groupId).forEach(g => reads.push(readSpace(fs, db, 'group', 'groups', g.groupId)));
   if (state.school && state.school.schoolId && state.school.role === 'teacher') reads.push(readSpace(fs, db, 'school', 'schools', state.school.schoolId));
+  // Aula Pro: la escuela que se creó al pedir el acceso (si no es la misma de la pestaña Escuela)
+  const aulaSid = state.aula && state.aula.schoolId;
+  if (aulaSid && !(state.school && state.school.schoolId === aulaSid)) reads.push(readSpace(fs, db, 'school', 'schools', aulaSid));
   return ownedSpaces((await Promise.all(reads)).filter(Boolean), uid);
 }
 
@@ -68,6 +71,17 @@ async function deleteGroup(fs, db, space, uid) {
 
 // Escuela: todo en una escritura (las fichas de alumno solo se borran junto al contador o con la escuela)
 async function deleteSchool(fs, db, space) {
+  // Aula Pro: cada clase con sus fichas, tareas, resúmenes, comentarios y su código (las fichas se borran con la clase)
+  const classes = await listDocs(fs, db, 'schools', space.id, 'classes');
+  for (const c of classes) {
+    const cls = { id: c.id, ...c.data() };
+    const lists = await Promise.all(['students', 'tasks', 'summaries', 'feedback'].map(n => listDocs(fs, db, 'schools', space.id, 'classes', cls.id, n)));
+    const batch = fs.writeBatch(db);
+    lists.flat().forEach(d => batch.delete(d.ref));
+    if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
+    batch.delete(c.ref);
+    await batch.commit();
+  }
   const [members, progress] = await Promise.all([listDocs(fs, db, 'schools', space.id, 'members'), listDocs(fs, db, 'schools', space.id, 'progress')]);
   const batch = fs.writeBatch(db);
   [...members, ...progress].forEach(d => batch.delete(d.ref));

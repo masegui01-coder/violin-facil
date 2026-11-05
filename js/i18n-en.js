@@ -9,8 +9,10 @@ import { COURSE_EXACT, coursePatterns } from './i18n-en-course.js';
 import { SCREENS_EXACT, screensPatterns } from './i18n-en-screens.js';
 import { DICTATION_EXACT, dictationPatterns } from './i18n-en-dictation.js';
 import { LM_EXACT, lmPatterns } from './i18n-en-lm.js';
+import { AULA_EXACT, aulaPatterns } from './i18n-en-aula.js'; // Aula Pro (bloque aparte)
 
 export const EXACT = {
+  ...AULA_EXACT, // Aula Pro: el primero, así no cambia ninguna traducción que ya existía
   ...LM_EXACT, ...DICTATION_EXACT, ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
   ...BAND_EXACT, ...COURSE_EXACT, ...SCREENS_EXACT,
   'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
@@ -473,6 +475,8 @@ export const PATTERNS = [
   [/^Precisión (\d+)$/, (m, n) => `Accuracy ${n}`],
   // Lenguaje musical (curso común)
   ...lmPatterns({ tr, noteEn }),
+  // Aula Pro (i18n-en-aula.js)
+  ...aulaPatterns({ tr }),
   // Asientos e instrumentos de la banda: los más generales, al final
   ...bandFallbackPatterns({ tr }),
 ];

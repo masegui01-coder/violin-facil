@@ -204,7 +204,7 @@ async function creatividad(host, ex, env) {
   saveWork(ex.id, `${tokensText(tokens)}${lyrics ? `\n${lyrics}` : ''}`);
   w.lock();
   host.querySelector('[data-check]').disabled = true;
-  return { pct: c.pct, marks: c.rules.map(r => (r.ok ? 'ok' : 'bad')), labels: c.rules.map(r => RULE_NAME[r.id]), mistakes: c.mistakes, note: 'Tu composición queda guardada. Si estás en una clase, tu profesor la escuchará y le pondrá nota.', work: tokensText(tokens) };
+  return { pct: c.pct, marks: c.rules.map(r => (r.ok ? 'ok' : 'bad')), labels: c.rules.map(r => RULE_NAME[r.id]), mistakes: c.mistakes, note: 'Tu composición queda guardada. Si estás en una clase, envíasela a tu profesor: la escuchará y le pondrá nota.', work: tokensText(tokens), lyrics, meter };
 }
 const RULE_NAME = {
   longitud: 'Número de compases', compases: 'Compases completos', figuras: 'Figuras permitidas', notas: 'Notas permitidas',

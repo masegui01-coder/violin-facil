@@ -1,7 +1,8 @@
 // Pantalla de un ejercicio nuevo del curso de Lenguaje Musical («lm»): cabecera con la unidad, la sección y la
 // variante; el ejercicio (runners.js); y el resultado con nota, estrellas, corrección ✓ ≈ ✕, errores explicados y
 // los botones para repetir, cambiar de variante, seguir con el siguiente o volver a la unidad.
-import { $, esc, starsHtml, announcer } from '../ui.js';
+import { $, esc, starsHtml, announcer, toast } from '../ui.js';
+import { cloudErrorText } from '../cloud.js';
 import { register, back, go } from '../router.js';
 import { getState } from '../store.js';
 import * as audio from '../audio.js';
@@ -32,6 +33,21 @@ function mistakesHtml(codes) {
   return `<div class="lm-mistakes"><h3>Para repasar</h3><ul>${known.map(k => `<li>${esc(k.text)}</li>`).join('')}</ul></div>`;
 }
 
+const myClasses = () => (getState().aula && getState().aula.classes) || [];
+async function sendWork(btn, ex, out, saved) {
+  btn.disabled = true;
+  try {
+    const api = await import('../aula-api.js');
+    const work = { exId: ex.id, title: ex.title, score: out.work, lyrics: out.lyrics || '', meter: out.meter, pct: saved.pct };
+    await Promise.all(myClasses().map(c => api.sendWork(c, work)));
+    btn.textContent = 'Enviada a tu profesor';
+    say('Enviada a tu profesor');
+  } catch (err) {
+    btn.disabled = false;
+    toast('No se ha podido enviar: ' + cloudErrorText(err));
+  }
+}
+
 function renderResult(ex, out, saved) {
   const ten = gradeTen(saved.pct, ex.variant);
   const sib = lmExercise(siblingId(ex.id, ex.variant === 'facil' ? 'medio' : 'facil'));
@@ -51,6 +67,7 @@ function renderResult(ex, out, saved) {
       ${next ? '<button type="button" class="btn" id="lmNext">Siguiente ejercicio</button>' : ''}
       <button type="button" class="btn ghost" id="lmAgain">Repetir</button>
       ${sib ? `<button type="button" class="btn ghost" id="lmOther">Probar la versión ${esc(VARIANT_NAME[sib.variant])}</button>` : ''}
+      ${out.work && myClasses().length ? '<button type="button" class="btn" id="lmSendWork">Enviar a mi profesor</button>' : ''}
       ${ex.params.practicaInfinita ? '<button type="button" class="btn ghost" id="lmMoreDict">Más dictados como este</button>' : ''}
       <button type="button" class="btn ghost" id="lmToUnit">Volver a la unidad</button>
     </div></div>`;
@@ -60,6 +77,8 @@ function renderResult(ex, out, saved) {
   $('lmToUnit').addEventListener('click', () => back());
   if (next) $('lmNext').addEventListener('click', () => openLmExercise(next));
   if (sib) $('lmOther').addEventListener('click', () => openLmExercise(sib));
+  // Creatividad: la composición va al profesor de cada una de mis clases del Aula (la escucha en mi ficha)
+  if (out.work && myClasses().length) $('lmSendWork').addEventListener('click', e => sendWork(e.currentTarget, ex, out, saved));
   // Práctica infinita: los Dictados de siempre con el nivel, el compás y las figuras de la unidad (sin semilla fija)
   if (ex.params.practicaInfinita) $('lmMoreDict').addEventListener('click', () => { const { level, meter, bars, cells } = ex.params.practicaInfinita.params; go('dictation', { lm: { level, meter, bars, cells } }); });
 }

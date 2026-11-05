@@ -95,8 +95,9 @@ export function openLmTarget(target = {}) {
   const level = Number(target.level || 1);
   const unit = Number(target.unit || 1);
   const ids = (target.ids || []).filter(id => lmExercise(id));
-  const inSection = target.section ? (lmUnit(level, unit)?.exercises || []).filter(e => e.section === target.section && (!target.variant || e.variant === target.variant)) : [];
-  const single = ids.length === 1 ? ids[0] : !ids.length && target.variant && inSection.length === 1 ? inSection[0].id : null;
+  const variant = ['facil', 'medio'].includes(target.variant) ? target.variant : null; // «any» del Aula: las dos
+  const inSection = target.section ? (lmUnit(level, unit)?.exercises || []).filter(e => e.section === target.section && (!variant || e.variant === variant)) : [];
+  const single = ids.length === 1 ? ids[0] : !ids.length && variant && inSection.length === 1 ? inSection[0].id : null;
   if (single) { openLmExercise(single); return; }
   update({ learnView: 'lm' });
   import('./view.js').then(m => {

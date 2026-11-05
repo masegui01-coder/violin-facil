@@ -20,6 +20,7 @@ import './screens/study.js';
 import './screens/social.js';
 import './screens/perc-tools.js';
 import './growth.js';
+import './aula-sync.js'; // Aula Pro: resultados del alumno a sus clases
 import { accountGate } from './screens/account.js';
 import './screens/friends.js';
 import { onAccount, currentAccount } from './account.js';
@@ -42,6 +43,13 @@ lazy('tips', () => import('./screens/tips.js'));
 lazy('pro', () => import('./screens/pro.js'));
 lazy('dictation', () => import('./screens/dictation.js'));
 lazy('lm', () => import('./lm/screen.js'));
+
+// ---------- Aula Pro (profesor y «Mis tareas» del alumno) ----------
+// La clase del profesor se descarga al abrirla; aula-sync.js escucha los resultados del alumno (sin clases no hace nada).
+// Enlace de invitación ?clase=CÓDIGO: abre Aprender › Pro › Aula con el código puesto.
+lazy('aula', () => import('./screens/aula.js'));
+if (new URLSearchParams(location.search).has('clase')) update({ learnView: 'pro', aulaView: 'aula' });
+// ---------- /Aula Pro ----------
 
 // Momento libre del hilo principal (o un poco después, si el navegador no tiene requestIdleCallback)
 const IDLE_TIMEOUT_MS = 3000;

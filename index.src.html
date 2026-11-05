@@ -28,7 +28,7 @@
 <script src="js/theme-boot.js"></script>
 <!-- /build:boot -->
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
-     base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
+     base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, dictation, aula, a11y, responsive, motion, perf -->
 <!-- build:css -->
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/nav.css">
@@ -48,6 +48,7 @@
 <link rel="stylesheet" href="css/pro.css">
 <link rel="stylesheet" href="css/dictation.css">
 <link rel="stylesheet" href="css/lm.css">
+<link rel="stylesheet" href="css/aula.css">
 <link rel="stylesheet" href="css/a11y.css">
 <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/motion.css">
@@ -120,6 +121,12 @@
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><div class="pro-head"><p id="proEyebrow" class="eyebrow"></p><h2 id="proTitle"></h2></div></div>
       <div class="seg three pro-tabs" role="group" aria-label="Pestañas del nivel"><button type="button" data-pro-tab="book">Libro</button><button type="button" data-pro-tab="relax">Relax</button><button type="button" data-pro-tab="play">Práctica</button></div>
       <div id="proBody" class="pro-body"></div>
+    </section>
+
+    <!-- Aula Pro (profesor): una clase por dentro y la ficha de cada alumno (js/screens/aula.js) -->
+    <section id="aula" class="screen aula-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" id="aulaBack" aria-label="Volver">‹</button><div class="aula-head"><p id="aulaEyebrow" class="eyebrow"></p><h1 id="aulaTitle"></h1></div></div>
+      <div id="aulaBody" class="aula"></div>
     </section>
 
     <!-- Pestaña Canciones -->

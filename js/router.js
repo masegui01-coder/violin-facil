@@ -3,18 +3,20 @@ import { $, toast } from './ui.js';
 import { stopMic, resumeMic } from './audio.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro', 'settings', 'dictation', 'lm'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro', 'settings', 'dictation', 'lm',
+  'aula', // Aula Pro: clase del profesor (js/screens/aula.js)
+];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';
 
 // De dónde se lanzó una lección: al salir se vuelve a esa pestaña
-export const ORIGIN_TAB = { course: 'learn', book: 'learn', rhythmbook: 'rhythmbook', songs: 'songs', practice: 'practice', band: 'band', pro: 'pro' };
+export const ORIGIN_TAB = { course: 'learn', book: 'learn', rhythmbook: 'rhythmbook', songs: 'songs', practice: 'practice', band: 'band', pro: 'pro', aula: 'learn' };
 export const originTab = from => ORIGIN_TAB[from] || 'learn';
 
 // Botón atrás del móvil: cierra la ventana abierta, sale de la lección o vuelve a Aprender.
 // Se deja una entrada en el historial para que el atrás llegue aquí en vez de cerrar la app.
-const EXIT_BUTTONS = '[data-back], #theoryExit, #lessonExit, #rhExit, #cdExit, #resBack';
+const EXIT_BUTTONS = '[data-back], #theoryExit, #lessonExit, #rhExit, #cdExit, #resBack, #aulaBack';
 let armed = false;
 function arm() {
   if (armed || typeof history === 'undefined') return;

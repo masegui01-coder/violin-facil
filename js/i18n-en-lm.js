@@ -70,7 +70,10 @@ export const LM_EXACT = {
   // Audición, creatividad y repaso
   'Escuchar el fragmento': 'Listen to the excerpt', Parar: 'Stop', 'También:': 'Also:', 'La llamada de la app': "The app's call", 'Tu composición': 'Your composition',
   'Notas:': 'Notes:', 'Tu letra': 'Your lyrics', 'Escuchar la llamada': 'Listen to the call', 'Escuchar lo que has escrito': 'Listen to what you wrote',
-  'Tu composición queda guardada. Si estás en una clase, tu profesor la escuchará y le pondrá nota.': 'Your composition is saved. If you are in a class, your teacher will listen to it and mark it.',
+  'Tu composición queda guardada. Si estás en una clase, envíasela a tu profesor: la escuchará y le pondrá nota.': 'Your composition is saved. If you are in a class, send it to your teacher: they will listen to it and mark it.',
+  'Enviar a mi profesor': 'Send to my teacher', 'Enviada a tu profesor': 'Sent to your teacher', Composiciones: 'Compositions',
+  'Sus composiciones del curso de Lenguaje Musical aparecerán aquí cuando te las envíe.': 'Their compositions from the Music theory course will appear here when they send them to you.',
+  'reglas cumplidas': 'rules met', 'Esta composición no se puede reproducir': "This composition can't be played",
   'Tienes una composición guardada de otra vez: puedes escribir una nueva': 'You have a composition saved from last time: you can write a new one',
   'Número de compases': 'Number of bars', 'Compases completos': 'Complete bars', 'Figuras permitidas': 'Allowed note values', 'Notas permitidas': 'Allowed notes',
   Final: 'Ending', 'Sin saltos': 'No leaps', 'Figuras obligatorias': 'Required note values', 'Los semitonos': 'The semitones',
@@ -193,6 +196,8 @@ export function lmPatterns({ tr, noteEn }) {
     [/^Ejercicios hechos de la unidad( \d+)?$/, (m, n) => `Exercises done in the unit${n || ''}`],
     [/^(.+): (Fácil|Media)(?:, (\d+) %)?$/, (m, x, v, p) => `${tr(x)}: ${v === 'Fácil' ? 'Easy' : 'Medium'}${p ? `, ${p} %` : ''}`],
     [/^Era «(.+)»\.$/, (m, x) => `It was “${tr(x)}”.`],
+    [/^Lee o canta (.+) como (.+)$/, (m, a, b) => `Reads or sings ${a} as ${b}`],
+    [/^No se ha podido enviar: (.+)$/, (m, x) => `Couldn't send it: ${tr(x)}`],
     [/^Lenguaje musical · Nivel (\d+) · Unidad (\d+)$/, (m, a, b) => `Music theory · Level ${a} · Unit ${b}`],
   ];
 }

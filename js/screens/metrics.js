@@ -68,7 +68,7 @@ function schoolsHtml(schools) {
   const until = `${new Date().getMonth() >= 8 ? new Date().getFullYear() + 1 : new Date().getFullYear()}${SCHOOL_YEAR_END}`;
   return `<h2>Escuelas</h2>${schools.length ? `<div class="list">${schools.map(s => `<div class="list-row check-row"><span><b>${esc(s.name)}</b><small>${esc(s.ownerName || '')} · ${num(s.students)} alumnos · curso ${esc(s.year || '')}</small></span>
     <span class="check-side">${premiumActive(s) ? `<span class="pill ok">Premium hasta ${esc(s.premium.until)}</span><button type="button" class="btn ghost small" data-premium="${esc(s.id)}" data-on="0">Quitar</button>`
-      : `<span class="pill">Modo prueba</span><button type="button" class="btn small" data-premium="${esc(s.id)}" data-on="1" data-until="${until}">Activar premium</button>`}</span></div>`).join('')}</div>`
+      : `${s.proRequestedAt ? '<span class="pill warn">Pide el Aula Pro</span>' : '<span class="pill">Modo prueba</span>'}<button type="button" class="btn small" data-premium="${esc(s.id)}" data-on="1" data-until="${until}">Activar premium</button>`}</span></div>`).join('')}</div>`
     : '<p class="muted small">Todavía no hay escuelas.</p>'}`;
 }
 

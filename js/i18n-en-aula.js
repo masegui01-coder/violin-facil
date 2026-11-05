@@ -1,0 +1,147 @@
+// Inglés del Aula Pro (clases del profesor y «Mis tareas» del alumno). Vocabulario: «Aula», Classroom; «clase», class;
+// «tarea», task; «entrega», submission; «ficha del alumno», student file; «informe trimestral», term report.
+// Va el primero en EXACT (si una frase ya existía, gana la traducción de siempre) y sus patrones, los últimos.
+export const AULA_EXACT = {
+  // ---------- Inicio del Aula (Aprender › Pro) ----------
+  'Aula': 'Classroom', 'Aula o Método Pro': 'Classroom or Pro method',
+  'El Aula necesita conexión con el servidor.': 'The Classroom needs a connection to the server.', 'Cargando el Aula…': 'Loading the Classroom…',
+  'Mis clases': 'My classes', 'Pon tareas del temario y mira de un vistazo cómo va cada alumno.': 'Set tasks from the syllabus and see at a glance how each student is doing.',
+  'Mis tareas': 'My tasks', 'Lo que te ha pedido tu profesor. Cada intento cuenta y tu profesor ve tu progreso.': 'What your teacher has asked for. Every attempt counts and your teacher sees your progress.',
+  'Clases con tu profesor de música: tareas del temario y seguimiento de cada alumno.': 'Classes with your music teacher: tasks from the syllabus and follow-up for every student.',
+  'Medio': 'Medium', 'Fácil o Medio': 'Easy or Medium', 'Queda 1 intento': '1 attempt left', 'Sin intentos': 'No attempts left', 'Hacer': 'Do it', 'Repetir': 'Repeat',
+  'Indicaciones:': 'Instructions:', 'Comentario de tu profesor': "Your teacher's comment", 'Clase': 'Class', 'Salir de la clase': 'Leave the class',
+  'Ya no estás en esta clase: tu profesor te ha dado de baja o la ha borrado.': 'You are no longer in this class: your teacher removed you or deleted it.',
+  '¡Todo hecho! Tu profesor verá tu progreso.': 'All done! Your teacher will see your progress.', 'Tu profesor todavía no ha puesto tareas.': "Your teacher hasn't set any tasks yet.",
+  'Qué ve tu profesor': 'What your teacher sees',
+  'Tu profesor ve solo esto: tus minutos de práctica, tu racha, el % de tus tareas y de las unidades de Lenguaje, tus competencias y tus errores más frecuentes. Nada de tu correo ni de tus grabaciones.':
+    'Your teacher only sees this: your practice minutes, your streak, the % of your tasks and of the Music Theory units, your skills and your most frequent mistakes. Nothing from your email or your recordings.',
+  'Soy alumno': "I'm a student", 'Código de tu clase': 'Your class code', 'Para ti es gratis.': "It's free for you.", 'Entrar en la clase': 'Join the class',
+  'Unirme a otra clase': 'Join another class', '¿Eres profesor? Conoce el Aula Pro': 'Are you a teacher? Discover Classroom Pro', 'Aula Pro activa': 'Classroom Pro active', 'Crea tu primera clase: tus alumnos entrarán con su código.': 'Create your first class: your students will join with its code.',
+  'Nueva clase': 'New class', 'Ej.: 1.º de Lenguaje · martes': 'E.g. Theory year 1 · Tuesday', 'Crear clase': 'Create class', 'código': 'code', '1 alumno': '1 student',
+  'Para profesores · Aula Pro': 'For teachers · Classroom Pro', 'Clases con código': 'Classes with a code',
+  'Tus alumnos entran con un código de 6 letras, sin correo.': 'Your students join with a 6-letter code, no email needed.',
+  'Tareas del temario': 'Tasks from the syllabus',
+  'Unidades, secciones o ejercicios de Lenguaje Musical, lecciones del curso de su instrumento, páginas del Libro, niveles del Método Pro o tu propio MusicXML. Con fecha, nota mínima, intentos y nivel Fácil o Medio, para toda la clase o para alumnos concretos.':
+    'Music Theory units, sections or exercises, lessons from their instrument course, Book pages, Pro method levels or your own MusicXML. With a due date, pass mark, attempts and Easy or Medium level, for the whole class or for specific students.',
+  'Seguimiento que se entiende': 'Follow-up that makes sense',
+  'La tabla de la clase con el % de cada tarea, quién no ha practicado esta semana y qué está vencido. La ficha de cada alumno con sus minutos, su racha, sus competencias y sus errores frecuentes.':
+    "The class table with the % of each task, who hasn't practised this week and what is overdue. Each student's file with their minutes, streak, skills and frequent mistakes.",
+  'Informes': 'Reports', 'Informe trimestral con nota de 1 a 10 por competencia en PDF y la clase entera en CSV.': 'Term report with a 1-10 mark per skill as a PDF, and the whole class as a CSV.',
+  'Para tus alumnos es gratis: la licencia es del profesor. Durante la beta la activamos a petición.': "It's free for your students: the licence is the teacher's. During the beta we activate it on request.",
+  'Solicitud enviada': 'Request sent', 'Te escribiremos cuando la activemos. Si tienes prisa, escríbenos.': "We'll write to you when we activate it. If you're in a hurry, email us.",
+  'Escribirnos': 'Email us', 'Escuela:': 'School:', 'Tu escuela o academia': 'Your school or academy', 'Solicitar acceso': 'Request access',
+  'Ya estás en esta clase.': "You're already in this class.", 'Ponle nombre a la clase.': 'Give the class a name.',
+  'Escribe el nombre de tu escuela y el tuyo.': 'Type the name of your school and your own.',
+  'Has salido de la clase': 'You left the class', 'Clase creada': 'Class created',
+  // ---------- Hacer una tarea ----------
+  'Ábrelo en Lenguaje musical': 'Open it in Music Theory', 'Esta tarea ya no tiene partitura': 'This task no longer has a score',
+  'Esta lección no está en el curso de tu instrumento': "This lesson isn't in your instrument's course", 'Esta página no está en el Libro de tu instrumento': "This page isn't in your instrument's Book",
+  'Este nivel del Método Pro es de otro instrumento': 'This Pro method level is for another instrument',
+  'No he podido crear la clase. Comprueba que tu Aula Pro está activa e inténtalo otra vez.': "I couldn't create the class. Check that your Classroom Pro is active and try again.",
+  'No existe ninguna clase con ese código. Pídeselo a tu profesor.': 'There is no class with that code. Ask your teacher for it.',
+  'No puedes entrar en esta clase: ya estás dentro, está completa o el Aula de tu profesor no está activa.': "You can't join this class: you're already in it, it's full or your teacher's Classroom isn't active.",
+  // ---------- Temario ----------
+  'Unidad de Lenguaje Musical': 'Music Theory unit', 'Sección de Lenguaje Musical': 'Music Theory section', 'Ejercicios de Lenguaje Musical': 'Music Theory exercises',
+  'Lección del curso de instrumento': 'Instrument course lesson', 'Página del Libro': 'Book page', 'Nivel del Método Pro': 'Pro method level', 'Partitura MusicXML propia': 'Your own MusicXML score',
+  'Agilidad de notas': 'Note speed', 'Entonación': 'Singing in tune', 'Dictado': 'Dictation', 'Canción': 'Song', 'Audición y cultura': 'Listening and culture',
+  'Creatividad': 'Creativity', 'Repaso': 'Review', 'Lectura': 'Reading', 'Audición': 'Listening',
+  // ---------- La clase (profesor) ----------
+  'Cargando la clase…': 'Loading the class…', 'Esta clase ya no existe': 'This class no longer exists', 'No he podido abrir la clase': "I couldn't open the class",
+  'Alumnos': 'Students', 'Han practicado esta semana': 'Practised this week', 'últimos 7 días': 'last 7 days', 'Entregas vencidas': 'Overdue submissions',
+  'Invita a tus alumnos': 'Invite your students', 'Entran desde Aprender › Pro › Aula con este código, o con el enlace de invitación:': 'They join from Learn › Pro › Classroom with this code, or with the invite link:',
+  'Avisos de la clase': 'Class alerts', 'Sin practicar esta semana': 'No practice this week', 'Con tareas vencidas': 'With overdue tasks', 'Por debajo del mínimo': 'Below the pass mark',
+  'Seguimiento': 'Follow-up', 'Filtrar alumnos': 'Filter students', 'Columnas': 'Columns', 'Unidades de Lenguaje': 'Music Theory units', 'Ordenar': 'Sort',
+  'Por nombre': 'By name', 'Primero quien necesita ayuda': 'Who needs help first', 'Aún nadie ha hecho ejercicios de Lenguaje Musical.': 'Nobody has done any Music Theory exercises yet.',
+  'Pon la primera tarea para ver aquí el progreso de cada alumno.': "Set the first task to see each student's progress here.", 'Tabla de seguimiento': 'Follow-up table',
+  '% de cada alumno en las unidades de Lenguaje Musical': "Each student's % in the Music Theory units", '% de cada alumno en cada tarea': "Each student's % in each task",
+  '7 días': '7 days', 'Promedio': 'Average', 'Sin práctica': 'No practice', 'Ningún alumno cumple este filtro.': 'No student matches this filter.', 'No asignada': 'Not assigned',
+  'Leyenda': 'Key', 'Menos del 50 %': 'Under 50 %', '90 % o más': '90 % or more', 'Sin empezar': 'Not started', 'Empezada': 'Started',
+  'Todavía no hay tareas. Elige del temario: Lenguaje Musical, el curso de instrumento, el Libro, el Método Pro o tu MusicXML.': 'No tasks yet. Pick from the syllabus: Music Theory, the instrument course, the Book, the Pro method or your MusicXML.',
+  'Toda la clase': 'Whole class', 'Ver entregas': 'See submissions', 'Descargar la clase (CSV)': 'Download the class (CSV)', 'Informe trimestral de la clase (PDF)': 'Class term report (PDF)',
+  'El informe trimestral pone una nota de 1 a 10 por competencia (% ÷ 10, redondeado; 5 es suficiente) y por tareas y constancia. La ficha de cada alumno tiene su informe individual.':
+    "The term report gives a 1-10 mark per skill (% ÷ 10, rounded; 5 is a pass) and for tasks and consistency. Each student's file has their own report.",
+  'Ajustes de la clase': 'Class settings', 'Nombre de la clase': 'Class name', 'Borrar la clase quita sus tareas, sus entregas y a sus alumnos. No se puede deshacer.': 'Deleting the class removes its tasks, submissions and students. This cannot be undone.',
+  'Borrar la clase': 'Delete the class', 'Nombre guardado': 'Name saved', 'Clase borrada': 'Class deleted', 'Comentario guardado': 'Comment saved',
+  'Todavía no lo ha intentado': "Hasn't tried it yet", 'Comentario para el alumno': 'Comment for the student', 'Ej.: ¡Muy bien el pulso! Repasa los silencios.': 'E.g. Great pulse! Go over the rests.',
+  'Guardar comentario': 'Save comment', 'Sin intentos todavía': 'No attempts yet', 'Esta tarea no va para nadie de la clase.': "This task isn't for anyone in the class.",
+  'Informe trimestral': 'Term report', 'Trimestre': 'Term', 'en curso': 'current', 'Observaciones (salen en el informe)': 'Remarks (shown in the report)',
+  'Ej.: Buen trimestre. Para el siguiente, más constancia con el ritmo.': 'E.g. Good term. Next term, more regular rhythm practice.',
+  'Las competencias son las del trimestre en curso: para el anterior solo cuentan las tareas, los minutos y la constancia.': 'Skills are those of the current term: for the previous one only tasks, minutes and consistency count.',
+  'Crear el PDF': 'Create the PDF', 'Minutos (7 días)': 'Minutes (7 days)', 'Minutos del trimestre': 'Minutes this term', 'Días de práctica del trimestre': 'Practice days this term',
+  'Tareas hechas': 'Tasks done', 'Tareas asignadas': 'Tasks assigned', 'Vencidas': 'Overdue', 'Media de tareas (%)': 'Task average (%)', 'Nota media (1-10)': 'Average mark (1-10)',
+  // ---------- Ficha del alumno ----------
+  'Aún no ha publicado actividad': 'No activity published yet', 'Minutos por día': 'Minutes per day', 'Minutos de práctica por día, últimas 4 semanas': 'Practice minutes per day, last 4 weeks',
+  'Competencias': 'Skills', 'este trimestre': 'this term', 'Sin datos': 'No data', 'Insuficiente': 'Fail', 'Suficiente': 'Pass', 'Bien': 'Good', 'Notable': 'Very good', 'Sobresaliente': 'Excellent',
+  'Cuando haga ejercicios de Lenguaje Musical verás aquí su % en ritmo, entonación, lectura, teoría, dictado y audición.': 'When they do Music Theory exercises you will see their % in rhythm, singing in tune, reading, theory, dictation and listening here.',
+  'Errores frecuentes': 'Frequent mistakes', 'Sin errores repetidos por ahora.': 'No repeated mistakes so far.', 'No tiene tareas asignadas.': 'No tasks assigned.',
+  'Historial de intentos': 'Attempt history', 'Todavía no hay intentos.': 'No attempts yet.', 'Informe trimestral (PDF)': 'Term report (PDF)',
+  'Dar de baja de la clase': 'Remove from the class', 'Alumno dado de baja': 'Student removed', '1 vez': 'once',
+  // ---------- Formulario de tareas ----------
+  'Del temario': 'From the syllabus', 'Lenguaje Musical': 'Music Theory', 'Curso de instrumento': 'Instrument course', 'MusicXML': 'MusicXML',
+  'Ej.: Ritmo de la unidad 3 para el jueves': 'E.g. Unit 3 rhythm for Thursday', 'Ej.: Primero en Fácil; cuando te salga, en Medio': 'E.g. First on Easy; once you get it, on Medium',
+  'Nota mínima': 'Pass mark', 'Intentos por ejercicio': 'Attempts per exercise', 'Sin límite': 'No limit', 'Alumnos concretos': 'Specific students',
+  'Aún no hay alumnos en la clase.': 'There are no students in the class yet.',
+  'El curso de Lenguaje Musical todavía no está en esta versión. Elige otra parte del temario.': "The Music Theory course isn't in this version yet. Pick another part of the syllabus.",
+  'Qué parte': 'Which part', 'Unidad entera': 'Whole unit', 'Una sección': 'One section', 'Ejercicios sueltos': 'Single exercises', 'Sección': 'Section', 'Variante': 'Version',
+  'Elige una lección…': 'Pick a lesson…', 'Cada alumno la hace en el curso de su instrumento.': 'Each student does it in their own instrument course.',
+  'Página': 'Page', 'Elige una página…': 'Pick a page…', 'Elige un nivel…': 'Pick a level…', 'Cuenta cuando lo toca en la pestaña Práctica del nivel.': "It counts when they play it in the level's Practice tab.",
+  'Este instrumento todavía no tiene Método Pro.': "This instrument doesn't have a Pro method yet.", 'Ninguna partitura todavía': 'No score yet',
+  'Cada alumno la lee transportada a su instrumento.': 'Each student reads it transposed for their instrument.',
+  'Elige qué hay que hacer en el temario.': 'Pick what to do from the syllabus.', 'Elige el nivel y la unidad de Lenguaje Musical.': 'Pick the Music Theory level and unit.',
+  'Elige la sección de la unidad.': 'Pick the section of the unit.', 'Marca al menos un ejercicio.': 'Tick at least one exercise.', 'Elige la lección, la página o el nivel.': 'Pick the lesson, the page or the level.',
+  'Importa la partitura MusicXML.': 'Import the MusicXML score.', 'La fecha límite ya ha pasado.': 'The due date has already passed.', 'Marca al menos un alumno.': 'Tick at least one student.',
+  // ---------- PDF ----------
+  'Minutos de práctica': 'Practice minutes', 'Días de práctica': 'Practice days', 'Nota media': 'Average mark', 'Apartado': 'Area', 'Nota': 'Mark', 'Calificación': 'Grade',
+  'Tareas': 'Tasks', 'Constancia': 'Consistency', 'Tareas del trimestre': "This term's tasks", 'Sin tareas este trimestre.': 'No tasks this term.',
+  'Observaciones del profesor': "Teacher's remarks", 'No hay alumnos en la clase.': 'There are no students in the class.', 'Informe': 'Report',
+};
+
+const QUALITY = { mayor: 'major', menor: 'minor', justa: 'perfect', aumentada: 'augmented', disminuida: 'diminished' };
+const ORD = { '2.ª': '2nd', '3.ª': '3rd', '4.ª': '4th', '5.ª': '5th', '6.ª': '6th', '7.ª': '7th', '8.ª': '8ve' };
+const TERM = { '1.er': '1st', '2.º': '2nd', '3.er': '3rd' };
+const STATUS = { Hecha: 'Done', 'Sin intentos': 'No attempts left', Vencida: 'Overdue', Empezada: 'Started', 'Sin empezar': 'Not started' };
+const plural = (n, one, many) => `${n} ${Number(n) === 1 ? one : many}`;
+
+export function aulaPatterns({ tr }) {
+  return [
+    [/^Venció el (.+)$/, (m, d) => `Was due ${d}`],
+    [/^Vence el (.+)$/, (m, d) => `Due ${d}`],
+    [/^Mínimo (\d+) %$/, (m, n) => `Pass mark ${n} %`],
+    [/^Quedan (\d+) intentos$/, (m, n) => `${n} attempts left`],
+    [/^(\d+) intentos? por ejercicio$/, (m, n) => `${plural(n, 'attempt', 'attempts')} per exercise`],
+    [/^(\d+) intentos?$/, (m, n) => plural(n, 'attempt', 'attempts')],
+    [/^último el (.+)$/, (m, d) => `last on ${d}`],
+    [/^Clase de (.+)$/, (m, who) => `${who}'s class`],
+    [/^(\d+) pendientes? · (\d+) vencidas? · (\d+) hechas?$/, (m, a, b, c) => `${a} to do · ${b} overdue · ${c} done`],
+    [/^Hechas \((\d+)\)$/, (m, n) => `Done (${n})`],
+    [/^Aula Pro activa hasta el (.+)$/, (m, d) => `Classroom Pro active until ${d}`],
+    [/^(\d+) alumnos$/, (m, n) => `${n} students`],
+    [/^Ábrelo en Lenguaje musical: (.+)$/, (m, what) => `Open it in Music Theory: ${what}`],
+    [/^No se ha podido enviar tu progreso a tu clase: (.+)$/, (m, e) => `Couldn't send your progress to your class: ${tr(e)}`],
+    [/^Ficha del alumno · (.+)$/, (m, c) => `Student file · ${c}`],
+    [/^Clase · código ([A-Z0-9]+)$/, (m, c) => `Class · code ${c}`],
+    [/^Código ((?:[A-Z0-9] ?)+)$/, (m, c) => `Code ${c}`],
+    [/^(\d+) de (\d+) la han hecho · (\d+) la han intentado(?: · media (\d+) %)?(?: · (\d+) vencidas)?$/, (m, d, a, s, avg, late) => `${d} of ${a} done · ${s} tried${avg ? ` · average ${avg} %` : ''}${late ? ` · ${late} overdue` : ''}`],
+    [/^Únete a mi clase «(.+)» en Band Flow: (\S+) \(código ([A-Z0-9]+)\)$/, (m, n, link, c) => `Join my class “${n}” on Band Flow: ${link} (code ${c})`],
+    [/^(1\.er|2\.º|3\.er) trimestre · curso (\d{4}-\d{4})$/, (m, n, y) => `${TERM[n]} term · school year ${y}`],
+    [/^Última actividad el (.+)$/, (m, d) => `Last activity on ${d}`],
+    [/^(\d+) min en total$/, (m, n) => `${n} min in total`],
+    [/^(\d+) vencidas$/, (m, n) => `${n} overdue`],
+    [/^(\d+) veces$/, (m, n) => `${n} times`],
+    [/^Confunde (\d\.ª) (mayor|menor|justa|aumentada|disminuida) con (\d\.ª) (mayor|menor|justa|aumentada|disminuida)$/, (m, a, qa, b, qb) => `Confuses ${QUALITY[qa]} ${ORD[a] || a} with ${QUALITY[qb]} ${ORD[b] || b}`],
+    [/^Como mucho (\d+) ejercicios\.$/, (m, n) => `Up to ${n} exercises.`],
+    [/^(\d+) ejercicios?$/, (m, n) => plural(n, 'exercise', 'exercises')],
+    [/^Nivel (\d+)$/, (m, n) => `Level ${n}`],
+    [/^Nivel (\d+): (.+)$/, (m, n, x) => `Level ${n}: ${tr(x)}`],
+    [/^Unidad (\d+): (.+)$/, (m, n, x) => `Unit ${n}: ${tr(x)}`],
+    [/^p\. (\d+): (.+)$/, (m, n, x) => `p. ${n}: ${tr(x)}`],
+    [/^N(\d+) · U(\d+)$/, (m, l, u) => `L${l} · U${u}`],
+    [/^N(\d+)$/, (m, l) => `L${l}`],
+    [/^Racha: (\d+)$/, (m, n) => `Streak: ${n}`],
+    // Opciones numeradas del temario («3. Dedos en La»): el número y el título traducido si se conoce
+    [/^(\d+)\. (.+)$/, (m, n, x) => `${n}. ${tr(x)}`],
+    [/^(.+): (?:(\d+ %), )?(Hecha|Sin intentos|Vencida|Empezada|Sin empezar)$/, (m, who, p, st) => `${who}: ${p ? p + ', ' : ''}${STATUS[st]}`],
+    [/^Baremo: nota = % ÷ 10, redondeado \(5 = suficiente\)\. Constancia: (\d+) días de práctica por semana = 100 %\. Las competencias salen de los ejercicios de Lenguaje Musical del trimestre\.$/,
+      (m, n) => `Scale: mark = % ÷ 10, rounded (5 = pass). Consistency: ${n} practice days a week = 100 %. Skills come from this term's Music Theory exercises.`],
+  ];
+}
