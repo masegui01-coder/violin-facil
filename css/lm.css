@@ -82,7 +82,8 @@
 .lm-bar { stroke: currentColor; stroke-width: 1.6; }
 .lm-bar-thick { fill: currentColor; }
 .lm-bar-hint { stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 3 4; }
-.lm-clef { font-family: var(--f-music); font-size: 64px; fill: currentColor; }
+/* Clave de sol: 8 medios espacios de cuerpo (Noto Music mide 1,72 em), la espiral cae en la 2.ª línea */
+.lm-clef { font-family: var(--f-music); font-size: 40px; fill: currentColor; }
 .lm-clef.bass { font-size: 40px; }
 .lm-time { font-family: var(--f-display); font-size: 21px; font-weight: 700; fill: currentColor; }
 .lm-mark { font-size: 13px; font-weight: 800; fill: currentColor; }

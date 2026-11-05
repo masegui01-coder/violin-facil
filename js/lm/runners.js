@@ -14,6 +14,8 @@ import { scoreTokens, barBeatsOf, noteText, solfaToName } from './notes.js';
 import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
 import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel } from './kit.js';
 import { playEvents, stopSound } from './sound.js';
+import { figureHtml, bindFigures, CARD_FIGURE } from './figures/index.js';
+import { currentLang } from '../i18n.js';
 
 const STAFF_KINDS = { tocarPentagrama, escala: tocarPentagrama, barras };
 const runItem = (host, item, env) => (STAFF_KINDS[item.tipo] || QUIZ_KINDS[item.tipo] || QUIZ_KINDS.elegir)(host, item, env);
@@ -35,14 +37,23 @@ async function runItems(host, items, env, title = 'Pregunta') {
 }
 
 // ---------- Teoría: ficha (tarjetas) y práctica interactiva ----------
-function cardHtml(card, env) {
+// Ilustración de la tarjeta (su campo «dibujo» o, si falta, la de su posición en la unidad); fija con «reducir movimiento»
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function cardFigure(card, i, env, still) {
+  const dibujo = card.dibujo || CARD_FIGURE[`lm${env.level}-u${env.unit}-${i + 1}`];
+  return figureHtml(dibujo, { lang: currentLang(), nom: env.nom, still: still || reduceMotion() });
+}
+const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
+function cardHtml(card, i, env) {
   const ex = card.ejemplo ? scoreTokens(card.ejemplo) : null;
-  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><p>${esc(card.texto)}</p>
+  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2>${cardFigure(card, i, env, false)}<p>${esc(card.texto)}</p>
     ${ex ? `${staffHtml(ex, { label: ex.map(t => tokenLabel(t, env.nom)).join(', ') })}${playButton('lmCardPlay', 'Escuchar el ejemplo')}` : ''}`;
 }
 async function showCards(host, cards, env, summary) {
+  const unitColor = `--unit:var(--u${((env.unit - 1) % 8) + 1})`;
   if (summary) {
-    host.innerHTML = `<p class="eyebrow">Resumen de la teoría</p>${cards.map(c => `<div class="lm-card-sum"><h2>${esc(c.titulo)}</h2><p>${esc(c.texto)}</p></div>`).join('')}`;
+    host.innerHTML = `<p class="eyebrow">Resumen de la teoría</p>${cards.map((c, i) => `<div class="lm-card-sum" style="${unitColor}"><h2>${esc(c.titulo)}</h2>${cardFigure(c, i, env, true)}<p>${esc(c.texto)}</p></div>`).join('')}`;
+    bindFigures(host, playFigure(env));
     host.querySelector('h2').setAttribute('tabindex', '-1');
     host.querySelector('h2').focus();
     await continueButton(host, 'A practicar');
@@ -50,7 +61,8 @@ async function showCards(host, cards, env, summary) {
   }
   for (let i = 0; i < cards.length; i++) {
     if (!env.alive()) return;
-    host.innerHTML = `<p class="eyebrow">Ficha ${i + 1} de ${cards.length}</p><div class="lm-card">${cardHtml(cards[i], env)}</div>`;
+    host.innerHTML = `<p class="eyebrow">Ficha ${i + 1} de ${cards.length}</p><div class="lm-card" style="${unitColor}">${cardHtml(cards[i], i, env)}</div>`;
+    bindFigures(host, playFigure(env));
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
     if (play) play.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemplo }, env));

@@ -3,10 +3,11 @@
 import { LM_CONTENT_EN_1 } from './i18n-en-lm-content-1.js';
 import { LM_CONTENT_EN_2 } from './i18n-en-lm-content-2.js';
 import { LM_COTEJO_EN } from './i18n-en-lm.js';
+import { LM_FIGURES_EN } from './i18n-en-lm-figures.js';
 
 export const CONTENT = {
   // Lenguaje Musical (nivel 1): primero, para que el contenido de los cursos y libros gane si una frase coincide
-  ...LM_CONTENT_EN_1, ...LM_CONTENT_EN_2, ...LM_COTEJO_EN,
+  ...LM_CONTENT_EN_1, ...LM_CONTENT_EN_2, ...LM_COTEJO_EN, ...LM_FIGURES_EN,
   "Primeros sonidos": "First sounds",
   "Las cuatro cuerdas al aire": "The four open strings",
   "Conoce tu violín": "Get to know your violin",

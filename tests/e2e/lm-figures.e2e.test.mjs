@@ -1,0 +1,129 @@
+// Ilustraciones de la teoría del curso de Lenguaje Musical en la app compilada: se abre la teoría de las 8 unidades
+// a 375 px, en modo oscuro y con «reducir movimiento», en español y en inglés. Cada tarjeta lleva su dibujo con texto
+// alternativo, sin animaciones, y ningún rótulo pisa otro rótulo ni un trazo ni se sale del lienzo (el mismo detector
+// de solapes con el que se diseñaron). Tocar una zona del dibujo suena sin errores.
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { launch, openApp } from './helpers.mjs';
+import { lmExercise } from '../../js/lm/catalog.js';
+
+const PHONE_375 = { width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
+const STEP_TIMEOUT = 8000;
+const MIN_ALT = 20;
+
+let env;
+before(async () => { env = await launch(); });
+after(async () => { await env?.close(); });
+
+// Detector de solapes (en la página): texto↔texto, texto↔trazo (contorno muestreado con su grosor) y fuera del lienzo
+function overlapsIn(svg) {
+  const out = [];
+  const [, , W, H] = svg.getAttribute('viewBox').split(' ').map(Number);
+  const inv = svg.getCTM().inverse();
+  const toUser = (el, p) => p.matrixTransform(inv.multiply(el.getCTM()));
+  const boxes = [...svg.querySelectorAll('text')]
+    .filter(t => !t.classList.contains('lmf-clef') && t.textContent.trim() && t.textContent.trim() !== '·')
+    .map(t => {
+      const b = t.getBBox();
+      return { time: t.classList.contains('lmf-time'), label: t.textContent.trim().slice(0, 30), x0: b.x - 1, x1: b.x + b.width + 1, y0: b.y + b.height * 0.14, y1: b.y + b.height * 0.9 };
+    });
+  const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+  boxes.forEach((a, i) => {
+    if (a.x0 < -2 || a.x1 > W + 2 || a.y0 < -2 || a.y1 > H + 2) out.push(`«${a.label}» se sale del lienzo`);
+    boxes.slice(i + 1).forEach(b => { if (!(a.time && b.time) && hit(a, b)) out.push(`«${a.label}» ↔ «${b.label}»`); });
+  });
+  const shapes = [...svg.querySelectorAll('path, line, rect, circle, ellipse, polyline')]
+    .filter(s => !s.classList.contains('lmf-tap') && !s.classList.contains('lmf-zone') && !s.closest('defs'));
+  shapes.forEach(s => {
+    const len = s.getTotalLength?.() || 0;
+    const style = getComputedStyle(s);
+    const pad = style.stroke !== 'none' ? (parseFloat(style.strokeWidth) || 0) / 2 + 0.5 : 0;
+    const pts = [];
+    for (let d = 0; d <= len; d += 1) pts.push(toUser(s, s.getPointAtLength(d)));
+    if (pts.some(p => p.x < -3 || p.x > W + 3 || p.y < -3 || p.y > H + 3)) out.push(`trazo ${s.getAttribute('class') || s.tagName} se sale del lienzo`);
+    boxes.forEach(a => {
+      if (a.time && s.classList.contains('lmf-line')) return;
+      if (pts.some(p => p.x > a.x0 - pad && p.x < a.x1 + pad && p.y > a.y0 - pad && p.y < a.y1 + pad)) out.push(`«${a.label}» ↔ trazo ${s.getAttribute('class') || s.tagName}`);
+    });
+  });
+  return [...new Set(out)];
+}
+
+async function checkAllUnits(lang) {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE_375, seed: { lang } });
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
+  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
+  const problems = [];
+  let cards = 0;
+  for (let u = 1; u <= 8; u++) {
+    const id = `lm1-u${u}-teoria-a-facil`;
+    const ficha = lmExercise(id).params.ficha;
+    await page.$eval(`.lm-unit-card[data-unit="${u}"]`, b => b.click());
+    await page.waitForSelector(`[data-ex="${id}"]`, { timeout: STEP_TIMEOUT });
+    await page.$eval(`[data-ex="${id}"]`, b => b.click());
+    for (let k = 0; k < ficha.length; k++) {
+      await page.waitForSelector('#lmBody .lm-card figure.lmf svg', { timeout: STEP_TIMEOUT });
+      await page.evaluate(() => document.fonts.ready);
+      const card = await page.$eval('#lmBody .lm-card', (c, src) => {
+        const svg = c.querySelector('figure.lmf svg');
+        const ink = getComputedStyle(svg.querySelector('text') || svg).fill;
+        return {
+          fig: c.querySelector('figure.lmf').dataset.fig,
+          role: svg.getAttribute('role'),
+          alt: svg.getAttribute('aria-label') || '',
+          title: (svg.querySelector('title') || {}).textContent || '',
+          animated: !!svg.querySelector('animateMotion') || c.querySelector('figure.lmf').classList.contains('still') === false,
+          bg: getComputedStyle(c).backgroundColor,
+          ink,
+          overlaps: new Function(`return (${src})`)()(svg),
+        };
+      }, overlapsIn.toString());
+      cards++;
+      const where = `U${u} ficha ${k + 1} (${card.fig}, ${lang})`;
+      if (card.fig !== ficha[k].dibujo) problems.push(`${where}: dibujo ${card.fig} en vez de ${ficha[k].dibujo}`);
+      if (!/^(img|group)$/.test(card.role) || card.alt.length < MIN_ALT || card.title !== card.alt) problems.push(`${where}: texto alternativo`);
+      if (card.animated) problems.push(`${where}: se mueve con «reducir movimiento»`);
+      if (card.ink === 'rgb(20, 27, 38)') problems.push(`${where}: rótulos con la tinta del tema claro en oscuro`);
+      card.overlaps.forEach(o => problems.push(`${where}: ${o}`));
+      if (k === 0) {
+        const zone = await page.$('#lmBody .lmf [data-play]');
+        if (zone) await zone.evaluate(z => z.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+      }
+      await page.waitForSelector('[data-lm-next]', { timeout: STEP_TIMEOUT });
+      await page.$eval('[data-lm-next]', b => b.click());
+    }
+    await page.$eval('#lm [data-back]', b => b.click());
+    await page.waitForSelector('#learn #lmUnitTitle', { timeout: STEP_TIMEOUT });
+    await page.$eval('[data-lm-back]', b => b.click());
+    await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
+  }
+  assert.equal(cards, 33);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(errors, []);
+  await close();
+}
+
+test('teoría ilustrada: las 33 tarjetas de las 8 unidades con su dibujo accesible y sin solapes (375 px, oscuro)', () => checkAllUnits('es'));
+test('teoría ilustrada en inglés: las 33 tarjetas sin solapes (375 px, oscuro)', () => checkAllUnits('en'));
+
+test('la ficha de la unidad en PDF lleva la ilustración de cada tarjeta de teoría', async () => {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  await page.evaluate(() => {
+    navigator.canShare = () => false;
+    const create = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = blob => { if (blob.type === 'application/pdf') window.__pdf = blob; return create(blob); };
+  });
+  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
+  await page.$eval('.lm-unit-card[data-unit="1"]', b => b.click());
+  await page.waitForSelector('[data-lm-pdf]', { timeout: STEP_TIMEOUT });
+  await page.$eval('[data-lm-pdf]', b => b.click());
+  await page.waitForFunction(() => !!window.__pdf, { timeout: 30000 });
+  const images = await page.evaluate(async () => ((await window.__pdf.text()).match(/\/Subtype\s*\/Image/g) || []).length);
+  const cards = lmExercise('lm1-u1-teoria-a-facil').params.ficha.length;
+  assert.ok(images >= cards, `${images} imágenes para ${cards} tarjetas`);
+  assert.deepEqual(errors, []);
+  await close();
+});

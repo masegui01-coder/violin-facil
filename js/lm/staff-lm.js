@@ -85,7 +85,7 @@ export function clefCell(clef = 'treble', meter = null) {
   const w = meter ? 68 : 40;
   const glyph = clef === 'bass'
     ? `<text class="lm-clef bass" x="3" y="${BOTTOM - 6 * HALF + 2}">${CLEF_GLYPH.bass}</text>`
-    : `<text class="lm-clef" x="2" y="${BOTTOM + 9}">${CLEF_GLYPH.treble}</text>`;
+    : `<text class="lm-clef" x="4" y="${r1(BOTTOM + 1.45 * HALF)}">${CLEF_GLYPH.treble}</text>`;
   const time = meter ? meter.split('/').map((n, i) => `<text class="lm-time" x="56" y="${BOTTOM - (i ? 0 : 4) * HALF - 1}" text-anchor="middle">${n}</text>`).join('') : '';
   return `<svg class="lm-cell lm-clefcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${glyph}${time}</svg>`;
 }

@@ -42,6 +42,9 @@ async function openLm(opts = {}) {
   return app;
 }
 async function openUnit(page, unit = 1) {
+  // tras volver a la lista, se espera a que esté pintada y sin transición en curso (si no, el toque se pierde)
+  await page.waitForSelector(`.lm-unit-card[data-unit="${unit}"]`, { timeout: STEP_TIMEOUT });
+  await page.waitForFunction(() => !document.documentElement.dataset.nav, { timeout: STEP_TIMEOUT });
   await page.$eval(`.lm-unit-card[data-unit="${unit}"]`, b => b.click());
   await page.waitForSelector('#lmUnitTitle', { timeout: STEP_TIMEOUT });
 }

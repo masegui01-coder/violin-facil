@@ -1,0 +1,131 @@
+/* Ilustraciones de la teoría (Lenguaje Musical). Solo tokens del tema (css/base.css): valen en claro y oscuro.
+   El color de realce es el de la unidad (--unit, el mismo de la cabecera); si no hay, el acento de la app.
+   Las animaciones son de adorno: con «reducir movimiento» se paran y el dibujo fijo ya explica lo mismo. */
+
+.lmf {
+  --f-ink: var(--ink); --f-staff: var(--staff); --f-muted: var(--muted); --f-paper: var(--surface);
+  --f-hi: var(--unit, var(--accent));
+  --f-hi-soft: color-mix(in srgb, var(--f-hi) 18%, transparent);
+  --f-2: var(--u2); --f-2-soft: color-mix(in srgb, var(--f-2) 20%, transparent);
+  --f-ok: var(--ok); --f-bad: var(--bad); --f-bad-soft: color-mix(in srgb, var(--bad) 18%, transparent);
+  margin: 0; color: var(--f-ink);
+}
+.lmf-svg { display: block; width: 100%; max-width: 30rem; height: auto; margin-inline: auto; overflow: visible; }
+
+/* Texto */
+.lmf-t { font-family: var(--f-body); font-size: 13px; font-weight: 600; fill: var(--f-ink); }
+.lmf-t.b { font-weight: 800; }
+.lmf-t.m { fill: var(--f-muted); font-weight: 600; }
+.lmf-t.s { font-size: 11px; }
+.lmf-t.l { font-size: 17px; font-weight: 800; }
+.lmf-t.xl { font-size: 24px; font-weight: 800; font-family: var(--f-display); }
+.lmf-t.hi { fill: var(--f-hi); }
+.lmf-t.two { fill: var(--f-2); }
+.lmf-t.bad { fill: var(--f-bad); }
+.lmf-t.ok { fill: var(--f-ok); }
+.lmf-t.on { fill: var(--f-paper); }
+.lmf-t.dyn { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-weight: 700; font-size: 26px; }
+.lmf-t.music { font-family: var(--f-music); }
+
+/* Pentagrama y figuras */
+.lmf-line { stroke: var(--f-staff); stroke-width: 1.3; }
+.lmf-line.hi, .lmf-ledger.hi { stroke: var(--f-hi); stroke-width: 3; }
+.lmf-line.soft { stroke-opacity: .45; }
+.lmf-ledger { stroke: currentColor; stroke-width: 1.8; }
+.lmf-bar { stroke: currentColor; stroke-width: 1.8; }
+.lmf-bar.hi { stroke: var(--f-hi); stroke-width: 3; }
+.lmf-fill { fill: currentColor; }
+.lmf-hollow { fill: var(--f-paper); stroke: currentColor; stroke-width: 2.4; }
+.lmf-hollow.lmf-whole { stroke-width: 3.2; }
+.lmf-stem { stroke: currentColor; stroke-linecap: round; }
+.lmf-rest-q { stroke: currentColor; stroke-width: .6; stroke-linejoin: round; }
+.lmf-note.hi, .lmf-fill.hi { color: var(--f-hi); fill: var(--f-hi); }
+.lmf-note.hi .lmf-hollow { stroke: var(--f-hi); }
+.lmf-note.mute { color: var(--f-muted); }
+.lmf-note.two { color: var(--f-2); }
+.lmf-rest-q.hi { stroke: var(--f-hi); fill: var(--f-hi); }
+.lmf-clef { font-family: var(--f-music); fill: currentColor; }
+.lmf-time { font-family: var(--f-display); font-weight: 700; fill: currentColor; }
+.lmf-time.hi { fill: var(--f-hi); }
+
+/* Señales: flechas, guías, duración, zonas */
+.lmf-arrow { fill: none; stroke: var(--f-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lmf-arrow.hi { stroke: var(--f-hi); stroke-width: 2.4; }
+.lmf-arrow.two { stroke: var(--f-2); stroke-width: 2.4; }
+.lmf-arrow.ink { stroke: var(--f-ink); }
+.lmf-guide { stroke: var(--f-muted); stroke-width: 1.1; stroke-dasharray: 2 3; }
+.lmf-guide-dot { fill: var(--f-muted); }
+.lmf-dur { fill: var(--f-hi); }
+.lmf-dur.ink { fill: var(--f-ink); }
+.lmf-dur.rest { fill: none; stroke: var(--f-hi); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.lmf-dur.bad { fill: var(--f-bad); }
+.lmf-dur.two { fill: var(--f-2); }
+.lmf-path { fill: none; stroke: var(--f-muted); stroke-width: 1.4; stroke-dasharray: 3 4; }
+.lmf-zone { fill: var(--f-hi-soft); }
+.lmf-zone.two { fill: var(--f-2-soft); }
+.lmf-zone.bad { fill: var(--f-bad-soft); }
+.lmf-box { fill: none; stroke: var(--f-muted); stroke-width: 1.4; }
+.lmf-box.hi { stroke: var(--f-hi); stroke-width: 2.2; }
+.lmf-box.dash { stroke-dasharray: 4 3; }
+.lmf-soft { fill: var(--f-hi-soft); stroke: var(--f-hi); stroke-width: 1.6; }
+.lmf-soft.two { fill: var(--f-2-soft); stroke: var(--f-2); }
+.lmf-solid { fill: var(--f-hi); }
+.lmf-solid.two { fill: var(--f-2); }
+.lmf-solid.ink { fill: var(--f-ink); }
+.lmf-outline { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lmf-outline.hi { stroke: var(--f-hi); }
+.lmf-outline.two { stroke: var(--f-2); }
+.lmf-outline.m { stroke: var(--f-muted); }
+.lmf-ball { fill: var(--f-hi); stroke: var(--f-paper); stroke-width: 2; }
+
+/* Corazones del pulso */
+.lmf-heart { fill: var(--f-hi); }
+.lmf-heart.soft { fill: var(--f-hi-soft); stroke: var(--f-hi); stroke-width: 1.4; }
+
+/* Teclado */
+.lmf-white { fill: var(--f-paper); stroke: var(--f-ink); stroke-width: 1.4; }
+.lmf-black { fill: var(--f-ink); }
+.lmf-key.hi .lmf-white { fill: var(--f-hi-soft); stroke: var(--f-ink); }
+.lmf-key.hi2 .lmf-white { fill: var(--f-2-soft); }
+.lmf-key.off .lmf-white { fill: var(--surface-2, var(--f-paper)); }
+.lmf-key.off .lmf-keyname { fill: var(--f-muted); text-decoration: line-through; }
+.lmf-keyname { font-weight: 800; }
+
+/* Interacción: tocar para oír (la zona tocable se nota y tiene foco visible) */
+.lmf [role="button"] { cursor: pointer; outline: none; }
+.lmf [role="button"]:focus-visible > :first-child { stroke: var(--accent); stroke-width: 3; }
+.lmf [role="button"].lmf-playing { filter: drop-shadow(0 0 4px var(--f-hi)); }
+.lmf-tap { fill: transparent; }
+.lmf-tap-hint { fill: var(--f-muted); font-size: 11px; font-weight: 700; }
+
+/* ---------- Animaciones (sutiles; el estado fijo es el dibujo completo) ---------- */
+.lmf-beat { transform-box: fill-box; transform-origin: center; animation: lmf-beat var(--cyc, 3s) var(--ease, ease-out) infinite; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
+@keyframes lmf-beat { 0% { transform: scale(1.22); opacity: 1; } 12% { transform: scale(1); } 100% { transform: scale(1); } }
+.lmf-glow { animation: lmf-glow var(--cyc, 3s) ease-out infinite; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
+@keyframes lmf-glow { 0% { opacity: 1; } 18% { opacity: 1; } 30%, 100% { opacity: .35; } }
+.lmf-sweep { transform-box: fill-box; transform-origin: left center; animation: lmf-sweep var(--cyc, 3s) linear infinite; }
+@keyframes lmf-sweep { 0% { transform: scaleX(0); } 50%, 100% { transform: scaleX(1); } }
+.lmf-draw { stroke-dasharray: var(--len, 300); animation: lmf-draw 3.2s ease-in-out infinite; }
+@keyframes lmf-draw { 0% { stroke-dashoffset: var(--len, 300); } 45%, 100% { stroke-dashoffset: 0; } }
+.lmf-drawonce { stroke-dasharray: var(--len, 400); animation: lmf-drawonce 1.2s ease-out both; animation-delay: calc(var(--i, 0) * .15s); }
+@keyframes lmf-drawonce { from { stroke-dashoffset: var(--len, 400); } to { stroke-dashoffset: 0; } }
+.lmf-breathe { transform-box: fill-box; transform-origin: center; animation: lmf-breathe 2.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .2s); }
+@keyframes lmf-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(var(--amp, 1.08)); } }
+.lmf-flow { stroke-dasharray: 6 6; animation: lmf-flow 1.6s linear infinite; }
+@keyframes lmf-flow { to { stroke-dashoffset: -24; } }
+.lmf-slide-r { animation: lmf-slide-r 4s ease-in-out infinite; }
+.lmf-slide-l { animation: lmf-slide-l 4s ease-in-out infinite; }
+@keyframes lmf-slide-r { 0%, 15% { transform: translateX(-14px); } 45%, 100% { transform: none; } }
+@keyframes lmf-slide-l { 0%, 15% { transform: translateX(14px); } 45%, 100% { transform: none; } }
+.lmf-hold { transform-box: fill-box; transform-origin: left center; animation: lmf-hold 4s ease-out infinite; }
+@keyframes lmf-hold { 0% { transform: scaleX(.2); } 55%, 100% { transform: scaleX(1); } }
+.lmf-fade { animation: lmf-fade 3s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 1.5s); }
+@keyframes lmf-fade { 0%, 100% { opacity: .25; } 30%, 60% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lmf *, .lmf *::before, .lmf *::after { animation: none !important; }
+}
+.lmf.still * { animation: none !important; }
+.lmf-fill.two { fill: var(--f-2); }
+.lmf-hint { text-align: center; font-size: .8rem; font-weight: 700; color: var(--muted); margin-top: 4px; }
+.lmf-cut { fill: var(--f-paper); }

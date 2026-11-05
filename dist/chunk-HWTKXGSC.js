@@ -1,1 +1,0 @@
-import{a,b,c,d,e,f,g,h,i,j,k}from"./chunk-XJOHO4SS.js";export{c as MAX_LEVEL,b as PREMIUM_STUDENTS,a as TRIAL_STUDENTS,i as bookSummary,e as nextSchoolYear,k as pct,f as premiumActive,j as promote,h as schoolBookOpen,d as schoolYear,g as studentLimit};

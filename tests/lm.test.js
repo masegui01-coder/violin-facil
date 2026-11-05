@@ -496,3 +496,45 @@ test('creatividad: reglas nuevas (anacrusa, una figura en cada compás, nota en 
   const d5 = checkComposition(parseTokens('C4q D5q'), { barBeats: 2, bars: 1, mustFigures: { D5: 1 }, extra: [{ id: 'signos', ok: false }] });
   assert.deepEqual(d5.rules.filter(r => !r.ok).map(r => r.id), ['signos']);
 });
+
+// ---------- Ilustraciones de la teoría ----------
+test('teoría: cada tarjeta del nivel 1 tiene su ilustración accesible (texto alternativo y versión fija)', async () => {
+  const { figureHtml, CARD_FIGURE, FIGURES } = await import('../js/lm/figures/index.js');
+  LM_LEVELS[0].units.forEach(u => u.raw.teoria.ficha.forEach((card, i) => {
+    const key = `lm1-u${u.unit}-${i + 1}`;
+    assert.equal(card.dibujo, CARD_FIGURE[key], key);
+    assert.ok(FIGURES[card.dibujo], `${key}: ${card.dibujo}`);
+    for (const lang of ['es', 'en']) {
+      const html = figureHtml(card.dibujo, { lang, nom: 'eu' });
+      assert.match(html, /<svg [^>]*role="(img|group)"[^>]*aria-label="[^"]{20,}"/, `${key} ${lang}`);
+      assert.match(html, /<title>[^<]{20,}<\/title>/, `${key} ${lang}`);
+    }
+    assert.doesNotMatch(figureHtml(card.dibujo, { still: true }), /<animate/, `${key}: la versión fija no se mueve`);
+  }));
+});
+
+test('teoría: los rótulos de las ilustraciones tienen su inglés y los ejemplos solo usan notas ya aprendidas', async () => {
+  const { figureHtml, FIGURES, FIG_EN } = await import('../js/lm/figures/index.js');
+  const { LM_FIGURES_EN } = await import('../js/i18n-en-lm-figures.js');
+  Object.keys(FIGURES).forEach(id => ['eu', 'us'].forEach(nom => figureHtml(id, { nom })));
+  const missing = Object.keys(FIG_EN).filter(es => es !== FIG_EN[es] && !(es in LM_FIGURES_EN));
+  assert.deepEqual(missing, []);
+  LM_LEVELS[0].units.forEach(u => {
+    const known = new Set(u.notes.map(solfaToName));
+    u.raw.teoria.ficha.filter(c => c.ejemplo).forEach(c => scoreTokens(c.ejemplo).filter(t => !t.rest)
+      .forEach(t => assert.ok(known.has(t.name), `U${u.unit} «${c.titulo}»: ${t.name}`)));
+  });
+});
+
+test('sonido de las ilustraciones: calderón, notas a la vez y matices', async () => {
+  const { figureNotes, gainsOf } = await import('../js/lm/tasks-quiz.js');
+  const notes = figureNotes('| G4q A4q C5h^ |');
+  assert.deepEqual(notes.map(n => n.beats), [1, 1, 5]);
+  const chord = figureNotes('| C4q E4q C4h+E4h |');
+  assert.deepEqual(chord.slice(2).map(n => [n.midi, n.start]), [[60, 2], [64, 2]]);
+  const [pp] = gainsOf({ dyn: 'pp' }, [{}]);
+  const [ff] = gainsOf({ dyn: 'ff' }, [{}]);
+  assert.ok(pp < ff);
+  const cresc = gainsOf({ dyn: 'cresc' }, [{}, {}, {}]);
+  assert.ok(cresc[0] < cresc[2]);
+});

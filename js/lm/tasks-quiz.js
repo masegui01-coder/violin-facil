@@ -5,29 +5,59 @@ import { esc } from '../ui.js';
 import { orderMark } from './grade.js';
 import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME } from './notes.js';
 import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel } from './kit.js';
-import { playNotes, stopSound } from './sound.js';
+import { playNotes, clicks, stopSound } from './sound.js';
+import { DYN_GAIN } from './gen.js';
 
 const LISTEN_BPM = 84;
 const PAIR_BPM = 60;
 const DYN_RANGE = [0.25, 1];
 const COUNT_SPREAD = 2;
+const FERMATA_STRETCH = 2.5; // una nota con calderón suena unas dos veces y media su valor
 
 // ---------- Sonido de una pregunta «escuchar…» ----------
+// Partitura de las ilustraciones: además del formato de siempre, «^» alarga la figura (calderón) y «+» suena a la vez
+export function figureNotes(text) {
+  const out = [];
+  let start = 0;
+  text.replace(/\|/g, ' ').trim().split(/\s+/).filter(Boolean).forEach(tok => {
+    const fermata = tok.endsWith('^');
+    const parts = tok.replace(/\^$/, '').split('+').map(p => scoreTokens(p)[0]).filter(Boolean);
+    if (!parts.length) return;
+    const beats = parts[0].beats * (fermata ? FERMATA_STRETCH : 1);
+    parts.forEach(t => out.push({ midi: t.midi, start, beats, rest: t.rest }));
+    start += beats;
+  });
+  return out;
+}
 function notesOfPlay(play, env) {
   if (play.notas) return play.notas.map((n, i) => ({ midi: midiOf(n), start: i * 1.2, beats: 1, rest: false }));
   const text = play.cancion ? env.songScore(play.cancion) : play.partitura;
-  return text ? scoreTokens(text).map(t => ({ midi: t.midi, start: t.start, beats: t.beats, rest: t.rest })) : [];
+  if (!text) return [];
+  if (/[\^+]/.test(text)) return figureNotes(text);
+  return scoreTokens(text).map(t => ({ midi: t.midi, start: t.start, beats: t.beats, rest: t.rest }));
 }
-function gainsOf(play, notes) {
-  if (!play.dinamica) return null;
+// Volumen por nota: un matiz fijo (pp…ff) o un regulador (cresc/dim) de punta a punta
+export function gainsOf(play, notes) {
+  const dyn = play.dinamica || play.dyn;
+  if (!dyn) return null;
+  if (dyn in DYN_GAIN) return notes.map(() => DYN_GAIN[dyn]);
   const [lo, hi] = DYN_RANGE;
   const k = i => (notes.length > 1 ? i / (notes.length - 1) : 0);
-  return notes.map((_, i) => (play.dinamica === 'cresc' ? lo + (hi - lo) * k(i) : play.dinamica === 'dim' ? hi - (hi - lo) * k(i) : 0.7));
+  return notes.map((_, i) => (dyn === 'cresc' ? lo + (hi - lo) * k(i) : dyn === 'dim' ? hi - (hi - lo) * k(i) : 0.7));
+}
+// «pulso»: un clic por pulso; «acento:N»: clics con el primero de cada N más fuerte (sin notas)
+function playPulse(sound, notes, bpm) {
+  const beats = Math.max(1, Math.round(notes.reduce((end, n) => Math.max(end, n.start + n.beats), 0)));
+  const meter = Number((/^acento:(\d)$/.exec(sound) || [])[1] || 0);
+  const end = clicks(beats, bpm, { accentEvery: meter, level: meter ? 0.8 : 0.6 });
+  return { t0: end - beats * 60 / bpm, end };
 }
 export function playQuestion(play, env) {
   stopSound();
   const notes = notesOfPlay(play, env);
-  return playNotes(notes, play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
+  const bpm = play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM;
+  if (play.sound && /^(pulso|acento:\d)$/.test(play.sound)) return playPulse(play.sound, notes, bpm);
+  return playNotes(notes, bpm, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
 }
 
 // ---------- Elegir (con sonido opcional) ----------
