@@ -9,6 +9,7 @@ import { gradeSung, singMark, SING_TOLERANCE, pctOf, mistakeCodes } from './grad
 import { staffHtml, CLEF } from './kit.js';
 import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.js';
 import { MIC_GATE, openMic, groupsOf } from './tasks-voice.js';
+import { dynamicsChecks } from './dynamics.js';
 
 const TICK_MS = 25;
 // Ataque a tiempo: ±180 ms en Fácil y ±120 ms en Media (la voz arranca más despacio que una palmada)
@@ -91,9 +92,10 @@ export async function singSong(host, opts, env) {
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
+    <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
     <div class="controls"><button type="button" class="btn ghost" id="lmSongHear">Escuchar la canción con acompañamiento</button><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>
     <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
-  const draw = current => { host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, current }); };
+  const draw = current => { host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, current, dynamics: opts.dynamics || null }); };
   const phase = (text, note = '') => { host.querySelector('#lmSingPhase').textContent = text; host.querySelector('#lmSingNote').textContent = note; };
   draw(-1);
   host.querySelector('#lmSongHear').addEventListener('click', () => {
@@ -136,7 +138,9 @@ export async function singSong(host, opts, env) {
         const t = now();
         if (t < t0 - 0.1) continue;
         const p = audio.readPitch();
-        frames.push({ t: t - audio.outputLatency(), freq: p && p.freq ? p.freq : null });
+        frames.push({ t: t - audio.outputLatency(), freq: p && p.freq ? p.freq : null, level: p ? p.level || 0 : 0 });
+        const vol = host.querySelector('#lmVol');
+        if (vol) vol.style.width = `${Math.min(100, Math.round((p ? p.level || 0 : 0) * 600))}%`;
         const beat = (t - t0) / spb;
         const cur = notes.find(n => beat >= n.start && beat < n.start + n.beats);
         if (cur) {
@@ -150,20 +154,29 @@ export async function singSong(host, opts, env) {
       }
       if (!env.alive()) return null;
       const graded = gradeTimedTake(notes, frames, { t0, spb, tolerance, attackTol });
-      graded.forEach((g, k) => { marks[notes[k].index] = g.pitch; results.push({ ...g, name: tokens[notes[k].index].name }); });
+      graded.forEach((g, k) => {
+        const n = notes[k];
+        const from = t0 + n.start * spb;
+        const lv = frames.filter(f => f.freq !== null && f.t >= from && f.t <= from + n.beats * spb).map(f => f.level);
+        marks[n.index] = g.pitch;
+        results.push({ ...g, name: tokens[n.index].name, bar: tokens[n.index].bar, level: lv.length ? median(lv) : null });
+      });
       draw(-1);
     }
     phase('¡Hecho!');
     delete host.dataset.target;
     const pitch = gradeSung(results.map(r => r.name), results.map(r => r.cents), { tolerance });
     const attackMarks = results.map(r => r.attack);
+    // matices (p/f, reguladores) con el volumen de cada nota: pesan un 15 %
+    const dyn = opts.dynamics ? dynamicsChecks(opts.dynamics, results, results.map(r => r.level)) : null;
+    const dynPart = dyn && dyn.total ? dyn.ok / dyn.total : null;
     const late = results.filter(r => r.off !== null && r.off > attackTol).length;
     const early = results.filter(r => r.off !== null && r.off < -attackTol).length;
     return {
-      pct: Math.round(0.7 * pitch.pct + 0.3 * pctOf(attackMarks)),
+      pct: Math.round(dynPart === null ? 0.7 * pitch.pct + 0.3 * pctOf(attackMarks) : 0.6 * pitch.pct + 0.25 * pctOf(attackMarks) + 15 * dynPart),
       skills: { entonacion: pitch.pct, ritmo: pctOf(attackMarks) },
       marks: pitch.marks, names: results.map(r => r.name),
-      mistakes: mistakeCodes([...pitch.mistakes, late > early && late > 1 ? 'tempo-' : null, early > late && early > 1 ? 'tempo+' : null]),
+      mistakes: mistakeCodes([...pitch.mistakes, late > early && late > 1 ? 'tempo-' : null, early > late && early > 1 ? 'tempo+' : null, dynPart !== null && dynPart < 1 ? 'matiz' : null]),
     };
   } finally {
     audio.setVoiceInput(false);

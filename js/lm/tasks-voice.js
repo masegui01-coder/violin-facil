@@ -9,6 +9,7 @@ import { gradeSung, singMark, SING_TOLERANCE } from './grade.js';
 import { staffHtml, CLEF } from './kit.js';
 import { playNotes, playChordNow, playPitch, stopSound, wait, now } from './sound.js';
 import { saveVoice } from './results.js';
+import { dynamicsChecks } from './dynamics.js';
 
 const TICK_MS = 30;
 const MIN_HOLD_MS = 300;
@@ -26,8 +27,9 @@ const MINOR_TRIAD = [0, 3, 7];
 const median = xs => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null; };
 
 // Espera una nota cantada estable y devuelve sus cents (o null si no se oye nada a tiempo)
-async function hearNote(midi, holdMs, alive, quietUntil) {
+async function hearNote(midi, holdMs, alive, quietUntil, onLevel = () => {}) {
   let run = [];
+  const levels = [];
   let lastVoiced = 0;
   const midis = [];
   const start = performance.now();
@@ -36,19 +38,21 @@ async function hearNote(midi, holdMs, alive, quietUntil) {
     if (now() < quietUntil()) continue;
     const p = audio.readPitch();
     const t = performance.now();
+    onLevel(p ? p.level || 0 : 0);
     if (!p || p.freq === null) {
       if (run.length && t - lastVoiced > GAP_MS) run = [];
       continue;
     }
+    levels.push(p.level || 0);
     const cents = centsAnyOctave(p.freq, midi);
     const m = median(run.map(r => r.cents));
     if (run.length && Math.abs(cents - m) > SAME_CENTS) run = [];
     run.push({ cents, t });
     midis.push(freqToMidi(p.freq));
     lastVoiced = t;
-    if (t - run[0].t >= holdMs) return { cents: median(run.map(r => r.cents)), sungMidi: median(midis.slice(-run.length).filter(Number.isFinite)) };
+    if (t - run[0].t >= holdMs) return { cents: median(run.map(r => r.cents)), sungMidi: median(midis.slice(-run.length).filter(Number.isFinite)), level: median(levels.slice(-run.length)) };
   }
-  return { cents: null, sungMidi: null };
+  return { cents: null, sungMidi: null, level: null };
 }
 
 // Tras aceptar una nota, si la siguiente es la misma hace falta volver a atacarla (silencio breve o cambio)
@@ -99,20 +103,29 @@ export async function singTask(host, opts, env) {
   const hide = !!opts.hideNames;
   const under = hide ? tokens.map(() => '') : opts.under || tokens.map(t => (t.rest ? '' : noteText(t.name, env.nom)));
   const nth = n => sounding.indexOf(n) + 1;
+  // help: lectura con apoyo (Fácil): se puede oír la nota que toca, pero entonces cuenta como «casi»
+  const help = !!opts.help;
+  const helped = new Set();
+  let currentNote = null;
+  const levels = [];
   const marks = [];
   const heard = [];
   let playingUntil = 0;
   const quietUntil = () => playingUntil;
 
   const draw = current => {
-    host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current });
+    // ordenamiento con notas que aún no se leen: se canta de oído, con los nombres (sin pentagrama)
+    host.querySelector('.lm-sing-staff').innerHTML = opts.noStaff
+      ? `<ol class="lm-names-row">${sounding.map(n => `<li class="${marks[n.index] || ''}${n.index === current ? ' lm-now' : ''}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
+      : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current, dynamics: opts.dynamics || null });
   };
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}
     ${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-meter" aria-hidden="true"><i id="lmSingDot"></i></div>
-    <div class="controls"><button type="button" class="btn ghost" id="lmSingRef">Oír la primera nota</button></div>`;
+    <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
+    <div class="controls"><button type="button" class="btn ghost" id="lmSingRef">Oír la primera nota</button>${help ? '<button type="button" class="btn ghost" id="lmSingHelp">Ayuda: oír la nota que toca</button>' : ''}</div>`;
   draw(-1);
   const phase = (text, note = '') => {
     host.querySelector('#lmSingPhase').textContent = text;
@@ -120,6 +133,13 @@ export async function singTask(host, opts, env) {
   };
   const first = sounding[0];
   host.querySelector('#lmSingRef').addEventListener('click', () => { playingUntil = playPitch(first.midi, 1) + AFTER_PLAY_S; });
+  host.querySelector('#lmSingHelp')?.addEventListener('click', () => {
+    if (!currentNote) return;
+    helped.add(currentNote.index);
+    playingUntil = playPitch(currentNote.midi, 0.8) + AFTER_PLAY_S;
+  });
+  const VOL_GAIN = 6;
+  const showLevel = l => { const v = host.querySelector('#lmVol'); if (v) v.style.width = `${Math.min(100, Math.round(l * VOL_GAIN * 100))}%`; };
 
   if (!(await openMic(host, env))) return null;
   audio.setVoiceInput(true);
@@ -149,11 +169,14 @@ export async function singTask(host, opts, env) {
         if (!env.alive()) return null;
         draw(n.index);
         host.dataset.target = String(n.midi);
+        currentNote = n;
         if (hide) phase(`Nota ${nth(n)} de ${sounding.length}`); else phase('Canta:', under[n.index] || noteText(n.name, env.nom));
         const hold = Math.max(MIN_HOLD_MS, Math.min(MAX_HOLD_MS, n.beats * spb * 1000 * HOLD_SHARE));
-        const { cents, sungMidi } = await hearNote(n.midi, hold, env.alive, quietUntil);
+        const { cents, sungMidi, level } = await hearNote(n.midi, hold, env.alive, quietUntil, showLevel);
         if (!env.alive()) return null;
-        const mark = singMark(cents, tolerance);
+        levels[n.index] = level;
+        const raw = singMark(cents, tolerance);
+        const mark = raw === 'ok' && helped.has(n.index) ? 'near' : raw;
         marks[n.index] = mark;
         heard[n.index] = cents;
         if (Number.isFinite(sungMidi)) sungMidis.push(sungMidi);
@@ -168,7 +191,9 @@ export async function singTask(host, opts, env) {
     draw(-1);
     phase('¡Hecho!');
     if (sungMidis.length >= 2) saveVoice(Math.min(...sungMidis), Math.max(...sungMidis));
-    return { marks: sounding.map(n => marks[n.index]), cents: sounding.map(n => heard[n.index] ?? null), names: sounding.map(n => n.name), tolerance, range: sungMidis.length ? [Math.min(...sungMidis), Math.max(...sungMidis)] : null };
+    // matices: con el volumen de cada nota cantada, lo forte más fuerte que lo piano y los reguladores
+    const dyn = opts.dynamics ? dynamicsChecks(opts.dynamics, sounding, sounding.map(n => levels[n.index] ?? null)) : null;
+    return { marks: sounding.map(n => marks[n.index]), cents: sounding.map(n => (helped.has(n.index) && heard[n.index] !== null ? Math.max(Math.abs(heard[n.index] ?? 0), tolerance + 1) : heard[n.index] ?? null)), names: sounding.map(n => n.name), tolerance, dyn, range: sungMidis.length ? [Math.min(...sungMidis), Math.max(...sungMidis)] : null };
   } finally {
     audio.setVoiceInput(false);
     stopSound();
@@ -176,18 +201,49 @@ export async function singTask(host, opts, env) {
 }
 
 // Texto bajo cada nota para la canción: la letra (por compases) o los nombres de nota
-export function lyricsUnder(tokens, letra, nom, names = false) {
+export function lyricsUnder(tokens, letra, nom, names = false, words = '') {
   if (names || !letra) return tokens.map(t => (t.rest ? '' : letterText(t.name[0], nom)));
   const counters = {};
-  return tokens.map(t => {
+  const syl = tokens.map(t => {
     if (t.rest) return '';
     const k = counters[t.bar] = (counters[t.bar] ?? -1) + 1;
     return (letra[t.bar] || [])[k] ?? '';
   });
+  return words ? hyphenate(syl, words) : syl;
 }
+
+// Guion tras cada sílaba que no acaba palabra. La letra del catálogo viene por sílabas; el texto seguido (words)
+// dice dónde acaba cada palabra: se recorren las letras de las dos a la vez
+const letters = w => w.toLowerCase().replace(/[^\p{L}]/gu, '');
+export function hyphenate(syllables, words) {
+  const ends = new Set();
+  let pos = 0;
+  words.split(/\s+/).forEach(w => { pos += letters(w).length; ends.add(pos); });
+  let at = 0;
+  return syllables.map(s => {
+    if (!s) return s;
+    at += letters(s).length;
+    return ends.has(at) || /-$/.test(s) ? s : `${s}-`;
+  });
+}
+
+// La letra seguida de cada canción del Nivel 1 (para los guiones entre sílabas)
+export const SONG_WORDS = {
+  'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces como caramelo Venga, ¡ven! venga, ¡ven! que se acaban, ¡ya!',
+  'Robots en el patio': 'Pipipí, robot mueve el brazo Pipipí, robot mueve el pie, ¡clac! Gira la cabeza, gira sin parar Se me acaba la pila ¡clic!',
+  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Los barcos vuelven ya a casa Duerme, duerme, mar',
+  'Vals de los relojes': 'Tic tac tic tac Baila el reloj Dame la mano damos la vuelta',
+  'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa se dan la mano, si do también la mano. ¡Ya lo sabes! ¡Do!',
+  'La brisa y el mar': 'La brisa me canta suave y lento; el mar me responde ¡fuerte, fuerte! ¡bum! Las olas suenan más y más, y más, ¡más! Se va la ola, se va, se va.',
+  'Saloma del barco fantasma': 'Iza la vela, ¡eho! Tira del cabo, ¡eho! Niebla en el agua, no se ve; rumbo al puerto, ¡ya!',
+  '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
+};
 
 // Resultado de una toma cantada según el contrato (marcas → porcentaje y errores)
 export function singResult(take) {
   const g = gradeSung(take.names, take.cents, { tolerance: take.tolerance });
-  return { pct: g.pct, marks: g.marks, mistakes: g.mistakes };
+  // con matices, pesan un 15 % (el resto, la afinación)
+  const dyn = take.dyn && take.dyn.total ? take.dyn : null;
+  const pct = dyn ? Math.round(0.85 * g.pct + 15 * dyn.ok / dyn.total) : g.pct;
+  return { pct, marks: g.marks, mistakes: dyn && dyn.ok < dyn.total ? [...g.mistakes, 'matiz'] : g.mistakes };
 }

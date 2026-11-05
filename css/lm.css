@@ -181,3 +181,31 @@
 
 /* El pentagrama por celdas va siempre en fila (aunque sea hijo directo de .lm-run, que apila en columna) */
 .lm-run .lm-staff, .lm-run > .lm-staff { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+
+/* Compases enteros por línea, corcheas con barra, matices, calderón y coma de respiración */
+.lm-bargroup { display: inline-flex; flex-wrap: nowrap; align-items: flex-start; }
+.lm-beam { fill: currentColor; }
+.lm-fermata { fill: none; stroke: currentColor; stroke-width: 1.6; }
+.lm-breath { font-family: var(--f-display); font-size: 18px; font-weight: 700; fill: currentColor; }
+.lm-dyn { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 1rem; line-height: 1.1; min-height: 1.1em; color: var(--ink); white-space: nowrap; }
+.lm-staff-two { display: flex; flex-direction: column; gap: 4px; }
+.lm-staff-two .dict-staff-label { margin: 0; }
+
+/* Volumen de la voz en vivo, ordenamiento de oído, matices por compás y casillas */
+.lm-vol { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted); font-weight: 600; }
+.lm-vol-track { flex: 1; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.lm-vol-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ok), var(--warn) 70%, var(--bad)); transition: width .08s linear; }
+.lm-names-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.lm-names-row li { min-width: 3rem; padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); text-align: center; font-weight: 800; }
+.lm-names-row li.lm-now { border-color: var(--accent); background: var(--accent-soft); }
+.lm-names-row li.ok { border-color: var(--dict-ok); color: var(--dict-ok); }
+.lm-names-row li.near { border-color: var(--dict-near); color: var(--dict-near); }
+.lm-names-row li.bad { border-color: var(--dict-bad); color: var(--dict-bad); }
+.lm-dynpick { border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.lm-dynpick legend { font-weight: 700; padding: 0 4px; }
+.lm-dynpick label { display: flex; align-items: center; gap: 6px; }
+.lm-dynpick select { min-height: 44px; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 4px 8px; }
+.lm-dynpick label.ok select { border-color: var(--dict-ok); } .lm-dynpick label.bad select { border-color: var(--dict-bad); }
+.lm-check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; }
+.lm-check input { width: 22px; height: 22px; }
+.lm-locked-notes [data-del], .lm-locked-notes [data-up], .lm-locked-notes [data-down] { display: none; }

@@ -12,6 +12,9 @@ const STEM = 30;
 const LOW = -6;         // tres líneas adicionales por debajo…
 const HIGH = 14;        // …y por encima
 const CLEF_GLYPH = { treble: '𝄞', bass: '𝄢' };
+const BEAM_UP = 46;     // altura de la barra de corcheas con plica hacia arriba (y hacia abajo)
+const BEAM_DOWN = 104;
+const BEAM_W = 4.5;
 
 export const yOf = (step, clef = 'treble') => BOTTOM - (step - CLEF_BOTTOM[clef]) * HALF;
 const r1 = v => Math.round(v * 10) / 10;
@@ -27,7 +30,9 @@ function ledgers(rel, cx) {
   return out.map(r => `<line class="lm-st-line" x1="${cx - 11}" x2="${cx + 11}" y1="${BOTTOM - r * HALF}" y2="${BOTTOM - r * HALF}"/>`).join('');
 }
 
-function noteSvg(step, dur, clef, cx) {
+// beam: 'start' | 'end' (corcheas unidas por una barra: la barra llega al borde de la celda y sigue en la de al lado)
+// up: dirección de la plica impuesta (las dos corcheas de una pareja, igual)
+function noteSvg(step, dur, clef, cx, { beam = null, up: forcedUp = null, w = NOTE_W } = {}) {
   const rel = step - CLEF_BOTTOM[clef];
   const y = yOf(step, clef);
   const base = dur.replace('.', '');
@@ -35,11 +40,16 @@ function noteSvg(step, dur, clef, cx) {
   const head = `<ellipse class="lm-head${open ? ' open' : ''}" cx="${cx}" cy="${y}" rx="6.4" ry="4.6" transform="rotate(-20 ${cx} ${y})"/>`;
   let stem = '';
   if (base !== 'w') {
-    const up = rel < 4;
+    const up = forcedUp ?? rel < 4;
     const x = up ? cx + 5.8 : cx - 5.8;
-    const end = up ? y - STEM : y + STEM;
+    // las dos plicas de una pareja acaban a la misma altura (la de la barra)
+    const end = beam ? (up ? Math.min(y - STEM, BEAM_UP) : Math.max(y + STEM, BEAM_DOWN)) : up ? y - STEM : y + STEM;
     stem = `<line class="lm-stem" x1="${x}" x2="${x}" y1="${r1(y + (up ? -1 : 1))}" y2="${end}"/>`;
-    const flags = base === 'e' ? 1 : base === 's' ? 2 : 0;
+    if (beam) {
+      const [x1, x2] = beam === 'start' ? [x, w] : [0, x];
+      stem += `<rect class="lm-beam" x="${r1(x1)}" y="${up ? end : end - BEAM_W}" width="${r1(x2 - x1)}" height="${BEAM_W}"/>`;
+    }
+    const flags = beam ? 0 : base === 'e' ? 1 : base === 's' ? 2 : 0;
     for (let k = 0; k < flags; k++) {
       const fy = end + (up ? 7 : -7) * k;
       stem += `<path class="lm-flag" d="M${x} ${fy} q 9 ${up ? 8 : -8} 7 ${up ? 18 : -18}" />`;
@@ -59,9 +69,12 @@ function restSvg(dur, cx) {
 }
 
 // Celda de nota o silencio. extra: marca de corrección encima (✓ ≈ ✕) o un fantasma (nota a punto de ponerse)
-export function noteCell({ step = null, rest = false, dur = 'q', clef = 'treble', mark = null, ghost = null, w = NOTE_W } = {}) {
+// fermata: calderón encima; breath: coma de respiración después de la nota
+export function noteCell({ step = null, rest = false, dur = 'q', clef = 'treble', mark = null, ghost = null, w = NOTE_W, beam = null, up = null, fermata = false, breath = false } = {}) {
   const cx = w / 2;
-  const body = rest ? restSvg(dur, cx) : step === null ? '' : noteSvg(step, dur, clef, cx);
+  const body = (rest ? restSvg(dur, cx) : step === null ? '' : noteSvg(step, dur, clef, cx, { beam, up, w }))
+    + (fermata ? `<path class="lm-fermata" d="M${cx - 8} 26 a8 7 0 0 1 16 0"/><circle class="lm-dot" cx="${cx}" cy="23" r="1.8"/>` : '')
+    + (breath ? `<text class="lm-breath" x="${w - 6}" y="${BOTTOM - 8 * HALF - 2}" text-anchor="middle">,</text>` : '');
   const ghostSvg = ghost === null ? '' : `<g class="lm-ghost">${noteSvg(ghost, dur, clef, cx)}</g>`;
   const markSvg = mark ? `<text class="lm-mark" x="${cx}" y="12" text-anchor="middle">${({ ok: '✓', near: '≈', bad: '✕' })[mark]}</text>` : '';
   return `<svg class="lm-cell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${ghostSvg}${body}${markSvg}</svg>`;
@@ -84,10 +97,33 @@ export function gapCell(on = false, mark = null, w = GAP_W) {
   return `<svg class="lm-cell lm-gapcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${bar}${markSvg}</svg>`;
 }
 
-// Barra final (doble)
-export function endCell() {
-  return `<svg class="lm-cell lm-endcell" viewBox="0 0 12 ${CELL_H}" aria-hidden="true" focusable="false">${lines(12)}<line class="lm-bar" x1="4" x2="4" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/><rect x="7" y="${BOTTOM - 8 * HALF}" width="3.5" height="${8 * HALF}" class="lm-bar-thick"/></svg>`;
+// Barra final (doble); con repeat, barra de repetición (dos puntos antes)
+export function endCell(repeat = false) {
+  const w = repeat ? 20 : 12;
+  const o = w - 12;
+  const dots = repeat ? `<circle class="lm-dot" cx="4" cy="${BOTTOM - 5 * HALF}" r="2"/><circle class="lm-dot" cx="4" cy="${BOTTOM - 3 * HALF}" r="2"/>` : '';
+  return `<svg class="lm-cell lm-endcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${dots}<line class="lm-bar" x1="${o + 4}" x2="${o + 4}" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/><rect x="${o + 7}" y="${BOTTOM - 8 * HALF}" width="3.5" height="${8 * HALF}" class="lm-bar-thick"/></svg>`;
 }
+
+// Disposición de una línea de notas: compás de cada una, si acaba compás y qué corcheas van unidas por una barra
+// (dos corcheas seguidas que empiezan en el pulso). pickup: pulsos de la anacrusa.
+export function layoutTokens(tokens, { barBeats = null, pickup = 0, clef = 'treble' } = {}) {
+  let start = 0;
+  const pos = tokens.map(t => { const p = { ...t, start: t.start ?? start, beats: t.beats ?? (BEATS[t.dur] || 0) }; start = p.start + p.beats; return p; });
+  return pos.map((t, i) => {
+    const next = pos[i + 1];
+    const prev = pos[i - 1];
+    const pairStart = t.dur === 'e' && !t.rest && next && next.dur === 'e' && !next.rest && Math.abs(t.start % 1) < 1e-6 && t.step !== undefined && next.step !== undefined;
+    const pairEnd = prev && t.dur === 'e' && !t.rest && prev.dur === 'e' && !prev.rest && Math.abs(prev.start % 1) < 1e-6 && Math.abs(t.start - prev.start - 0.5) < 1e-6;
+    const mate = pairStart ? next : pairEnd ? prev : null;
+    const up = mate ? ((t.step + mate.step) / 2 - CLEF_BOTTOM[clef]) < 4 : null;
+    const end = t.start + t.beats;
+    const barEnd = !!barBeats && i < pos.length - 1 && (Math.abs((((end - pickup) % barBeats) + barBeats) % barBeats) < 1e-6);
+    const bar = !barBeats ? 0 : pickup ? (t.start < pickup - 1e-6 ? 0 : 1 + Math.floor((t.start - pickup + 1e-6) / barBeats)) : Math.floor((t.start + 1e-6) / barBeats);
+    return { beam: pairStart ? 'start' : pairEnd ? 'end' : null, up, barEnd, bar };
+  });
+}
+const BEATS = { w: 4, 'h.': 3, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25 };
 
 // Escalón según dónde se toca la celda (para escribir notas tocando líneas y espacios)
 export function stepAtY(svg, clientY, clef = 'treble') {

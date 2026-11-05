@@ -56,7 +56,7 @@ async function choose(host, item, env, { options, correct, extraHtml = '', optio
     else if (k === chosen) x.classList.add('wrong');
   });
   host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why);
-  return { mark, mistake: mark === 'ok' ? null : LISTEN_MISTAKE[item.tipo] || item.id || 'teoria' };
+  return { mark, mistake: mark === 'ok' ? null : item.code || item.id || LISTEN_MISTAKE[item.tipo] || 'teoria' };
 }
 
 const elegir = (host, item, env) => choose(host, item, env, { options: item.options, correct: [item.answer] });

@@ -419,3 +419,129 @@ for (const section of ['teoria', 'audicion']) {
     await close();
   });
 }
+
+// Una solución correcta de cada creatividad: con ella, el 100 % de las reglas (todas se pueden cumplir con el editor)
+const CREATIVE = {
+  'lm1-u1-creatividad-a-facil': { score: '| C5q C5q | C5q Rq | C5q C5q | C5q Rq |' },
+  'lm1-u1-creatividad-a-medio': { score: '| G4q E4q | G4q Rq | G4q E4q | E4q G4q |', lyrics: 'Pe-ras ri-cas, ya' },
+  'lm1-u2-creatividad-a-facil': { score: '| C5e C5e C5q | C5e C5e Rq | C5q C5e C5e | C5e C5e C5q |' },
+  'lm1-u2-creatividad-a-medio': { score: '| E4e G4e A4q | G4q Rq | A4e A4e G4q | E4q G4q |', lyrics: 'Soy un ro-bot de me-tal' },
+  'lm1-u3-creatividad-a-facil': { score: '| G4q A4q G4q E4q | E4q E4q C4h |' },
+  'lm1-u3-creatividad-a-medio': { score: '| C4h E4h | G4q A4q G4h | Rh E4q G4q | E4q A4q C4h |' },
+  'lm1-u4-creatividad-a-facil': { score: '| C5q C5q C5q | C5h C5q | C5e C5e C5q C5q | C5h C5q |' },
+  'lm1-u4-creatividad-a-medio': { score: '| C4q D4q E4q | G4h A4q | G4q E4q D4q | C4h C4q |', repeat: true },
+  'lm1-u5-creatividad-a-facil': { score: '| C4q D4q E4q F4q | G4q A4q G4q F4q | E4q D4q E4q D4q | C4w |' },
+  'lm1-u5-creatividad-a-medio': { score: '| C4q D4q E4q F4q | G4q A4q B4q C5q | C5w | Rw | C5q B4q A4q G4q | F4q E4q D4q E4q | D4q E4q D4q D4q | C4w |' },
+  'lm1-u6-creatividad-a-facil': { dyn: { 1: 'p', 2: 'f', 3: 'cresc', 4: 'dim' }, fermata: true },
+  'lm1-u6-creatividad-a-medio': { meter: '2/4', score: '| C4q E4q | G4q C5q | D5q C5q | C5h | C4q E4q | G4q C5q | D5q C5q | C5h |', dyn: { 1: 'f', 5: 'p' }, fermata: true },
+  'lm1-u7-creatividad-a-facil': { raise: { index: 8, steps: 5 } },
+  'lm1-u7-creatividad-a-medio': { score: '| A4q B4q C5q B4q | A4h E4h | A4q G4q F4q E4q | A4w |', breathAfter: 5, lyrics: 'I-za la ve-la, e-ho' },
+  'lm1-u8-creatividad-a-facil': { score: '| G4q A4q G4q E4q | D4q E4q C4h |' },
+  'lm1-u8-creatividad-a-medio': { meter: '2/4', pickup: 1, score: '| G4q | C5q C5q | B4q A4q | G4q E4q | G4h | A4q B4q | C5q D5q | C5q G4q | C5q |', lyrics: 'Te vie-nes, ya' },
+};
+const setControl = (page, sel, apply, ...args) => page.$eval(sel, apply, ...args);
+
+test('creatividad: las 16 se pueden cumplir enteras con el editor (solución correcta = 100 % de las reglas)', async () => {
+  const { page, errors, close } = await openLm({ viewport: DESKTOP });
+  for (let u = 1; u <= 8; u++) {
+    await openUnit(page, u);
+    for (const v of ['facil', 'medio']) {
+      const id = `lm1-u${u}-creatividad-a-${v}`;
+      const sol = CREATIVE[id];
+      await openExercise(page, id);
+      await page.waitForSelector('#lmBody [data-check]', { timeout: STEP_TIMEOUT });
+      if (sol.meter) await click(page, `[data-meter="${sol.meter}"]`);
+      if (sol.pickup) await click(page, `[data-pick="${sol.pickup}"]`);
+      if (sol.score) await writeNotes(page, scoreTokens(sol.score));
+      if (sol.raise) {
+        await click(page, `[data-idx="${sol.raise.index}"]`);
+        await page.focus(`[data-idx="${sol.raise.index}"]`);
+        for (let k = 0; k < sol.raise.steps; k++) await page.keyboard.press('ArrowUp');
+      }
+      if (sol.breathAfter !== undefined) { await click(page, `[data-idx="${sol.breathAfter}"]`); await click(page, '[data-breath]'); }
+      for (const [bar, sign] of Object.entries(sol.dyn || {})) {
+        await setControl(page, `[data-dynbar="${bar}"]`, (s, val) => { s.value = val; s.dispatchEvent(new Event('change', { bubbles: true })); }, sign);
+      }
+      if (sol.fermata) await setControl(page, '[data-fermata]', c => { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+      if (sol.repeat) await setControl(page, '[data-repeat]', c => { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+      if (sol.lyrics) await page.type('#lmLyrics', sol.lyrics);
+      await click(page, '#lmBody [data-check]');
+      await page.waitForSelector('.lm-rules', { timeout: STEP_TIMEOUT });
+      const rules = await page.$$eval('.lm-rules li', li => li.map(x => `${x.className}:${x.textContent.trim()}`));
+      assert.ok(rules.every(r => r.startsWith('ok')), `${id}: ${rules.join(' | ')}`);
+      await next(page);
+      await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+      assert.equal((await lmState(page)).last[id].pct, 100, id);
+      await click(page, '#lmToUnit');
+      await page.waitForFunction(() => !document.documentElement.dataset.nav && !document.getElementById('learn').hidden, { timeout: STEP_TIMEOUT });
+      await page.waitForSelector('#learn #lmUnitTitle', { timeout: STEP_TIMEOUT });
+    }
+    await click(page, '[data-lm-back]');
+    await page.waitForSelector('.lm-unit-card');
+  }
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+// Recorre un ejercicio de varias partes hasta el resultado, contestando lo que aparezca: continuar, empezar, cantar
+// (micrófono simulado con la nota que pide la app), nombrar la nota, la primera opción o «Comprobar»
+async function drive(page, limitMs) {
+  const started = Date.now();
+  let lastTarget = null;
+  while (Date.now() - started < limitMs) {
+    const state = await page.evaluate(() => {
+      const body = document.getElementById('lmBody');
+      const vis = sel => { const el = body.querySelector(sel); return !!el && !el.disabled && el.getClientRects().length > 0; };
+      const ag = body.querySelector('#lmAgNote');
+      return {
+        failed: !!body.dataset.error, done: !!document.getElementById('lmScores'), next: vis('[data-lm-next]'), tap: vis('#lmTapGo'), agGo: vis('#lmAgGo'),
+        agStep: ag && ag.dataset.step ? Number(ag.dataset.step) : null, target: body.dataset.target || (body.querySelector('[data-target]') || { dataset: {} }).dataset.target || null,
+        opt: vis('.lm-item [data-opt]:not([disabled])'), name: vis('.lm-item [data-name]:not([disabled])'), check: vis('[data-check]'),
+      };
+    });
+    if (state.done) return true;
+    if (state.failed) return false;
+    if (state.target) {
+      if (state.target !== lastTarget) {
+        lastTarget = state.target;
+        await page.evaluate(m => { window.__setTone(0); setTimeout(() => window.__setTone(440 * 2 ** ((Number(m) - 69) / 12)), 40); }, state.target);
+      }
+    } else if (lastTarget) { await page.evaluate(() => window.__setTone(0)); lastTarget = null; }
+    if (state.next) await page.$eval('[data-lm-next]', b => b.click());
+    else if (state.tap) await page.$eval('#lmTapGo', b => b.click());
+    else if (state.agGo) await page.$eval('#lmAgGo', b => b.click());
+    else if (state.agStep !== null && await page.$('.lm-names [data-name]')) {
+      await page.$eval(`.lm-names [data-name="${LETTERS[state.agStep % 7]}"]`, b => b.click()).catch(() => {});
+      await sleep(200);
+    } else if (state.opt) await page.$eval('.lm-item [data-opt]:not([disabled])', b => b.click());
+    else if (state.name) await page.$eval('.lm-item [data-name]', b => b.click());
+    else if (!state.target && state.check) await page.$eval('#lmBody [data-check]', b => b.click());
+    await sleep(40);
+  }
+  return false;
+}
+
+test('repaso: los 16 repasos (8 unidades, Fácil y Media) se hacen enteros y registran sus competencias', async () => {
+  const { page, errors, close } = await openLm({ viewport: DESKTOP });
+  for (let u = 1; u <= 8; u++) {
+    await openUnit(page, u);
+    for (const v of ['facil', 'medio']) {
+      const id = `lm1-u${u}-repaso-a-${v}`;
+      await openExercise(page, id);
+      const ok = await drive(page, 240000);
+      const body = await page.$eval('#lmBody', b => `${b.innerText.slice(0, 300)} ${b.dataset.error || ''}`);
+      assert.ok(ok, `${id} no llega al resultado: ${body}`);
+      assert.ok(!/No se ha podido/.test(body), id);
+      const r = (await lmState(page)).last[id];
+      assert.ok(r && Object.keys(r.skills).length >= 5, `${id}: ${JSON.stringify(r && r.skills)}`);
+      await page.evaluate(() => window.__setTone(0));
+      await click(page, '#lmToUnit');
+      await page.waitForFunction(() => !document.documentElement.dataset.nav && !document.getElementById('learn').hidden, { timeout: STEP_TIMEOUT });
+      await page.waitForSelector('#learn #lmUnitTitle', { timeout: STEP_TIMEOUT });
+    }
+    await click(page, '[data-lm-back]');
+    await page.waitForSelector('.lm-unit-card');
+  }
+  assert.deepEqual(errors, []);
+  await close();
+});

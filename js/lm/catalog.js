@@ -117,6 +117,9 @@ export const LM_CATALOG = allLmExercises().map(({ id, level, unit, section, vari
 export const LM_MISTAKES = {
   ...META_1.codigosError,
   'semitono-oido': 'no distinguió el tono del semitono al oírlo', modo: META_1.codigosError.modo,
+  cancion: 'no reconoció la canción por su ritmo', nota: 'una nota en otra altura', teoria: 'una pregunta de teoría',
+  'fig-w': 'una redonda con otra figura', 'fig-h': 'una blanca con otra figura', 'fig-q': 'una negra con otra figura', 'fig-e': 'una corchea con otra figura',
+  'fig-h.': 'una blanca con puntillo con otra figura', 'fig-q.': 'una negra con puntillo con otra figura',
   'stop-pronto': 'paró antes del error', 'stop-tarde': 'paró tarde', 'stop-no': 'no paró la música',
   'barra-falta': 'faltó una barra de compás', 'barra-sobra': 'sobró una barra de compás', falta: 'faltó una nota', sobra: 'sobró una nota',
   altura: 'nota equivocada', 'r-longitud': 'número de compases', 'r-compases': 'compases incompletos', 'r-figuras': 'figura no permitida',

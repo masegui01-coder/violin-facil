@@ -1,7 +1,7 @@
 // Generadores puros del curso (sin DOM, con semilla: toda la clase recibe lo mismo): rondas del juego STOP a partir de
 // la lectura rítmica de la unidad, ritmos con las figuras permitidas y preguntas de discriminación auditiva.
 import { rng } from '../generate.js';
-import { FIGURE_BEATS, scale } from './notes.js';
+import { FIGURE_BEATS, scale, midiOf, stepOf } from './notes.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
@@ -90,7 +90,9 @@ export function stopKinds(errores = []) {
 // Una ronda: lo que suena (con el error), el pulso donde empieza el error, el código y dónde. offset: pulsos de
 // silencio antes de la primera nota (la anacrusa entra en el último pulso de la claqueta: offset = compás − anacrusa).
 // avoid: rondas ya jugadas («código:posición»), para no repetir la misma.
-export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set() }) {
+// round: número de ronda. Se sortea primero el TIPO de error (los de la unidad por turnos, así salen todos) y
+// después la posición
+export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set(), round = null }) {
   const ts = stopBase(base, { matices, voice: kinds.includes('voz') });
   const r = rng(seed);
   const offset = pickup ? barBeats - pickup : 0;
@@ -98,7 +100,14 @@ export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pic
     : ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean)));
   const fallback = ts.map((t, i) => (i > 0 && MUTATIONS['q>ee'].can(ts, i) ? { k: 'q>ee', i } : null)).filter(Boolean);
   const all = options.length ? options : fallback;
-  const fresh = all.filter(o => !avoid.has(`${o.k}:${o.i}`));
+  let fresh = all.filter(o => !avoid.has(`${o.k}:${o.i}`));
+  if (round !== null && fresh.length) {
+    const offered = kinds.filter(k => fresh.some(o => o.k === k));
+    if (offered.length) {
+      const kind = offered[round % offered.length];
+      fresh = fresh.filter(o => o.k === kind);
+    }
+  }
   // si los errores de la unidad ya se han jugado todos, una figura cambiada nueva antes que repetir una ronda
   const generic = ['q>ee', 'ee>q', 'h-corta', 'Rq>q'].flatMap(k => ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean))
     .filter(o => !avoid.has(`${o.k}:${o.i}`));
@@ -146,24 +155,27 @@ export function genRhythm({ figuras, barBeats, bars, seed }) {
   return withStarts(out);
 }
 
-// Melodía corta con las notas de la unidad (por grados o saltos pequeños), terminada en la primera de la lista
-export function genMelody({ notas, bars, barBeats, seed, figures = ['q', 'h'] }) {
+// Melodía corta con las notas de la unidad: se mueve de nota vecina en nota vecina (ordenadas de grave a agudo),
+// empieza y acaba en la tónica (tonic; si no, la primera de la lista)
+export function genMelody({ notas, bars, barBeats, seed, figures = ['q', 'h'], tonic = null }) {
   const r = rng(seed);
-  const order = [...notas];
+  const order = [...new Set(notas)].sort((a, b) => midiOf(a) - midiOf(b));
+  const home = tonic && order.includes(tonic) ? tonic : notas[0];
   const out = [];
-  let idx = 0;
+  let idx = order.indexOf(home);
   for (let b = 0; b < bars; b++) {
     let left = barBeats;
     while (left > EPS) {
       const fit = figures.filter(f => FIGURE_BEATS[f] <= left + EPS);
       const dur = fit[Math.floor(r() * fit.length)] || 'q';
       idx = Math.max(0, Math.min(order.length - 1, idx + Math.floor(r() * 3) - 1));
-      out.push({ rest: false, dur, name: order[idx] });
+      out.push({ rest: false, dur, name: order[idx], bar: b });
       left -= FIGURE_BEATS[dur];
     }
   }
-  out[out.length - 1] = { ...out[out.length - 1], name: order[0] };
-  return withStarts(out);
+  out[out.length - 1] = { ...out[out.length - 1], name: home };
+  // con su altura (midi) y su escalón: la lectura cantada y el dictado del repaso la necesitan
+  return withStarts(out).map(t => ({ ...t, midi: midiOf(t.name), step: stepOf(t.name) }));
 }
 
 // ---------- Discriminación auditiva ----------
@@ -174,7 +186,7 @@ export function meterQuestions(count, seed) {
     const m = Math.floor(r() * METERS.length);
     const [meter, beats] = METERS[m];
     const bar = ['C3q', ...Array(beats - 1).fill('G4q')].join(' ');
-    return { tipo: 'escucharCompas', id: `compas-${k}`, q: '¿De cuántos pulsos es el compás?', options: METERS.map(x => x[2]),
+    return { tipo: 'escucharCompas', id: `compas-${k}`, code: 'compas', q: '¿De cuántos pulsos es el compás?', options: METERS.map(x => x[2]),
       answer: m, play: { partitura: `| ${Array(4).fill(bar).join(' | ')} |`, compas: meter, acentoPrimero: true, tempo: 100 },
       why: `El golpe grave llega cada ${beats === 2 ? 'dos' : beats === 3 ? 'tres' : 'cuatro'} pulsos.` };
   });
@@ -193,7 +205,7 @@ export function semitoneQuestions(count, seed) {
     const s = starts[Math.floor(r() * starts.length)];
     const five = two.slice(s, s + 5);
     const at = five.findIndex((n, i) => i < 4 && ['E', 'B'].includes(n[0]));
-    return { tipo: 'escucharIntervalo', id: `semitono-${k}`, q: 'Escucha la escalera: ¿dónde está el peldaño corto?', options: PAIR_NAMES,
+    return { tipo: 'escucharIntervalo', id: `semitono-${k}`, code: 'semitono-oido', q: 'Escucha la escalera: ¿dónde está el peldaño corto?', options: PAIR_NAMES,
       answer: at, play: { partitura: `| ${five.map(n => `${n}q`).join(' ')} Rq |`, tempo: 76 }, why: 'El semitono es el paso más corto: mi-fa o si-do.' };
   });
 }
@@ -209,7 +221,7 @@ export function modeQuestions(count, seed) {
     const shape = SHAPES[Math.floor(r() * SHAPES.length)];
     const notes = shape.map(d => (isMinor ? minor : major)[d - 1]);
     const toks = notes.map((n, i) => `${n}${i === notes.length - 1 ? 'h' : 'q'}`);
-    return { tipo: 'escucharModo', id: `modo-${k}`, q: 'Escucha: ¿mayor o menor?', options: ['Mayor', 'Menor'], answer: isMinor ? 1 : 0,
+    return { tipo: 'escucharModo', id: `modo-${k}`, code: 'modo', q: 'Escucha: ¿mayor o menor?', options: ['Mayor', 'Menor'], answer: isMinor ? 1 : 0,
       play: { partitura: `| ${toks.join(' ')} |`, tempo: 84 }, why: isMinor ? 'Menor: suena más oscuro (la-do-mi).' : 'Mayor: luminoso (do-mi-sol).' };
   });
 }
@@ -220,7 +232,7 @@ export function songQuestions(songs, count, seed) {
   return Array.from({ length: count }, (_, k) => {
     const pick = Math.floor(r() * songs.length);
     const bars = songs[pick].partitura.split('|').map(x => x.trim()).filter(Boolean).slice(0, 4);
-    return { tipo: 'escucharForma', id: `cancion-${k}`, q: '¿Qué canción es? Escucha su ritmo', options: songs.map(s => s.titulo), answer: pick,
+    return { tipo: 'escucharForma', id: `cancion-${k}`, code: 'cancion', q: '¿Qué canción es? Escucha su ritmo', options: songs.map(s => s.titulo), answer: pick,
       play: { partitura: `| ${bars.join(' | ')} |`, clap: true, tempo: songs[pick].tempo || 84 }, why: `Era «${songs[pick].titulo}».` };
   });
 }

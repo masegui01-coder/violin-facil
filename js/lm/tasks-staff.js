@@ -1,9 +1,10 @@
 // Pentagrama para escribir varias notas (tocar líneas y espacios, elegir figura, borrar, con teclado) y los
 // ejercicios que lo usan: tocar notas en el pentagrama, construir una escala, dictado escrito y trazar barras.
 import { esc } from '../ui.js';
-import { noteCell, gapCell, clefCell, stepAtY, STEP_LIMITS } from './staff-lm.js';
+import { noteCell, gapCell, clefCell, endCell, stepAtY, STEP_LIMITS, layoutTokens } from './staff-lm.js';
 import { FIGURE_BEATS, FIGURE_NAME, REST_NAME, nameOfStep, noteText, positionText, stepOf, scoreTokens, barBeatsOf, midiOf } from './notes.js';
-import { gradeWriting, gradeBarlines, scaleMark } from './grade.js';
+import { gradeWriting, gradeBarlines, scaleMark, pctOf } from './grade.js';
+import { gainsFor } from './gen.js';
 import { staffHtml, onceClick, whyHtml, CLEF, tokenLabel, playButton, continueButton } from './kit.js';
 import { playNotes, stopSound } from './sound.js';
 
@@ -23,10 +24,12 @@ export const tokensToPlay = tokens => {
 
 // ---------- El escritor ----------
 // opts: clef, figures (['q','h','Rq'…]; una sola = sin paleta), rhythmOnly (todas en la misma línea), max (notas),
-// nom, say (anuncio para el lector de pantalla), onChange
-export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter = null } = {}) {
+// nom, say (anuncio para el lector de pantalla), meter, initial (notas de partida), extras () → { dynamics, pickup,
+// repeat } (lo que se dibuja además: matices, anacrusa, barra de repetición), breath (botón de coma de respiración)
+export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false } = {}) {
   const [lo, hi] = STEP_LIMITS(clef);
-  let tokens = [];
+  let meter = meter0;
+  let tokens = initial.map(t => ({ ...t }));
   let figure = figures[0];
   let sel = null;          // nota seleccionada (para cambiarla o borrarla)
   let cursor = rhythmOnly ? RHYTHM_STEP[clef] : DEFAULT_STEP[clef];
@@ -38,15 +41,24 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 
   function render(focusSel = null) {
     const barBeats = meter ? barBeatsOf(meter) : null;
-    let sum = 0;
+    const ext = extras() || {};
+    // compases agrupados (no se parten entre líneas), corcheas con su barra, matices y calderón como se pintan
+    const lay = layoutTokens(tokens, { barBeats, pickup: ext.pickup || 0, clef });
+    const dyn = {};
+    (ext.dynamics || []).forEach(m => { (dyn[m.compas] ||= []).push(m); });
+    let open = true;
     const cells = tokens.map((t, i) => {
-      sum += FIGURE_BEATS[t.dur];
-      const bar = barBeats && Math.abs(sum % barBeats) < 1e-6 ? `<span class="lm-sc">${gapCell(true, null, 14)}</span>` : '';
-      return `<button type="button" class="lm-sc lm-note-btn${i === sel ? ' sel' : ''}" data-idx="${i}" aria-pressed="${i === sel}" aria-label="${esc(`${i + 1}: ${describe(t)}`)}">${noteCell({ ...t, clef })}</button>${bar}`;
+      const L = lay[i];
+      const bar = L.bar + 1;
+      const signs = open ? (dyn[bar] || []).filter(m => m.signo !== 'calderon').map(m => ({ cresc: 'cresc.', dim: 'dim.' })[m.signo] || m.signo) : [];
+      const fermata = (L.barEnd || i === tokens.length - 1) && (dyn[bar] || []).some(m => m.signo === 'calderon');
+      open = L.barEnd;
+      const btn = `<button type="button" class="lm-sc lm-note-btn${i === sel ? ' sel' : ''}" data-idx="${i}" aria-pressed="${i === sel}" aria-label="${esc(`${i + 1}: ${describe(t)}${t.breath ? ', respiración' : ''}`)}">${noteCell({ ...t, clef, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${signs.length ? `<span class="lm-dyn" lang="it">${esc(signs.join(' '))}</span>` : ''}</button>`;
+      return btn + (L.barEnd ? `<span class="lm-sc">${gapCell(true, null, 14)}</span></span><span class="lm-bargroup">` : '');
     }).join('');
     const isRest = figure.startsWith('R');
     const ghost = isRest || rhythmOnly ? null : cursor;
-    box.querySelector('.lm-w-staff').innerHTML = `<span class="lm-sc" aria-hidden="true">${clefCell(clef, meter)}</span>${cells}${tokens.length < max && !locked ? `<button type="button" class="lm-sc lm-insert" data-insert data-step="${cursor}" aria-label="${esc(`Añadir ${figLabel(figure).toLowerCase()}${rhythmOnly || isRest ? '' : `: ${cursorText()}`}. Toca una línea o un espacio; flechas arriba y abajo para cambiar la nota`)}">${noteCell({ clef, dur: isRest ? figure.slice(1) : figure, rest: isRest, ghost, step: null })}</button>` : ''}`;
+    box.querySelector('.lm-w-staff').innerHTML = `<span class="lm-bargroup"><span class="lm-sc" aria-hidden="true">${clefCell(clef, meter)}</span>${cells}${tokens.length < max && !locked ? `<button type="button" class="lm-sc lm-insert" data-insert data-step="${cursor}" aria-label="${esc(`Añadir ${figLabel(figure).toLowerCase()}${rhythmOnly || isRest ? '' : `: ${cursorText()}`}. Toca una línea o un espacio; flechas arriba y abajo para cambiar la nota`)}">${noteCell({ clef, dur: isRest ? figure.slice(1) : figure, rest: isRest, ghost, step: null })}</button>` : ''}${ext.repeat ? `<span class="lm-sc" aria-hidden="true">${endCell(true)}</span>` : ''}</span>`;
     box.querySelectorAll('[data-fig]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fig === figure)));
     box.querySelector('[data-del]').disabled = locked || !tokens.length;
     box.querySelectorAll('[data-up],[data-down]').forEach(b => { b.disabled = locked || rhythmOnly; });
@@ -92,6 +104,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       <button type="button" class="btn ghost small" data-up aria-label="Nota más aguda">↑ Más aguda</button>
       <button type="button" class="btn ghost small" data-down aria-label="Nota más grave">↓ Más grave</button>
       <button type="button" class="btn ghost small" data-del>Borrar</button>
+      ${breath ? '<button type="button" class="btn ghost small" data-breath>Coma de respiración</button>' : ''}
     </div>`;
   if (rhythmOnly) box.querySelectorAll('[data-up],[data-down]').forEach(b => { b.hidden = true; });
 
@@ -104,6 +117,15 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
     if (e.target.closest('[data-up]')) { moveCursor(1); return; }
     if (e.target.closest('[data-down]')) { moveCursor(-1); return; }
     if (e.target.closest('[data-del]')) { remove(); return; }
+    if (e.target.closest('[data-breath]')) {
+      // la coma va detrás de la nota elegida (o de la última escrita); otra vez, se quita
+      const i = sel ?? tokens.length - 1;
+      if (i < 0) return;
+      tokens = tokens.map((t, k) => (k === i ? { ...t, breath: !t.breath } : t));
+      render(sel !== null ? `[data-idx="${i}"]` : null);
+      say(tokens[i].breath ? 'Coma de respiración puesta' : 'Coma de respiración quitada');
+      return;
+    }
     if (ins) {
       const svg = ins.querySelector('svg');
       // con el ratón o el dedo, la altura es donde se toca; con el teclado (clic sin posición), la del cursor
@@ -131,6 +153,8 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 
   return {
     tokens: () => tokens,
+    refresh: () => render(),
+    setMeter(m) { meter = m; render(); },
     lock(marks = []) {
       locked = true;
       sel = null;
@@ -140,7 +164,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
         b.classList.add(marks[i]);
         b.insertAdjacentHTML('beforeend', `<span class="lm-cell-mark ${marks[i]}" aria-hidden="true">${({ ok: '✓', near: '≈', bad: '✕' })[marks[i]]}</span>`);
       });
-      box.querySelectorAll('[data-fig],[data-up],[data-down],[data-del]').forEach(b => { b.disabled = true; });
+      box.querySelectorAll('[data-fig],[data-up],[data-down],[data-del],[data-breath]').forEach(b => { b.disabled = true; });
     },
   };
 }
@@ -214,11 +238,17 @@ export async function dictadoEscrito(host, p, env) {
   const bpm = p.tempo || (rhythmOnly ? 72 : 66);
   const play = () => {
     stopSound();
-    playNotes(want.map(t => ({ rest: t.rest, start: t.start, beats: t.beats, midi: t.midi })), bpm, { clap: rhythmOnly, accentEvery: barBeatsOf(p.compas) });
+    // con matices, suena con su volumen (lo que hay que reconocer)
+    playNotes(want.map(t => ({ rest: t.rest, start: t.start, beats: t.beats, midi: t.midi })), bpm, { clap: rhythmOnly, accentEvery: barBeatsOf(p.compas), gains: dynMarks.length ? gainsFor(want, p.matices) : null });
   };
+  // dictado de matices: además de las figuras, el matiz de cada compás que lo lleva (selector por compás)
+  const dynMarks = (p.matices || []).filter(m => m.signo !== 'calderon');
+  const barCount = want.length ? want[want.length - 1].bar + 1 : 0;
+  const dynHtml = dynMarks.length ? `<fieldset class="lm-dynpick"><legend>Matiz de cada compás</legend>${Array.from({ length: barCount }, (_, b) => `<label><span>Compás ${b + 1}</span>
+      <select data-dynbar="${b + 1}"><option value="">—</option>${DYN_OPTIONS.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>`).join('')}</fieldset>` : '';
   host.innerHTML = `<p class="muted">${rhythmOnly ? 'Escucha el ritmo y escríbelo con las figuras.' : 'Escucha la melodía y escríbela en el pentagrama.'}${p.pista ? ` <b>${esc(p.pista)}</b>` : ''}</p>
     <div class="controls">${playButton('lmDictPlay', 'Escuchar')}<span class="muted small" id="lmDictLeft" aria-live="polite">Escuchas: ${listens}</span></div>
-    <div class="lm-writer"></div>
+    <div class="lm-writer"></div>${dynHtml}
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   const w = createStaffWriter(host.querySelector('.lm-writer'), { figures, rhythmOnly, max: want.length + 4, nom: env.nom, say: env.say, meter: p.compas });
   const left = host.querySelector('#lmDictLeft');
@@ -237,11 +267,24 @@ export async function dictadoEscrito(host, p, env) {
     : gradeWriting(want, got);
   w.lock(g.marks);
   host.querySelector('[data-check]').remove();
-  const pct = Math.max(0, g.pct - extra * EXTRA_LISTEN_PENALTY);
-  host.querySelector('.lm-feedback').innerHTML = `<p class="dict-staff-label">Lo que sonaba</p>${staffHtml(want, { meter: p.compas, marks: g.marks, label: want.map(t => tokenLabel(t, env.nom, { pitch: !rhythmOnly })).join(', ') })}
+  // matices: cada uno que pide el dictado, en su compás
+  const chosen = Object.fromEntries([...host.querySelectorAll('[data-dynbar]')].map(s => { s.disabled = true; return [s.dataset.dynbar, s.value]; }));
+  const dynMarksOk = dynMarks.map(m => (chosen[m.compas] === m.signo ? 'ok' : 'bad'));
+  host.querySelectorAll('[data-dynbar]').forEach(s => {
+    const want1 = dynMarks.find(m => String(m.compas) === s.dataset.dynbar);
+    if (!want1) return;
+    const ok = s.value === want1.signo;
+    s.closest('label').classList.add(ok ? 'ok' : 'bad');
+    s.closest('label').insertAdjacentHTML('beforeend', `<span class="dict-sw ${ok ? 'ok' : 'bad'}" aria-hidden="true">${ok ? '✓' : '✕'}</span>${ok ? '' : ` <small class="muted">${esc(DYN_LABEL[want1.signo] || want1.signo)}</small>`}`);
+  });
+  const allMarks = [...g.marks, ...dynMarksOk];
+  const pct = Math.max(0, (dynMarks.length ? pctOf(allMarks, g.extra) : g.pct) - extra * EXTRA_LISTEN_PENALTY);
+  host.querySelector('.lm-feedback').innerHTML = `<p class="dict-staff-label">Lo que sonaba</p>${staffHtml(want, { meter: p.compas, marks: g.marks, dynamics: p.matices || null, label: want.map(t => tokenLabel(t, env.nom, { pitch: !rhythmOnly })).join(', ') })}
     ${extra ? `<p class="muted small">Incluye −${extra * EXTRA_LISTEN_PENALTY} puntos por las escuchas extra</p>` : ''}`;
   host.querySelector('.lm-feedback').insertAdjacentHTML('beforeend', '<p class="muted small">Compara tu pentagrama con lo que sonaba: cada nota lleva su signo.</p>');
   await continueButton(host, 'Ver el resultado');
-  return { pct, marks: g.marks, extra: g.extra, mistakes: g.mistakes };
+  return { pct, marks: allMarks, extra: g.extra, mistakes: [...g.mistakes, ...(dynMarksOk.includes('bad') ? ['matiz'] : [])] };
 }
+const DYN_OPTIONS = [['pp', 'pp (pianísimo)'], ['p', 'p (piano)'], ['mp', 'mp (mezzopiano)'], ['mf', 'mf (mezzoforte)'], ['f', 'f (forte)'], ['ff', 'ff (fortísimo)'], ['cresc', 'crescendo'], ['dim', 'diminuendo']];
+const DYN_LABEL = Object.fromEntries(DYN_OPTIONS);
 

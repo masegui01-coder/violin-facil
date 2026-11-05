@@ -11,7 +11,7 @@ import { RUNNERS } from './runners.js';
 import { recordActive, openLmExercise } from './launcher.js';
 import { gradeTen, starsFor } from './grade.js';
 import { legendHtml, chipsHtml, seedOf } from './kit.js';
-import { noteText, letterText } from './notes.js';
+import { noteText, letterText, solfaToName } from './notes.js';
 import { stopSound } from './sound.js';
 
 const say = announcer('lmStatus', 600);
@@ -36,7 +36,9 @@ function mistakeItem(code, ex, nom) {
   const q = lmQuestion(ex.level, code);
   if (q) return `<li><b>${esc(q.q)}</b>${q.why ? ` <span>${esc(q.why)}</span>` : ''}</li>`;
   const pair = /^([A-G][#b]?\d)>([A-G][#b]?\d?)$/.exec(code);
-  if (pair) return `<li><span>Sonaba</span> <b>${esc(noteName(pair[1], nom))}</b><span>, y fue</span> <b>${esc(noteName(pair[2], nom))}</b></li>`;
+  // el verbo según el ejercicio: en la agilidad no suena nada, se responde; en el dictado se escribe; al cantar, se canta
+  const verb = ({ agilidad: 'y respondiste', entonacion: 'y cantaste', cancion: 'y cantaste', dictado: 'y escribiste', repaso: 'y salió' })[ex.section] || 'y salió';
+  if (pair) return `<li><span>Era</span> <b>${esc(noteName(pair[1], nom))}</b> <span>${verb}</span> <b>${esc(noteName(pair[2], nom))}</b></li>`;
   const silent = /^([A-G][#b]?\d)-(sil|t)$/.exec(code);
   if (silent) return `<li><b>${esc(noteName(silent[1], nom))}</b>: <span>${silent[2] === 'sil' ? 'no se oyó la nota' : 'se acabó el tiempo'}</span></li>`;
   const text = mistakeText(code);
@@ -107,7 +109,9 @@ function renderResult(ex, out, saved) {
 async function run(ex) {
   const token = ++session;
   const alive = () => token === session;
-  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), alive, say, level: ex.level, songScore: ref => (lmSong(ex.level, ref) || {}).partitura || null };
+  const unit = lmUnit(ex.level, ex.unit);
+  const unitNotes = (unit && unit.notes || []).map(solfaToName).filter(Boolean);
+  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), alive, say, level: ex.level, unit: ex.unit, unitNotes, songScore: ref => (lmSong(ex.level, ref) || {}).partitura || null };
   $('lmTitle').textContent = ex.title;
   $('lmEyebrow').innerHTML = `<span>Unidad ${ex.unit}</span> · <span>${esc(SECTION_NAME[ex.section])}</span> · <span class="lm-variant ${ex.variant}">${esc(VARIANT_NAME[ex.variant])}</span>`;
   body().innerHTML = '';
@@ -121,6 +125,7 @@ async function run(ex) {
     body().innerHTML = `<p class="dict-warn" role="alert">No se ha podido hacer el ejercicio. Inténtalo otra vez.</p>
       <div class="controls"><button type="button" class="btn" id="lmAgain">Repetir</button></div>`;
     $('lmAgain').addEventListener('click', () => openLmExercise(ex));
+    body().dataset.error = String(err && err.message || err).slice(0, 200); // para el diagnóstico (pruebas)
     throw err;
   }
   if (!out || !alive()) return;

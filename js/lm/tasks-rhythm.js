@@ -2,8 +2,8 @@
 // a tiempo) y la lectura rítmica tocando la pantalla (repaso), con la tolerancia del contrato (±120 ms / ±80 ms).
 import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
-import { stopKinds, stopRoundOf, stopWindow } from './gen.js';
-import { barBeatsOf } from './notes.js';
+import { stopKinds, stopRoundOf, stopWindow, stopBase } from './gen.js';
+import { barBeatsOf, stepOf } from './notes.js';
 import { staffHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
@@ -16,6 +16,20 @@ const STOP_NAMES = {
   'Rw-salto': 'Se saltó el silencio', compas: 'Un compás tuvo un pulso de más', matiz: 'Un compás sonó con el matiz cambiado',
   calderon: 'No esperó en el calderón', voz: 'Una nota de la voz cambió de altura', anacrusa: 'La anacrusa cayó en la parte fuerte',
 };
+
+// Lo que se lee en el STOP: la lectura con sus matices, calderón y anacrusa; si el error es de voz, también la voz
+// de la app (el ostinato) en su pentagrama, encima del ritmo
+function stopScore(tokens, kinds, base, env) {
+  const meter = base.compas || '4/4';
+  const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0 };
+  const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
+  if (!kinds.includes('voz')) return rhythm;
+  const voice = stopBase(tokens, { matices: base.matices || [], voice: true }).map(t => (t.rest ? t : { ...t, name: nameOf(t.midi), step: stepOf(nameOf(t.midi)) }));
+  return `<div class="lm-staff-two"><p class="dict-staff-label">Voz 1: la app (el ostinato)</p>${staffHtml(voice, { ...opts, label: voice.map(t => tokenLabel(t, env.nom)).join(', ') })}
+    <p class="dict-staff-label">Voz 2: tú (palméala o cántala mientras escuchas)</p>${rhythm}</div>`;
+}
+const NAMES = { 72: 'C5', 67: 'G4', 69: 'A4', 70: 'Bb4', 75: 'Eb5' };
+const nameOf = midi => NAMES[midi] || 'C5';
 
 const PULSE_LEVEL = 0.25;
 const LEGATO = 0.92;
@@ -51,11 +65,11 @@ export async function stopGame(host, p, env) {
   const total = p.rondas || 3;
   for (let k = 0; k < total; k++) {
     if (!env.alive()) return null;
-    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played });
+    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played, round: k });
     played.add(round.key);
     host.innerHTML = `<p class="eyebrow">Ronda ${k + 1} de ${total}</p>
       <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
-      ${staffHtml(tokens, { meter, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') })}
+      ${stopScore(tokens, kinds, p.base, env)}
       <p class="lm-stop-phase" id="lmStopPhase" aria-live="polite">Preparado</p>
       <div class="controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
     host.querySelector('#lmStopGo').focus();

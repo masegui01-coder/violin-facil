@@ -7,7 +7,9 @@ import { gradeAgility, mistakeCodes } from './grade.js';
 import { stepOf, positionText, letterText, barBeatsOf, LETTERS } from './notes.js';
 import { noteCell, clefCell } from './staff-lm.js';
 import { nameButtons, CLEF, GLYPH } from './kit.js';
-import { wait, clicks } from './sound.js';
+import { wait, clicks, now, stopSound } from './sound.js';
+
+const LEAD_IN_S = 0.6;
 import { recordOf, saveRecord } from './results.js';
 
 const FEEDBACK_MS = 450;
@@ -53,8 +55,15 @@ export async function agilityTask(host, p, env) {
     <p id="lmAgFeedback" class="lm-ag-feedback" aria-live="polite"></p>`;
   let right = 0;
   const misses = [];
+  // a tempo: un pulso continuo (dos clics por nota, cada vez más deprisa) programado de una vez; cada nota dura su
+  // hueco aunque se conteste antes, para no perder el pulso
+  const tempo = p.modo === 'leer-a-tempo';
+  const slots = plan.secs.reduce((acc, s) => [...acc, (acc.length ? acc[acc.length - 1] : 0) + s], []).map((end, i) => end - plan.secs[i]);
+  const t0 = tempo ? now() + LEAD_IN_S : 0;
+  if (tempo) plan.secs.forEach((s, i) => clicks(2, 120 / s, { at: t0 + slots[i], accentEvery: 2, level: 0.45 }));
+  if (tempo) await wait((t0 - now()) * 1000);
   for (let i = 0; i < plan.notes.length; i++) {
-    if (!env.alive()) return null;
+    if (!env.alive()) { stopSound(); return null; }
     const name = plan.notes[i];
     const step = stepOf(name);
     const noteBox = host.querySelector('#lmAgNote');
@@ -63,9 +72,7 @@ export async function agilityTask(host, p, env) {
     noteBox.setAttribute('aria-label', `Nota ${i + 1}: ${positionText(step, clef)}`);
     host.querySelector('#lmAgCount').textContent = `${i + 1} / ${plan.notes.length}`;
     if (i === 0) host.querySelector('[data-name]').focus();
-    const limit = plan.secs[i] * 1000;
-    // a tempo, el metrónomo marca los dos pulsos de cada nota
-    if (p.modo === 'leer-a-tempo') clicks(2, 120000 / limit, { accentEvery: 2, level: 0.45 });
+    const limit = tempo ? Math.max(0, (t0 + slots[i] + plan.secs[i] - now()) * 1000) : plan.secs[i] * 1000;
     const started = performance.now();
     const bar = host.querySelector('#lmAgBar');
     const answer = await new Promise(resolve => {
@@ -89,7 +96,8 @@ export async function agilityTask(host, p, env) {
     const fb = host.querySelector('#lmAgFeedback');
     fb.className = `lm-ag-feedback ${ok ? 'ok' : 'bad'}`;
     fb.innerHTML = `<span class="dict-sw ${ok ? 'ok' : 'bad'}" aria-hidden="true">${GLYPH[ok ? 'ok' : 'bad']}</span> <span>${ok ? '¡Bien!' : answer ? 'Era' : 'Tiempo. Era'}</span>${ok ? '' : ` <b>${esc(letterText(name[0], env.nom))}</b>`}`;
-    await wait(FEEDBACK_MS);
+    // a tempo, la nota siguiente llega en su pulso; si no, tras un momento para ver la corrección
+    await wait(tempo ? (t0 + slots[i] + plan.secs[i] - now()) * 1000 : FEEDBACK_MS);
   }
   // contrato: aciertos sobre el total (los tiempos agotados cuentan como fallo, sin restar más)
   const g = gradeAgility(right, 0, plan.notes.length);

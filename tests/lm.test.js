@@ -164,7 +164,7 @@ test('estrellas del contrato (60 / 80 / 90) y nota de 1 a 10 de la rúbrica', ()
   assert.deepEqual([0, 59, 60, 79, 80, 89, 90, 100].map(starsFor), [0, 0, 1, 1, 2, 2, 3, 3]);
   assert.equal(pctOf(['ok', 'near', 'bad', 'ok']), 63);
   assert.equal(pctOf(['ok'], 1), 50);
-  assert.deepEqual(mistakeCodes(['x', 'x', null, 'muy-largo-codigo-de-error']), ['x', 'muy-largo-co']);
+  assert.deepEqual(mistakeCodes(['x', 'x', null, 'muy-largo-codigo-de-error']), ['x', 'muy-largo-codigo']);
   assert.equal(gradeTen(100, 'facil'), 8);
   assert.equal(gradeTen(96, 'medio', true), 10);
   assert.equal(gradeTen(90, 'medio'), 9);
@@ -449,4 +449,50 @@ test('audición sintetizada: Haydn repite en pp y remata ff; Grieg acelera y cre
   assert.ok(g[g.length - 1].gain > g[0].gain, 'crescendo');
   const gap = (k) => g[k + 1].at - g[k].at;
   assert.ok(gap(g.length - 3) < gap(0), 'accelerando: al final las corcheas van más deprisa');
+});
+
+test('pentagrama: corcheas por parejas con barra, compases completos y la anacrusa en su compás', async () => {
+  const { layoutTokens } = await import('../js/lm/staff-lm.js');
+  const lay = layoutTokens(scoreTokens('| G4q | E4e E4e G4q G4q | C5e C5e D5h |'), { barBeats: 3, pickup: 1 });
+  assert.deepEqual(lay.map(x => `${x.bar}${x.barEnd ? '|' : ''}${x.beam ? x.beam[0] : ''}`), ['0|', '1s', '1e', '1', '1|', '2s', '2e', '2']);
+  assert.equal(lay[1].up, lay[2].up, 'las dos corcheas, con la plica hacia el mismo lado');
+});
+
+test('letra: guion entre las sílabas de una misma palabra (con el texto seguido de la canción)', async () => {
+  const { hyphenate, SONG_WORDS } = await import('../js/lm/tasks-voice.js');
+  assert.deepEqual(hyphenate(['La', 'bri', 'sa', 'me', 'can', 'ta'], 'La brisa me canta'), ['La', 'bri-', 'sa', 'me', 'can-', 'ta']);
+  LM_LEVELS[0].units.forEach(u => {
+    const syl = u.song.letra.flat();
+    const out = hyphenate(syl, SONG_WORDS[u.song.titulo]);
+    const rebuilt = out.join(' ').replace(/- /g, '').replace(/\s+/g, ' ');
+    assert.equal(rebuilt.replace(/[^\p{L} ]/gu, '').toLowerCase(), SONG_WORDS[u.song.titulo].replace(/[^\p{L} ]/gu, '').toLowerCase().replace(/\s+/g, ' ').trim(), u.song.titulo);
+  });
+});
+
+test('repaso: melodías con las notas de la unidad, con su altura y acabando en la tónica', () => {
+  const m = genMelody({ notas: ['G4', 'E4', 'A4', 'C4'], bars: 2, barBeats: 4, seed: 3, tonic: 'C4' });
+  assert.ok(m.every(t => Number.isFinite(t.midi) && Number.isFinite(t.step)), 'cada nota con su midi (antes se colgaba la lectura cantada)');
+  assert.equal(m[0].name, 'C4');
+  assert.equal(m[m.length - 1].name, 'C4');
+  assert.ok(m.every(t => ['G4', 'E4', 'A4', 'C4'].includes(t.name)), 'solo notas de la unidad');
+});
+
+test('STOP: se sortea primero el tipo de error; los propios de la unidad salen por turnos', () => {
+  const base = scoreTokens('| C5q C5q C5q C5q | C5h C5h | C5q C5q C5q C5q | C5w |');
+  const kinds = ['h-corta', 'q>ee', 'ee>q'];
+  const avoid = new Set();
+  const codes = [0, 1, 2].map(k => { const r = stopRoundOf(base, { kinds, seed: 5 + k * 101, barBeats: 4, avoid, round: k }); avoid.add(r.key); return r.code; });
+  assert.equal(codes[0], 'h-corta');
+  assert.ok(codes.includes('q>ee'));
+});
+
+test('creatividad: reglas nuevas (anacrusa, una figura en cada compás, nota en el primer tiempo, notas obligatorias, reglas externas)', () => {
+  const pick = checkComposition(parseTokens('G4q C5q C5q B4q A4q G4q'), { barBeats: 2, bars: 3, pickup: 1 });
+  assert.equal(pick.pct, 100, JSON.stringify(pick.rules));
+  const each = checkComposition(parseTokens('C5e C5e C5q C5q C5q'), { barBeats: 2, bars: 2, mustFigures: { e: 'en cada compás' } });
+  assert.deepEqual(each.rules.filter(r => !r.ok).map(r => r.id), ['incluye']);
+  const first = checkComposition(parseTokens('Rq C5h C5q C5q C5q'), { barBeats: 3, bars: 2, firstBeatNote: true });
+  assert.deepEqual(first.rules.filter(r => !r.ok).map(r => r.id), ['tiempo1']);
+  const d5 = checkComposition(parseTokens('C4q D5q'), { barBeats: 2, bars: 1, mustFigures: { D5: 1 }, extra: [{ id: 'signos', ok: false }] });
+  assert.deepEqual(d5.rules.filter(r => !r.ok).map(r => r.id), ['signos']);
 });

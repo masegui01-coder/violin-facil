@@ -2,18 +2,18 @@
 // y devuelve { pct, marks?, labels?, mistakes, skills?, note? } para el resultado (screen.js lo registra y lo enseña).
 import { esc } from '../ui.js';
 import { QUIZ_KINDS, playQuestion } from './tasks-quiz.js';
-import { tocarPentagrama, barras, dictadoEscrito, createStaffWriter, tokensToPlay } from './tasks-staff.js';
-import { singTask, lyricsUnder, singResult } from './tasks-voice.js';
+import { tocarPentagrama, barras, dictadoEscrito } from './tasks-staff.js';
+import { singTask, lyricsUnder, singResult, SONG_WORDS } from './tasks-voice.js';
 import { singSong } from './tasks-song.js';
 import { stopGame, tapRhythm } from './tasks-rhythm.js';
 import { agilityTask } from './tasks-agility.js';
 import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, genRhythm, genMelody, gainsFor } from './gen.js';
-import { pctOf, checkComposition, mistakeCodes } from './grade.js';
-import { scoreTokens, barBeatsOf, stepOf, noteText, tokensText } from './notes.js';
+import { pctOf, mistakeCodes } from './grade.js';
+import { creatividad } from './creative.js';
+import { scoreTokens, barBeatsOf, noteText, solfaToName } from './notes.js';
 import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
-import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel, GLYPH } from './kit.js';
-import { playNotes, playEvents, stopSound } from './sound.js';
-import { saveWork, workOf } from './results.js';
+import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel } from './kit.js';
+import { playEvents, stopSound } from './sound.js';
 
 const STAFF_KINDS = { tocarPentagrama, escala: tocarPentagrama, barras };
 const runItem = (host, item, env) => (STAFF_KINDS[item.tipo] || QUIZ_KINDS[item.tipo] || QUIZ_KINDS.elegir)(host, item, env);
@@ -79,16 +79,22 @@ async function entonacion(host, ex, env) {
   const p = ex.params;
   const tokens = scoreTokens(p.partitura);
   // lectura melódica: hay que leer las notas en el pentagrama (sin el nombre escrito debajo ni dicho por la app)
+  // lectura en Fácil: con apoyo (la primera nota y un botón para oír la nota que toca), nunca en eco
   const reading = ex.skills.includes('lectura');
+  // ordenamiento con notas que la unidad aún no lee: de oído, con sus nombres y sin pentagrama
+  const taught = (env.unitNotes || []);
+  const noStaff = !reading && taught.length > 0 && tokens.some(t => !t.rest && !taught.includes(t.name));
   const take = await singTask(host, {
-    tokens, key: p.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: p.compas, bpm: p.tempo || 72, clef: CLEF[p.clave] || 'treble',
-    intro: ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo, hideNames: reading,
+    tokens, key: p.tonalidad, echo: !reading && ex.variant === 'facil', variant: ex.variant, meter: p.compas, bpm: p.tempo || 72, clef: CLEF[p.clave] || 'treble',
+    intro: reading ? (ex.variant === 'facil' ? SUPPORT.lectura : SUPPORT.solo) : ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo,
+    hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null,
   }, env);
   return take && { ...singResult(take), labels: take.names.map(n => noteText(n, env.nom)), range: take.range };
 }
 // Lo que la app hace en cada variante (los apoyos de verdad)
 const SUPPORT = {
   eco: 'Con apoyo: la app canta cada compás y tú lo repites (eco).',
+  lectura: 'Lectura con apoyo: la app da la tonalidad y la primera nota; si dudas, puedes oír la nota que toca (cuenta como «casi»).',
   solo: 'Sin apoyo: la app da el acorde de la tonalidad y la primera nota; después cantas tú solo.',
 };
 async function cancionCantada(host, ex, env) {
@@ -98,7 +104,8 @@ async function cancionCantada(host, ex, env) {
   // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
   const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
-    under: lyricsUnder(tokens, song.letra, env.nom, names), intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    under: lyricsUnder(tokens, song.letra, env.nom, names, SONG_WORDS[song.titulo] || ''), intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    dynamics: Array.isArray(song.matices) ? song.matices : null,
   }, env);
   return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
 }
@@ -194,52 +201,15 @@ async function audicion(host, ex, env) {
   return r && { ...r, pct: pctOf(r.marks) };
 }
 
-// ---------- Creatividad: componer con restricciones y escucharlo ----------
-const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
-async function creatividad(host, ex, env) {
-  const p = ex.params;
-  const rs = p.restricciones || {};
-  const meter = rs.compas || '4/4';
-  const figures = (rs.figuras || ['q', 'h']).map(normFig);
-  const rhythmOnly = !rs.notas;
-  const given = rs.dada ? scoreTokens(rs.dada) : null;
-  const saved = workOf(ex.id);
-  host.innerHTML = `<p>${esc(p.consigna || '')}</p>
-    ${given ? `<p class="dict-staff-label">La llamada de la app</p>${staffHtml(given, { meter, label: given.map(t => tokenLabel(t, env.nom)).join(', ') })}${playButton('lmGivenPlay', 'Escuchar la llamada')}` : ''}
-    <p class="dict-staff-label">Tu composición</p><div class="lm-writer"></div>
-    ${rs.notas ? `<p class="muted small"><span>Notas:</span> <span>${rs.notas.map(n => noteText(n, env.nom)).join(', ')}</span></p>` : ''}
-    ${rs.letra ? '<label class="lm-lyrics"><span>Tu letra</span><input type="text" id="lmLyrics" maxlength="120" autocomplete="off"></label>' : ''}
-    <div class="controls">${playButton('lmMinePlay', 'Escuchar lo que has escrito')}<button type="button" class="btn" data-check>Comprobar y guardar</button></div>
-    <div class="lm-feedback"></div>`;
-  const w = createStaffWriter(host.querySelector('.lm-writer'), { figures, rhythmOnly, max: 64, nom: env.nom, say: env.say, meter });
-  if (saved) env.say('Tienes una composición guardada de otra vez: puedes escribir una nueva');
-  host.querySelector('#lmGivenPlay')?.addEventListener('click', () => { stopSound(); playNotes(tokensToPlay(given), 80); });
-  host.querySelector('#lmMinePlay').addEventListener('click', () => { stopSound(); playNotes(tokensToPlay(w.tokens()), 80, { clap: rhythmOnly }); });
-  await new Promise(r => host.querySelector('[data-check]').addEventListener('click', r, { once: true }));
-  const tokens = w.tokens();
-  const finals = rs.final ? String(rs.final).split('|').map(stepOf) : null;
-  const semis = rs.mustInclude && rs.mustInclude.semitonos ? rs.mustInclude.semitonos.map(x => x.split('-').map(stepOf)) : null;
-  const must = rs.mustInclude ? Object.fromEntries(Object.entries(rs.mustInclude).filter(([k]) => k !== 'semitonos')) : null;
-  const c = checkComposition(tokens, {
-    barBeats: barBeatsOf(meter), bars: rs.compases || 2, figures, notes: rs.notas ? rs.notas.map(stepOf) : null,
-    endSteps: finals, endFigure: rs.finalFigura || null, maxLeap: rs.saltoMax ?? null, mustFigures: must && Object.keys(must).length ? must : null, semitones: semis,
-  });
-  const lyrics = host.querySelector('#lmLyrics')?.value.trim() || '';
-  saveWork(ex.id, `${tokensText(tokens)}${lyrics ? `\n${lyrics}` : ''}`);
-  w.lock();
-  host.querySelector('[data-check]').remove();
-  // las reglas, una a una, con la composición a la vista (y se puede volver a escuchar antes de seguir)
-  host.querySelector('.lm-feedback').innerHTML = `<h2 class="lm-q">Lo que pedía el ejercicio</h2><ul class="lm-rules">${c.rules.map(r => `<li class="${r.ok ? 'ok' : 'bad'}"><span class="dict-sw ${r.ok ? 'ok' : 'bad'}" aria-hidden="true">${GLYPH[r.ok ? 'ok' : 'bad']}</span> <span>${esc(RULE_NAME[r.id])}</span><span class="sr-only">: ${r.ok ? 'cumplida' : 'sin cumplir'}</span></li>`).join('')}</ul>`;
-  await continueButton(host, 'Ver el resultado');
-  // sin nota automática: la app solo comprueba las reglas; la nota la pone el profesor
-  return { pct: c.pct, noGrade: true, rulesOk: c.rules.filter(r => r.ok).length, rulesTotal: c.rules.length, marks: c.rules.map(r => (r.ok ? 'ok' : 'bad')), labels: c.rules.map(r => RULE_NAME[r.id]), mistakes: c.mistakes, note: 'Tu composición queda guardada. Si estás en una clase, envíasela a tu profesor: la escuchará y le pondrá nota.', work: tokensText(tokens), lyrics, meter };
-}
-const RULE_NAME = {
-  longitud: 'Número de compases', compases: 'Compases completos', figuras: 'Figuras permitidas', notas: 'Notas permitidas',
-  final: 'Final', saltos: 'Sin saltos', incluye: 'Figuras obligatorias', semitonos: 'Los semitonos',
-};
-
 // ---------- Repaso por competencias ----------
+const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
+// Tonalidad de la unidad y su tónica entre las notas que se usan (do; la en la menor; si no hay, sol)
+const unitKeyOf = ex => (lmUnit(ex.level, ex.unit) || {}).key || 'Do M';
+function tonicOf(ex, notas) {
+  const minor = /^La m/.test(unitKeyOf(ex));
+  return [minor ? 'A4' : 'C4', minor ? 'A3' : 'C5', 'G4'].find(n => notas.includes(n)) || notas[0];
+}
+
 // Figuras de una nota por pulso o más largas (las melodías generadas no parten pulsos); si la unidad aún no tiene
 // la blanca, solo negras
 function longFigures(figs = []) {
@@ -280,14 +250,17 @@ async function repasoPart(host, part, ex, env) {
       const lect = pp.lectura || {};
       const takes = [];
       if (order) {
-        const t1 = await singTask(host, { tokens: scoreTokens(order.params.partitura), echo: ex.variant === 'facil', variant: ex.variant, bpm: order.params.tempo || 72, meter: order.params.compas, intro: 'Ordenamiento de la unidad.' }, sub);
+        const otoks = scoreTokens(order.params.partitura);
+        const noStaff = otoks.some(t => !t.rest && !(env.unitNotes || []).includes(t.name));
+        const t1 = await singTask(host, { tokens: otoks, key: unitKeyOf(ex), echo: ex.variant === 'facil', variant: ex.variant, bpm: order.params.tempo || 72, meter: order.params.compas, noStaff, intro: noStaff ? 'Ordenamiento de la unidad, de oído: canta los nombres.' : 'Ordenamiento de la unidad.' }, sub);
         if (!t1) return null;
         takes.push(singResult(t1));
         await continueButton(host, 'Ahora, una lectura nueva');
       }
       const meter = (order && order.params.compas) || '4/4';
-      const melody = genMelody({ notas: lect.notas || ['G4', 'E4'], bars: Math.min(lect.compases || 2, 4), barBeats: barBeatsOf(meter), seed, figures: longFigures(lect.figuras) });
-      const t2 = await singTask(host, { tokens: melody, echo: false, variant: ex.variant, bpm: 72, meter, hideNames: true, intro: 'Lectura cantada: lee las notas en el pentagrama.' }, sub);
+      const pool = lect.notas || env.unitNotes || ['G4', 'E4'];
+      const melody = genMelody({ notas: pool, bars: Math.min(lect.compases || 2, 4), barBeats: barBeatsOf(meter), seed, figures: longFigures(lect.figuras), tonic: tonicOf(ex, pool) });
+      const t2 = await singTask(host, { tokens: melody, key: unitKeyOf(ex), echo: false, variant: ex.variant, bpm: 72, meter, hideNames: true, help: ex.variant === 'facil', intro: 'Lectura cantada: lee las notas en el pentagrama.' }, sub);
       if (!t2) return null;
       takes.push(singResult(t2));
       return { pct: Math.round(takes.reduce((s, x) => s + x.pct, 0) / takes.length), mistakes: mistakeCodes(takes.flatMap(x => x.mistakes)) };
@@ -306,9 +279,10 @@ async function repasoPart(host, part, ex, env) {
         if (!r1) return null;
         parts.push(r1);
       }
-      const notas = mel.notas || ['C4', 'D4', 'E4'];
+      // las notas que ya conoce la unidad (y su tónica: la en la unidad en la menor)
+      const notas = mel.notas || env.unitNotes || ['C4', 'D4', 'E4'];
       const bars = Array.isArray(mel.compases) ? mel.compases[0] : mel.bars || 2;
-      const tokens = genMelody({ notas, bars, barBeats: barBeatsOf(mel.meter || meter), seed: seed + 1, figures: longFigures(mel.figuras || figures) });
+      const tokens = genMelody({ notas, bars, barBeats: barBeatsOf(mel.meter || meter), seed: seed + 1, figures: longFigures(mel.figuras || figures), tonic: tonicOf(ex, notas) });
       const r2 = await dictadoEscrito(host, { partitura: scoreText(tokens, barBeatsOf(mel.meter || meter)), compas: mel.meter || meter, tempo: 72, escuchas: 3, tipo: 'melodico', figurasUnidad: figures }, sub);
       if (!r2) return null;
       parts.push(r2);

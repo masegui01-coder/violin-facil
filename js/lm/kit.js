@@ -2,7 +2,7 @@
 // leyenda y fichas de corrección (✓ ≈ ✕, como en Dictados), botones de nombres de nota y utilidades de espera.
 import { esc, icon } from '../ui.js';
 import { rng } from '../generate.js';
-import { noteCell, clefCell, gapCell, endCell } from './staff-lm.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
 import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf } from './notes.js';
 
 export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
@@ -22,18 +22,42 @@ export function tokenLabel(t, nom, { pitch = true } = {}) {
 }
 
 // Pentagrama de una lista de notas: celdas en fila con barras de compás; under: texto bajo cada nota (letra, nombre)
-export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], current = -1, bars = true, label = '' } = {}) {
+// Matices del catálogo ({ compas, signo, hasta }) → texto bajo el primer tiempo de cada compás y calderones
+const DYN_TEXT = { cresc: 'cresc.', dim: 'dim.' };
+function dynamicsByBar(matices = []) {
+  const by = {};
+  matices.forEach(m => { (by[m.compas] ||= []).push(m); });
+  return by;
+}
+
+// Pentagrama de una lista de notas: celdas en fila agrupadas por compases (un compás nunca se parte entre dos
+// líneas), corcheas unidas por su barra, matices y reguladores debajo, calderones y comas de respiración encima.
+// under: texto bajo cada nota (letra, nombre). dynamics: matices del catálogo. pickup: pulsos de la anacrusa.
+export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
-  let sum = 0;
-  const cells = [`<span class="lm-sc">${clefCell(clef, meter)}</span>`];
+  const lay = layoutTokens(tokens, { barBeats, pickup, clef });
+  const dyn = dynamicsByBar(dynamics || []);
+  const groups = [[`<span class="lm-sc">${clefCell(clef, meter)}</span>`]];
+  let firstInBar = true;
   tokens.forEach((t, i) => {
+    const L = lay[i];
+    const barNo = L.bar + 1;
+    const lastOfBar = L.barEnd || i === tokens.length - 1;
+    const signs = firstInBar ? (dyn[barNo] || []).filter(m => m.signo !== 'calderon') : [];
+    const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
     const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
-    cells.push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null })}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}</span>`);
-    sum += t.beats ?? 0;
-    if (barBeats && i < tokens.length - 1 && Math.abs(sum % barBeats) < 1e-6) cells.push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);
+    const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : '';
+    groups[groups.length - 1].push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}</span>`);
+    firstInBar = false;
+    if (L.barEnd) {
+      groups[groups.length - 1].push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);
+      groups.push([]);
+      firstInBar = true;
+    }
   });
-  cells.push(`<span class="lm-sc">${endCell()}</span>`);
-  return `<div class="lm-staff"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${cells.join('')}</div>`;
+  groups[groups.length - 1].push(`<span class="lm-sc">${endCell(repeat)}</span>`);
+  const html = groups.filter(g => g.length).map(g => `<span class="lm-bargroup">${g.join('')}</span>`).join('');
+  return `<div class="lm-staff"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
 }
 
 // Fichas de corrección (una por elemento), con signo además del color
