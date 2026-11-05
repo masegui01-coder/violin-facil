@@ -76,6 +76,7 @@ register('practice', {
     // Guitarra y piano: la afinación la da el instrumento; notas tenidas y afinar en acorde no les sirven
     if (instrumentById(getState().instrument).polyphonic) document.querySelectorAll('#practice [data-melodic]').forEach(el => { el.hidden = true; });
     $('tipsToolText').textContent = TIPS_TOOL_TEXT[instrumentById(getState().instrument).family] || TIPS_TOOL_TEXT.viento;
+    $('dictToolText').textContent = perc ? 'Escucha un ritmo y tócalo de oído, en 10 niveles' : 'Escucha una melodía y tócala de oído, en 10 niveles';
     $('gymToolText').textContent = perc ? 'Pulso, golpes simples y dobles, paradiddle y acentos' : 'Escalas, arpegios y terceras en las 12 tonalidades';
   },
 });

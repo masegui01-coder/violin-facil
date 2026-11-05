@@ -533,10 +533,11 @@ export function onBeat(fn) {
 }
 
 // Clics sueltos (cuenta previa). Devuelve el instante de audio en que acaba la cuenta.
-export function countIn(beats, bpm, sound = true) {
+// accents: qué clics van acentuados (por defecto, el primero; en 6/8, el 1 y el 4)
+export function countIn(beats, bpm, sound = true, accents = [0]) {
   const c = ctx();
   const start = c.currentTime + 0.15;
-  for (let i = 0; i < beats; i++) scheduleClick(start + i * 60 / bpm, i === 0, sound);
+  for (let i = 0; i < beats; i++) scheduleClick(start + i * 60 / bpm, accents.includes(i), sound);
   return start + beats * 60 / bpm;
 }
 

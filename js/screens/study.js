@@ -53,6 +53,7 @@ const TOOL_HELP = [
   ['Gimnasio de técnica', 'Escalas, arpegios y terceras en las 12 tonalidades, siempre a tu mejor tempo. Si lo haces con 2 estrellas, sube 4 pulsos por minuto.'],
   ['Afinar en acorde', 'La app suena un acorde y tú colocas la tercera, la quinta o la sexta en su sitio justo, como en la banda. Sin auriculares, alterna escuchar y tocar.'],
   ['Lectura a primera vista', 'Una partitura nueva cada vez, en tres niveles, y una sola toma: sin escucharla antes ni repetir.'],
+  ['Dictados', 'Escuchas una melodía corta tres veces, con el acorde de tónica y un compás de claqueta antes, y la tocas de oído. La app la corrige nota a nota: verde si está bien, amarillo si te acercas y rojo si falla. En percusión, dictados de ritmo.'],
   ['Modo audición', 'Una obra al azar, una sola toma y sin ayudas en pantalla, como en una prueba real.'],
   ['Percusión: calibrar el micrófono', 'Mide el retraso de tu móvil con unos golpes de prueba, para que la app sepa al milisegundo si te adelantas o te retrasas. Hazlo una vez por móvil.'],
   ['Percusión: gimnasio de rudimentos', 'Pulso estable, golpes simples y dobles, paradiddle, semicorcheas y acentos, con el tempo que sube cuando lo haces bien.'],

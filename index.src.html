@@ -46,6 +46,7 @@
 <link rel="stylesheet" href="css/book.css">
 <link rel="stylesheet" href="css/tips.css">
 <link rel="stylesheet" href="css/pro.css">
+<link rel="stylesheet" href="css/dictation.css">
 <link rel="stylesheet" href="css/a11y.css">
 <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/motion.css">
@@ -160,6 +161,7 @@
         <button class="tool" type="button" id="toolCalibrate" data-family="perc"><span class="tool-ic" data-icon="audition"></span><span><b>Calibrar el micrófono</b><small>Mide el retraso de tu móvil para que los golpes cuadren al milisegundo</small></span></button>
         <button class="tool" type="button" data-go="chord" data-family="pitch" data-melodic><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
         <button class="tool" type="button" id="toolSight"><span class="tool-ic" data-icon="sight"></span><span><b>Lectura a primera vista</b><small>Partituras nuevas cada vez, en tres niveles</small></span></button>
+        <button class="tool" type="button" data-go="dictation"><span class="tool-ic" data-icon="dictation"></span><span><b>Dictados</b><small id="dictToolText">Escucha una melodía y tócala de oído, en 10 niveles</small></span></button>
         <button class="tool" type="button" id="toolRhythmBook" hidden><span class="tool-ic" data-icon="sight"></span><span><b>Libro de lecturas <span class="beta-pill">Beta</span></b><small>Lecturas a primera vista en 10 niveles, hasta prueba de acceso a superior</small></span></button>
         <button class="tool" type="button" id="toolAudition"><span class="tool-ic" data-icon="audition"></span><span><b>Modo audición</b><small>Una obra al azar, una sola toma, sin ayudas</small></span></button>
       </div>
@@ -571,6 +573,12 @@
       <div class="setting"><span>Tempo del metrónomo</span>
         <div class="gym-tempo"><button id="gymSlower" class="icon-btn" type="button" aria-label="Más lento">−</button><b id="gymBpm" class="tempo-bpm" aria-live="polite"></b><button id="gymFaster" class="icon-btn" type="button" aria-label="Más rápido">+</button></div></div>
       <div id="gymList" class="gym-list"></div>
+    </section>
+    <!-- Dictados: escuchar y tocar de oído -->
+    <section id="dictation" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Dictados</h1></div>
+      <p id="dictStatus" class="sr-only" role="status" aria-live="polite"></p>
+      <div id="dictBody" class="dict"></div>
     </section>
   </main>
 </div>

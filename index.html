@@ -26,30 +26,30 @@
 
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
      base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
-<link rel="stylesheet" href="dist/app-ef2e27ace5.css">
-<link rel="modulepreload" href="dist/main-NBTKJHN3.js">
-<link rel="modulepreload" href="dist/chunk-LG6AAELJ.js">
-<link rel="modulepreload" href="dist/chunk-ZHERNXJS.js">
-<link rel="modulepreload" href="dist/chunk-FI7F65DT.js">
-<link rel="modulepreload" href="dist/chunk-YT3FSUYA.js">
-<link rel="modulepreload" href="dist/chunk-M6ROD2VY.js">
+<link rel="stylesheet" href="dist/app-2a7f0606ac.css">
+<link rel="modulepreload" href="dist/main-C43XXJFR.js">
+<link rel="modulepreload" href="dist/chunk-BXVA3BAM.js">
+<link rel="modulepreload" href="dist/chunk-2SWTRCOX.js">
+<link rel="modulepreload" href="dist/chunk-2DXC7ZKT.js">
+<link rel="modulepreload" href="dist/chunk-SOBYW75U.js">
+<link rel="modulepreload" href="dist/chunk-LRITU6TM.js">
 <link rel="modulepreload" href="dist/chunk-SJWVOYGB.js">
-<link rel="modulepreload" href="dist/chunk-KJ5P3KT2.js">
-<link rel="modulepreload" href="dist/chunk-73PL3Z3Y.js">
-<link rel="modulepreload" href="dist/chunk-CWWBLQZK.js">
+<link rel="modulepreload" href="dist/chunk-UEARUTHC.js">
+<link rel="modulepreload" href="dist/chunk-LN4754QL.js">
+<link rel="modulepreload" href="dist/chunk-EZ2LFITE.js">
 <link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
 <link rel="modulepreload" href="dist/chunk-3GV7AFFR.js">
-<link rel="modulepreload" href="dist/chunk-C5PDMLS7.js">
-<link rel="modulepreload" href="dist/chunk-KMA2AZSP.js">
-<link rel="modulepreload" href="dist/chunk-3B2WEYBT.js">
+<link rel="modulepreload" href="dist/chunk-NBVA3ZZZ.js">
+<link rel="modulepreload" href="dist/chunk-O5EEQ2OC.js">
+<link rel="modulepreload" href="dist/chunk-ILW2YQVO.js">
 <link rel="modulepreload" href="dist/chunk-OUHRGTUX.js">
 <link rel="modulepreload" href="dist/chunk-UEVO3H7G.js">
 <link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
-<link rel="modulepreload" href="dist/chunk-77WMWVYQ.js">
-<link rel="modulepreload" href="dist/chunk-HYCFYCNJ.js">
-<link rel="modulepreload" href="dist/chunk-GXQLE3BP.js">
-<link rel="modulepreload" href="dist/chunk-7TMXELJE.js">
-<link rel="modulepreload" href="dist/chunk-4ICQGMOS.js">
+<link rel="modulepreload" href="dist/chunk-BBQTVYHI.js">
+<link rel="modulepreload" href="dist/chunk-4MM6MZCZ.js">
+<link rel="modulepreload" href="dist/chunk-7TMR3LBQ.js">
+<link rel="modulepreload" href="dist/chunk-SIYLPWFO.js">
+<link rel="modulepreload" href="dist/chunk-UHW44CWM.js">
 
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -160,6 +160,7 @@
         <button class="tool" type="button" id="toolCalibrate" data-family="perc"><span class="tool-ic" data-icon="audition"></span><span><b>Calibrar el micrófono</b><small>Mide el retraso de tu móvil para que los golpes cuadren al milisegundo</small></span></button>
         <button class="tool" type="button" data-go="chord" data-family="pitch" data-melodic><span class="tool-ic" data-icon="chord"></span><span><b>Afinar en acorde</b><small>Terceras y quintas como en la banda</small></span></button>
         <button class="tool" type="button" id="toolSight"><span class="tool-ic" data-icon="sight"></span><span><b>Lectura a primera vista</b><small>Partituras nuevas cada vez, en tres niveles</small></span></button>
+        <button class="tool" type="button" data-go="dictation"><span class="tool-ic" data-icon="dictation"></span><span><b>Dictados</b><small id="dictToolText">Escucha una melodía y tócala de oído, en 10 niveles</small></span></button>
         <button class="tool" type="button" id="toolRhythmBook" hidden><span class="tool-ic" data-icon="sight"></span><span><b>Libro de lecturas <span class="beta-pill">Beta</span></b><small>Lecturas a primera vista en 10 niveles, hasta prueba de acceso a superior</small></span></button>
         <button class="tool" type="button" id="toolAudition"><span class="tool-ic" data-icon="audition"></span><span><b>Modo audición</b><small>Una obra al azar, una sola toma, sin ayudas</small></span></button>
       </div>
@@ -572,6 +573,12 @@
         <div class="gym-tempo"><button id="gymSlower" class="icon-btn" type="button" aria-label="Más lento">−</button><b id="gymBpm" class="tempo-bpm" aria-live="polite"></b><button id="gymFaster" class="icon-btn" type="button" aria-label="Más rápido">+</button></div></div>
       <div id="gymList" class="gym-list"></div>
     </section>
+    <!-- Dictados: escuchar y tocar de oído -->
+    <section id="dictation" class="screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Dictados</h1></div>
+      <p id="dictStatus" class="sr-only" role="status" aria-live="polite"></p>
+      <div id="dictBody" class="dict"></div>
+    </section>
   </main>
 </div>
 
@@ -602,7 +609,7 @@
 <div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" async src="dist/main-NBTKJHN3.js"></script>
+<script type="module" async src="dist/main-C43XXJFR.js"></script>
 
 </body>
 </html>

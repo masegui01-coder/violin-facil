@@ -4,8 +4,8 @@ import { parseNote } from './music.js';
 
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-const MAJOR = [0, 2, 4, 5, 7, 9, 11];
-const MINOR = [0, 2, 3, 5, 7, 8, 10];
+export const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+export const MINOR = [0, 2, 3, 5, 7, 8, 10];
 const ACC = { '-1': 'b', 0: '', 1: '#' };
 
 // Tonalidades mayores con su nombre en el formato de la app (como mucho 6 alteraciones)
@@ -19,7 +19,7 @@ export function keyLabel(key) {
 }
 
 // Nombres de las 7 notas de la escala, con la ortografía correcta (una letra por grado)
-function scaleNames(tonic, steps) {
+export function scaleNames(tonic, steps) {
   const l0 = LETTERS.indexOf(tonic[0]);
   const pc0 = LETTER_PC[tonic[0]] + (tonic.includes('#') ? 1 : tonic.includes('b') ? -1 : 0);
   return steps.map((st, i) => {
@@ -44,7 +44,7 @@ function scaleFrom(tonic, steps, octave, degrees) {
 const midiOf = n => parseNote(n).midi;
 
 // Elige la octava de la tónica para que todas las notas quepan; prefiere la más cercana al centro del registro
-function fit(tonic, steps, degrees, inst) {
+export function fit(tonic, steps, degrees, inst) {
   const center = (inst.written[0] + inst.written[1]) / 2 - 4;
   const options = [2, 3, 4, 5, 6].map(o => scaleFrom(tonic, steps, o, degrees))
     .filter(ns => ns.every(n => { const m = midiOf(n); return m >= inst.written[0] && m <= inst.written[1]; }));
@@ -52,7 +52,7 @@ function fit(tonic, steps, degrees, inst) {
   return options.reduce((a, b) => (Math.abs(midiOf(b[0]) + 6 - center) < Math.abs(midiOf(a[0]) + 6 - center) ? b : a));
 }
 
-function bars(tokens, time) {
+export function bars(tokens, time) {
   const out = [];
   let acc = 0;
   let bar = [];
@@ -120,7 +120,7 @@ const LEVELS = {
   2: { keys: 2, rhythms: [[1, 1], [0.5, 0.5, 1], [1.5, 0.5], [2], [1, 0.5, 0.5]], leap: 2, minor: false, time: [4, 3] },
   3: { keys: 4, rhythms: [[0.5, 0.5, 0.5, 0.5], [1.5, 0.5], [0.75, 0.25, 1], [1, 'r1'], [0.5, 0.5, 1], [2]], leap: 4, minor: true, time: [4, 3, 2] },
 };
-const DUR = { 4: 'w', 3: 'h.', 2: 'h', 1.5: 'q.', 1: 'q', 0.75: 'e.', 0.5: 'e', 0.25: 's' };
+export const DUR = { 4: 'w', 3: 'h.', 2: 'h', 1.5: 'q.', 1: 'q', 0.75: 'e.', 0.5: 'e', 0.25: 's' };
 const NEAR_KEYS = { C: ['F', 'G', 'Bb', 'D'], G: ['C', 'D', 'F', 'A'], Bb: ['F', 'Eb', 'C', 'G'], D: ['G', 'A', 'C', 'E'] };
 
 function pickRhythmBar(r, level, time) {

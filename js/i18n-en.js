@@ -1,15 +1,16 @@
 // Traducción al inglés de la interfaz (fase 1). Clave: el texto en español tal cual aparece en pantalla.
 // El contenido de los cursos y libros (teoría, títulos de lecciones) sigue en español por ahora.
 // Los avisos y errores viven en i18n-en-messages.js; la lección, el afinador y Perfil, en i18n-en-practice.js;
-// la banda, en i18n-en-band.js; los cursos y módulos de js/, en i18n-en-course.js; el resto de pantallas, en i18n-en-screens.js.
+// la banda, en i18n-en-band.js; los cursos y módulos de js/, en i18n-en-course.js; los dictados, en i18n-en-dictation.js; el resto de pantallas, en i18n-en-screens.js.
 import { MESSAGES_EXACT, messagePatterns } from './i18n-en-messages.js';
 import { PRACTICE_EXACT, practicePatterns } from './i18n-en-practice.js';
 import { BAND_EXACT, bandPatterns, bandFallbackPatterns } from './i18n-en-band.js';
 import { COURSE_EXACT, coursePatterns } from './i18n-en-course.js';
 import { SCREENS_EXACT, screensPatterns } from './i18n-en-screens.js';
+import { DICTATION_EXACT, dictationPatterns } from './i18n-en-dictation.js';
 
 export const EXACT = {
-  ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
+  ...DICTATION_EXACT, ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
   ...BAND_EXACT, ...COURSE_EXACT, ...SCREENS_EXACT,
   'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
   'Fila de atrás, antes de la lámina 1 (xilófono grande)': 'Back row, before bar 1 (big xylophone)',
@@ -356,6 +357,7 @@ const tr = text => (deep ? deep(text) : text);
 // Frases con números u otras partes que cambian
 export const PATTERNS = [
   // Avisos, errores y pistas de práctica: van delante de los patrones genéricos («… · 3 de 5», glosario)
+  ...dictationPatterns(),
   ...messagePatterns({ tr }),
   ...practicePatterns({ tr, noteEn, notesEn }),
   ...bandPatterns({ tr, noteEn, notesEn }),

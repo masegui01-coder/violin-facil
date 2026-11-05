@@ -40,6 +40,7 @@ lazy('rhythmbook', () => import('./screens/rhythm-book.js'));
 lazy('bookpage', () => import('./screens/book-page.js'));
 lazy('tips', () => import('./screens/tips.js'));
 lazy('pro', () => import('./screens/pro.js'));
+lazy('dictation', () => import('./screens/dictation.js'));
 
 // Momento libre del hilo principal (o un poco después, si el navegador no tiene requestIdleCallback)
 const IDLE_TIMEOUT_MS = 3000;

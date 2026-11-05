@@ -3,7 +3,7 @@ import { $, toast } from './ui.js';
 import { stopMic, resumeMic } from './audio.js';
 
 export const TABS = ['learn', 'songs', 'practice', 'band', 'profile'];
-const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro', 'settings'];
+const SCREENS = [...TABS, 'onboarding', 'theory', 'lesson', 'result', 'tuner', 'metro', 'free', 'longtone', 'tuningmap', 'chord', 'chords', 'gym', 'rhythm', 'account', 'friends', 'groupsong', 'metrics', 'bookpage', 'rhythmbook', 'tips', 'pro', 'settings', 'dictation'];
 const hooks = {};
 let current = null;
 let lastTab = 'learn';
@@ -73,7 +73,7 @@ export function lazy(id, load) {
 lazy('settings', () => import('./screens/settings.js'));
 
 // Pantallas que escuchan: al entrar se reabre el micrófono si ya se había concedido
-const MIC_SCREENS = new Set(['lesson', 'tuner', 'free', 'longtone', 'chord', 'chords', 'rhythm', 'groupsong']);
+const MIC_SCREENS = new Set(['lesson', 'tuner', 'free', 'longtone', 'chord', 'chords', 'rhythm', 'groupsong', 'dictation']);
 
 // Transiciones: View Transitions si el navegador las tiene y no se pide reducir el movimiento.
 // El estado (pantalla actual, salida y micrófono) cambia al momento; solo el cambio visible va en la transición.

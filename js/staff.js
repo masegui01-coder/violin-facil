@@ -66,8 +66,10 @@ function drawPrefix(g, key, time, clef) {
   steps.forEach((s, i) => text(g, 46 + i * 10, y(s) + (n >= 0 ? 5 : 3), n >= 0 ? '♯' : '♭', { class: 'st-acc' }));
   const tx = 54 + steps.length * 10;
   if (time) {
-    text(g, tx, BOTTOM_Y - HALF * 4 - 1, String(time), { class: 'st-time' });
-    text(g, tx, BOTTOM_Y + 1, '4', { class: 'st-time' });
+    // time: pulsos de negra (3 → 3/4) o [numerador, denominador] para compases como el 6/8
+    const [num, den] = Array.isArray(time) ? time : [time, 4];
+    text(g, tx, BOTTOM_Y - HALF * 4 - 1, String(num), { class: 'st-time' });
+    text(g, tx, BOTTOM_Y + 1, String(den), { class: 'st-time' });
   }
   return tx + (time ? 22 : 6);
 }
@@ -83,7 +85,8 @@ function drawRest(g, x, note) {
   }
 }
 
-function drawNote(g, x, note, sig, shownAcc) {
+// stem: plica fijada por el barrado ({ up, tip }); entonces no lleva corchetes
+function drawNote(g, x, note, sig, shownAcc, stem = null) {
   const step = diatonicStep(note);
   const ny = y(step);
   ledgerSteps(step).forEach(s => el('line', { x1: x - 13, x2: x + 13, y1: y(s), y2: y(s), class: 'st-line' }, g));
@@ -104,16 +107,59 @@ function drawNote(g, x, note, sig, shownAcc) {
   for (let d = 0; d < (note.dots || (note.dotted ? 1 : 0)); d++) el('circle', { cx: x + 13 + d * 6, cy: (step - base) % 2 === 0 ? ny - 4 : ny, r: 2.2, class: 'st-fill' }, g);
   if (note.tuplet && note.tupletFirst) text(g, x - 4, BOTTOM_Y - HALF * 12, String(note.tuplet), { class: 'st-tuplet' });
   if (note.dur === 'w') return;
-  const up = step < base + 4; // a partir de la línea central la plica va hacia abajo
-  const sx = up ? x + 7.3 : x - 7.3;
-  const tip = up ? ny - 42 : ny + 42;
+  const up = stem ? stem.up : step < base + 4; // a partir de la línea central la plica va hacia abajo
+  const sx = up ? x + STEM_DX : x - STEM_DX;
+  const tip = stem ? stem.tip : up ? ny - 42 : ny + 42;
   el('line', { x1: sx, x2: sx, y1: ny, y2: tip, class: 'st-stroke', 'stroke-width': 1.7 }, g);
-  const flags = note.dur === 'e' ? 1 : note.dur === 's' ? 2 : note.dur === 't' ? 3 : 0;
+  const flags = stem ? 0 : note.dur === 'e' ? 1 : note.dur === 's' ? 2 : note.dur === 't' ? 3 : 0;
   for (let i = 0; i < flags; i++) {
     const fy = tip + (up ? i * 8 : -i * 8);
     const d = up ? `M${sx} ${fy} q2 10 10 16 q-4 -8 -10 -10` : `M${sx} ${fy} q2 -10 10 -16 q-4 8 -10 10`;
     el('path', { d, class: 'st-fill' }, g);
   }
+}
+
+// ---------- Barrado de corcheas y semicorcheas (opcional: render(…, { beams: pulso en negras })) ----------
+const STEM_DX = 7.3;
+const BEAM_H = 5;
+const BEAM_GAP = 8;
+const BEAM_STEM = 38;
+const STUB = 9;
+const beamCount = n => (n.dur === 's' ? 2 : n.dur === 'e' ? 1 : 0);
+const beamable = n => !n.rest && beamCount(n) > 0 && !n.tuplet && !n.grace;
+
+// Grupos de figuras cortas seguidas dentro de un mismo pulso (o parte de 6/8)
+function beamGroups(notes, unit) {
+  const groups = [];
+  let cur = null;
+  notes.forEach((n, i) => {
+    const slot = Math.floor((n.start + 1e-6) / unit);
+    const inside = n.start + n.beats <= (slot + 1) * unit + 1e-6;
+    if (!beamable(n) || !inside) { cur = null; return; }
+    if (cur && cur.slot === slot && cur.idx[cur.idx.length - 1] === i - 1) cur.idx.push(i);
+    else { cur = { slot, idx: [i] }; groups.push(cur); }
+  });
+  return groups.filter(gr => gr.idx.length > 1).map(gr => {
+    const ys = gr.idx.map(i => y(diatonicStep(notes[i])));
+    const up = gr.idx.reduce((sum, i) => sum + diatonicStep(notes[i]), 0) / gr.idx.length < base + 4;
+    return { idx: gr.idx, up, tip: up ? Math.min(...ys) - BEAM_STEM : Math.max(...ys) + BEAM_STEM };
+  });
+}
+
+function drawBeams(g, group, notes, xOf) {
+  const { idx, up, tip } = group;
+  const sx = i => xOf(notes[i].start) + (up ? STEM_DX : -STEM_DX);
+  const bar = (x1, x2, level) => {
+    const yy = up ? tip + level * BEAM_GAP : tip - level * BEAM_GAP - BEAM_H;
+    el('rect', { x: Math.min(x1, x2) - 0.85, y: yy, width: Math.abs(x2 - x1) + 1.7, height: BEAM_H, class: 'st-fill' }, g);
+  };
+  bar(sx(idx[0]), sx(idx[idx.length - 1]), 0);
+  idx.forEach((i, k) => {
+    if (beamCount(notes[i]) < 2) return;
+    const next = idx[k + 1];
+    if (next !== undefined && beamCount(notes[next]) >= 2) bar(sx(i), sx(next), 1);
+    else if (!(k > 0 && beamCount(notes[idx[k - 1]]) >= 2)) bar(sx(i), sx(i) + (k === idx.length - 1 ? -STUB : STUB), 1);
+  });
 }
 
 let staffCount = 0;
@@ -134,11 +180,13 @@ export function createStaff(svg) {
 
   // mode: learn (nota resaltada), tempo (línea de lectura y duración de cada nota) o review (partitura entera, sin desplazamiento)
   // clef: 'treble', 'bass' o 'perc'; sticking: letras de mano (D/I) para cada nota que suena, en orden
-  function render(score, { key = 'C', time = 4, mode = 'learn', clef = 'treble', sticking = null } = {}) {
+  // minBeats: figura más corta para la escala horizontal (para que dos pentagramas queden alineados pulso a pulso);
+  // con fixedScale, la escala es exactamente esa (una nota suelta más corta no ensancha todo el pentagrama)
+  function render(score, { key = 'C', time = 4, mode = 'learn', clef = 'treble', sticking = null, minBeats: scaleBeats = 1, fixedScale = false, beams = 0 } = {}) {
     svg.replaceChildren();
     notes = score.notes;
     base = BASE[clef] || E4;
-    const minBeats = Math.min(1, ...notes.map(n => n.beats));
+    const minBeats = fixedScale ? Math.min(1, scaleBeats) : Math.min(1, scaleBeats, ...notes.map(n => n.beats));
     beatPx = Math.max(52, 32 / minBeats);
     const fixed = el('g', {}, svg);
     startX = drawPrefix(fixed, key, time, clef);
@@ -162,6 +210,8 @@ export function createStaff(svg) {
     const endX = xOfBeat(score.totalBeats) - 8;
     el('line', { x1: endX, x2: endX, y1: BOTTOM_Y - HALF * 8, y2: BOTTOM_Y, class: 'st-line' }, scroller);
     el('rect', { x: endX + 3, y: BOTTOM_Y - HALF * 8, width: 4, height: HALF * 8, class: 'st-fill' }, scroller);
+    const groups = beams ? beamGroups(notes, beams) : [];
+    const stemOf = new Map(groups.flatMap(gr => gr.idx.map(i => [i, { up: gr.up, tip: gr.tip }])));
     let playIndex = 0;
     let shownClef = clef;
     let shownMeter = null;
@@ -191,7 +241,7 @@ export function createStaff(svg) {
         const tiedIn = i > 0 && notes[i - 1].tie && !notes[i - 1].rest;
         const shown = n.acc === expected || tiedIn ? null : n.acc === 0 ? 'natural' : n.acc > 0 ? 'sharp' : 'flat';
         barMem[id] = n.acc;
-        drawNote(g, xOfBeat(n.start), n, sigHere, shown);
+        drawNote(g, xOfBeat(n.start), n, sigHere, shown, stemOf.get(i) || null);
         // ligadura de prolongación hacia la nota siguiente
         const next = notes[i + 1];
         if (n.tie && next && !next.rest) {
@@ -208,6 +258,9 @@ export function createStaff(svg) {
       return g;
     });
     base = BASE[clef] || E4;
+    // las barras en su propio grupo (color del pentagrama), no con el color de la primera nota
+    const beamLayer = groups.length ? el('g', { class: 'st-beam' }, scroller) : null;
+    groups.forEach(gr => drawBeams(beamLayer, gr, notes, xOfBeat));
     // A tempo la línea de lectura queda fija justo después de la clave y la partitura pasa por debajo:
     // cada nota suena cuando el borde izquierdo de su cabeza toca la línea
     tempoMode = mode === 'tempo';

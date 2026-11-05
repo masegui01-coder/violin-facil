@@ -51,6 +51,7 @@ export const ICONS = {
   chord: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="9" cy="18" rx="3.5" ry="2.6" fill="currentColor"/><ellipse cx="9" cy="12" rx="3.5" ry="2.6" fill="currentColor"/><ellipse cx="9" cy="6" rx="3.5" ry="2.6" fill="currentColor"/><path d="M12.5 6v12" stroke="currentColor" stroke-width="2"/></svg>',
   sight: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
   audition: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z" fill="currentColor"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  dictation: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 3.2-3 4.2-3 7.2a3 3 0 0 1-5.6 1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 10.2a2 2 0 0 1 4 0c0 1.2-1 1.6-1.4 2.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   band: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 20c.8-3 3-5 6-5s5.2 2 6 5M14 15.3c.6-.2 1.3-.3 2-.3 3 0 5.2 2 6 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
 

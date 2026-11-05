@@ -1,0 +1,121 @@
+/* Dictados (Estudio): elegir nivel, escuchar, tocar y la corrección en dos pentagramas. Parte de la hoja de estilos
+   de Band Flow: ver el orden en index.html. Los colores de acierto van siempre con su signo (✓ ≈ ✕), nunca solos. */
+
+#dictation { --dict-ok: var(--ok); --dict-near: var(--warn); --dict-bad: var(--bad); }
+.dict { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dict-key { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+
+/* ---------- Niveles ---------- */
+.dict-levels { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.dict-level {
+  display: grid; grid-template-columns: 2.5rem 1fr; gap: 12px; align-items: center; text-align: left; width: 100%;
+  min-height: 64px; padding: 10px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.dict-level[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.dict-lv-num {
+  width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: var(--surface-2); border: 1.5px solid var(--line);
+}
+.dict-level[aria-pressed="true"] .dict-lv-num { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.dict-lv-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dict-lv-text small { color: var(--muted); line-height: 1.3; }
+.dict-lv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; }
+.dict-lv-meta small { color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (min-width: 720px) { .dict-levels { grid-template-columns: 1fr 1fr; } }
+@media (hover: hover) { .dict-level:hover { background-image: linear-gradient(var(--ctl-hover), var(--ctl-hover)); } }
+
+/* El botón de empezar queda a mano mientras se recorre la lista de niveles */
+@media (max-width: 719px) { #dictGo { position: sticky; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 2; box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 22%, transparent); } }
+@media (min-width: 720px) { #dictGo { align-self: flex-start; width: auto; min-width: 18rem; } }
+
+/* ---------- Escuchar y tocar ---------- */
+.dict-stage {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 16px;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); text-align: center;
+}
+.dict-count { margin: 0; font-family: var(--f-display); font-size: 1.6rem; line-height: 1.2; }
+.dict-phase { margin: 0; font-weight: 700; color: var(--muted); min-height: 1.4em; }
+.dict-ear { display: flex; align-items: center; gap: 10px; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.dict-mic { width: 4.5rem; height: .5rem; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.dict-mic i { display: block; height: 100%; width: 100%; background: var(--ok); transform: scaleX(0); transform-origin: left; transition: transform .06s linear; }
+.dict-dots { display: flex; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.dict-dots li { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); }
+.dict-dots li.on { background: var(--accent); }
+.dict-progress { width: 100%; max-width: 420px; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); }
+.dict-progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+.dict-empty { display: flex; flex-direction: column; gap: 12px; }
+.dict-empty h2 { margin: 0; }
+
+/* ---------- Corrección ---------- */
+.dict-scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(5.5rem, 100%), 1fr)); gap: 8px; border-radius: var(--r); }
+.dict-score { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 8px; border-radius: var(--r); background: var(--surface); border: 1.5px solid var(--line); }
+.dict-score b { font-family: var(--f-display); font-size: 1.8rem; font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; }
+.dict-score span { color: var(--muted); font-weight: 700; font-size: .9rem; text-align: center; }
+.dict-score.main { border-color: var(--accent); background: var(--accent-soft); }
+.dict-stars { display: flex; justify-content: center; font-size: 1.6rem; }
+.dict-stars .stars { font-size: inherit; }
+.dict-record, .dict-next { margin: 0; text-align: center; font-weight: 800; color: var(--ink); }
+.dict-next { color: var(--accent); }
+
+.dict-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; list-style: none; margin: 0; padding: 0; font-size: .9rem; }
+.dict-legend li { display: flex; align-items: center; gap: 6px; }
+.dict-sw {
+  display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 6px; font-weight: 800; font-size: .9rem; line-height: 1;
+  border: 2px solid currentColor; flex: none;
+}
+.dict-sw.ok { color: var(--dict-ok); border-radius: 50%; }
+.dict-sw.near { color: var(--dict-near); border-radius: 4px; transform: rotate(0); }
+.dict-sw.bad { color: var(--dict-bad); border-radius: 2px; }
+
+.dict-staves {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 8px 0;
+  overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; max-width: 100%;
+}
+.dict-staff-label { position: sticky; left: 0; margin: 0; padding: 4px 12px 0; font-weight: 800; font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); width: max-content; }
+.dict-svg { display: block; height: auto; max-width: none; margin: 0 auto; }
+.dict-svg .st-note { cursor: pointer; }
+.dict-svg .st-note.dict-ok { color: var(--dict-ok); opacity: 1; }
+.dict-svg .st-note.dict-near { color: var(--dict-near); opacity: 1; }
+.dict-svg .st-note.dict-bad { color: var(--dict-bad); opacity: 1; }
+.dict-mark { font: 800 15px var(--f-body); fill: currentColor; }
+.dict-svg .st-note.dict-sel { filter: drop-shadow(0 0 3px currentColor); }
+.dict-svg .st-note.dict-sel .dict-mark { font-size: 19px; }
+
+.dict-detail { min-height: 5.5em; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); border: 1.5px solid var(--line); }
+.dict-detail p { margin: 0; }
+.dict-detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 600; }
+.dict-detail dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0 4px; }
+.dict-detail dt { font-size: .8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.dict-detail dd { margin: 0; }
+
+.dict-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dict-chip {
+  min-width: max(48px, 3rem); min-height: max(48px, 3rem); padding: 4px 6px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0; background: var(--surface); color: var(--ink); border: 2px solid var(--line); font-weight: 800; line-height: 1.1;
+}
+.dict-chip > span { font-size: 1.05rem; }
+.dict-chip small { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dict-chip.ok { border-color: var(--dict-ok); background: color-mix(in srgb, var(--dict-ok) 12%, var(--surface)); }
+.dict-chip.ok > span { color: var(--dict-ok); }
+.dict-chip.near { border-color: var(--dict-near); border-style: dashed; background: color-mix(in srgb, var(--dict-near) 14%, var(--surface)); }
+.dict-chip.near > span { color: color-mix(in srgb, var(--dict-near) 70%, var(--ink)); }
+.dict-chip.bad { border-color: var(--dict-bad); border-style: dotted; background: color-mix(in srgb, var(--dict-bad) 12%, var(--surface)); }
+.dict-chip.bad > span { color: var(--dict-bad); }
+.dict-chip[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
+.dict-actions .btn { flex: 1 1 200px; }
+
+/* Foco: anillo que sigue el radio de cada caja (también el foco que pone la app al cambiar de fase) */
+.dict-count, .dict-scores, .dict-staves, .dict-empty h2 { border-radius: 12px; }
+.dict-count:focus, .dict-scores:focus, .dict-empty h2:focus { outline: none; }
+.dict-scores:focus-visible, .dict-staves:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+/* en los títulos que reciben el foco al cambiar de fase, un subrayado discreto en vez de un marco grueso */
+.dict-count:focus-visible, .dict-empty h2:focus-visible { outline: none; text-decoration: underline 3px var(--accent); text-underline-offset: 6px; }
+/* «Recomendado» se ve también sobre la tarjeta elegida (que ya lleva el fondo de acento) */
+.dict-rec { background: var(--surface); color: var(--accent); border: 1.5px solid var(--accent); }
+.dict-svg .st-beam { color: var(--staff); }
+.dict-offbeat { margin: 4px 0 0; font-weight: 600; }
+.dict-warn { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+@media (min-width: 720px) { .dict-actions .btn { flex: 1 1 auto; white-space: nowrap; } }
+
+@media (prefers-reduced-motion: reduce) { .dict-progress i, .dict-mic i { transition: none; } }
+@media (max-width: 380px) { .dict-score { padding: 12px 4px; } .dict-score b { font-size: 1.35rem; } .dict-score span { font-size: .78rem; } }

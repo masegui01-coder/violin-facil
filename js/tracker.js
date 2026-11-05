@@ -6,7 +6,8 @@ const STABLE_MS = 150;
 const SILENCE_MS = 60;
 const DIP = 0.55;
 
-export function createTracker() {
+// Opciones: stableMs (cuánto debe durar estable una nota para darla por buena; más corto para figuras rápidas)
+export function createTracker({ stableMs = STABLE_MS, silenceMs = SILENCE_MS } = {}) {
   let candidate = null;
   let since = 0;
   let last = null;
@@ -18,7 +19,7 @@ export function createTracker() {
   function feed(reading, dt) {
     if (!reading || reading.freq === null) {
       silent += dt;
-      if (silent >= SILENCE_MS) articulated = true;
+      if (silent >= silenceMs) articulated = true;
       candidate = null;
       return null;
     }
@@ -33,7 +34,7 @@ export function createTracker() {
     peak = Math.max(peak * 0.995, reading.level);
     if (midi !== candidate) { candidate = midi; since = 0; return null; }
     since += dt;
-    if (since < STABLE_MS) return null;
+    if (since < stableMs) return null;
     if (midi === last && !articulated) return null;
     last = midi;
     articulated = false;
