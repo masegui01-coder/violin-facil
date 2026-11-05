@@ -18,7 +18,14 @@ export function proAccess({ school = null, purchase = null, now = Date.now() } =
     const until = school.premium.until ? Date.parse(school.premium.until) : null;
     return { active: true, source: PRO_SOURCE.license, until: Number.isFinite(until) ? until : null, requested: false };
   }
-  return { active: false, source: null, until: null, requested: !!(school && school.proRequestedAt) };
+  // Licencia que existió y ya venció: el profesor conserva sus clases en solo lectura (y puede pedir renovarla)
+  const p = school && school.premium;
+  const ended = p && p.until ? Date.parse(p.until) : NaN;
+  const requested = !!(school && school.proRequestedAt);
+  const at = school && school.proRequestedAt;
+  const askedMs = at && typeof at.toMillis === 'function' ? at.toMillis() : Number(at) || 0;
+  if (p && Number.isFinite(ended)) return { active: false, source: null, until: null, requested: askedMs > ended, expired: true, expiredAt: ended };
+  return { active: false, source: null, until: null, requested };
 }
 
 // Escuela en la que el profesor tiene su Aula: la de la pestaña Escuela si es suya, o la que se creó al pedir el acceso

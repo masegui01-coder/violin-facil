@@ -181,3 +181,25 @@ test('temario: catálogo de Lenguaje leído con tolerancia, errores e intentos c
   assert.equal(attemptLabel({ id: 'e1' }, flattenLm(tree)), 'N1 · U1 · Ritmo · Palmas');
   assert.equal(attemptLabel({ id: 'x', t: 'Conoce tu violín' }), 'Conoce tu violín');
 });
+
+test('evaluación 1: licencia caducada, promedio de lo exigible y competencias del trimestre anterior', () => {
+  const now = Date.UTC(2026, 10, 5);
+  const expired = proAccess({ school: { premium: { active: true, until: '2026-08-31' }, proRequestedAt: { toMillis: () => Date.UTC(2026, 9, 1) } }, now });
+  assert.deepEqual([expired.active, expired.expired, expired.requested], [false, true, true]);
+  assert.equal(proAccess({ school: { premium: { active: true, until: '2026-08-31' }, proRequestedAt: { toMillis: () => Date.UTC(2026, 0, 1) } }, now }).requested, false, 'la petición antigua no cuenta como renovación');
+  // Lucía: 92 % en lo exigible y una tarea que vence dentro de 10 días sin empezar → 92 %, no 46 %
+  const tasks = [task({ id: 'a' }), task({ id: 'b', due: addDays(TODAY, 10) })];
+  const [row] = classRows({ students: [{ id: 'l', nickname: 'Lucía' }], tasks, summaries: { l: { tasks: { a: { p: 92, n: 1, d: true } }, days: {} } }, today: TODAY });
+  assert.deepEqual([row.avg, row.pending], [92, 1]);
+  const term = termOf(new Date(2026, 10, 5));
+  assert.equal(termReport({ summary: { tasks: { a: { p: 92, n: 1, d: true } } }, tasks, uid: 'l', term, today: TODAY }).rows.find(r => r.id === 'tareas').pct, 92);
+  // Competencias: al cambiar de trimestre las del anterior se guardan y el informe de ese trimestre las usa
+  let log = addToLog(undefined, { id: 'x', pct: 80, at: NOW, skills: { ritmo: 80 } }, '2026-2027-1');
+  log = addToLog(log, { id: 'y', pct: 40, at: NOW + 1, skills: { ritmo: 40 } }, '2026-2027-2');
+  assert.deepEqual(skillsPct(log, '2026-2027-2'), { ritmo: 40 });
+  const cls = { sid: 'S', cid: 'C', nickname: 'Ana' };
+  const sum = buildSummary({ cls, aula: { log }, practiceLog: {}, streak: 0, exercises: [], now: NOW, termId: '2026-2027-2' });
+  assert.deepEqual([sum.prevTerm, sum.prevSkills], ['2026-2027-1', { ritmo: 80 }]);
+  const rep = termReport({ summary: sum, tasks: [], uid: 'x', term: { ...term }, today: TODAY });
+  assert.equal(rep.rows[0].pct, 80, 'el informe del 1.er trimestre usa las competencias guardadas');
+});

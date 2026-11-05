@@ -38,15 +38,24 @@ export function addToLog(log, r, termId) {
   const results = Object.fromEntries(Object.entries(allResults).sort((a, b) => b[1].l - a[1].l).slice(0, MAX_IDS));
   const counted = (r.mistakes || []).reduce((m, code) => ({ ...m, [code]: (m[code] || 0) + 1 }), { ...(prev.m || {}) });
   const mistakes = Object.fromEntries(Object.entries(counted).sort((a, b) => b[1] - a[1]).slice(0, MAX_CODES));
-  const base = prev.s && prev.s.term === termId ? prev.s.sums : {};
+  const sameTerm = prev.s && prev.s.term === termId;
+  const base = sameTerm ? prev.s.sums : {};
+  // Trimestre nuevo: las competencias del anterior se guardan aparte (el informe del trimestre pasado las usa)
+  const ps = !prev.s || sameTerm ? prev.ps : prev.s;
   const sums = Object.entries(r.skills || {}).reduce((m, [k, v]) => ({ ...m, [k]: [((m[k] || [0, 0])[0]) + v, ((m[k] || [0, 0])[1]) + 1] }), { ...base });
   const recent = [...(prev.recent || []), { id: r.id, p: r.pct, at: r.at, ...(r.title ? { t: r.title } : {}) }].slice(-MAX_RECENT);
-  return { r: results, m: mistakes, s: { term: termId, sums }, recent };
+  return { r: results, m: mistakes, s: { term: termId, sums }, ...(ps ? { ps } : {}), recent };
 }
 
+const averages = sums => Object.fromEntries(Object.entries(sums || {}).filter(([k, [, n]]) => SKILLS.includes(k) && n > 0).map(([k, [sum, n]]) => [k, Math.round(sum / n)]));
 export function skillsPct(log, termId) {
-  if (!log || !log.s || log.s.term !== termId) return {};
-  return Object.fromEntries(Object.entries(log.s.sums).filter(([k, [, n]]) => SKILLS.includes(k) && n > 0).map(([k, [sum, n]]) => [k, Math.round(sum / n)]));
+  if (log && log.s && log.s.term === termId) return averages(log.s.sums);
+  return {};
+}
+export function prevSkills(log, termId) {
+  // El trimestre anterior más reciente: el actual del registro si ya no es este, o el que se guardó aparte
+  const ps = log ? [log.s, log.ps].find(x => x && x.term !== termId) : null;
+  return ps ? { term: ps.term, skills: averages(ps.sums) } : null;
 }
 
 // % de cada unidad de Lenguaje con algún intento («l1u3»). Por sección cuenta la mejor variante (Fácil o Medio)
@@ -90,17 +99,20 @@ export function buildSummary({ cls, aula, practiceLog, streak, exercises, now = 
   const today = dayKey(now);
   const from = addDays(today, -(SUMMARY_DAYS - 1));
   const days = Object.fromEntries(Object.entries(practiceLog || {})
-    .filter(([d, m]) => d >= from && d <= today && m > 0).map(([d, m]) => [d, Math.round(m * 10) / 10]));
+    .filter(([d, m]) => d >= from && d <= today && m >= 0.5).map(([d, m]) => [d, Math.min(1440, Math.round(m))]));
   const log = aula.log || {};
   const tasks = (((aula.tasks || {})[classKey(cls)]) || []).slice(0, MAX_TASKS);
   const entries = Object.fromEntries(tasks.map(t => [t.id, (aula.prog || {})[progKey(cls, t.id)]]).filter(([, e]) => e).map(([id, e]) => [id, publicEntry(e)]));
   const units = Object.fromEntries(Object.entries(unitPcts(exercises, log)).slice(0, 64));
+  const prev = prevSkills(log, termId);
   return {
+    ...(prev ? { prevTerm: prev.term, prevSkills: prev.skills } : {}),
     nickname: String(cls.nickname || '').slice(0, 30), instrument: String(cls.instrument || '').slice(0, 24),
     at: now, term: termId, days, streak: Math.max(0, Math.min(5000, Math.round(streak || 0))),
     skills: skillsPct(log, termId),
     mistakes: Object.fromEntries(Object.entries(log.m || {}).slice(0, PUBLISHED_CODES)),
     units, tasks: entries,
-    recent: (log.recent || []).slice(-PUBLISHED_RECENT).map(x => ({ id: x.id, p: x.p, at: x.at, ...(x.t ? { t: x.t } : {}) })),
+    // Sin títulos: el profesor los saca del temario (aula-temario.js attemptLabel); así todo se puede validar en las reglas
+    recent: (log.recent || []).slice(-PUBLISHED_RECENT).map(x => ({ id: x.id, p: x.p, at: x.at })),
   };
 }

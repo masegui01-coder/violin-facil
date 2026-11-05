@@ -46,15 +46,18 @@ export function termReport({ summary, tasks, uid, term, today }) {
   const until = today < term.end ? today : term.end;
   const weeks = Math.max(1, Math.ceil((new Date(until + 'T12:00') - new Date(term.start + 'T12:00') + 1) / WEEK_MS));
   const consistency = Math.min(100, Math.round(days.length / (weeks * DAYS_PER_WEEK_GOAL) * 100));
-  const sameTerm = sum.term === term.id;
+  // Competencias del trimestre pedido: las del curso o, si es el anterior, las que el alumno guardó de él (prevSkills)
+  const source = sum.term === term.id ? sum.skills : sum.prevTerm === term.id ? sum.prevSkills : null;
   const skills = COMPETENCIES.map(([id, label]) => {
-    const pct = sameTerm && sum.skills && Number.isFinite(sum.skills[id]) ? Math.round(sum.skills[id]) : null;
+    const pct = source && Number.isFinite(source[id]) ? Math.round(source[id]) : null;
     return { id, label, pct, grade: grade10(pct) };
   });
   const termTasks = tasks.filter(t => assignedTo(t, uid) && (t.createdAt || 0) >= Date.parse(term.start + 'T00:00') && (t.createdAt || 0) <= Date.parse(term.end + 'T23:59'));
   const entries = termTasks.map(t => ({ task: t, entry: (sum.tasks || {})[t.id] || null }));
   const done = entries.filter(e => e.entry && e.entry.d).length;
-  const tasksPct = entries.length ? Math.round(entries.reduce((s, e) => s + ((e.entry && e.entry.p) || 0), 0) / entries.length) : null;
+  // Nota de tareas: solo lo exigible (empezado, hecho, agotado o vencido); lo que aún no vence y no se ha empezado no baja la nota
+  const due = entries.filter(e => taskStatus(e.task, e.entry, today) !== 'todo');
+  const tasksPct = due.length ? Math.round(due.reduce((s, e) => s + ((e.entry && e.entry.p) || 0), 0) / due.length) : null;
   const rows = [
     ...skills,
     { id: 'tareas', label: 'Tareas', pct: tasksPct, grade: grade10(tasksPct) },

@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { launch, MOBILE, DESKTOP, sleep, tap, waitVisible } from './helpers.mjs';
 import { createStore, installFakeFirebase } from './fake-firebase.mjs';
+import { decodeSummary, WIRE } from '../../js/aula-wire.js';
 
 const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
@@ -111,8 +112,12 @@ test('profesor crea clase y tarea; el alumno la ve y la hace; el profesor ve su 
   await finishTheory(sp);
   const summaryPath = taskPath.replace(/tasks\/.*/, `summaries/${STUDENT.uid}`);
   const taskId = taskPath.split('/').pop();
-  for (let i = 0; i < 40 && !(store.docs.get(summaryPath)?.tasks?.[taskId]); i++) await sleep(250);
-  const summary = store.docs.get(summaryPath);
+  const published = () => decodeSummary(store.docs.get(summaryPath));
+  for (let i = 0; i < 40 && !(published()?.tasks?.[taskId]); i++) await sleep(250);
+  const raw = store.docs.get(summaryPath);
+  // lo publicado cumple las expresiones de las reglas (validAulaSummary)
+  ['days', 'tasks', 'units', 'mistakes', 'recent'].forEach(f => assert.match(raw[f], new RegExp(`^(?:${WIRE[f]})$`), f));
+  const summary = published();
   assert.ok(summary, 'el alumno publica su resumen en la clase');
   assert.equal(summary.nickname, 'Lucía');
   assert.ok(summary.tasks[taskId].n >= 1, 'el intento cuenta para la tarea');
@@ -218,6 +223,29 @@ test('en inglés: el Aula del profesor y la clase sin español a la vista', asyn
   await sleep(300);
   const form = await text(page, '#aulaTaskForm');
   assert.doesNotMatch(form, SPANISH, form.match(SPANISH)?.[0]);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('licencia caducada: aviso con fecha, clases en solo lectura y renovación', async () => {
+  const store = createStore({
+    'schools/S1': { ...SCHOOL, premium: { active: true, until: '2020-08-31' } },
+    'schools/S1/classes/C1': { name: 'Grupo B', code: 'QWERTY', teacherName: 'Marta', students: 0, createdAt: { __ts: Date.now() } },
+  });
+  const { page, errors, close } = await openAs(store, TEACHER, { viewport: DESKTOP, seed: TEACHER_STATE });
+  await page.waitForSelector('.aula-expired', { timeout: 10000 });
+  const home = await text(page, '#proView');
+  assert.match(home, /venció el/);
+  assert.doesNotMatch(home, /Para tus alumnos es gratis/, 'no se le vuelve a vender el Aula como si nunca la hubiera tenido');
+  assert.equal(await page.$('#aulaNewClass'), null);
+  await page.$eval('#aulaRenew', b => b.click());
+  for (let i = 0; i < 20 && !store.docs.get('schools/S1').proRequestedAt; i++) await sleep(150);
+  assert.ok(store.docs.get('schools/S1').proRequestedAt, 'pide la renovación');
+  await page.waitForSelector('[data-open-class]');
+  await page.$eval('[data-open-class]', b => b.click());
+  await page.waitForSelector('#aulaBody .aula-expired', { timeout: 10000 });
+  assert.equal(await page.$('#aulaNewTask'), null, 'sin tareas nuevas');
+  assert.deepEqual(await axeViolations(page), []);
   assert.deepEqual(errors, []);
   await close();
 });

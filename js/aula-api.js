@@ -8,8 +8,11 @@
 // schools/{sid}/classes/{cid}/works/{uid_ejercicio} composición del curso de Lenguaje (creatividad): ese alumno y el profesor
 import { getCloud, ensureSignedIn, randomCode } from './cloud.js';
 import { createSchool } from './school-api.js';
+import { encodeSummary, decodeSummary } from './aula-wire.js';
 
 const MAX_CODE_TRIES = 5;
+// Todo lo que cuelga de una clase (también las composiciones y los comentarios: son datos de menores)
+export const CLASS_SUBS = ['students', 'tasks', 'summaries', 'feedback', 'works'];
 const refs = async () => { const c = await getCloud(); return { db: c.db, fs: c.fs }; };
 const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
 const classRef = (fs, db, sid, cid) => fs.doc(db, 'schools', sid, 'classes', cid);
@@ -69,7 +72,8 @@ export async function loadClass(sid, cid) {
   return {
     cls: { id: cls.id, ...cls.data() }, students: rows(students),
     tasks: rows(tasks).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)),
-    summaries: Object.fromEntries(rows(summaries).map(s => [s.id, s])),
+    // Lo que publica el alumno se sanea al leerlo: todo % y todo número salen como número (aula-wire.js)
+    summaries: Object.fromEntries(rows(summaries).map(s => [s.id, decodeSummary(s)])),
     feedback: Object.fromEntries(rows(feedback).map(f => [f.id, f])),
     works: rows(works).sort((a, b) => (b.at || 0) - (a.at || 0)),
   };
@@ -83,7 +87,7 @@ export async function renameClass(sid, cid, name) {
 // Borra la clase entera (tareas, resúmenes, comentarios, fichas y su código) en una escritura
 export async function deleteClass(sid, cls) {
   const { db, fs } = await refs();
-  const lists = await Promise.all(['students', 'tasks', 'summaries', 'feedback'].map(n => fs.getDocs(sub(fs, db, sid, cls.id, n))));
+  const lists = await Promise.all(CLASS_SUBS.map(n => fs.getDocs(sub(fs, db, sid, cls.id, n))));
   const batch = fs.writeBatch(db);
   lists.forEach(snap => snap.docs.forEach(d => batch.delete(d.ref)));
   if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
@@ -112,13 +116,39 @@ export async function setFeedback(sid, cid, taskId, uid, comment) {
   return doc;
 }
 
-// Dar de baja: ficha, resumen y una plaza menos (indicando quién sale), juntos como piden las reglas
+// Dar de baja: ficha, resumen, composiciones y comentarios del alumno con una plaza menos (indicando quién sale),
+// todo en una escritura como piden las reglas; después se quita «leftUid» para que la clase no guarde su identificador
 export async function removeStudent(sid, cid, uid) {
   const { db, fs } = await refs();
+  const own = await Promise.all(['works', 'feedback'].map(n => fs.getDocs(fs.query(sub(fs, db, sid, cid, n), fs.where('uid', '==', uid)))));
   const batch = fs.writeBatch(db);
   batch.delete(fs.doc(db, 'schools', sid, 'classes', cid, 'students', uid));
   batch.delete(fs.doc(db, 'schools', sid, 'classes', cid, 'summaries', uid));
+  own.forEach(snap => snap.docs.forEach(d => batch.delete(d.ref)));
   batch.update(classRef(fs, db, sid, cid), { students: fs.increment(-1), leftUid: uid });
+  await batch.commit();
+  await fs.updateDoc(classRef(fs, db, sid, cid), { leftUid: fs.deleteField() });
+}
+
+// Código de la clase: uno nuevo (el anterior deja de servir) o ninguno (inscripciones cerradas)
+export async function changeCode(sid, cls, teacherName) {
+  const { db, fs } = await refs();
+  for (let i = 0; i < MAX_CODE_TRIES; i++) {
+    const code = randomCode();
+    const batch = fs.writeBatch(db);
+    batch.update(classRef(fs, db, sid, cls.id), { code, closed: false });
+    batch.set(fs.doc(db, 'classCodes', code), { schoolId: sid, classId: cls.id, className: cls.name, teacherName });
+    if (cls.code && !cls.closed) batch.delete(fs.doc(db, 'classCodes', cls.code));
+    try { await batch.commit(); return code; } catch (e) { if (!isPermission(e)) throw e; }
+  }
+  throw new Error('No he podido cambiar el código. Inténtalo otra vez.');
+}
+
+export async function closeJoining(sid, cls) {
+  const { db, fs } = await refs();
+  const batch = fs.writeBatch(db);
+  batch.update(classRef(fs, db, sid, cls.id), { closed: true });
+  if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
   await batch.commit();
 }
 
@@ -147,6 +177,9 @@ export async function leaveClass(c) {
   const batch = fs.writeBatch(db);
   batch.delete(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'students', user.uid));
   batch.delete(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', user.uid));
+  // sus composiciones y los comentarios a sus entregas se van con él (las reglas lo dejan al salir de la clase)
+  const own = await Promise.all(['works', 'feedback'].map(n => fs.getDocs(fs.query(sub(fs, db, c.sid, c.cid, n), fs.where('uid', '==', user.uid))).catch(() => ({ docs: [] }))));
+  own.forEach(snap => snap.docs.forEach(d => batch.delete(d.ref)));
   // si el profesor ya borró la clase no hay contador que restar
   if ((await fs.getDoc(ref).catch(() => null))?.exists()) batch.update(ref, { students: fs.increment(-1) });
   await batch.commit();
@@ -192,5 +225,5 @@ export async function sendWork(c, work) {
 export async function publishSummary(c, summary) {
   const user = await ensureSignedIn();
   const { db, fs } = await refs();
-  await fs.setDoc(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', user.uid), summary);
+  await fs.setDoc(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', user.uid), encodeSummary(summary));
 }

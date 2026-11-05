@@ -161,3 +161,29 @@ thead .aula-name-col { background: var(--surface-2); z-index: 2; }
 }
 .aula-entry > span:last-child { align-items: flex-end; text-align: right; }
 .aula-fb { color: var(--ink) !important; }
+
+/* ---------- Evaluación 1: columnas nuevas, salto de la tabla, licencia caducada y texto grande ---------- */
+.aula-last { padding: 6px 8px !important; white-space: nowrap; color: var(--muted); font-size: .84rem; }
+.aula-grade b { display: block; padding: 12px 8px; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.aula-cell small { display: block; font-size: .72rem; color: var(--muted); padding: 0 4px 6px; }
+.aula-table [tabindex="0"]:focus-visible, .aula-table td:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.aula-skip { justify-self: start; }
+.aula-skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.aula-expired { gap: 6px; border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); }
+.aula-sort { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aula-toolbar > .btn { flex: 1 1 auto; min-width: 0; }
+.aula .tile, .aula .tile-label { min-width: 0; overflow-wrap: anywhere; }
+.aula h3 { margin: 4px 0 0; }
+/* Texto grande (letra del sistema al 150-200 %): la consulta va en «em» del propio contenedor, así crece con la letra */
+.aula { container: aula / inline-size; }
+.aula-toolbar .btn, .aula-exports .btn, .aula-task-actions .btn { white-space: normal; text-align: center; }
+@container aula (max-width: 20em) {
+  .aula-tiles { grid-template-columns: minmax(0, 1fr); }
+  .aula-toolbar > .btn, .aula-exports > .btn { flex: 1 1 100%; }
+  .aula-view-opts .seg { min-width: 0; flex-basis: 100%; max-width: none; }
+  .aula-name-col { min-width: 7em; }
+}
+.aula > * { min-width: 0; }
+.aula-filters { flex-wrap: wrap; overflow: visible; }
+.aula-cell small { color: inherit; }
+.pill.bad { color: color-mix(in srgb, var(--bad) 72%, var(--ink)); }

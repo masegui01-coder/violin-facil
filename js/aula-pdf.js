@@ -11,7 +11,7 @@ const LEFT = 18;
 const LINE = 6.5;
 const MAX_TASKS = 14;
 const WRAP = 95;
-const STATUS = { done: 'Hecha', out: 'Sin intentos', late: 'Vencida', progress: 'Empezada', todo: 'Sin empezar' };
+const STATUS = { done: 'Hecha', out: 'Intentos agotados', late: 'Vencida', progress: 'Empezada', todo: 'Sin empezar' };
 
 function wrap(text, width = WRAP) {
   return String(text).split(/\n/).flatMap(par => par.split(' ').reduce((lines, word) => {
@@ -60,7 +60,7 @@ function studentPage(doc, { cls, row, tasks, term, today, notes, lm }) {
     doc.text(t('Observaciones del profesor'), LEFT, y, { size: 12, bold: true });
     wrap(notes).slice(0, 8).forEach(line => doc.text(line, LEFT, y += 5.5, { size: 10 }));
   }
-  wrap(t(`Baremo: nota = % ÷ 10, redondeado (5 = suficiente). Constancia: ${DAYS_PER_WEEK_GOAL} días de práctica por semana = 100 %. Las competencias salen de los ejercicios de Lenguaje Musical del trimestre.`), 120)
+  wrap(t(`Baremo: nota = % ÷ 10, redondeado (5 = suficiente). Constancia: ${DAYS_PER_WEEK_GOAL} días de práctica por semana = 100 %. Las competencias salen de los ejercicios de Lenguaje Musical del trimestre. Tareas: solo cuenta lo exigible. Datos registrados por la app del alumno.`), 120)
     .forEach((line, i) => doc.text(line, LEFT, 274 + i * 4, { size: 7.5, gray: 110 }));
 }
 

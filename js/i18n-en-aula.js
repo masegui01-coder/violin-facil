@@ -90,6 +90,23 @@ export const AULA_EXACT = {
   'Elige qué hay que hacer en el temario.': 'Pick what to do from the syllabus.', 'Elige el nivel y la unidad de Lenguaje Musical.': 'Pick the Music Theory level and unit.',
   'Elige la sección de la unidad.': 'Pick the section of the unit.', 'Marca al menos un ejercicio.': 'Tick at least one exercise.', 'Elige la lección, la página o el nivel.': 'Pick the lesson, the page or the level.',
   'Importa la partitura MusicXML.': 'Import the MusicXML score.', 'La fecha límite ya ha pasado.': 'The due date has already passed.', 'Marca al menos un alumno.': 'Tick at least one student.',
+  // ---------- Evaluación 1 ----------
+  'Intentos agotados': 'No attempts left', '¿También eres alumno? Unirme a una clase': 'Are you a student too? Join a class',
+  'Tu nombre de pila o un apodo': 'Your first name or a nickname',
+  'Tu profesor te verá con este nombre: basta con tu nombre de pila o un apodo, sin apellidos.': 'Your teacher will see you with this name: your first name or a nickname is enough, no surname.',
+  'Licencia caducada': 'Licence expired', 'Inscripciones cerradas': 'Joining closed', 'Renovación pedida': 'Renewal requested', 'Pedir la renovación': 'Request renewal',
+  'Tus clases y tus alumnos siguen aquí en solo lectura: hasta renovarla no puedes crear clases, tareas ni comentarios.': "Your classes and students are still here, read-only: until you renew it you can't create classes, tasks or comments.",
+  'Solo lectura': 'Read-only', 'Tu licencia del Aula Pro ha caducado: puedes ver la clase, exportarla y borrar datos, pero no poner tareas ni comentarios.': 'Your Classroom Pro licence has expired: you can view the class, export it and delete data, but not set tasks or comments.',
+  'Clase · inscripciones cerradas': 'Class · joining closed', 'Código de la clase': 'Class code',
+  'Las inscripciones están cerradas: nadie puede entrar. Crea un código nuevo para abrirlas.': 'Joining is closed: nobody can join. Create a new code to open it.',
+  'Cambia el código si se ha compartido de más o si no quieres que vuelva a entrar alguien a quien diste de baja. Cerrar las inscripciones invalida el código.': "Change the code if it has been shared too widely or if you don't want someone you removed to join again. Closing joining invalidates the code.",
+  'Abrir con un código nuevo': 'Open with a new code', 'Cambiar el código': 'Change the code', 'Cerrar inscripciones': 'Close joining', 'Código nuevo listo': 'New code ready',
+  'Borrar la clase quita sus tareas, las entregas, los comentarios, las composiciones y las fichas de sus alumnos. No se puede deshacer.': "Deleting the class removes its tasks, submissions, comments, compositions and students' files. This cannot be undone.",
+  'No he podido cambiar el código. Inténtalo otra vez.': "I couldn't change the code. Try again.",
+  'Saltar la tabla': 'Skip the table', 'Muévete por la tabla con las flechas. Intro abre el alumno o la entrega.': 'Move around the table with the arrow keys. Enter opens the student or the submission.',
+  'Última actividad': 'Last activity', 'Nota del trimestre, de 1 a 10': 'Term mark, 1 to 10', 'Nota del trimestre': 'Term mark',
+  'El promedio solo cuenta lo exigible: no baja por tareas sin empezar que aún no han vencido. Los datos los registra la app de cada alumno al practicar.': "The average only counts what is due: tasks not started that aren't due yet don't lower it. The data is recorded by each student's app while practising.",
+  '1 vencida': '1 overdue', 'Los minutos, los % y los intentos los registra la app del alumno mientras practica.': "Minutes, % and attempts are recorded by the student's app while practising.",
   // ---------- PDF ----------
   'Minutos de práctica': 'Practice minutes', 'Días de práctica': 'Practice days', 'Nota media': 'Average mark', 'Apartado': 'Area', 'Nota': 'Mark', 'Calificación': 'Grade',
   'Tareas': 'Tasks', 'Constancia': 'Consistency', 'Tareas del trimestre': "This term's tasks", 'Sin tareas este trimestre.': 'No tasks this term.',
@@ -104,6 +121,12 @@ const plural = (n, one, many) => `${n} ${Number(n) === 1 ? one : many}`;
 
 export function aulaPatterns({ tr }) {
   return [
+    [/^Tu licencia del Aula Pro venció el (.+)$/, (m, d) => `Your Classroom Pro licence expired on ${d}`],
+    [/^y (\d+) más$/, (m, n) => `and ${n} more`],
+    [/^(\d+) sin vencer$/, (m, n) => `${n} not yet due`],
+    [/^trimestre anterior: (\d+) %$/, (m, n) => `previous term: ${n} %`],
+    [/^Libro (\d+)$/, (m, n) => `Book ${n}`],
+    [/^Unidad (\d+)$/, (m, n) => `Unit ${n}`],
     [/^Venció el (.+)$/, (m, d) => `Was due ${d}`],
     [/^Vence el (.+)$/, (m, d) => `Due ${d}`],
     [/^Mínimo (\d+) %$/, (m, n) => `Pass mark ${n} %`],
@@ -141,7 +164,7 @@ export function aulaPatterns({ tr }) {
     // Opciones numeradas del temario («3. Dedos en La»): el número y el título traducido si se conoce
     [/^(\d+)\. (.+)$/, (m, n, x) => `${n}. ${tr(x)}`],
     [/^(.+): (?:(\d+ %), )?(Hecha|Sin intentos|Vencida|Empezada|Sin empezar)$/, (m, who, p, st) => `${who}: ${p ? p + ', ' : ''}${STATUS[st]}`],
-    [/^Baremo: nota = % ÷ 10, redondeado \(5 = suficiente\)\. Constancia: (\d+) días de práctica por semana = 100 %\. Las competencias salen de los ejercicios de Lenguaje Musical del trimestre\.$/,
-      (m, n) => `Scale: mark = % ÷ 10, rounded (5 = pass). Consistency: ${n} practice days a week = 100 %. Skills come from this term's Music Theory exercises.`],
+    [/^Baremo: nota = % ÷ 10, redondeado \(5 = suficiente\)\. Constancia: (\d+) días de práctica por semana = 100 %\. Las competencias salen de los ejercicios de Lenguaje Musical del trimestre\. Tareas: solo cuenta lo exigible\. Datos registrados por la app del alumno\.$/,
+      (m, n) => `Scale: mark = % ÷ 10, rounded (5 = pass). Consistency: ${n} practice days a week = 100 %. Skills come from this term's Music Theory exercises. Tasks: only what is due counts. Data recorded by the student's app.`],
   ];
 }
