@@ -6,11 +6,12 @@ import { cloudErrorText } from '../cloud.js';
 import { register, back, go } from '../router.js';
 import { getState } from '../store.js';
 import * as audio from '../audio.js';
-import { lmExercise, lmUnit, siblingId, SECTION_NAME, VARIANT_NAME, SKILL_NAME, mistakeText } from './catalog.js';
+import { lmExercise, lmUnit, lmSong, lmQuestion, siblingId, SECTION_NAME, VARIANT_NAME, SKILL_NAME, mistakeText } from './catalog.js';
 import { RUNNERS } from './runners.js';
 import { recordActive, openLmExercise } from './launcher.js';
 import { gradeTen, starsFor } from './grade.js';
 import { legendHtml, chipsHtml, seedOf } from './kit.js';
+import { noteText, letterText } from './notes.js';
 import { stopSound } from './sound.js';
 
 const say = announcer('lmStatus', 600);
@@ -27,10 +28,25 @@ function nextExercise(ex) {
   return same[at + 1] || null;
 }
 
-function mistakesHtml(codes) {
-  const known = [...new Set(codes.map(mistakeText).filter(Boolean))].slice(0, 5).map(text => ({ text }));
-  if (!known.length) return '';
-  return `<div class="lm-mistakes"><h3>Para repasar</h3><ul>${known.map(k => `<li>${esc(k.text)}</li>`).join('')}</ul></div>`;
+// «Para repasar»: cada error en palabras. Una pregunta fallada enseña su enunciado y el concepto (why); una nota
+// confundida, las dos notas en la notación del alumno (Do-Re-Mi o C-D-E)
+const NOTE_RE = /^([A-G][#b]?)(\d)?$/;
+const noteName = (n, nom) => { const m = NOTE_RE.exec(n); return !m ? n : m[2] ? noteText(n, nom) : letterText(m[1][0], nom) + (m[1][1] ? m[1].slice(1).replace('#', '♯').replace('b', '♭') : ''); };
+function mistakeItem(code, ex, nom) {
+  const q = lmQuestion(ex.level, code);
+  if (q) return `<li><b>${esc(q.q)}</b>${q.why ? ` <span>${esc(q.why)}</span>` : ''}</li>`;
+  const pair = /^([A-G][#b]?\d)>([A-G][#b]?\d?)$/.exec(code);
+  if (pair) return `<li><span>Sonaba</span> <b>${esc(noteName(pair[1], nom))}</b><span>, y fue</span> <b>${esc(noteName(pair[2], nom))}</b></li>`;
+  const silent = /^([A-G][#b]?\d)-(sil|t)$/.exec(code);
+  if (silent) return `<li><b>${esc(noteName(silent[1], nom))}</b>: <span>${silent[2] === 'sil' ? 'no se oyó la nota' : 'se acabó el tiempo'}</span></li>`;
+  const text = mistakeText(code);
+  return text ? `<li>${esc(text)}</li>` : '';
+}
+function mistakesHtml(codes, ex) {
+  const nom = getState().nom;
+  const items = [...new Set(codes)].map(c => mistakeItem(c, ex, nom)).filter(Boolean).slice(0, 5);
+  if (!items.length) return '';
+  return `<div class="lm-mistakes"><h2>Para repasar</h2><ul>${items.join('')}</ul></div>`;
 }
 
 const myClasses = () => (getState().aula && getState().aula.classes) || [];
@@ -53,16 +69,21 @@ function renderResult(ex, out, saved) {
   const sib = lmExercise(siblingId(ex.id, ex.variant === 'facil' ? 'medio' : 'facil'));
   const next = nextExercise(ex);
   const skills = Object.entries(saved.skills || {});
-  body().innerHTML = `<div class="lm-result">
+  // creatividad: sin nota de la app (solo las reglas cumplidas); la nota la pone el profesor
+  const scores = out.noGrade
+    ? `<div id="lmScores" class="dict-scores one" tabindex="-1"><div class="dict-score main"><b>${out.rulesOk}/${out.rulesTotal}</b><span>Reglas cumplidas</span></div></div>
+      <p class="muted center">La nota la pone tu profesor al escucharla.</p>`
+    : '';
+  body().innerHTML = `<div class="lm-result">${scores}${out.noGrade ? '' : `
     <div id="lmScores" class="dict-scores ${skills.length > 1 ? '' : 'one'}" tabindex="-1">
       <div class="dict-score main"><b>${saved.pct} %</b><span>Resultado</span></div>
       ${skills.length > 1 ? skills.map(([k, v]) => `<div class="dict-score"><b>${v} %</b><span>${esc(SKILL_NAME[k] || k)}</span></div>`).join('') : ''}
     </div>
     <div class="dict-stars">${starsHtml(saved.stars)}</div>
-    <p class="lm-ten"><span>Calificación</span> <b>${ten}</b><small class="muted">/10</small>${ex.variant === 'facil' ? ' <small class="muted">(en Fácil, como mucho 8)</small>' : ''}</p>
+    <p class="lm-ten"><span>Calificación</span> <b>${ten}</b><small class="muted">/10</small>${ex.variant === 'facil' ? ' <small class="muted">(en Fácil, como mucho 8)</small>' : ''}</p>`}
     ${out.marks && out.marks.length ? `${legendHtml()}${chipsHtml(out.marks, out.labels || [])}` : ''}
     ${out.note ? `<p class="muted center">${esc(out.note)}</p>` : ''}
-    ${mistakesHtml(saved.mistakes || [])}
+    ${mistakesHtml(saved.mistakes || [], ex)}
     <div class="controls lm-result-actions">
       ${next ? '<button type="button" class="btn" id="lmNext">Siguiente ejercicio</button>' : ''}
       <button type="button" class="btn ghost" id="lmAgain">Repetir</button>
@@ -86,7 +107,7 @@ function renderResult(ex, out, saved) {
 async function run(ex) {
   const token = ++session;
   const alive = () => token === session;
-  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), alive, say, level: ex.level };
+  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), alive, say, level: ex.level, songScore: ref => (lmSong(ex.level, ref) || {}).partitura || null };
   $('lmTitle').textContent = ex.title;
   $('lmEyebrow').innerHTML = `<span>Unidad ${ex.unit}</span> · <span>${esc(SECTION_NAME[ex.section])}</span> · <span class="lm-variant ${ex.variant}">${esc(VARIANT_NAME[ex.variant])}</span>`;
   body().innerHTML = '';
@@ -104,7 +125,8 @@ async function run(ex) {
   }
   if (!out || !alive()) return;
   stopSound();
-  const partial = { pct: out.pct, mistakes: out.mistakes || [], ...(out.stars !== undefined ? { stars: out.stars } : { stars: starsFor(out.pct) }), ...(out.skills ? { skills: out.skills } : {}) };
+  const stars = out.noGrade ? 0 : out.stars !== undefined ? out.stars : starsFor(out.pct);
+  const partial = { pct: out.pct, mistakes: out.mistakes || [], stars, ...(out.skills ? { skills: out.skills } : {}) };
   const saved = recordActive(partial);
   if (saved) renderResult(ex, out, saved);
 }

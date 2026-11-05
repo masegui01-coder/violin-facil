@@ -49,6 +49,14 @@ export function playNotes(notes, bpm, { at = null, gains = null, clap = false, a
   return { t0, end: t0 + (last ? (last.start + last.beats) * spb : 0) };
 }
 
+// Notas con su instante y su duración en segundos (relativos a «at») y su volumen: matices, calderones, accelerando
+export function playEvents(events, { at = null } = {}) {
+  const c = ctx();
+  const t0 = at ?? c.currentTime + LEAD_S;
+  events.forEach(e => tone(c, e.midi, t0 + e.at, e.dur, e.gain ?? 1));
+  return { t0, end: t0 + Math.max(0, ...events.map(e => e.at + e.dur)) };
+}
+
 // Varias voces a la vez (audiciones)
 export function playVoices(voices, bpm) {
   const c = ctx();
@@ -69,10 +77,10 @@ export function playChordNow(midis, seconds = 1.2) {
 }
 
 // Clics de metrónomo (cuenta previa): devuelve cuándo acaba
-export function clicks(count, bpm, { at = null, accentEvery = 0 } = {}) {
+export function clicks(count, bpm, { at = null, accentEvery = 0, level = 0.7 } = {}) {
   const c = ctx();
   const t0 = at ?? c.currentTime + LEAD_S;
-  for (let i = 0; i < count; i++) drumHit(t0 + i * 60 / bpm, accentEvery ? i % accentEvery === 0 : i === 0, 0.7);
+  for (let i = 0; i < count; i++) drumHit(t0 + i * 60 / bpm, accentEvery ? i % accentEvery === 0 : i === 0, level);
   return t0 + count * 60 / bpm;
 }
 

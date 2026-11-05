@@ -13,9 +13,10 @@ import {
 import {
   interval, scale, degreeNote, centsAnyOctave, voiceTonic, parseTokens, tokensText, tokensToNotes, positionText, stepOf, scoreTokens, barBeatsOf, solfaToName,
 } from '../js/lm/notes.js';
-import { stopRoundOf, stopKinds, stopWindow, genRhythm, genMelody, meterQuestions, semitoneQuestions, modeQuestions } from '../js/lm/gen.js';
+import { stopRoundOf, stopKinds, stopWindow, stopBase, gainsFor, genRhythm, genMelody, meterQuestions, semitoneQuestions, modeQuestions } from '../js/lm/gen.js';
 import { agilityPlan } from '../js/lm/tasks-agility.js';
 import { getState } from '../js/store.js';
+import { readFileSync } from 'node:fs';
 
 // ---------- Catálogo ----------
 test('cada ejercicio cumple el contrato de ids y el catálogo plano del Aula coincide', () => {
@@ -139,10 +140,11 @@ test('progreso de la unidad: mejor variante de cada ejercicio, estrellas y porce
   lm = applyResult(lm, makeResult('lm1-u1-teoria-a-medio', { pct: 40 }), '2026-11-05');
   assert.equal(lm.best['lm1-u1-ritmo-b-medio'].stars, 1);
   const p = unitProgress(1, 1, lm);
-  assert.equal(p.done, 1, 'el 40 % no da estrellas');
-  assert.equal(p.stars, 3);
-  assert.equal(p.maxStars, p.total * 3);
-  assert.equal(p.total, LM_LEVELS[0].units[0].exercises.filter(e => e.variant === 'medio').length);
+  assert.equal(p.done, 2, 'Fácil y Media cuentan por separado; el 40 % no da estrellas');
+  assert.equal(p.stars, 4);
+  const exs = LM_LEVELS[0].units[0].exercises;
+  assert.equal(p.total, exs.length);
+  assert.equal(p.maxStars, exs.filter(e => e.section !== 'creatividad').length * 3, 'la creatividad no suma estrellas de la app');
 });
 
 test('recordLmResult guarda en state.lm y avisa a los oyentes (hook del Aula)', () => {
@@ -235,11 +237,20 @@ test('STOP: cada error del catálogo cambia el ritmo de la lectura de su unidad'
   allLmExercises().filter(e => e.type === 'stop').forEach(e => {
     const base = scoreTokens(e.params.base.partitura);
     const barBeats = barBeatsOf(e.params.base.compas);
-    for (let k = 0; k < 3; k++) {
-      const r = stopRoundOf(base, { kinds: stopKinds(e.params.errores), seed: 11 + k, barBeats });
-      assert.ok(r.errorBeat > 0 && r.code, e.id);
-      assert.notDeepEqual(r.played.map(t => `${t.rest}${t.dur}`), base.map(t => `${t.rest}${t.dur}`), e.id);
+    const kinds = stopKinds(e.params.errores);
+    const opts = { kinds, barBeats, matices: e.params.base.matices || [], pickup: e.params.base.anacrusa || 0 };
+    const sound = r => JSON.stringify([r.offset, r.played.map(t => [t.rest, t.dur, t.midi, Math.round((t.gain || 0) * 100), t.hold || 0])]);
+    const correct = sound({ offset: opts.pickup ? barBeats - opts.pickup : 0, played: stopBase(base, { matices: opts.matices, voice: kinds.includes('voz') }) });
+    const avoid = new Set();
+    for (let k = 0; k < (e.params.rondas || 3); k++) {
+      const r = stopRoundOf(base, { ...opts, seed: 11 + k * 101, avoid });
+      assert.ok(r.errorBeat >= 0 && r.code, e.id);
+      assert.notEqual(sound(r), correct, `${e.id}: la ronda ${k + 1} suena distinta (${r.code})`);
+      assert.ok(!avoid.has(r.key), `${e.id}: ronda repetida ${r.key}`);
+      avoid.add(r.key);
     }
+    // los errores que pide el catálogo existen de verdad (matiz, calderón, voz, anacrusa…), no solo corcheas
+    kinds.forEach(k => assert.ok(['q>ee', 'ee>q', 'Rq>q', 'q>Rq', 'h-corta', 'w-corta', 'Rw-salto', 'compas', 'matiz', 'calderon', 'voz', 'anacrusa'].includes(k), k));
   });
 });
 
@@ -392,4 +403,50 @@ test('«En tu instrumento»: textos concretos de cada herramienta y escala menor
   const { translate } = await import('../js/i18n.js');
   assert.equal(translate('Escala de La menor'), 'A minor scale');
   assert.equal(translate('Lee o canta E4 como F4'), 'Reads or sings E4 as F4');
+});
+
+test('STOP con matiz, calderón, voz y anacrusa: el error se oye y se sabe dónde empieza', () => {
+  const base = scoreTokens('| C5q C5q C5q C5q | C5h C5h | C5q C5q C5q C5q | C5w |');
+  const matices = [{ compas: 1, signo: 'p' }, { compas: 3, signo: 'f' }, { compas: 4, signo: 'calderon' }];
+  const cal = stopRoundOf(base, { kinds: ['calderon'], seed: 1, barBeats: 4, matices });
+  assert.equal(cal.code, 'calderon');
+  assert.equal(cal.errorBeat, 16, 'el calderón debía seguir sonando después de la redonda');
+  const mat = stopRoundOf(base, { kinds: ['matiz'], seed: 2, barBeats: 4, matices });
+  const bar = base[mat.index].bar;
+  const loud = mat.played.filter(t => t.bar === bar).map(t => t.gain);
+  const good = stopBase(base, { matices }).filter(t => t.bar === bar).map(t => t.gain);
+  assert.notDeepEqual(loud, good);
+  const voz = stopRoundOf(base, { kinds: ['voz'], seed: 3, barBeats: 4 });
+  assert.notEqual(voz.played[voz.index].midi, stopBase(base, { voice: true })[voz.index].midi);
+  const pick = scoreTokens('| C5q | C5q C5q C5q C5q | C5h C5h | C5q C5q C5h | C5h. |');
+  const ana = stopRoundOf(pick, { kinds: ['anacrusa'], seed: 4, barBeats: 4, pickup: 1 });
+  assert.deepEqual([ana.offset, ana.errorBeat], [0, 0], 'la anacrusa cae en el primer pulso');
+  assert.equal(stopRoundOf(pick, { kinds: ['q>ee'], seed: 4, barBeats: 4, pickup: 1 }).offset, 3, 'bien tocada, entra en el último pulso');
+  const gains = gainsFor(scoreTokens('| C5q C5q | C5q C5q | C5q C5q | C5q C5q |'), [{ compas: 1, signo: 'p' }, { compas: 2, signo: 'cresc', hasta: 3 }, { compas: 4, signo: 'ff' }]);
+  assert.ok(gains[2] < gains[5] && gains[7] > gains[0], 'p, crescendo y ff');
+});
+
+test('audición: el fragmento suena con sus matices, su crescendo y su accelerando', async () => {
+  const { lmUnit } = await import('../js/lm/catalog.js');
+  const src = readFileSync(new URL('../js/lm/runners.js', import.meta.url), 'utf8');
+  assert.ok(src.includes('playEvents(workEvents(frag))'), 'la audición suena con workEvents');
+  const haydn = lmUnit(1, 6).listening.fragmento;
+  const grieg = lmUnit(1, 7).listening.fragmento;
+  assert.ok(haydn.matices.some(m => m.signo === 'pp') && haydn.golpe, 'Haydn: p, pp y el golpe');
+  assert.ok(grieg.tempoFinal > grieg.tempo && grieg.repetir > 1, 'Grieg: accelerando en las repeticiones');
+});
+
+test('audición sintetizada: Haydn repite en pp y remata ff; Grieg acelera y crece', async () => {
+  const { workEvents } = await import('../js/lm/runners.js');
+  const { lmUnit } = await import('../js/lm/catalog.js');
+  const haydn = lmUnit(1, 6).listening.fragmento;
+  const spb = 60 / haydn.tempo;
+  const h = workEvents(haydn);
+  const at = beat => h.find(e => Math.abs(e.at - beat * spb) < 1e-6 && e.gain <= 1);
+  assert.ok(at(16).gain < at(0).gain, 'la repetición (compás 9) suena más suave');
+  assert.ok(h.filter(e => e.gain > 1).length >= 6, 'el golpe: acorde de toda la orquesta');
+  const g = workEvents(lmUnit(1, 7).listening.fragmento);
+  assert.ok(g[g.length - 1].gain > g[0].gain, 'crescendo');
+  const gap = (k) => g[k + 1].at - g[k].at;
+  assert.ok(gap(g.length - 3) < gap(0), 'accelerando: al final las corcheas van más deprisa');
 });

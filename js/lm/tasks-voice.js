@@ -95,7 +95,10 @@ export async function singTask(host, opts, env) {
   const { tokens, echo = false, variant = 'facil', meter = null, bpm = 72, clef = 'treble' } = opts;
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
   const sounding = tokens.map((t, i) => ({ ...t, index: i })).filter(t => !t.rest);
-  const under = opts.under || tokens.map(t => (t.rest ? '' : noteText(t.name, env.nom)));
+  // hideNames: lectura cantada (se lee el pentagrama: ni el nombre debajo ni la app lo dice)
+  const hide = !!opts.hideNames;
+  const under = hide ? tokens.map(() => '') : opts.under || tokens.map(t => (t.rest ? '' : noteText(t.name, env.nom)));
+  const nth = n => sounding.indexOf(n) + 1;
   const marks = [];
   const heard = [];
   let playingUntil = 0;
@@ -104,7 +107,7 @@ export async function singTask(host, opts, env) {
   const draw = current => {
     host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current });
   };
-  host.innerHTML = `${opts.intro ? `<p class="muted">${opts.introLabel ? `<span>${esc(opts.introLabel)}</span> ` : ''}<span>${esc(opts.intro)}</span></p>` : ''}
+  host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}
     ${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
@@ -146,7 +149,7 @@ export async function singTask(host, opts, env) {
         if (!env.alive()) return null;
         draw(n.index);
         host.dataset.target = String(n.midi);
-        phase('Canta:', under[n.index] || noteText(n.name, env.nom));
+        if (hide) phase(`Nota ${nth(n)} de ${sounding.length}`); else phase('Canta:', under[n.index] || noteText(n.name, env.nom));
         const hold = Math.max(MIN_HOLD_MS, Math.min(MAX_HOLD_MS, n.beats * spb * 1000 * HOLD_SHARE));
         const { cents, sungMidi } = await hearNote(n.midi, hold, env.alive, quietUntil);
         if (!env.alive()) return null;
@@ -156,7 +159,7 @@ export async function singTask(host, opts, env) {
         if (Number.isFinite(sungMidi)) sungMidis.push(sungMidi);
         const dot = host.querySelector('#lmSingDot');
         if (dot) { dot.className = mark; dot.style.left = `${50 + Math.max(-50, Math.min(50, (cents ?? 0) / 2))}%`; }
-        env.say(`${noteText(n.name, env.nom)}: ${cents === null ? 'no te he oído' : mark === 'ok' ? 'afinada' : cents > 0 ? 'alta' : 'baja'}`);
+        env.say(`${hide ? `Nota ${nth(n)}` : noteText(n.name, env.nom)}: ${cents === null ? 'no te he oído' : mark === 'ok' ? 'afinada' : cents > 0 ? 'alta' : 'baja'}`);
         const next = sounding[sounding.indexOf(n) + 1];
         if (next && next.midi % 12 === n.midi % 12) await waitBreak(n.midi, env.alive);
       }

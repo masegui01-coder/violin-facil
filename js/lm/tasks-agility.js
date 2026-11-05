@@ -7,7 +7,7 @@ import { gradeAgility, mistakeCodes } from './grade.js';
 import { stepOf, positionText, letterText, barBeatsOf, LETTERS } from './notes.js';
 import { noteCell, clefCell } from './staff-lm.js';
 import { nameButtons, CLEF, GLYPH } from './kit.js';
-import { wait } from './sound.js';
+import { wait, clicks } from './sound.js';
 import { recordOf, saveRecord } from './results.js';
 
 const FEEDBACK_MS = 450;
@@ -41,7 +41,7 @@ export async function agilityTask(host, p, env) {
   const letters = env.variant === 'facil' ? LETTERS.filter(l => p.notas.some(n => n[0] === l)) : LETTERS;
   const key = `agil:${env.id}`;
   const best = recordOf(key);
-  host.innerHTML = `<p class="muted">${p.modo === 'leer-a-tempo' ? 'Las notas llegan a tempo y cada vez más deprisa: nómbralas a tiempo.' : 'Nombra cada nota antes de que se acabe la barra de tiempo.'}</p>
+  host.innerHTML = `<p class="muted">${p.modo === 'leer-a-tempo' ? 'Las notas llegan con el metrónomo, cada vez más deprisa: nómbralas antes de la siguiente.' : 'Nombra cada nota antes de que se acabe la barra de tiempo.'}</p>
     <p class="muted small">${best ? `<span>Tu récord:</span> <b>${best}</b>` : ''}</p>
     <div class="controls"><button type="button" class="btn big" id="lmAgGo">Empezar</button></div>`;
   host.querySelector('#lmAgGo').focus();
@@ -64,6 +64,8 @@ export async function agilityTask(host, p, env) {
     host.querySelector('#lmAgCount').textContent = `${i + 1} / ${plan.notes.length}`;
     if (i === 0) host.querySelector('[data-name]').focus();
     const limit = plan.secs[i] * 1000;
+    // a tempo, el metrónomo marca los dos pulsos de cada nota
+    if (p.modo === 'leer-a-tempo') clicks(2, 120000 / limit, { accentEvery: 2, level: 0.45 });
     const started = performance.now();
     const bar = host.querySelector('#lmAgBar');
     const answer = await new Promise(resolve => {

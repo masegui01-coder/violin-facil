@@ -89,7 +89,21 @@ export const LM_EXACT = {
   Mayor: 'Major', Menor: 'Minor', 'Menor: suena más oscuro (la-do-mi).': 'Minor: it sounds darker (A-C-E).', 'Mayor: luminoso (do-mi-sol).': 'Major: bright (C-E-G).',
   '¿Qué canción es? Escucha su ritmo': 'Which song is it? Listen to its rhythm',
   // Herramientas lanzadas desde una unidad
-  'Repetir el dictado': 'Repeat the dictation', 'Notas tenidas con regulador': 'Long tones with a swell', 'Afinar en acorde: la tercera': 'Chord tuning: the third', 'Afinar en acorde: la tónica': 'Chord tuning: the root', Gimnasio: 'Gym', 'Responder tocando la pantalla (sin micrófono)': 'Answer by tapping the screen (no microphone)',
+  'Repetir el dictado': 'Repeat the dictation',
+  'Compara tu pentagrama con lo que sonaba: cada nota lleva su signo.': 'Compare your staff with what was played: each note has its sign.',
+  'Lo que pedía el ejercicio': 'What the exercise asked for', cumplida: 'met', 'sin cumplir': 'not met', 'Reglas cumplidas': 'Rules met',
+  'La nota la pone tu profesor al escucharla.': 'Your teacher gives the mark after listening to it.',
+  'Con apoyo: la app canta cada compás y tú lo repites (eco).': 'With support: the app sings each bar and you repeat it (echo).',
+  'Sin apoyo: la app da el acorde de la tonalidad y la primera nota; después cantas tú solo.': 'Without support: the app plays the key chord and the first note; then you sing on your own.',
+  'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.': 'With support: the app sings each bar with its accompaniment and you repeat it in time.',
+  'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.': 'Without support: one bar of count-in and you sing the whole song a cappella.',
+  'Escuchar la canción con acompañamiento': 'Listen to the song with accompaniment', 'Empezar a cantar': 'Start singing',
+  'Ordenamiento de la unidad.': 'The unit ordering exercise.', 'Lectura cantada: lee las notas en el pentagrama.': 'Sung reading: read the notes on the staff.',
+  'Ahora, una lectura nueva': 'Now, a new reading',
+  'Las notas llegan con el metrónomo, cada vez más deprisa: nómbralas antes de la siguiente.': 'The notes arrive with the metronome, faster and faster: name each one before the next.',
+  'La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!': 'The app plays this rhythm over the beat, but it will make a mistake at some point. Press STOP as soon as you notice!',
+  'Un compás sonó con el matiz cambiado': 'A bar was played with the wrong dynamic', 'No esperó en el calderón': "It didn't wait on the fermata",
+  'Una nota de la voz cambió de altura': 'A note of the voice changed pitch', 'La anacrusa cayó en la parte fuerte': 'The upbeat fell on the downbeat', Sonaba: 'It was', ', y fue': ', and you gave', 'no distinguió el tono del semitono al oírlo': "couldn't tell a tone from a semitone by ear", 'Notas tenidas con regulador': 'Long tones with a swell', 'Afinar en acorde: la tercera': 'Chord tuning: the third', 'Afinar en acorde: la tónica': 'Chord tuning: the root', Gimnasio: 'Gym', 'Responder tocando la pantalla (sin micrófono)': 'Answer by tapping the screen (no microphone)',
   ' · Los matices se miden con el micrófono': ' · Dynamics are measured with the microphone', 'Toca aquí': 'Tap here', 'regulador p < f > p': 'swell p < f > p', 'regulador: crece más en el centro': 'swell: grow more in the middle',
   'Haz un regulador: empieza piano, crece hasta forte en la mitad y vuelve a piano.': 'Make a swell: start piano, grow to forte in the middle and go back to piano.', 'Más dictados como este': 'More dictations like this', '¡Ejercicio completado!': 'Exercise completed!', 'Ejercicio guardado': 'Exercise saved',
   // Vara del trombón (keydiagram.js): «Vara» y las siete posiciones
@@ -147,6 +161,10 @@ export const LM_COTEJO_EN = {
   'Tema de la obra, en 2/4 como lo escribió Mozart (en la partitura, una octava más agudo). Dominio público.': 'The theme of the piece, in 2/4 as Mozart wrote it (an octave higher in the score). Public domain.',
   'Transportado a la menor. Simplificación: la semifrase de 4 compases se repite cuatro veces, cada vez más rápida y más fuerte (accelerando y crescendo). Dominio público.': 'Transposed to A minor. Simplified: the 4-bar half-phrase is repeated four times, faster and louder each time (accelerando and crescendo). Public domain.',
   'Violín 2': 'Violin 2',
+  // fe de erratas de la evaluación 1: las corcheas de Martinillo están en «toca la campana»
+  'Traza las barras (3/4): cada frase dura 2 compases y acaba en una blanca': 'Draw the bar lines (3/4): each phrase lasts 2 bars and ends on a half note',
+  'Escribe 4 compases de 2/4 con negras y silencios de negra: una negra por cada sílaba de tu nombre y tu apellido, y silencios donde respires hasta completar los 4 compases.': 'Write 4 bars of 2/4 with quarter notes and quarter rests: one quarter note for each syllable of your first name and surname, and rests where you breathe until the 4 bars are complete.',
+  'La frase rápida «toca la campana» usa…': 'The fast phrase “morning bells are ringing” uses…',
   '«Gartenlieder», op. 3 (1846-1847) — n.º 5, «Abendlich schon rauscht der Wald»': '“Gartenlieder”, op. 3 (1846-1847) — no. 5, “Abendlich schon rauscht der Wald”',
 };
 
@@ -200,6 +218,7 @@ export function lmPatterns({ tr, noteEn }) {
     [/^(Escala|Arpegio) de (Do|Re|Mi|Fa|Sol|La|Si)([♯♭]?) (mayor|menor)$/, (m, k, n, a, q) => `${noteOr(n)}${a} ${q === 'mayor' ? 'major' : 'minor'} ${k === 'Escala' ? 'scale' : 'arpeggio'}`],
     [/^De memoria: (.+)$/, (m, x) => `From memory: ${tr(x)}`],
     [/^Libro: (.+)$/, (m, x) => `Book: ${tr(x)}`],
+    [/^Lectura rítmica · Unidad (\d+)$/, (m, n) => `Rhythm reading · Unit ${n}`],
     [/^Lee o canta (.+) como (.+)$/, (m, a, b) => `Reads or sings ${a} as ${b}`],
     [/^No se ha podido enviar: (.+)$/, (m, x) => `Couldn't send it: ${tr(x)}`],
     [/^Lenguaje musical · Nivel (\d+) · Unidad (\d+)$/, (m, a, b) => `Music theory · Level ${a} · Unit ${b}`],

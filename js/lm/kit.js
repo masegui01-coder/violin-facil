@@ -27,7 +27,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
   let sum = 0;
   const cells = [`<span class="lm-sc">${clefCell(clef, meter)}</span>`];
   tokens.forEach((t, i) => {
-    const cls = ['lm-sc', marks[i] || '', i === current ? 'now' : ''].join(' ');
+    const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
     cells.push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null })}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}</span>`);
     sum += t.beats ?? 0;
     if (barBeats && i < tokens.length - 1 && Math.abs(sum % barBeats) < 1e-6) cells.push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);

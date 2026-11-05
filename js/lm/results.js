@@ -72,20 +72,18 @@ export function onLmResult(fn) {
 export const bestOf = id => lmState().best[id] || null;
 export const lastOf = id => lmState().last[id] || null;
 
-// Progreso de una unidad: ejercicios hechos (con al menos 1 estrella, en cualquiera de sus variantes),
-// estrellas (la mejor de Fácil o Media de cada ejercicio, sobre 3) y porcentaje medio
+// Progreso de una unidad: ejercicios hechos (Fácil y Media por separado; con al menos 1 estrella, o guardada en
+// creatividad), estrellas (sobre 3 por ejercicio puntuado por la app) y porcentaje medio
 export function unitProgress(level, unit, lm = lmState()) {
   const u = lmUnit(level, unit);
   if (!u) return { done: 0, total: 0, stars: 0, maxStars: 0, pct: 0 };
-  const groups = {};
-  u.exercises.forEach(e => { (groups[e.id.replace(/-(facil|medio)$/, '')] ||= []).push(e.id); });
-  const bests = Object.values(groups).map(ids => ids.map(id => lm.best[id]).filter(Boolean)
-    .reduce((a, b) => (!a || b.stars > a.stars || (b.stars === a.stars && b.pct > a.pct) ? b : a), null));
+  const bests = u.exercises.map(e => ({ e, b: lm.best[e.id] || null }));
+  const graded = bests.filter(x => x.e.section !== 'creatividad'); // la creatividad la puntúa el profesor
   const total = bests.length;
   return {
-    done: bests.filter(b => b && b.stars > 0).length, total,
-    stars: bests.reduce((s, b) => s + (b ? b.stars : 0), 0), maxStars: total * 3,
-    pct: total ? Math.round(bests.reduce((s, b) => s + (b ? b.pct : 0), 0) / total) : 0,
+    done: bests.filter(({ e, b }) => b && (b.stars > 0 || e.section === 'creatividad')).length, total,
+    stars: graded.reduce((s, x) => s + (x.b ? x.b.stars : 0), 0), maxStars: graded.length * 3,
+    pct: total ? Math.round(bests.reduce((s, x) => s + (x.b ? x.b.pct : 0), 0) / total) : 0,
   };
 }
 

@@ -13,6 +13,7 @@ import { octaveShiftFor } from '../songs.js';
 import { launch, currentCourse } from '../launch.js';
 import { LANGUAGE } from '../book-theory.js';
 import { barBeatsOf } from './notes.js';
+import { genRhythm } from './gen.js';
 import { lmExercise, lmUnit, lmSong, TYPES } from './catalog.js';
 import { recordLmResult } from './results.js';
 import { LM_TOOL_EVENT } from './bridge.js';
@@ -58,7 +59,7 @@ function openTool(ex) {
 // Herramientas del bloque «En tu instrumento» (temario de instrumento de la unidad): se abren con sus parámetros
 // fijos y guardan su progreso como siempre (no son ejercicios del catálogo de Lenguaje)
 const toUnit = { label: 'Volver a la unidad', run: () => go('learn') };
-export function openInstrumentTool(h) {
+export function openInstrumentTool(h, unit = null) {
   const p = h.params || {};
   const inst = instrumentById(getState().instrument);
   const lesson = extra => ({ noRecord: true, nextAction: () => toUnit, ...extra });
@@ -77,7 +78,8 @@ export function openInstrumentTool(h) {
       return;
     }
     case 'generate.rhythmReading': {
-      const song = rhythmReading(p.level || 1, p.seed || 1);
+      // con las figuras que ya conoce la unidad (el generador de siempre metería blancas y redondas antes de tiempo)
+      const song = unit && unit.raw.figuras ? unitReading(unit, p.seed || 1) : rhythmReading(p.level || 1, p.seed || 1);
       go('rhythm', { lesson: lesson({ id: song.id, kind: 'song', song, sticking: song.sticking }), from: 'lm', eyebrow: 'Lenguaje musical' });
       return;
     }
@@ -111,6 +113,18 @@ export function openInstrumentTool(h) {
   }
 }
 
+// Lectura rítmica de 8 compases con las figuras de la unidad, en su compás
+function unitReading(unit, seed) {
+  const meter = (unit.meters && unit.meters[0]) || '4/4';
+  const barBeats = barBeatsOf(meter);
+  const tokens = genRhythm({ figuras: unit.raw.figuras.map(f => (f === 'ee' ? 'e' : f)), barBeats, bars: 8, seed });
+  const bars = [];
+  let cur = [];
+  let sum = 0;
+  tokens.forEach(t => { cur.push((t.rest ? 'R' : 'C5') + t.dur); sum += t.beats; if (Math.abs(sum % barBeats) < 1e-6) { bars.push(cur.join(' ')); cur = []; } });
+  return { id: `rhythm-lm${unit.level}-u${unit.unit}-${seed}`, title: `Lectura rítmica · Unidad ${unit.unit}`, by: '', style: null, key: 'C', time: barBeats, bpm: 72, score: `| ${bars.join(' | ')} |` };
+}
+
 // Texto del botón de cada herramienta del bloque «En tu instrumento»
 const TOOL_BASE = {
   longtone: 'Notas tenidas', chord: 'Afinar en acorde', gym: 'Gimnasio', 'generate.sightReading': 'Lectura a primera vista',
@@ -129,7 +143,9 @@ const CHORD_ROOT = { C: 60, F: 65, G: 55, Bb: 58, Eb: 63 };
 const CHORD_DEGREE = { tercera: 'M3', 'tónica': 'root', quinta: 'P5', sexta: 'M6' };
 
 // Herramientas que valen para la familia del instrumento del alumno («para» vacío: todas)
-export const toolsFor = (tools, family) => tools.filter(h => !h.para || h.para.includes(family));
+// El xilófono (familia de percusión) también hace las escalas del gimnasio: es de láminas con altura
+export const toolsFor = (tools, family, inst = null) => tools.filter(h => !h.para || h.para.includes(family)
+  || (inst && inst.id === 'xylophone' && h.tool === 'gym'));
 
 // Abre lo que asigna el Aula: una unidad, una sección de la unidad o ejercicios sueltos.
 // target: { level, unit, section?, ids?, variant? }. Un solo ejercicio (o una sección con variante) se abre directamente;

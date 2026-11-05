@@ -74,19 +74,19 @@ export function clefCell(clef = 'treble', meter = null) {
     ? `<text class="lm-clef bass" x="3" y="${BOTTOM - 6 * HALF + 2}">${CLEF_GLYPH.bass}</text>`
     : `<text class="lm-clef" x="2" y="${BOTTOM + 9}">${CLEF_GLYPH.treble}</text>`;
   const time = meter ? meter.split('/').map((n, i) => `<text class="lm-time" x="56" y="${BOTTOM - (i ? 0 : 4) * HALF - 1}" text-anchor="middle">${n}</text>`).join('') : '';
-  return `<svg class="lm-cell clef" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${glyph}${time}</svg>`;
+  return `<svg class="lm-cell lm-clefcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${glyph}${time}</svg>`;
 }
 
 // Hueco entre dos notas: con barra de compás o vacío (en el ejercicio de barras es un botón)
 export function gapCell(on = false, mark = null, w = GAP_W) {
   const bar = on ? `<line class="lm-bar" x1="${w / 2}" x2="${w / 2}" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/>` : `<line class="lm-bar-hint" x1="${w / 2}" x2="${w / 2}" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/>`;
   const markSvg = mark ? `<text class="lm-mark" x="${w / 2}" y="12" text-anchor="middle">${({ ok: '✓', near: '≈', bad: '✕' })[mark]}</text>` : '';
-  return `<svg class="lm-cell gap" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${bar}${markSvg}</svg>`;
+  return `<svg class="lm-cell lm-gapcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${bar}${markSvg}</svg>`;
 }
 
 // Barra final (doble)
 export function endCell() {
-  return `<svg class="lm-cell end" viewBox="0 0 12 ${CELL_H}" aria-hidden="true" focusable="false">${lines(12)}<line class="lm-bar" x1="4" x2="4" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/><rect x="7" y="${BOTTOM - 8 * HALF}" width="3.5" height="${8 * HALF}" class="lm-bar-thick"/></svg>`;
+  return `<svg class="lm-cell lm-endcell" viewBox="0 0 12 ${CELL_H}" aria-hidden="true" focusable="false">${lines(12)}<line class="lm-bar" x1="4" x2="4" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/><rect x="7" y="${BOTTOM - 8 * HALF}" width="3.5" height="${8 * HALF}" class="lm-bar-thick"/></svg>`;
 }
 
 // Escalón según dónde se toca la celda (para escribir notas tocando líneas y espacios)

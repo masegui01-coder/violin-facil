@@ -4,7 +4,7 @@ import { esc } from '../ui.js';
 import { noteCell, gapCell, clefCell, stepAtY, STEP_LIMITS } from './staff-lm.js';
 import { FIGURE_BEATS, FIGURE_NAME, REST_NAME, nameOfStep, noteText, positionText, stepOf, scoreTokens, barBeatsOf, midiOf } from './notes.js';
 import { gradeWriting, gradeBarlines, scaleMark } from './grade.js';
-import { staffHtml, onceClick, whyHtml, CLEF, tokenLabel, playButton } from './kit.js';
+import { staffHtml, onceClick, whyHtml, CLEF, tokenLabel, playButton, continueButton } from './kit.js';
 import { playNotes, stopSound } from './sound.js';
 
 const RHYTHM_STEP = { treble: 36, bass: 24 }; // Do5 / Mi3: la línea donde se escribe el ritmo sin altura
@@ -205,7 +205,9 @@ export async function barras(host, item, env) {
 export async function dictadoEscrito(host, p, env) {
   const want = scoreTokens(p.partitura);
   const rhythmOnly = p.tipo === 'ritmico';
-  const figures = [...new Set(want.map(t => (t.rest ? `R${t.dur}` : t.dur)))].sort((a, b) => (FIGURE_BEATS[b.replace('R', '')] - FIGURE_BEATS[a.replace('R', '')]) || (a.startsWith('R') ? 1 : -1));
+  // la paleta es la de la unidad (todas las figuras que ya se conocen), no solo las de la respuesta: así no da pistas
+  const known = (p.figurasUnidad || []).map(f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f)).filter(f => /^R?(w|h\.?|q\.?|e|s)$/.test(f));
+  const figures = [...new Set([...want.map(t => (t.rest ? `R${t.dur}` : t.dur)), ...known])].sort((a, b) => (FIGURE_BEATS[b.replace('R', '')] - FIGURE_BEATS[a.replace('R', '')]) || (a.startsWith('R') ? 1 : -1));
   const listens = p.escuchas || 3;
   let used = 0;
   let extra = 0;
@@ -238,6 +240,8 @@ export async function dictadoEscrito(host, p, env) {
   const pct = Math.max(0, g.pct - extra * EXTRA_LISTEN_PENALTY);
   host.querySelector('.lm-feedback').innerHTML = `<p class="dict-staff-label">Lo que sonaba</p>${staffHtml(want, { meter: p.compas, marks: g.marks, label: want.map(t => tokenLabel(t, env.nom, { pitch: !rhythmOnly })).join(', ') })}
     ${extra ? `<p class="muted small">Incluye −${extra * EXTRA_LISTEN_PENALTY} puntos por las escuchas extra</p>` : ''}`;
+  host.querySelector('.lm-feedback').insertAdjacentHTML('beforeend', '<p class="muted small">Compara tu pentagrama con lo que sonaba: cada nota lleva su signo.</p>');
+  await continueButton(host, 'Ver el resultado');
   return { pct, marks: g.marks, extra: g.extra, mistakes: g.mistakes };
 }
 

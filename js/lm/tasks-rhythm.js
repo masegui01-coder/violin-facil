@@ -5,18 +5,36 @@ import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow } from './gen.js';
 import { barBeatsOf } from './notes.js';
 import { staffHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
-import { playNotes, clicks, stopSound, now, wait } from './sound.js';
+import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
 
 const TAP_TOLERANCE_MS = { facil: 120, medio: 80 };
 const AFTER_END_S = 0.8;
 const STOP_NAMES = {
-  'q>ee': 'Una negra se partió en dos corcheas', 'ee>q': 'Dos corcheas se juntaron en una negra', 'q>Rq': 'Sonó un silencio donde había una negra',
-  'Rq>q': 'Sonó una negra donde había un silencio', 'h-corta': 'Una blanca duró solo un pulso', 'w-corta': 'Una redonda se cortó a la mitad',
-  'Rw-salto': 'Se saltó el silencio', compas: 'Un compás tuvo un pulso de más',
+  'q>ee': 'Una negra se partió en dos corcheas', 'ee>q': 'Dos corcheas se juntaron en una negra', 'Rq>q': 'Sonó un silencio donde había una negra',
+  'q>Rq': 'Sonó una negra donde había un silencio', 'h-corta': 'Una blanca duró solo un pulso', 'w-corta': 'Una redonda se cortó a la mitad',
+  'Rw-salto': 'Se saltó el silencio', compas: 'Un compás tuvo un pulso de más', matiz: 'Un compás sonó con el matiz cambiado',
+  calderon: 'No esperó en el calderón', voz: 'Una nota de la voz cambió de altura', anacrusa: 'La anacrusa cayó en la parte fuerte',
 };
 
-const asNotes = tokens => tokens.map(t => ({ rest: t.rest, start: t.start, beats: t.beats, midi: 72 }));
+const PULSE_LEVEL = 0.25;
+const LEGATO = 0.92;
+const ACCENT = 1.25;
+// Lo que suena en una ronda: notas sostenidas (cada figura dura lo que vale; el calderón, el doble) con su volumen,
+// el primer pulso de cada compás algo más fuerte, a partir del desplazamiento de la ronda (anacrusa)
+function playStopRound(round, { t0, spb, barBeats, pickup }) {
+  let extra = 0;
+  const events = [];
+  round.played.forEach(t => {
+    const at = (round.offset + t.start + extra) * spb;
+    const downbeat = Math.abs(((t.start - pickup) % barBeats + barBeats) % barBeats) < 1e-6;
+    if (!t.rest) events.push({ midi: t.midi || 72, at, dur: (t.beats + (t.hold || 0)) * spb * LEGATO, gain: (t.gain ?? 0.68) * (downbeat ? ACCENT : 1) });
+    extra += t.hold || 0;
+  });
+  const last = round.played[round.played.length - 1];
+  const beats = round.offset + (last ? last.start + last.beats : 0) + extra;
+  return { end: playEvents(events, { at: t0 }).end, beats };
+}
 
 // ---------- STOP ----------
 // p: { base (lectura de la unidad: partitura, tempo, compas), errores, rondas, tolerancia }
@@ -29,12 +47,14 @@ export async function stopGame(host, p, env) {
   const window = stopWindow(p.tolerancia, barBeats);
   const kinds = stopKinds(p.errores);
   const rounds = [];
+  const played = new Set(); // rondas ya jugadas: no se repite la misma
   const total = p.rondas || 3;
   for (let k = 0; k < total; k++) {
     if (!env.alive()) return null;
-    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats });
+    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played });
+    played.add(round.key);
     host.innerHTML = `<p class="eyebrow">Ronda ${k + 1} de ${total}</p>
-      <p class="muted">La app palmea este ritmo, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
+      <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
       ${staffHtml(tokens, { meter, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') })}
       <p class="lm-stop-phase" id="lmStopPhase" aria-live="polite">Preparado</p>
       <div class="controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
@@ -46,7 +66,8 @@ export async function stopGame(host, p, env) {
     const phase = text => { host.querySelector('#lmStopPhase').textContent = text; };
     phase('Claqueta…');
     const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
-    const { end } = playNotes(asNotes(round.played), bpm, { at: t0, clap: true, accentEvery: barBeats });
+    const { end, beats } = playStopRound(round, { t0, spb, barBeats, pickup: p.base.anacrusa || 0 });
+    clicks(Math.ceil(beats), bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
     const lat = outputLatency();
     const pressed = await new Promise(resolve => {
       const done = beat => { clearInterval(timer); resolve(beat); };
@@ -63,7 +84,7 @@ export async function stopGame(host, p, env) {
     const r = { errorBeat: round.errorBeat, pressBeat: pressed, code: round.code };
     rounds.push(r);
     const mark = stopMark(r.errorBeat, r.pressBeat, window);
-    const where = Math.floor(round.errorBeat / barBeats) + 1;
+    const where = ((tokens[round.index] || {}).bar ?? Math.floor(round.errorBeat / barBeats)) + 1;
     const msg = mark === 'ok' ? '¡Parada a tiempo!' : r.pressBeat === null ? 'No has parado la música' : r.pressBeat < r.errorBeat ? 'Has parado antes del error' : 'Has parado tarde';
     host.querySelector('.controls').innerHTML = '';
     host.querySelector('#lmStopPhase').innerHTML = `<span class="dict-sw ${mark}" aria-hidden="true">${GLYPH[mark]}</span> <span>${esc(msg)}</span>`;
@@ -93,7 +114,7 @@ export async function tapRhythm(host, p, env) {
   pad.focus();
   const taps = [];
   const lat = outputLatency();
-  const onTap = e => { e.preventDefault(); taps.push(now() - lat); pad.classList.remove('hit'); void pad.offsetWidth; pad.classList.add('hit'); };
+  const onTap = e => { e.preventDefault(); taps.push(now() - lat); pad.classList.remove('lm-hit'); void pad.offsetWidth; pad.classList.add('lm-hit'); };
   pad.addEventListener('pointerdown', onTap);
   pad.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') onTap(e); });
   pad.addEventListener('click', e => e.preventDefault());

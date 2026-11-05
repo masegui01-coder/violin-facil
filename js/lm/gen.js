@@ -5,47 +5,113 @@ import { FIGURE_BEATS, scale } from './notes.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
-const beatsOf = t => FIGURE_BEATS[t.dur] ?? t.beats ?? 0;
 const withStarts = tokens => {
   let start = 0;
-  return tokens.map(t => { const n = { ...t, start, beats: beatsOf(t) }; start += n.beats; return n; });
+  return tokens.map(t => { const n = { ...t, start, beats: FIGURE_BEATS[t.dur] ?? t.beats ?? 0 }; start += n.beats; return n; });
 };
 const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false, dur, name: CLAP });
 
 // ---------- STOP ----------
-// Cada error del catálogo («blanca acortada», «corcheas↔negra»…) es una mutación del ritmo: dónde puede ir, cómo queda
-// lo que suena, en qué pulso empieza a oírse distinto y su código de error (contrato del curso)
+// La lectura de la unidad suena con notas sostenidas (cada figura dura lo que vale) sobre un pulso suave, con sus
+// matices, su calderón, su anacrusa y, si el error es de voz, una pequeña melodía ostinato. Cada error del catálogo es
+// una mutación: dónde puede ir, cómo queda, en qué pulso empieza a oírse distinto y su código (contrato del curso;
+// «Rq>q» = calló una negra, «q>Rq» = sonó en un silencio).
+export const DYN_GAIN = { ppp: 0.2, pp: 0.28, p: 0.42, mp: 0.55, mf: 0.68, f: 0.85, ff: 1, fff: 1 };
+const DEFAULT_GAIN = DYN_GAIN.mf;
+const OSTINATO = [72, 67, 69, 67]; // Do5 Sol4 La4 Sol4: la «voz» que la app repite
+const WRONG_STEP = 3;               // la nota cambiada, una tercera menor por encima
+
+// Volumen de cada nota según los matices (compases desde 1; t.bar desde 0): el último matiz fijo vale hasta el
+// siguiente y los reguladores (cresc, dim) van de piano a forte o al revés a lo largo de sus compases
+export function gainsFor(ts, matices = []) {
+  const bars = Math.max(1, ...ts.map(t => (t.bar ?? 0) + 1));
+  const level = Array(bars + 1).fill(DEFAULT_GAIN);
+  const statics = matices.filter(m => m.signo in DYN_GAIN).sort((x, y) => x.compas - y.compas);
+  for (let b = 1; b <= bars; b++) {
+    const last = statics.filter(m => m.compas <= b).pop();
+    if (last) level[b] = DYN_GAIN[last.signo];
+  }
+  const swells = matices.filter(m => m.signo === 'cresc' || m.signo === 'dim');
+  return ts.map(t => {
+    const bar = (t.bar ?? 0) + 1;
+    const sw = swells.find(m => bar >= m.compas && bar <= (m.hasta || m.compas));
+    if (!sw) return level[bar];
+    const span = ts.filter(x => (x.bar ?? 0) + 1 >= sw.compas && (x.bar ?? 0) + 1 <= (sw.hasta || sw.compas));
+    const pos = span.indexOf(t) / Math.max(1, span.length - 1);
+    const from = level[Math.max(1, sw.compas - 1)] || DYN_GAIN.p;
+    const to = sw.signo === 'cresc' ? Math.max(DYN_GAIN.f, from) : Math.min(DYN_GAIN.p, from);
+    return from + (to - from) * pos;
+  });
+}
+
+// Interpretación correcta de la lectura: volumen por compás (matices y reguladores), calderón y melodía si hace falta
+export function stopBase(base, { matices = [], voice = false } = {}) {
+  const ts = withStarts(base);
+  const gains = gainsFor(ts, matices);
+  const fermata = (matices.find(m => m.signo === 'calderon') || {}).compas;
+  let k = 0;
+  return ts.map((t, j) => {
+    const bar = (t.bar ?? 0) + 1;
+    const gain = gains[j];
+    const lastInBar = !ts.some(x => x.bar === t.bar && x.start > t.start);
+    const hold = fermata && bar === fermata && lastInBar && !t.rest ? t.beats : 0;
+    const midi = t.rest ? 0 : voice ? OSTINATO[k++ % OSTINATO.length] : 72;
+    return { ...t, gain, hold, midi };
+  });
+}
+
 const MUTATIONS = {
-  'q>ee': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [note('e'), note('e')], at: 0.5 },
-  'ee>q': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'e' && ts[i + 1] && !ts[i + 1].rest && ts[i + 1].dur === 'e' && Math.abs(ts[i].start % 1) < EPS, apply: () => [note('q')], at: 0.5, span: 2 },
-  'q>Rq': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: () => [note('q', true)], at: 0 },
-  'Rq>q': { can: (ts, i) => ts[i].rest && ts[i].dur === 'q', apply: () => [note('q')], at: 0 },
-  'h-corta': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'h', apply: () => [note('q'), note('q', true)], at: 1 },
-  'w-corta': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'w', apply: () => [note('h'), note('h', true)], at: 2 },
+  'q>ee': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i], dur: 'e' }], at: 0.5 },
+  'ee>q': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'e' && ts[i + 1] && !ts[i + 1].rest && ts[i + 1].dur === 'e' && Math.abs(ts[i].start % 1) < EPS, apply: (ts, i) => [{ ...ts[i], dur: 'q' }], at: 0.5, span: 2 },
+  'Rq>q': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], rest: true }], at: 0 },
+  'q>Rq': { can: (ts, i) => ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], rest: false, midi: (ts[i - 1] && ts[i - 1].midi) || 72 }], at: 0 },
+  'h-corta': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'h', apply: (ts, i) => [{ ...ts[i], dur: 'q' }, { ...ts[i], dur: 'q', rest: true }], at: 1 },
+  'w-corta': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'w', apply: (ts, i) => [{ ...ts[i], dur: 'h' }, { ...ts[i], dur: 'h', rest: true }], at: 2 },
   'Rw-salto': { can: (ts, i) => ts[i].rest && (ts[i].dur === 'w' || ts[i].dur === 'h'), apply: () => [], at: 0 },
-  compas: { can: (ts, i, bar) => !ts[i].rest && ts[i].dur === 'q' && Math.abs((ts[i].start + 1) % bar) < EPS, apply: () => [note('q'), note('q')], at: 1 },
+  compas: { can: (ts, i, bar) => !ts[i].rest && ts[i].dur === 'q' && Math.abs((ts[i].start + 1) % bar) < EPS, apply: (ts, i) => [ts[i], { ...ts[i] }], at: 1 },
+  // matiz equivocado: un compás entero suena con el matiz contrario (fuerte donde pone piano o al revés)
+  matiz: { can: (ts, i) => i > 0 && !ts[i].rest && ts[i - 1].bar !== ts[i].bar, apply: (ts, i) => ts.filter(t => t.bar === ts[i].bar).map(t => ({ ...t, gain: t.gain >= DYN_GAIN.mf ? DYN_GAIN.pp : DYN_GAIN.ff })), at: 0, wholeBar: true },
+  // calderón ignorado: la nota del calderón dura solo su figura
+  calderon: { can: (ts, i) => ts[i].hold > 0, apply: (ts, i) => [{ ...ts[i], hold: 0 }], at: 'end' },
+  // voz cambiada: una nota del ostinato suena a otra altura
+  voz: { can: (ts, i) => !ts[i].rest && ts[i].midi > 0, apply: (ts, i) => [{ ...ts[i], midi: ts[i].midi + WRONG_STEP }], at: 0 },
 };
 const KINDS_OF = [
-  [/negra↔silencio/, ['q>Rq', 'Rq>q']], [/corcheas↔negra/, ['q>ee', 'ee>q']], [/blanca acortada/, ['h-corta']],
+  [/negra↔silencio/, ['Rq>q', 'q>Rq']], [/corcheas↔negra/, ['q>ee', 'ee>q']], [/blanca acortada/, ['h-corta']],
   [/redonda acortada/, ['w-corta']], [/silencio de compás/, ['Rw-salto']], [/compás de 4/, ['compas']],
-  [/cualquier figura/, ['q>ee', 'ee>q', 'h-corta', 'q>Rq']],
+  [/matiz/, ['matiz']], [/calderón/, ['calderon']], [/voz cambiada/, ['voz']], [/anacrusa/, ['anacrusa']],
+  [/cualquier figura/, ['q>ee', 'ee>q', 'h-corta', 'Rq>q']],
 ];
 export function stopKinds(errores = []) {
   const kinds = errores.flatMap(e => (KINDS_OF.find(([re]) => re.test(e)) || [null, []])[1]);
   return kinds.length ? [...new Set(kinds)] : ['q>ee', 'ee>q'];
 }
 
-// Una ronda: ritmo que suena (con el error), pulso donde empieza el error, código y nota afectada
-export function stopRoundOf(base, { kinds, seed, barBeats = 4 }) {
-  const ts = withStarts(base);
+// Una ronda: lo que suena (con el error), el pulso donde empieza el error, el código y dónde. offset: pulsos de
+// silencio antes de la primera nota (la anacrusa entra en el último pulso de la claqueta: offset = compás − anacrusa).
+// avoid: rondas ya jugadas («código:posición»), para no repetir la misma.
+export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set() }) {
+  const ts = stopBase(base, { matices, voice: kinds.includes('voz') });
   const r = rng(seed);
-  const options = kinds.flatMap(k => ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean));
+  const offset = pickup ? barBeats - pickup : 0;
+  const options = kinds.flatMap(k => (k === 'anacrusa' ? (pickup ? [{ k, i: 0 }] : [])
+    : ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean)));
   const fallback = ts.map((t, i) => (i > 0 && MUTATIONS['q>ee'].can(ts, i) ? { k: 'q>ee', i } : null)).filter(Boolean);
-  const pool = options.length ? options : fallback.length ? fallback : [{ k: 'q>Rq', i: ts.findIndex((t, i) => i > 0 && !t.rest) }];
+  const all = options.length ? options : fallback;
+  const fresh = all.filter(o => !avoid.has(`${o.k}:${o.i}`));
+  // si los errores de la unidad ya se han jugado todos, una figura cambiada nueva antes que repetir una ronda
+  const generic = ['q>ee', 'ee>q', 'h-corta', 'Rq>q'].flatMap(k => ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean))
+    .filter(o => !avoid.has(`${o.k}:${o.i}`));
+  const pool = fresh.length ? fresh : generic.length ? generic : all;
   const { k, i } = pool[Math.floor(r() * pool.length)];
+  const key = `${k}:${i}`;
+  // anacrusa en tiempo fuerte: la anacrusa cae en el primer pulso, todo se adelanta y los acentos cambian de sitio
+  if (k === 'anacrusa') return { played: withStarts(ts), offset: 0, errorBeat: 0, code: k, index: 0, key };
   const m = MUTATIONS[k];
-  const played = withStarts([...ts.slice(0, i), ...m.apply(ts, i), ...ts.slice(i + (m.span || 1))]);
-  return { played, errorBeat: ts[i].start + m.at, code: k, index: i };
+  const span = m.wholeBar ? ts.filter(t => t.bar === ts[i].bar).length : (m.span || 1);
+  const played = withStarts([...ts.slice(0, i), ...m.apply(ts, i), ...ts.slice(i + span)]);
+  const errorBeat = offset + (m.at === 'end' ? ts[i].start + ts[i].beats : ts[i].start + m.at);
+  return { played, offset, errorBeat, code: k, index: i, key };
 }
 
 // Ventana para parar a tiempo según la tolerancia del ejercicio («1 compás», «½ pulso», «1 pulso»)
@@ -115,13 +181,16 @@ export function meterQuestions(count, seed) {
 }
 
 // Cinco notas seguidas de do mayor: ¿entre qué dos estaba el semitono (mi-fa o si-do)?
-const SEMITONE_STARTS = [0, 1, 4, 5];
+// inicio (grado de do mayor) → hueco del semitono entre sus cinco notas: do-sol 2, re-la 1, mi-si 0, fa-do 3, sol-re 2, la-mi 1
+const SEMITONE_AT = { 0: 2, 1: 1, 2: 0, 3: 3, 4: 2, 5: 1 };
 const PAIR_NAMES = ['Entre la 1.ª y la 2.ª', 'Entre la 2.ª y la 3.ª', 'Entre la 3.ª y la 4.ª', 'Entre la 4.ª y la 5.ª'];
 export function semitoneQuestions(count, seed) {
   const r = rng(seed);
   const two = [...scale('C4'), ...scale('C5').slice(1)];
   return Array.from({ length: count }, (_, k) => {
-    const s = SEMITONE_STARTS[Math.floor(r() * SEMITONE_STARTS.length)];
+    const target = k % 4 === 0 ? Math.floor(r() * 4) : (Math.floor(r() * 4) + k) % 4;
+    const starts = Object.keys(SEMITONE_AT).map(Number).filter(st => SEMITONE_AT[st] === target);
+    const s = starts[Math.floor(r() * starts.length)];
     const five = two.slice(s, s + 5);
     const at = five.findIndex((n, i) => i < 4 && ['E', 'B'].includes(n[0]));
     return { tipo: 'escucharIntervalo', id: `semitono-${k}`, q: 'Escucha la escalera: ¿dónde está el peldaño corto?', options: PAIR_NAMES,

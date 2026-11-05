@@ -7,7 +7,7 @@ import * as audio from '../audio.js';
 import { centsAnyOctave, noteText, barBeatsOf } from './notes.js';
 import { gradeSung, singMark, SING_TOLERANCE, pctOf, mistakeCodes } from './grade.js';
 import { staffHtml, CLEF } from './kit.js';
-import { playNotes, playChordNow, clicks, stopSound, wait, now } from './sound.js';
+import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.js';
 import { MIC_GATE, openMic, groupsOf } from './tasks-voice.js';
 
 const TICK_MS = 25;
@@ -53,6 +53,33 @@ export function gradeTimedTake(notes, frames, { t0, spb, tolerance, attackTol })
   });
 }
 
+// Acompañamiento de la canción: acorde de tónica o de dominante en cada compás (el que mejor encaja con sus notas),
+// en el registro grave; en la habanera, con su ritmo (corchea con puntillo, semicorchea y dos corcheas)
+const DOMINANT_LETTERS = new Set(['B', 'D', 'F']);
+const HABANERA = [[0, 0.75], [0.75, 0.25], [1, 0.5], [1.5, 0.5]];
+const ACCOMP_GAIN = 0.32;
+export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, fromBar = 0, toBar = Infinity }) {
+  const barBeats = barBeatsOf(meter);
+  const spb = 60 / bpm;
+  const minor = /m$|menor|La m/i.test(key);
+  const I = minor ? [45, 48, 52] : [48, 52, 55];   // La2-Do3-Mi3 / Do3-Mi3-Sol3
+  const V = minor ? [40, 44, 47] : [43, 47, 50];   // Mi2-Sol#2-Si2 / Sol2-Si2-Re3
+  const bars = Math.max(0, ...tokens.map(t => t.bar)) + 1;
+  const events = [];
+  for (let b = Math.max(0, fromBar); b < Math.min(bars, toBar + 1); b++) {
+    const notes = tokens.filter(t => t.bar === b && !t.rest);
+    const dominant = notes.filter(t => DOMINANT_LETTERS.has(t.name[0])).length > notes.filter(t => !DOMINANT_LETTERS.has(t.name[0])).length;
+    const chord = dominant ? V : I;
+    const start = (b - fromBar) * barBeats;
+    const pattern = habanera ? HABANERA.flatMap(([at, len]) => (barBeats >= 2 ? [[at, len]] : [])) : [[0, barBeats]];
+    pattern.forEach(([at, len], k) => {
+      const midis = habanera ? [k === 0 ? chord[0] : chord[(k % 2) + 1]] : chord;
+      midis.forEach(m => events.push({ midi: m, at: (start + at) * spb, dur: len * spb * 0.9, gain: ACCOMP_GAIN }));
+    });
+  }
+  return events;
+}
+
 export async function singSong(host, opts, env) {
   const { tokens, meter, bpm, echo, variant } = opts;
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
@@ -64,13 +91,21 @@ export async function singSong(host, opts, env) {
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
-    <div class="controls"><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>`;
+    <div class="controls"><button type="button" class="btn ghost" id="lmSongHear">Escuchar la canción con acompañamiento</button><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>
+    <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
   const draw = current => { host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, current }); };
   const phase = (text, note = '') => { host.querySelector('#lmSingPhase').textContent = text; host.querySelector('#lmSingNote').textContent = note; };
   draw(-1);
+  host.querySelector('#lmSongHear').addEventListener('click', () => {
+    stopSound();
+    const all = sounding.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 }));
+    playEvents([...all, ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera })]);
+  });
   host.querySelector('#lmSongGo').focus();
   await new Promise(r => host.querySelector('#lmSongGo').addEventListener('click', r, { once: true }));
+  stopSound();
   host.querySelector('.controls').remove();
+  host.querySelector('.muted.small')?.remove();
   if (!(await openMic(host, env))) return null;
   audio.setVoiceInput(true);
   const results = [];
@@ -86,7 +121,9 @@ export async function singSong(host, opts, env) {
       const length = echo ? barBeats : tokens.reduce((s, t) => s + t.beats, 0);
       if (echo) {
         phase('Escucha y repite');
-        const r = playNotes(notes, bpm);
+        const bar = group[0].bar;
+        const r = playEvents([...notes.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
+          ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, fromBar: bar, toBar: bar })]);
         await wait((r.end - now() + 0.2) * 1000);
       }
       // claqueta de un compás y a cantar: los fotogramas del micrófono se guardan con su instante

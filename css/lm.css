@@ -61,7 +61,7 @@
 .lm-run > *, .lm-item { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .lm-q { font-size: 1.3rem; outline-offset: 4px; }
 .lm-card, .lm-card-sum, .lm-work { display: flex; flex-direction: column; gap: 8px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; background: var(--surface); }
-.lm-card-sum h3 { font-size: 1.05rem; }
+.lm-card-sum h2 { font-size: 1.05rem; }
 .lm-work-title { margin: 0; }
 .lm-facts { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
 .lm-listen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -88,8 +88,8 @@
 .lm-mark { font-size: 13px; font-weight: 800; fill: currentColor; }
 .lm-ghost { opacity: .4; }
 .lm-under { font-size: .85rem; font-weight: 700; min-height: 1.3em; color: var(--muted); max-width: 4.5rem; text-align: center; overflow-wrap: anywhere; }
-.lm-sc.now { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 8px; }
-.lm-sc.now .lm-under { color: var(--ink); }
+.lm-sc.lm-now { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 8px; }
+.lm-sc.lm-now .lm-under { color: var(--ink); }
 .lm-sc.ok, .lm-sc.ok .lm-under { color: var(--dict-ok); }
 .lm-sc.near, .lm-sc.near .lm-under { color: var(--dict-near); }
 .lm-sc.bad, .lm-sc.bad .lm-under { color: var(--dict-bad); }
@@ -130,7 +130,7 @@
 .lm-stop-phase { text-align: center; font-weight: 800; font-size: 1.15rem; min-height: 1.5em; margin: 0; }
 .lm-stop-btn { background: var(--bad); color: #fff; font-size: 1.6rem; letter-spacing: .08em; min-height: 5rem; }
 .lm-tap { min-height: 6rem; font-size: 1.3rem; user-select: none; touch-action: manipulation; }
-.lm-tap.hit { animation: lm-hit .12s ease-out; }
+.lm-tap.lm-hit { animation: lm-hit .12s ease-out; }
 @keyframes lm-hit { from { filter: brightness(1.25); transform: scale(.98); } to { filter: none; transform: none; } }
 .lm-ag-top { display: flex; justify-content: space-between; font-weight: 700; font-variant-numeric: tabular-nums; }
 .lm-ag-stage { display: flex; justify-content: center; color: var(--ink); }
@@ -152,7 +152,7 @@
 .lm-ten { text-align: center; margin: 0; font-size: 1.1rem; }
 .lm-ten b { font-size: 1.6rem; font-family: var(--f-display); }
 .lm-mistakes { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; background: var(--surface); }
-.lm-mistakes h3 { font-size: 1rem; }
+.lm-mistakes h2 { font-size: 1rem; }
 .lm-legend { justify-content: center; }
 
 /* Herramientas lanzadas desde una unidad: aviso de terminado con vuelta a la unidad */
@@ -170,3 +170,14 @@
 
 /* Lectura rítmica respondida con toques en la pantalla */
 .rh-tap { min-height: 6rem; font-size: 1.3rem; user-select: none; touch-action: manipulation; }
+
+/* Paleta de figuras: con el texto al 200 % los botones crecen y el texto salta de línea en vez de cortarse */
+.seg.wrap.lm-figs { grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr)); }
+.seg.wrap.lm-figs button { white-space: normal; text-align: left; justify-content: flex-start; min-width: 0; height: auto; min-height: 48px; overflow-wrap: normal; word-break: normal; hyphens: auto; }
+
+/* Creatividad: reglas cumplidas una a una */
+.lm-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lm-rules li { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+/* El pentagrama por celdas va siempre en fila (aunque sea hijo directo de .lm-run, que apila en columna) */
+.lm-run .lm-staff, .lm-run > .lm-staff { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }

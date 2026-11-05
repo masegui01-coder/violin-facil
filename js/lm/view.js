@@ -6,7 +6,7 @@ import { getState } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { currentCourse, currentStates, launch } from '../launch.js';
 import { lessonTitle } from '../course.js';
-import { LM_LEVELS, lmUnit, SECTION_NAME, VARIANT_NAME, SKILL_NAME, LM_SKILLS } from './catalog.js';
+import { LM_LEVELS, lmLevel, lmUnit, SECTION_NAME, VARIANT_NAME, SKILL_NAME, LM_SKILLS } from './catalog.js';
 import { unitProgress, levelProgress, skillSummary, bestOf } from './results.js';
 import { openLmExercise, openInstrumentTool, toolsFor, toolLabel } from './launcher.js';
 
@@ -55,8 +55,9 @@ function levelsHtml() {
 }
 
 // ---------- Una unidad ----------
+const groupTitle = t => String(t).replace(/\s+(fácil|media|medio)$/i, '');
 function exerciseRow(group) {
-  const [first] = group;
+  const first = { ...group[0], title: groupTitle(group[0].title) };
   const assigned = group.some(e => marked.ids.includes(e.id));
   return `<li class="lm-ex${assigned ? ' assigned' : ''}"><div class="lm-ex-text"><b>${esc(first.title)}</b>${assigned ? '<span class="pill">Tarea</span>' : ''}</div>
     <div class="lm-ex-variants">${group.map(e => {
@@ -78,26 +79,33 @@ function sectionHtml(block) {
 }
 
 // Lección del curso del instrumento del alumno que corresponde a la unidad («u3», «pu1», «gu5»…)
-function courseLesson(block) {
-  const s = getState();
+const refOf = (block, s) => {
   const fam = block.families[familyOf(instrumentById(s.instrument))];
-  if (!fam || !fam.curso) return { fam, lesson: null };
+  if (!fam || !fam.curso) return { fam, n: null };
   const ref = fam.curso[s.instrument] || fam.curso.winds || Object.values(fam.curso)[0];
-  const n = Number(String(ref).replace(/\D+/g, '')) || 1;
+  return { fam, n: Number(String(ref).replace(/\D+/g, '')) || 1 };
+};
+export function courseLesson(block, lmUnitNumber, level = 1) {
+  const s = getState();
+  const { fam, n } = refOf(block, s);
+  if (!n) return { fam, lesson: null };
   const course = currentCourse();
   const unit = course[Math.min(course.length, n) - 1];
   if (!unit) return { fam, lesson: null };
-  const states = currentStates(course);
-  const lesson = unit.lessons.find(l => states[l.id] === 'open') || unit.lessons.find(l => states[l.id] !== 'locked') || unit.lessons[0];
+  // las unidades de Lenguaje que remiten a esta misma unidad del curso se reparten sus lecciones por orden
+  const sharing = (lmLevel(level)?.units || []).filter(u => refOf(u.blocks.find(b => b.kind === 'instrument'), s).n === n).map(u => u.unit);
+  const lessons = unit.lessons.filter(l => !l.optional || l.pill);
+  const k = Math.max(0, sharing.indexOf(lmUnitNumber));
+  const lesson = lessons[Math.min(lessons.length - 1, Math.floor(lessons.length * k / Math.max(1, sharing.length)))] || unit.lessons[0];
   return { fam, lesson, unitTitle: unit.title };
 }
 
 let instrumentLesson = null;
-function instrumentHtml(block) {
+function instrumentHtml(block, u) {
   const inst = instrumentById(getState().instrument);
-  const { fam, lesson } = courseLesson(block);
+  const { fam, lesson } = courseLesson(block, u.unit, u.level);
   instrumentLesson = lesson;
-  const tools = toolsFor(block.tools, familyOf(inst));
+  const tools = toolsFor(block.tools, familyOf(inst), inst);
   return `<section class="lm-instrument" aria-labelledby="lmInstTitle"><h3 id="lmInstTitle"><span>En tu instrumento</span> · <span>${esc(inst.name)}</span></h3>
     <p>${esc(block.idea)}</p>${fam ? `<p class="muted">${esc(fam.texto)}</p>` : ''}
     <div class="lm-inst-links">
@@ -116,7 +124,7 @@ function unitHtml(u) {
       <h4>Novedades</h4><ul>${u.novelties.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
       <h4>Objetivos</h4><ul>${u.objectives.map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>
     <div class="controls"><button type="button" class="btn ghost small" data-lm-pdf>Ficha de la unidad en PDF</button></div>
-    ${u.blocks.map(b => (b.kind === 'instrument' ? instrumentHtml(b) : sectionHtml(b))).join('')}`;
+    ${u.blocks.map(b => (b.kind === 'instrument' ? instrumentHtml(b, u) : sectionHtml(b))).join('')}`;
 }
 
 export function renderLm({ focus = false } = {}) {
@@ -142,7 +150,8 @@ export function bindLm() {
     if (tool) {
       const u = lmUnit(openUnit.level, openUnit.unit);
       const block = u.blocks.find(b => b.kind === 'instrument');
-      openInstrumentTool(toolsFor(block.tools, familyOf(instrumentById(getState().instrument)))[Number(tool.dataset.instTool)]);
+      const inst = instrumentById(getState().instrument);
+      openInstrumentTool(toolsFor(block.tools, familyOf(inst), inst)[Number(tool.dataset.instTool)], u);
       return;
     }
     if (e.target.closest('[data-lm-pdf]')) {

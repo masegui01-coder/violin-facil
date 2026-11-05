@@ -63,6 +63,7 @@ function resolve(section, ex, raw) {
   if (section === 'ritmo' && ex.base) return { ...ex, base: list.find(b => b.id === ex.base) || null };
   if (section === 'cancion' || (section === 'dictado' && ex.compases)) return { ...ex, cancion: raw.cancion };
   if (section === 'audicion') return { ...ex, audicion: raw.audicion };
+  if (section === 'dictado' || section === 'repaso') return { ...ex, figurasUnidad: raw.figuras || [] };
   return ex;
 }
 
@@ -115,6 +116,7 @@ export const LM_CATALOG = allLmExercises().map(({ id, level, unit, section, vari
 // los ejercicios (STOP, barras, escritura, reglas de la composición). «X>Y»: nota X leída o cantada como Y.
 export const LM_MISTAKES = {
   ...META_1.codigosError,
+  'semitono-oido': 'no distinguió el tono del semitono al oírlo', modo: META_1.codigosError.modo,
   'stop-pronto': 'paró antes del error', 'stop-tarde': 'paró tarde', 'stop-no': 'no paró la música',
   'barra-falta': 'faltó una barra de compás', 'barra-sobra': 'sobró una barra de compás', falta: 'faltó una nota', sobra: 'sobró una nota',
   altura: 'nota equivocada', 'r-longitud': 'número de compases', 'r-compases': 'compases incompletos', 'r-figuras': 'figura no permitida',

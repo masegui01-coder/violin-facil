@@ -27,11 +27,11 @@ function gainsOf(play, notes) {
 export function playQuestion(play, env) {
   stopSound();
   const notes = notesOfPlay(play, env);
-  return playNotes(notes, play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0 });
+  return playNotes(notes, play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
 }
 
 // ---------- Elegir (con sonido opcional) ----------
-const LISTEN_MISTAKE = { escucharCompas: 'compas', escucharModo: 'modo', escucharIntervalo: 'semitono', escucharMatiz: 'matiz' };
+const LISTEN_MISTAKE = { escucharCompas: 'compas', escucharModo: 'modo', escucharIntervalo: 'semitono-oido', escucharMatiz: 'matiz' };
 
 function headHtml(item) {
   return `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2>`;
@@ -63,7 +63,8 @@ const elegir = (host, item, env) => choose(host, item, env, { options: item.opti
 
 // ---------- Contar pulsos ----------
 function contar(host, item, env) {
-  const tokens = scoreTokens(item.partitura);
+  // sin partitura, la pregunta es de cálculo («¿cuántas corcheas llenan un 2/4?»)
+  const tokens = item.partitura ? scoreTokens(item.partitura) : null;
   const right = Number(item.respuesta);
   const pool = [];
   for (let d = -COUNT_SPREAD; d <= COUNT_SPREAD; d++) if (right + d >= 1) pool.push(right + d);
@@ -72,7 +73,7 @@ function contar(host, item, env) {
   const sorted = [...options].sort((a, b) => a - b);
   return choose(host, item, env, {
     options: sorted.map(String), correct: [sorted.indexOf(right)],
-    extraHtml: staffHtml(tokens, { meter: item.compas || null, label: tokens.map(t => tokenLabel(t, env.nom)).join(', ') }),
+    extraHtml: tokens ? staffHtml(tokens, { meter: item.compas || null, label: tokens.map(t => tokenLabel(t, env.nom)).join(', ') }) : '',
   });
 }
 

@@ -88,6 +88,12 @@ async function answer(page, item) {
     for (const n of item.respuesta) await click(page, `[data-name="${({ do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' })[n.replace(/\d/, '')]}"]`);
   } else if (item.tipo === 'ordenar') {
     await click(page, '[data-check]');
+  } else if (item.tipo === 'emparejar') {
+    await page.$$eval('[data-pair]', (sels, pares) => sels.forEach((sel, i) => { sel.value = pares[i][1]; }), item.pares);
+    await click(page, '[data-check]');
+  } else if (item.tipo === 'barras') {
+    for (const g of item.respuesta) await click(page, `[data-gap="${g}"]`);
+    await click(page, '[data-check]');
   } else if (item.tipo === 'completar') {
     await click(page, `[data-opt="${item.correctas[0]}"]`);
   } else {
@@ -211,6 +217,9 @@ test('dictado escrito: escucha, escribe con el teclado en el pentagrama y correc
   const want = scoreTokens(ex.params.partitura);
   await writeNotes(page, want);
   await click(page, '[data-check]');
+  // la solución se ve antes del resultado: lo que sonaba, con los signos
+  await page.waitForSelector('.lm-feedback .lm-staff', { timeout: STEP_TIMEOUT });
+  await next(page);
   await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
   const chips = await page.$$eval('.lm-chips .dict-chip', cs => cs.map(c => c.firstElementChild.textContent));
   assert.ok(chips.length === want.length && chips.every(c => c === '✓'), chips.join(''));
@@ -260,7 +269,10 @@ test('audición y creatividad: ficha con fragmento sintetizado, preguntas, compo
   const beats = Number(rs.compas.split('/')[0]) * rs.compases;
   await writeNotes(page, Array.from({ length: beats }, () => ({ step: note.step, dur: 'q' })));
   await click(page, '[data-check]');
+  await page.waitForSelector('.lm-rules', { timeout: STEP_TIMEOUT });
+  await next(page);
   await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+  assert.equal(await page.$('.lm-ten'), null, 'creatividad: sin nota automática');
   const lm = await lmState(page);
   assert.ok(lm.works[cre], 'la composición queda guardada');
   assert.deepEqual(lm.best[cre].skills, {}, 'creatividad: sin competencia automática (la nota la pone el profesor)');
@@ -366,3 +378,44 @@ test('lectura rítmica respondida con toques en la pantalla (sin micrófono) y e
   assert.deepEqual(errors, []);
   await close();
 });
+
+// Recorre la teoría y la audición de las 8 unidades en Fácil y Media (ninguna se cuelga y todas quedan registradas)
+for (const section of ['teoria', 'audicion']) {
+  test(`${section}: las 8 unidades en Fácil y Media se completan y registran su resultado`, async () => {
+    const { page, errors, close } = await openLm({ viewport: DESKTOP });
+    for (let u = 1; u <= 8; u++) {
+      await openUnit(page, u);
+      for (const v of ['facil', 'medio']) {
+        const id = `lm1-u${u}-${section}-a-${v}`;
+        const ex = lmExercise(id);
+        if (!ex) continue;
+        await openExercise(page, id);
+        try {
+        if (section === 'teoria') {
+          const summary = /resumen/.test(ex.params.herramienta?.params?.cards || '');
+          for (let k = 0; k < (summary ? 1 : ex.params.ficha.length); k++) await next(page);
+          for (const item of ex.params.items) { await answer(page, item); await next(page); }
+        } else {
+          await page.waitForSelector('#lmWorkPlay');
+          await next(page);
+          for (const q of ex.params.preguntas) { await answer(page, q); await next(page); }
+        }
+        await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+        assert.ok(await page.$eval('#lmBody', b => !/No se ha podido/.test(b.textContent)), id);
+        const r = (await lmState(page)).last[id];
+        assert.ok(r && r.pct >= 60, `${id}: ${r && r.pct} %`);
+        await click(page, '#lmToUnit');
+        await page.waitForFunction(() => !document.documentElement.dataset.nav && !document.getElementById('learn').hidden, { timeout: STEP_TIMEOUT });
+        await page.waitForSelector('#learn #lmUnitTitle', { timeout: STEP_TIMEOUT });
+        } catch (err) {
+          const state = await page.evaluate(() => ({ screen: [...document.querySelectorAll('main > section')].filter(x => !x.hidden).map(x => x.id), body: (document.getElementById('lmBody') || {}).innerText }));
+          throw new Error(`${id}: ${err.message} · ${JSON.stringify(state).slice(0, 600)}`);
+        }
+      }
+      await click(page, '[data-lm-back]');
+      await page.waitForSelector('.lm-unit-card');
+    }
+    assert.deepEqual(errors, []);
+    await close();
+  });
+}
