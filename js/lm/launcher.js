@@ -8,9 +8,12 @@ import { go } from '../router.js';
 import { toast } from '../ui.js';
 import { getState, update } from '../store.js';
 import { instrumentById } from '../instruments.js';
-import { sightReading, rhythmReading, technique } from '../generate.js';
-import { launch } from '../launch.js';
-import { lmExercise, lmUnit, TYPES } from './catalog.js';
+import { sightReading, rhythmReading, technique, keyLabel } from '../generate.js';
+import { octaveShiftFor } from '../songs.js';
+import { launch, currentCourse } from '../launch.js';
+import { LANGUAGE } from '../book-theory.js';
+import { barBeatsOf } from './notes.js';
+import { lmExercise, lmUnit, lmSong, TYPES } from './catalog.js';
 import { recordLmResult } from './results.js';
 import { LM_TOOL_EVENT } from './bridge.js';
 
@@ -46,7 +49,7 @@ function openTool(ex) {
   if (ex.type === 'lectura-ritmica') {
     const time = Number(String(p.compas || '4/4').split('/')[0]);
     const song = { id: ex.id, title: ex.title, by: '', key: 'C', time, bpm: p.tempo || 72, score: p.partitura };
-    go('rhythm', { lesson: rhythmLesson(ex, song), from: 'lm', eyebrow: 'Lenguaje musical' });
+    go('rhythm', { lesson: { ...rhythmLesson(ex, song), ...(p.matices ? { dynamics: p.matices } : {}) }, from: 'lm', eyebrow: 'Lenguaje musical' });
     return;
   }
   toast('Este ejercicio todavía no está disponible');
@@ -61,7 +64,7 @@ export function openInstrumentTool(h) {
   const lesson = extra => ({ noRecord: true, nextAction: () => toUnit, ...extra });
   switch (h.tool) {
     case 'longtone': go('longtone', { secs: p.segundos || 8, dynamics: p.dinamica || null, routine: toUnit }); return;
-    case 'chord': go('chord', {}); return;
+    case 'chord': go('chord', { lm: { root: CHORD_ROOT[p.acorde] || 60, interval: CHORD_DEGREE[p.nota] || 'M3', hits: 3 } }); return;
     case 'gym': {
       const song = inst.rhythmOnly ? null : technique(p.kind || 'scale', p.key || 'C', inst, p.bpm || 60, p.figure || 'q');
       if (!song) { go('gym'); return; }
@@ -79,11 +82,51 @@ export function openInstrumentTool(h) {
       return;
     }
     case 'dictation.melodicDictation': go('dictation', { lm: { level: p.level, meter: p.meter, bars: p.bars } }); return;
-    case 'free': go('free', {}); return;
-    case 'book': case 'method': update({ learnView: h.tool === 'book' ? 'book' : 'pro' }); go('learn'); return;
+    case 'free': {
+      // De memoria: la canción de la unidad, tocada sin partitura y comparada nota a nota
+      const tune = p.obra ? lmSong(1, p.obra) : null;
+      if (!tune) { go('free', {}); return; }
+      const song = { id: `lm-song-${tune.titulo}`.replace(/\W+/g, '-').slice(0, 60), title: tune.titulo, by: 'Band Flow', style: null, key: 'C', time: barBeatsOf(tune.compas), bpm: tune.tempo || 80, score: tune.partitura };
+      launch(lesson({ id: song.id, kind: 'song', song, octaveShift: octaveShiftFor(song, inst) ?? 0 }), { mode: 'memory', from: 'lm' });
+      return;
+    }
+    case 'book': {
+      // la página del Libro del instrumento con esa teoría («b1-lm1-pentagrama»)
+      import('../books.js').then(({ buildLibrary }) => {
+        const page = buildLibrary(currentCourse(), inst).flatMap(b => b.chapters.flatMap(c => c.pages)).find(pg => pg.lesson.id.endsWith(`-${p.lesson}`));
+        if (page) go('bookpage', { lessonId: page.lesson.id });
+        else { update({ learnView: 'book' }); go('learn'); }
+      }, () => toast('No se ha podido abrir. Revisa la conexión.'));
+      return;
+    }
+    case 'method':
+      // el primer nivel del Método Pro del instrumento (el temario asignable equivalente al final del nivel 1)
+      import('../method.js').then(({ buildMethod, hasMethod }) => {
+        const first = hasMethod(inst) ? buildMethod(inst, getState().nom)[0] : null;
+        update({ learnView: 'pro' });
+        if (first) go('pro', { id: first.leccion_id, tab: 'play' }); else go('learn');
+      }, () => toast('No se ha podido abrir. Revisa la conexión.'));
+      return;
     default: toast('Este ejercicio todavía no está disponible');
   }
 }
+
+// Texto del botón de cada herramienta del bloque «En tu instrumento»
+const TOOL_BASE = {
+  longtone: 'Notas tenidas', chord: 'Afinar en acorde', gym: 'Gimnasio', 'generate.sightReading': 'Lectura a primera vista',
+  'generate.rhythmReading': 'Lectura rítmica', 'dictation.melodicDictation': 'Dictado tocado', free: 'De memoria', book: 'Libro', method: 'Método Pro',
+};
+export function toolLabel(h) {
+  const p = h.params || {};
+  if (h.tool === 'longtone' && p.dinamica) return 'Notas tenidas con regulador';
+  if (h.tool === 'chord') return p.nota === 'tercera' ? 'Afinar en acorde: la tercera' : 'Afinar en acorde: la tónica';
+  if (h.tool === 'gym') return `${p.kind === 'arpeggio' ? 'Arpegio' : 'Escala'} de ${keyLabel(p.key || 'C')}`;
+  if (h.tool === 'free' && p.obra) return `De memoria: ${p.obra}`;
+  if (h.tool === 'book') { const topic = Object.values(LANGUAGE).flat().find(x => x.id === p.lesson); return topic ? `Libro: ${topic.title}` : 'Libro'; }
+  return TOOL_BASE[h.tool] || h.tool;
+}
+const CHORD_ROOT = { C: 60, F: 65, G: 55, Bb: 58, Eb: 63 };
+const CHORD_DEGREE = { tercera: 'M3', 'tónica': 'root', quinta: 'P5', sexta: 'M6' };
 
 // Herramientas que valen para la familia del instrumento del alumno («para» vacío: todas)
 export const toolsFor = (tools, family) => tools.filter(h => !h.para || h.para.includes(family));
@@ -118,8 +161,11 @@ export function openLmExercise(idOrEx) {
 function onLessonFinished(e) {
   const { lesson, stars, accuracy, missed } = e.detail || {};
   if (!lesson || !lesson.lm || lesson.lm.via === 'tool' || !active || active.ex.id !== lesson.lm.id) return;
-  const pct = accuracy === null || accuracy === undefined ? Math.round((stars || 0) * 100 / 3) : Math.round(accuracy * 100);
-  const mistakes = (missed || []).map((m, i) => (m ? `n${i + 1}` : null)).filter(Boolean).slice(0, MAX_MISTAKES);
+  const base = accuracy === null || accuracy === undefined ? Math.round((stars || 0) * 100 / 3) : Math.round(accuracy * 100);
+  // matices de la lectura rítmica (rhythm.js): pesan un 20 % y el fallo se apunta con el código del contrato
+  const dyn = lesson.dynamicsResult;
+  const pct = dyn && dyn.total ? Math.round(base * (0.8 + 0.2 * dyn.ok / dyn.total)) : base;
+  const mistakes = [...(dyn && dyn.ok < dyn.total ? ['matiz'] : []), ...(missed || []).map((m, i) => (m ? `n${i + 1}` : null)).filter(Boolean)].slice(0, MAX_MISTAKES);
   recordActive({ pct, stars, mistakes }, { logMinutes: false });
 }
 

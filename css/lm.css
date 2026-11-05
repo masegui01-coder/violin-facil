@@ -167,3 +167,6 @@
 .aula-works li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .aula-works li > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .aula-works .btn { min-height: 44px; }
+
+/* Lectura rítmica respondida con toques en la pantalla */
+.rh-tap { min-height: 6rem; font-size: 1.3rem; user-select: none; touch-action: manipulation; }

@@ -90,7 +90,9 @@ export const EXERCISE_IDS = Object.keys(EXERCISES);
 const FIGURE_BEATS = { e: 0.5, q: 1, h: 2 };
 export function technique(kind, key, inst, bpm, figure = 'e') {
   const ex = EXERCISES[kind];
-  const names = fit(key, MAJOR, ex.degrees, inst);
+  // «Am»: la escala menor natural de La (curso de Lenguaje Musical, Nivel 1)
+  const minor = key.endsWith('m');
+  const names = fit(minor ? key.slice(0, -1) : key, minor ? MINOR : MAJOR, ex.degrees, inst);
   if (!names) return null;
   const beats = FIGURE_BEATS[figure];
   const tokens = names.slice(0, -1).map(n => ({ tok: n + figure, beats }));

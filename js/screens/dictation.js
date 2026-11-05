@@ -158,7 +158,9 @@ function startDictation() {
   const o = lmCtx ? normalizedOpts({ level: lmCtx.level, meter: lmCtx.meter, bars: lmCtx.bars }) : normalizedOpts();
   if (!lmCtx) saveOpts(o);
   const seed = lmCtx && Number.isFinite(lmCtx.seed) ? lmCtx.seed : Math.floor(Math.random() * 1e9);
-  const dict = makeDictation(i, { ...o, seed, ...(lmCtx && lmCtx.cells ? { cells: lmCtx.cells, meter: lmCtx.meter || o.meter } : {}) });
+  // desde el curso: figuras permitidas, compás pedido, menor natural y anacrusa (dictation.js limitedConfig, withPickup)
+  const course = lmCtx ? { ...(lmCtx.cells ? { cells: lmCtx.cells, meter: lmCtx.meter || o.meter } : {}), ...(lmCtx.minor ? { minor: lmCtx.minor } : {}), ...(lmCtx.anacrusa ? { anacrusa: true } : {}), ...(lmCtx.key ? { key: lmCtx.key } : {}) } : {};
+  const dict = makeDictation(i, { ...o, seed, ...course });
   if (!dict) { toast('Este dictado no cabe en el registro de tu instrumento'); if (lmCtx) back(); return; }
   run = { dict, inst: i, listens: 0, extra: 0, startedAt: performance.now(), canPlay: false };
   listenCycle();
@@ -203,9 +205,11 @@ function markListen(n, extra) {
 }
 
 // La claqueta del compás (dos compases en 2/4; en 6/8, acentos en la 1 y la 4). Devuelve cuándo acaba.
+// music: cuándo empieza la partitura (con anacrusa, sus silencios iniciales suenan sobre la claqueta)
 function countIn(d) {
   const plan = countInPlan(d);
-  return { end: audio.countIn(plan.clicks, plan.bpm, true, plan.accents), plan };
+  const end = audio.countIn(plan.clicks, plan.bpm, true, plan.accents);
+  return { end, music: end - (d.lead || 0) * 60 / d.bpm, plan };
 }
 
 // Muestra la claqueta (1, 2, 3…) y luego el avance
@@ -254,8 +258,8 @@ async function playOnce(token, n, extra = false) {
   if (!(await situate(token, d))) return;
   const count = countIn(d);
   const total = followPlayback(d, count, () => phaseText('Escucha…'));
-  if (d.rhythmOnly) stops.push(playDrums(d.notes, d.bpm, d.barBeats, count.end));
-  else stops.push(audio.playScore(d.notes, d.bpm, () => {}, { at: count.end }));
+  if (d.rhythmOnly) stops.push(playDrums(d.notes, d.bpm, d.barBeats, count.music));
+  else stops.push(audio.playScore(d.notes, d.bpm, () => {}, { at: count.music }));
   await wait((count.end - audio.audioTime() + total) * 1000 + AFTER_PLAY_MS);
   barWidth(1);
 }
@@ -367,7 +371,7 @@ function beginCapture() {
   const d = run.dict;
   const count = countIn(d);
   setStatus('Atento a la claqueta: después, toca lo que has oído');
-  capture = { count, t0: count.end, spb: 60 / d.bpm, events: [], current: null, lastSound: audio.audioTime(), tracker: createTracker({ stableMs: STABLE_MS }), announced: false };
+  capture = { count, t0: count.music, spb: 60 / d.bpm, events: [], current: null, lastSound: audio.audioTime(), tracker: createTracker({ stableMs: STABLE_MS }), announced: false };
   if (d.rhythmOnly) {
     const lag = getState().percLatency || audio.outputLatency();
     audio.startOnsetCapture(hits => {

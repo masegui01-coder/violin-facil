@@ -202,7 +202,8 @@ export function screensPatterns({ tr, noteEn, notesEn }) {
     [/^(\d+) perfectos · (\d+) bien · (\d+) fuera de tiempo · (\d+) sin tocar((?: · [^.]+)*)\. ?(.*)$/, (m, p, g, o, x, extra, tip) => {
       const parts = extra.split(' · ').filter(Boolean).map(part => part
         .replace(/^Acentos claros$/, 'Clear accents').replace(/^Marca más los acentos$/, 'Bring out the accents more')
-        .replace(/^Graves y agudos: (\d+) % bien( \(grave con la palma en el centro, agudo con los dedos en el borde\))?$/, (s, n, how) => `Bass and slap: ${n} % right${how ? ' (bass with the palm in the centre, slap with the fingers on the edge)' : ''}`));
+        .replace(/^Graves y agudos: (\d+) % bien( \(grave con la palma en el centro, agudo con los dedos en el borde\))?$/, (s, n, how) => `Bass and slap: ${n} % right${how ? ' (bass with the palm in the centre, slap with the fingers on the edge)' : ''}`)
+        .replace(/^Matices: (\d+) de (\d+) bien$/, (s, a, b) => `Dynamics: ${a} of ${b} right`).replace(/^Los matices se miden con el micrófono$/, 'Dynamics are measured with the microphone'));
       return `${p} perfect · ${g} good · ${o} off the beat · ${x} missed${parts.map(s => ` · ${s}`).join('')}.${tip ? ` ${tr(tip)}` : ''}`;
     }],
     // Resultado

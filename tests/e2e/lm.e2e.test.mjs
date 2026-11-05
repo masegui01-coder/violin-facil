@@ -305,3 +305,64 @@ test('herramienta de siempre lanzada desde la unidad: la lectura rítmica abre e
   assert.deepEqual(errors, []);
   await close();
 });
+
+test('canción de la unidad cantada a tempo: afinación y ataques medidos nota a nota (micrófono simulado)', async () => {
+  const id = 'lm1-u1-cancion-a-medio';
+  const { page, errors, close } = await openLm();
+  await openUnit(page, 1);
+  await openExercise(page, id);
+  await click(page, '#lmSongGo');
+  const started = Date.now();
+  let last = null;
+  while (Date.now() - started < SING_TIMEOUT_MS) {
+    if (await page.$('#lmScores')) break;
+    const cur = await page.$eval('#lmBody', el => (el.dataset.index ? `${el.dataset.index}:${el.dataset.target}` : null)).catch(() => null);
+    if (cur && cur !== last) {
+      last = cur;
+      const midi = Number(cur.split(':')[1]);
+      // un corte breve antes de cada nota: así dos notas iguales seguidas son dos ataques
+      await page.evaluate(m => { window.__setTone(0); setTimeout(() => window.__setTone(440 * 2 ** ((m - 69) / 12)), 30); }, midi);
+    } else if (!cur && last) { await page.evaluate(() => window.__setTone(0)); last = null; }
+    await sleep(15);
+  }
+  await page.waitForSelector('#lmScores', { timeout: 5000 });
+  const r = (await lmState(page)).best[id];
+  assert.ok(r.skills.entonacion >= 80, `afinación ${r.skills.entonacion} %`);
+  assert.ok(r.skills.ritmo >= 60, `ataques ${r.skills.ritmo} %`);
+  assert.notEqual(r.skills.ritmo, undefined, 'el ritmo se mide aparte de la afinación');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('lectura rítmica respondida con toques en la pantalla (sin micrófono) y el Libro desde «En tu instrumento»', async () => {
+  const id = 'lm1-u1-ritmo-a-facil';
+  const ex = lmExercise(id);
+  const { page, errors, close } = await openLm({ init: () => { navigator.mediaDevices.getUserMedia = async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); }; } });
+  await openUnit(page, 1);
+  await openExercise(page, id);
+  await waitVisible(page, 'rhythm');
+  await page.$eval('#rhTouch', el => { el.checked = true; el.dispatchEvent(new Event('change')); });
+  assert.equal(await page.$eval('#rhGate', el => el.hidden), true, 'sin la puerta del micrófono');
+  const spb = 60 / ex.params.tempo;
+  const beats = Number(ex.params.compas.split('/')[0]);
+  const notes = scoreTokens(ex.params.partitura).filter(t => !t.rest);
+  const t0 = await page.evaluate(() => { document.getElementById('rhStart').click(); return performance.now(); });
+  for (const n of notes) {
+    const at = t0 + (0.15 + (beats + n.start) * spb) * 1000;
+    await page.evaluate(when => new Promise(res => setTimeout(() => {
+      document.getElementById('rhTap').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      res();
+    }, Math.max(0, when - performance.now()))), at);
+  }
+  await page.waitForSelector('#result:not([hidden])', { timeout: 15000 });
+  const r = (await lmState(page)).best[id];
+  assert.ok(r && r.pct >= 60, `lectura con toques: ${r && r.pct} %`);
+  await click(page, '#resBack');
+  await page.waitForSelector('#lmUnitTitle', { timeout: STEP_TIMEOUT });
+  const book = await page.$$eval('[data-inst-tool]', bs => bs.findIndex(b => b.textContent.startsWith('Libro')));
+  assert.ok(book >= 0, 'enlace al Libro');
+  await click(page, `[data-inst-tool="${book}"]`);
+  await waitVisible(page, 'bookpage');
+  assert.deepEqual(errors, []);
+  await close();
+});

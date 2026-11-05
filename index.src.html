@@ -474,10 +474,11 @@
         <div class="row spread"><span class="muted">Velocidad</span><b id="rhBpm" class="tempo-bpm"></b></div>
         <div class="seg five" role="group" aria-label="Velocidad"><button type="button" data-rspeed="0.4">40 %</button><button type="button" data-rspeed="0.5">50 %</button><button type="button" data-rspeed="0.6">60 %</button><button type="button" data-rspeed="0.8">80 %</button><button type="button" data-rspeed="1">100 %</button></div>
         <label class="switch-row" for="rhClick"><span>Clic del metrónomo (la cuenta previa suena siempre)</span><input id="rhClick" type="checkbox" class="switch"></label>
+        <label class="switch-row" for="rhTouch"><span>Responder tocando la pantalla (sin micrófono)</span><input id="rhTouch" type="checkbox" class="switch"></label>
         <label class="switch-row" id="rhVbRow" for="rhVbToggle" hidden><span>Banda virtual: suenan las otras voces (con auriculares)</span><input id="rhVbToggle" type="checkbox" class="switch"></label>
         <div class="row" style="justify-content:center"><button id="rhDemo" class="btn ghost" type="button"><span data-icon="speaker" class="ic"></span>Escuchar</button><button id="rhStart" class="btn" type="button"><span data-icon="play" class="ic"></span>Empezar</button></div>
       </div>
-      <div id="rhPlaying" class="controls" hidden><button id="rhRestart" class="btn ghost small" type="button">⟲ Reiniciar</button></div>
+      <div id="rhPlaying" class="controls" hidden><button id="rhTap" class="btn big rh-tap" type="button" aria-keyshortcuts="Space" hidden>Toca aquí</button><button id="rhRestart" class="btn ghost small" type="button">⟲ Reiniciar</button></div>
       <p class="small muted center">Golpea en la caja, en un pad o en la mesa. Las letras D e I indican la mano derecha o izquierda.</p>
     </section>
 

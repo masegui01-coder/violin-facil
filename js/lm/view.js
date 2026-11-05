@@ -8,7 +8,7 @@ import { currentCourse, currentStates, launch } from '../launch.js';
 import { lessonTitle } from '../course.js';
 import { LM_LEVELS, lmUnit, SECTION_NAME, VARIANT_NAME, SKILL_NAME, LM_SKILLS } from './catalog.js';
 import { unitProgress, levelProgress, skillSummary, bestOf } from './results.js';
-import { openLmExercise, openInstrumentTool, toolsFor } from './launcher.js';
+import { openLmExercise, openInstrumentTool, toolsFor, toolLabel } from './launcher.js';
 
 let openUnit = null; // { level, unit }
 let marked = { section: null, ids: [] }; // lo que asignó el Aula, resaltado en la unidad
@@ -18,10 +18,6 @@ const SECTION_HINT = {
   teoria: 'Ficha y práctica interactiva', ritmo: 'Palmas al micrófono y el juego STOP', agilidad: 'Nombra las notas contra reloj',
   entonacion: 'Canta: la app te escucha y corrige', dictado: 'Escucha y escribe en el pentagrama', cancion: 'La canción de la unidad, cantada',
   audicion: 'Una obra, su historia y preguntas', creatividad: 'Compón y escúchalo', repaso: 'Todas las competencias',
-};
-const TOOL_NAME = {
-  longtone: 'Notas tenidas', chord: 'Afinar en acorde', gym: 'Gimnasio: la escala', 'generate.sightReading': 'Lectura a primera vista',
-  'generate.rhythmReading': 'Lectura rítmica', 'dictation.melodicDictation': 'Dictado tocado', free: 'Toca libre de memoria', book: 'Modo libro', method: 'Método Pro',
 };
 // Familia de instrumento del temario (lm-nivel1: cuerdaFrotada, vientoMadera…)
 const FAMILY = { cuerda: 'cuerdaFrotada', madera: 'vientoMadera', escuela: 'vientoMadera', metal: 'vientoMetal', tecla: 'teclado', pulsada: 'cuerdaPulsada', percusion: 'percusion' };
@@ -106,7 +102,7 @@ function instrumentHtml(block) {
     <p>${esc(block.idea)}</p>${fam ? `<p class="muted">${esc(fam.texto)}</p>` : ''}
     <div class="lm-inst-links">
       ${lesson ? `<button type="button" class="btn" data-inst-lesson><span class="ic">${icon('play')}</span><span>Lección:</span> <span>${esc(lessonTitle(lesson))}</span></button>` : ''}
-      ${tools.map((h, i) => `<button type="button" class="btn ghost small" data-inst-tool="${i}">${esc(TOOL_NAME[h.tool] || h.tool)}</button>`).join('')}
+      ${tools.map((h, i) => `<button type="button" class="btn ghost small" data-inst-tool="${i}">${esc(toolLabel(h))}</button>`).join('')}
     </div></section>`;
 }
 

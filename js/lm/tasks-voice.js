@@ -61,7 +61,25 @@ async function waitBreak(midi, alive) {
   }
 }
 
-function groupsOf(notes, by) {
+// Puerta del micrófono (#lmSingGate, #lmSingErr, #lmSingMic en host): insiste hasta que se concede o se sale
+export const MIC_GATE = `<div id="lmSingGate" class="mic-gate" hidden><p><strong>Necesito el micrófono</strong> para oír cómo cantas.</p><p class="muted" id="lmSingErr"></p>
+      <button type="button" class="btn" id="lmSingMic">Activar micrófono</button></div>`;
+export async function openMic(host, env) {
+  for (;;) {
+    try { await audio.startMic(); break; } catch (err) {
+      host.querySelector('#lmSingGate').hidden = false;
+      host.querySelector('#lmSingErr').textContent = audio.micErrorText(err);
+      host.querySelector('#lmSingMic').focus();
+      env.say('Micrófono sin permiso');
+      await new Promise(r => host.querySelector('#lmSingMic').addEventListener('click', r, { once: true }));
+      if (!env.alive()) return false;
+    }
+  }
+  host.querySelector('#lmSingGate').hidden = true;
+  return true;
+}
+
+export function groupsOf(notes, by) {
   if (!by) return [notes];
   const out = [];
   notes.forEach(n => {
@@ -87,8 +105,7 @@ export async function singTask(host, opts, env) {
     host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current });
   };
   host.innerHTML = `${opts.intro ? `<p class="muted">${opts.introLabel ? `<span>${esc(opts.introLabel)}</span> ` : ''}<span>${esc(opts.intro)}</span></p>` : ''}
-    <div id="lmSingGate" class="mic-gate" hidden><p><strong>Necesito el micrófono</strong> para oír cómo cantas.</p><p class="muted" id="lmSingErr"></p>
-      <button type="button" class="btn" id="lmSingMic">Activar micrófono</button></div>
+    ${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-meter" aria-hidden="true"><i id="lmSingDot"></i></div>
@@ -101,18 +118,7 @@ export async function singTask(host, opts, env) {
   const first = sounding[0];
   host.querySelector('#lmSingRef').addEventListener('click', () => { playingUntil = playPitch(first.midi, 1) + AFTER_PLAY_S; });
 
-  // Micrófono (con su puerta si se niega)
-  for (;;) {
-    try { await audio.startMic(); break; } catch (err) {
-      host.querySelector('#lmSingGate').hidden = false;
-      host.querySelector('#lmSingErr').textContent = audio.micErrorText(err);
-      host.querySelector('#lmSingMic').focus();
-      env.say('Micrófono sin permiso');
-      await new Promise(r => host.querySelector('#lmSingMic').addEventListener('click', r, { once: true }));
-      if (!env.alive()) return null;
-    }
-  }
-  host.querySelector('#lmSingGate').hidden = true;
+  if (!(await openMic(host, env))) return null;
   audio.setVoiceInput(true);
   try {
     // Situarse: acorde de la tonalidad y primera nota

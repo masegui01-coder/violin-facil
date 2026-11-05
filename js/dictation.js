@@ -26,6 +26,7 @@ export const meterBeatsOf = meter => METER_BEATS[meter];
 export const meterParts = meter => meter.split('/').map(Number);
 const EPS = 1e-6;
 const HARMONIC_MINOR = [0, 2, 3, 5, 7, 8, 11];
+const NATURAL_MINOR = [0, 2, 3, 5, 7, 8, 10];
 // Densidad máxima (notas por compás de media) y semicorcheas seguidas
 const MAX_NOTES_PER_BAR = 3.75;
 const MAX_SIXTEENTH_RUN = 4;
@@ -347,12 +348,16 @@ const inRange = (midi, inst) => midi >= inst.written[0] && midi <= inst.written[
 const NEIGHBOR_KEYS = { C: ['G', 'F'], G: ['D', 'C'], D: ['A', 'G'], A: ['E', 'D'], F: ['C', 'Bb'], Bb: ['F', 'Eb'], Eb: ['Bb', 'Ab'] };
 
 function chooseKey(r, cfg, inst) {
-  const base = inst.bandKey;
-  const pool = cfg.nearKeys ? [base, base, ...(NEIGHBOR_KEYS[base] || [])] : [base];
+  const base = cfg.forceKey || inst.bandKey;
+  const pool = cfg.nearKeys && !cfg.forceKey ? [base, base, ...(NEIGHBOR_KEYS[base] || [])] : [base];
   const key = pool[Math.floor(r() * pool.length)];
   const relative = scaleNames(key, MAJOR)[5];
   // en menor, la sensible no puede ser Mi♯ ni Si♯ (Fa♯ menor, Do♯ menor): entonces se queda en mayor
   const leading = scaleNames(relative.letter + accText(relative.acc), HARMONIC_MINOR)[6];
+  if (cfg.naturalMinor) {
+    const nat = relative.letter + accText(relative.acc);
+    return { key: nat + 'm', tonic: nat, minor: true, steps: NATURAL_MINOR };
+  }
   const minor = !!cfg.minor && r() < cfg.minor && !oddSpelling(leading);
   const t = minor ? relative : { letter: key[0], acc: key.includes('#') ? 1 : key.includes('b') ? -1 : 0 };
   const tonic = t.letter + accText(t.acc);
@@ -420,16 +425,21 @@ const melodyOk = notes => notes.every((n, i) => i === 0 || intervalOk(notes[i - 
 // Dictado melódico. opts: { level, meter, bars, seed }. null si el instrumento no da para la tonalidad.
 // Curso de Lenguaje Musical: un nivel con solo las figuras ya vistas (cells: claves de SIMPLE, p. ej. ['q', 'rq', 'ee'])
 // y, si las células lo permiten, un compás simple que el nivel aún no tenía (3/4 en el rítmico 3)
-export function limitedConfig(cfg, { cells = null, meter = null } = {}) {
-  if (!cells || !cells.length) return cfg;
+// minor: 'natural' → siempre en el relativo menor, escala menor natural (sin sensible), ya en los niveles bajos
+// key: tonalidad escrita pedida por el curso («C», «Am»), en vez de la de la banda del instrumento
+const RELATIVE_MAJOR = { Am: 'C', Em: 'G', Bm: 'D', Dm: 'F', Gm: 'Bb' };
+export function limitedConfig(cfg, { cells = null, meter = null, minor = null, key = null } = {}) {
+  const forced = key ? { forceKey: RELATIVE_MAJOR[key] || key } : {};
+  const natural = { ...forced, ...(minor === 'natural' ? { naturalMinor: true, cadence: false } : {}) };
+  if (!cells || !cells.length) return { ...cfg, ...natural };
   const simple = cells.filter(k => SIMPLE[k]);
   if (!simple.length) return cfg;
   const meters = meter && SIMPLE_METERS.includes(meter) && !cfg.meters.includes(meter) ? [...cfg.meters, meter] : cfg.meters;
-  return { ...cfg, limited: true, simple, compound: [], novel: (cfg.novel || []).filter(k => simple.includes(k)), meters: meters.filter(m => m !== '6/8') };
+  return { ...cfg, ...natural, limited: true, simple, compound: [], novel: (cfg.novel || []).filter(k => simple.includes(k)), meters: meters.filter(m => m !== '6/8') };
 }
 
-export function melodicDictation(inst, { level, meter, bars: barCount, seed, cells = null }) {
-  const cfg = limitedConfig(levelConfig(level, false), { cells, meter });
+export function melodicDictation(inst, { level, meter, bars: barCount, seed, cells = null, minor: minorOpt = null, anacrusa = false, key: keyOpt = null }) {
+  const cfg = limitedConfig(levelConfig(level, false), { cells, meter, minor: minorOpt, key: keyOpt });
   const r = rng(seed);
   const m = cfg.meters.includes(meter) ? meter : cfg.meters[0];
   const nBars = barsFor(level, m).includes(barCount) ? barCount : 4;
@@ -443,7 +453,7 @@ export function melodicDictation(inst, { level, meter, bars: barCount, seed, cel
   let best = null;
   let fallback = null;
   for (let attempt = 0; attempt < MELODY_TRIES && !best; attempt++) {
-    const plan = rhythmPlan(r, cfg, m, nBars);
+    const plan = anacrusa ? withPickup(rhythmPlan(r, cfg, m, nBars), METER_BEATS[m]) : rhythmPlan(r, cfg, m, nBars);
     const beats = plan.flat().filter(x => x > 0);
     // para recorrer la escala hacen falta notas: los ritmos muy escasos se descartan
     if (cfg.check === 'high' && beats.length < MIN_SCALE_NOTES_PER_BEAT * nBars * METER_BEATS[m] && fallback) continue;
@@ -465,21 +475,21 @@ export function melodicDictation(inst, { level, meter, bars: barCount, seed, cel
   if (!best) return null;
   return finishDictation({
     id: `dict-m${level}-${seed}`, level, seed, rhythmOnly: false, key, minor, meter: m, bars: nBars, bpm: bpmFor(cfg, m),
-    keyName: keyLabel(key), tonicMidi, cadence: !!cfg.cadence,
+    keyName: keyLabel(key), tonicMidi, cadence: !!cfg.cadence, ...(anacrusa ? { lead: METER_BEATS[m] - PICKUP_BEATS } : {}),
   }, tokensFrom(best.plan, best.notes));
 }
 
 // Dictado rítmico para percusión: todas las notas en Do5 (la línea del pentagrama de percusión)
-export function rhythmDictation({ level, meter, bars: barCount, seed, cells = null }) {
+export function rhythmDictation({ level, meter, bars: barCount, seed, cells = null, anacrusa = false }) {
   const cfg = limitedConfig(levelConfig(level, true), { cells, meter });
   const r = rng(seed);
   const m = cfg.meters.includes(meter) ? meter : cfg.meters[0];
   const nBars = barsFor(level, m, true).includes(barCount) ? barCount : 4;
-  const plan = rhythmPlan(r, cfg, m, nBars);
+  const plan = anacrusa ? withPickup(rhythmPlan(r, cfg, m, nBars), METER_BEATS[m]) : rhythmPlan(r, cfg, m, nBars);
   const notes = Array.from({ length: noteCount(plan) }, () => parseNote('C5'));
   return finishDictation({
     id: `dict-r${level}-${seed}`, level, seed, rhythmOnly: true, key: 'C', minor: false, meter: m, bars: nBars, bpm: bpmFor(cfg, m),
-    keyName: null, tonicMidi: null, cadence: false,
+    keyName: null, tonicMidi: null, cadence: false, ...(anacrusa && plan[0][0] < 0 ? { lead: METER_BEATS[m] - PICKUP_BEATS } : {}),
   }, tokensFrom(plan, notes));
 }
 
@@ -492,6 +502,15 @@ function finishDictation(base, tokens) {
 
 export function makeDictation(inst, opts) {
   return inst.rhythmOnly ? rhythmDictation(opts) : melodicDictation(inst, opts);
+}
+
+// Anacrusa (curso de Lenguaje Musical): la frase empieza en el último pulso. El primer compás se escribe con silencios
+// hasta la anacrusa (así toda la corrección por compases sigue igual) y esos silencios suenan sobre la claqueta
+// (dict.lead: pulsos de silencio inicial, countInPlan los añade); el último compás deja el pulso que «prestó».
+export const PICKUP_BEATS = 1;
+export function withPickup(plan, barBeats) {
+  if (plan.length < 2 || barBeats < 2) return plan;
+  return [[-(barBeats - PICKUP_BEATS), PICKUP_BEATS], ...plan.slice(1, -1), [barBeats - PICKUP_BEATS, -PICKUP_BEATS]];
 }
 
 // Acorde de tónica (notas escritas) para situarse antes de cada escucha
@@ -513,9 +532,11 @@ export function cadenceChords(dict) {
 // Claqueta: un compás (en 2/4, dos). En 6/8, las seis corcheas con acento en la 1 y en la 4.
 export function countInPlan(dict) {
   const [num] = meterParts(dict.meter);
+  const lead = dict.lead || 0; // anacrusa: los silencios del primer compás se cuentan como claqueta
   if (dict.meter === '6/8') return { clicks: 6, bpm: dict.bpm * 2, accents: [0, 3] };
-  if (dict.meter === '2/4') return { clicks: 4, bpm: dict.bpm, accents: [0, 2] };
-  return { clicks: num, bpm: dict.bpm, accents: [0] };
+  const more = lead ? [dict.meter === '2/4' ? 4 : num] : []; // el compás de la anacrusa también marca su primer pulso
+  if (dict.meter === '2/4') return { clicks: 4 + lead, bpm: dict.bpm, accents: [0, 2, ...more] };
+  return { clicks: num + lead, bpm: dict.bpm, accents: [0, ...more] };
 }
 
 // ---------- Récords y nivel recomendado ----------

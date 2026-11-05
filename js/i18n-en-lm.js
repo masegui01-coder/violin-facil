@@ -89,7 +89,8 @@ export const LM_EXACT = {
   Mayor: 'Major', Menor: 'Minor', 'Menor: suena más oscuro (la-do-mi).': 'Minor: it sounds darker (A-C-E).', 'Mayor: luminoso (do-mi-sol).': 'Major: bright (C-E-G).',
   '¿Qué canción es? Escucha su ritmo': 'Which song is it? Listen to its rhythm',
   // Herramientas lanzadas desde una unidad
-  'Repetir el dictado': 'Repeat the dictation', 'regulador p < f > p': 'swell p < f > p', 'regulador: crece más en el centro': 'swell: grow more in the middle',
+  'Repetir el dictado': 'Repeat the dictation', 'Notas tenidas con regulador': 'Long tones with a swell', 'Afinar en acorde: la tercera': 'Chord tuning: the third', 'Afinar en acorde: la tónica': 'Chord tuning: the root', Gimnasio: 'Gym', 'Responder tocando la pantalla (sin micrófono)': 'Answer by tapping the screen (no microphone)',
+  ' · Los matices se miden con el micrófono': ' · Dynamics are measured with the microphone', 'Toca aquí': 'Tap here', 'regulador p < f > p': 'swell p < f > p', 'regulador: crece más en el centro': 'swell: grow more in the middle',
   'Haz un regulador: empieza piano, crece hasta forte en la mitad y vuelve a piano.': 'Make a swell: start piano, grow to forte in the middle and go back to piano.', 'Más dictados como este': 'More dictations like this', '¡Ejercicio completado!': 'Exercise completed!', 'Ejercicio guardado': 'Exercise saved',
   // Vara del trombón (keydiagram.js): «Vara» y las siete posiciones
   Vara: 'Slide', '1.ª': '1st', '2.ª': '2nd', '3.ª': '3rd', '4.ª': '4th', '6.ª': '6th', '7.ª': '7th',
@@ -196,6 +197,9 @@ export function lmPatterns({ tr, noteEn }) {
     [/^Ejercicios hechos de la unidad( \d+)?$/, (m, n) => `Exercises done in the unit${n || ''}`],
     [/^(.+): (Fácil|Media)(?:, (\d+) %)?$/, (m, x, v, p) => `${tr(x)}: ${v === 'Fácil' ? 'Easy' : 'Medium'}${p ? `, ${p} %` : ''}`],
     [/^Era «(.+)»\.$/, (m, x) => `It was “${tr(x)}”.`],
+    [/^(Escala|Arpegio) de (Do|Re|Mi|Fa|Sol|La|Si)([♯♭]?) (mayor|menor)$/, (m, k, n, a, q) => `${noteOr(n)}${a} ${q === 'mayor' ? 'major' : 'minor'} ${k === 'Escala' ? 'scale' : 'arpeggio'}`],
+    [/^De memoria: (.+)$/, (m, x) => `From memory: ${tr(x)}`],
+    [/^Libro: (.+)$/, (m, x) => `Book: ${tr(x)}`],
     [/^Lee o canta (.+) como (.+)$/, (m, a, b) => `Reads or sings ${a} as ${b}`],
     [/^No se ha podido enviar: (.+)$/, (m, x) => `Couldn't send it: ${tr(x)}`],
     [/^Lenguaje musical · Nivel (\d+) · Unidad (\d+)$/, (m, a, b) => `Music theory · Level ${a} · Unit ${b}`],

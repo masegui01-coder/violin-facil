@@ -80,7 +80,7 @@ function renderResult(ex, out, saved) {
   // Creatividad: la composición va al profesor de cada una de mis clases del Aula (la escucha en mi ficha)
   if (out.work && myClasses().length) $('lmSendWork').addEventListener('click', e => sendWork(e.currentTarget, ex, out, saved));
   // Práctica infinita: los Dictados de siempre con el nivel, el compás y las figuras de la unidad (sin semilla fija)
-  if (ex.params.practicaInfinita) $('lmMoreDict').addEventListener('click', () => { const { level, meter, bars, cells } = ex.params.practicaInfinita.params; go('dictation', { lm: { level, meter, bars, cells } }); });
+  if (ex.params.practicaInfinita) $('lmMoreDict').addEventListener('click', () => { const { level, meter, bars, cells, minor, anacrusa, key } = ex.params.practicaInfinita.params; go('dictation', { lm: { level, meter, bars, cells, minor, anacrusa, key } }); });
 }
 
 async function run(ex) {

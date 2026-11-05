@@ -10,6 +10,7 @@ import * as audio from '../audio.js';
 import { finishLesson } from './result.js';
 import { decodeScore } from '../passage.js';
 import { createPulse } from './pulse.js';
+import { dynamicsChecks } from '../lm/dynamics.js';
 
 const pulse = createPulse('rhPulse', '#rhythm .staff-card');
 
@@ -59,12 +60,14 @@ function renderControls() {
 }
 
 // ---------- Golpes en directo ----------
+// Toques en la pantalla (sin micrófono): el toque va con lo que se oye, que sale por el altavoz con su retraso
+const hitLatency = () => (run.touch ? audio.outputLatency() : latency());
 function onHits(hits) {
   if (!run || !run.playing) return;
   hits.forEach(h => {
     if (h.time < run.countEnd - 0.1) { setStatus('Te oigo: espera a que acabe la cuenta', 'var(--muted)'); return; } // la cuenta previa no cuenta
     run.onsets.push(h);
-    const t = h.time - latency();
+    const t = h.time - hitLatency();
     const near = run.expected.reduce((best, e, i) => (Math.abs(e - t) < Math.abs(run.expected[best] - t) ? i : best), 0);
     const ms = (t - run.expected[near]) * 1000;
     if (Math.abs(ms) > WINDOW_MS) { setStatus('Golpe de más', 'var(--bad)'); showOffset(null); return; }
@@ -100,14 +103,16 @@ function tick() {
 }
 
 function start() {
-  if (!audio.micReady()) { $('rhGate').hidden = false; setStatus('Activa el micrófono para empezar', 'var(--bad)'); return; }
+  run.touch = $('rhTouch').checked;
+  $('rhTap').hidden = !run.touch;
+  if (!run.touch && !audio.micReady()) { $('rhGate').hidden = false; setStatus('Activa el micrófono para empezar', 'var(--bad)'); return; }
   run.spb = 60 / tempoBpm();
   run.onsets = [];
   run.countEnd = audio.countIn(run.time, tempoBpm(), true);
   run.t0 = run.countEnd;
   run.expected = run.playable.map(i => run.t0 + run.notes[i].start * run.spb);
   run.notes.forEach((n, i) => { if (!n.rest) staff.setState(i, 'future'); });
-  audio.startOnsetCapture(onHits);
+  if (!run.touch) audio.startOnsetCapture(onHits);
   if (run.stopAccomp) run.stopAccomp();
   run.stopAccomp = $('rhVbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
   if (getState().metroClick) {
@@ -117,6 +122,7 @@ function start() {
   run.playing = true;
   pulse.show(true);
   run.startedAt = performance.now();
+  if (run.touch) $('rhTap').focus();
   setStatus('Sigue la línea y golpea en cada nota');
   renderControls();
 }
@@ -132,7 +138,7 @@ function stop() {
 
 function finish() {
   stop();
-  const r = scoreRhythm(run.expected, run.onsets, latency());
+  const r = scoreRhythm(run.expected, run.onsets, hitLatency());
   const count = s => r.results.filter(x => x.status === s).length;
   const accents = run.playable.map(i => run.notes[i].accent);
   const contrast = accents.some(Boolean) ? accentContrast(r.results, accents) : null;
@@ -143,7 +149,14 @@ function finish() {
   if (toneAcc !== null && toneAcc < TONE_GOAL) stars = Math.min(stars, 2);
   const accentText = contrast === null ? '' : contrast >= ACCENT_GOAL ? ' · Acentos claros' : ' · Marca más los acentos';
   const toneText = toneAcc === null ? '' : ` · Graves y agudos: ${Math.round(toneAcc * 100)} % bien${toneAcc < TONE_GOAL ? ' (grave con la palma en el centro, agudo con los dedos en el borde)' : ''}`;
-  const text = `${count('perfect')} perfectos · ${count('good')} bien · ${count('early') + count('late')} fuera de tiempo · ${count('miss')} sin tocar${accentText}${toneText}. ${rhythmTip(r)}`;
+  // Matices (lecturas del curso de Lenguaje con p, f, reguladores): con la fuerza de cada golpe del micrófono
+  const dyn = run.lesson.dynamics && !run.touch ? dynamicsChecks(run.lesson.dynamics, run.playable.map(i => run.notes[i]), strengthsOf(run)) : null;
+  if (dyn && dyn.total) {
+    run.lesson.dynamicsResult = dyn;
+    if (dyn.ok * 2 < dyn.total) stars = Math.min(stars, 2);
+  }
+  const dynText = dyn && dyn.total ? ` · Matices: ${dyn.ok} de ${dyn.total} bien` : run.lesson.dynamics && run.touch ? ' · Los matices se miden con el micrófono' : '';
+  const text = `${count('perfect')} perfectos · ${count('good')} bien · ${count('early') + count('late')} fuera de tiempo · ${count('miss')} sin tocar${accentText}${toneText}${dynText}. ${rhythmTip(r)}`;
   let k = 0;
   const states = run.notes.map(n => (n.rest ? 'future' : ['perfect', 'good'].includes(r.results[k++].status) ? 'done' : 'miss'));
   finishLesson({
@@ -151,6 +164,15 @@ function finish() {
     minutes: (performance.now() - run.startedAt) / 60000,
     missed: r.results.map(x => !['perfect', 'good'].includes(x.status)),
     review: { score: run.score, key: 'C', time: run.time, states, clef: 'perc', sticking: run.sticking },
+  });
+}
+
+// Fuerza del golpe más cercano a cada nota (null si no hubo golpe en la ventana)
+function strengthsOf(r) {
+  const lat = latency();
+  return r.expected.map(at => {
+    const near = r.onsets.filter(h => Math.abs(h.time - lat - at) * 1000 <= WINDOW_MS);
+    return near.length ? Math.max(...near.map(h => h.strength || 0)) : null;
   });
 }
 
@@ -183,7 +205,8 @@ function enter({ lesson, from, eyebrow }) {
   $('rhVbRow').querySelector('span').textContent = lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
   $('rhEyebrow').textContent = eyebrow || '';
   $('rhTitle').textContent = run.title;
-  $('rhGate').hidden = audio.micReady();
+  $('rhTouch').checked = !!getState().rhythmTouch;
+  $('rhGate').hidden = audio.micReady() || $('rhTouch').checked;
   $('rhMicError').hidden = true;
   $('rhCountdown').hidden = true;
   $('rhCounter').textContent = '';
@@ -210,6 +233,12 @@ $('rhStartMic').addEventListener('click', async () => {
   catch (err) { $('rhMicError').textContent = audio.micErrorText(err); $('rhMicError').hidden = false; }
 });
 $('rhStart').addEventListener('click', start);
+// Toque en pantalla: al bajar el dedo (sin esperar al clic) o con la barra espaciadora / Intro
+const tap = e => { e.preventDefault(); onHits([{ time: audio.audioTime(), strength: null, tap: true }]); };
+$('rhTap').addEventListener('pointerdown', tap);
+$('rhTap').addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) tap(e); });
+$('rhTap').addEventListener('click', e => e.preventDefault());
+$('rhTouch').addEventListener('change', e => { update({ rhythmTouch: e.target.checked }); $('rhGate').hidden = e.target.checked || audio.micReady(); });
 $('rhDemo').addEventListener('click', demo);
 $('rhRestart').addEventListener('click', () => { stop(); start(); });
 $('rhClick').addEventListener('change', e => {

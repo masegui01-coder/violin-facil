@@ -339,5 +339,57 @@ test('Dictados con las figuras de la unidad: células permitidas, 3/4 en el rít
   const t = rhythmDictation({ level: 3, meter: '3/4', bars: 2, seed: 9, cells: ['h', 'qq', 'q', 'rq', 'ee'] });
   assert.equal(t.meter, '3/4');
   assert.ok(t.notes.every(n => [0.5, 1, 2].includes(n.beats)), t.score);
-  assert.equal(limitedConfig(levelConfig(3, true), {}), levelConfig(3, true), 'sin células, el nivel de siempre');
+  assert.deepEqual(limitedConfig(levelConfig(3, true), {}), levelConfig(3, true), 'sin células, el nivel de siempre');
+});
+
+test('Dictados desde el curso: menor natural en la tonalidad pedida y anacrusa contada sobre la claqueta', async () => {
+  const { melodicDictation, rhythmDictation, countInPlan, withPickup } = await import('../js/dictation.js');
+  const { instrumentById } = await import('../js/instruments.js');
+  const m = melodicDictation(instrumentById('violin'), { level: 3, meter: '4/4', bars: 4, seed: 7, minor: 'natural', key: 'Am' });
+  assert.equal(m.key, 'Am');
+  assert.ok(!m.score.includes('G#'), 'menor natural: sin sensible');
+  const r = rhythmDictation({ level: 3, meter: '4/4', bars: 4, seed: 3, anacrusa: true });
+  assert.equal(r.lead, 3);
+  assert.match(r.score, /^\| Rh\. C5q \|/);
+  assert.equal(r.totalBeats, 16, 'mismos compases');
+  assert.deepEqual(countInPlan(r), { clicks: 7, bpm: r.bpm, accents: [0, 4] });
+  assert.deepEqual(withPickup([[1, 1], [2], [1, 1], [2]], 2), [[-1, 1], [2], [1, 1], [1, -1]]);
+});
+
+test('canción cantada a tempo: afinación y ataques de cada nota por separado', async () => {
+  const { gradeTimedTake, attacksOf } = await import('../js/lm/tasks-song.js');
+  const hz = m => 440 * 2 ** ((m - 69) / 12);
+  const notes = [{ midi: 67, start: 0, beats: 1 }, { midi: 64, start: 1, beats: 1 }, { midi: 67, start: 2, beats: 1 }];
+  // a 60 BPM: sol a tiempo, mi 0,3 s tarde, el último sol sin cantar
+  const frames = [];
+  for (let k = 0; k < 120; k++) {
+    const t = k / 40;
+    const freq = t < 0.95 ? hz(55) : t >= 1.3 && t < 1.95 ? hz(64) : null; // el primero, una octava más grave
+    frames.push({ t: 10 + t, freq });
+  }
+  assert.deepEqual(attacksOf(frames).map(t => Math.round((t - 10) * 100) / 100), [0, 1.3]);
+  const g = gradeTimedTake(notes, frames, { t0: 10, spb: 1, tolerance: 50, attackTol: 0.18 });
+  assert.deepEqual(g.map(x => x.pitch), ['ok', 'ok', 'bad']);
+  assert.deepEqual(g.map(x => x.attack), ['ok', 'near', 'bad']);
+});
+
+test('matices de la lectura rítmica: forte más fuerte que piano y reguladores que crecen o decrecen', async () => {
+  const { dynamicsChecks } = await import('../js/lm/dynamics.js');
+  const matices = [{ compas: 1, signo: 'p' }, { compas: 3, signo: 'f' }, { compas: 5, signo: 'cresc', hasta: 6 }];
+  const notes = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5].map(bar => ({ bar }));
+  const good = dynamicsChecks(matices, notes, [1, 1, 1, 1, 2, 2, 2, 2, 1, 1.2, 1.4, 1.6, 1.8, 2]);
+  assert.deepEqual([good.ok, good.total], [2, 2]);
+  const flat = dynamicsChecks(matices, notes, notes.map(() => 1));
+  assert.deepEqual([flat.ok, flat.total], [0, 2]);
+  assert.equal(dynamicsChecks(matices, notes, notes.map(() => null)).total, 0, 'sin golpes oídos no se juzga');
+});
+
+test('«En tu instrumento»: textos concretos de cada herramienta y escala menor del gimnasio', async () => {
+  const { technique } = await import('../js/generate.js');
+  const { instrumentById } = await import('../js/instruments.js');
+  const am = technique('scale', 'Am', instrumentById('violin'), 60, 'q');
+  assert.ok(!/#/.test(am.score), `la menor natural: ${am.score}`);
+  const { translate } = await import('../js/i18n.js');
+  assert.equal(translate('Escala de La menor'), 'A minor scale');
+  assert.equal(translate('Lee o canta E4 como F4'), 'Reads or sings E4 as F4');
 });

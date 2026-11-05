@@ -4,6 +4,7 @@ import { esc } from '../ui.js';
 import { QUIZ_KINDS, playQuestion } from './tasks-quiz.js';
 import { tocarPentagrama, barras, dictadoEscrito, createStaffWriter, tokensToPlay } from './tasks-staff.js';
 import { singTask, lyricsUnder, singResult } from './tasks-voice.js';
+import { singSong } from './tasks-song.js';
 import { stopGame, tapRhythm } from './tasks-rhythm.js';
 import { agilityTask } from './tasks-agility.js';
 import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, genRhythm, genMelody } from './gen.js';
@@ -87,11 +88,12 @@ async function cancionCantada(host, ex, env) {
   const song = ex.params.cancion;
   const tokens = scoreTokens(song.partitura);
   const names = /nombre de notas/.test(ex.params.modo || '');
-  const take = await singTask(host, {
+  // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
+  const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
     under: lyricsUnder(tokens, song.letra, env.nom, names), intro: ex.params.consigna || '',
   }, env);
-  return take && { ...singResult(take), labels: take.names.map(n => noteText(n, env.nom)), range: take.range };
+  return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
 }
 
 // ---------- Dictado escrito ----------
