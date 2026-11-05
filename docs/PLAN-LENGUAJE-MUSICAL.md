@@ -10,6 +10,10 @@
 - Puerta de calidad con **mínimo 8**, peso en originalidad, calidad del contenido, sentido didáctico y menús de seguimiento.
 - Referencia de nivel: libros de un curso de Lenguaje Musical de 4 niveles que pasó el usuario. **No copiar** ejercicios, canciones ni textos: todo original o de dominio público.
 
+## Exigencias añadidas por el usuario
+- El **contenido didáctico** debe sacar **mínimo un 9** en la puerta de calidad (el resto de criterios, mínimo 8).
+- La **teoría va acompañada de imágenes**: cada tarjeta de teoría con su ilustración (pentagrama anotado, figuras y duraciones, teclado con tonos y semitonos, pulso como latido, compases con acentos, matices como volumen, etc.). Ilustraciones propias en SVG del mismo estilo, que se adapten a claro/oscuro, con texto alternativo y animación sutil cuando ayude a entender (respetando reduce-motion).
+
 ## Curso (alumno)
 4 niveles × 8 unidades. Cada unidad, secciones con versión **Fácil** y **Media**:
 Teoría (ficha + práctica interactiva) · Ritmo (palmas por micro o toque en pantalla, metrónomo, juego STOP) ·
