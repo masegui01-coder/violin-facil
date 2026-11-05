@@ -11,6 +11,7 @@ import { resolveQuestion } from '../theory-pills.js';
 import * as audio from '../audio.js';
 import { getState, recordTheoryAnswer } from '../store.js';
 import { finishLesson } from './result.js';
+import { reportLmTool } from '../lm/bridge.js';
 
 const SEQUENCE_GAP_MS = 900;
 const TONE_S = 1.2;
@@ -91,6 +92,11 @@ const EXAM_TOP = 0.9;
 function finish() {
   const right = answers.filter(a => a.right).length;
   const allRight = right === questions.length;
+  // Ficha de una unidad del curso de Lenguaje Musical: el porcentaje de aciertos vuelve con el contrato
+  if (ctx.lesson.lm) {
+    const wrong = questions.filter((q, k) => !answers[k].right).map(q => q.id);
+    reportLmTool(ctx.lesson.lm, { pct: questions.length ? 100 * right / questions.length : 100, mistakes: wrong, log: true });
+  }
   if (ctx.lesson.exam) {
     // Examen del libro: se aprueba con el 70 % (2 estrellas) y el 90 % da las 3
     const ratio = questions.length ? right / questions.length : 1;

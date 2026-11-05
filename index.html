@@ -20,34 +20,39 @@
 <!-- Fuentes sin bloquear el primer pintado (display=swap: mientras llegan se ve la del sistema); theme-boot.js las activa -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap" data-fonts>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700;800&family=Noto+Music&display=swap"></noscript>
+
 <!-- Tema elegido en Perfil (claro, oscuro o el del sistema) antes de pintar, para que no parpadee -->
 <script>(function(){document.querySelectorAll("link[data-fonts]").forEach(function(a){var t=document.createElement("link");t.rel="stylesheet",t.href=a.href,document.head.appendChild(t)});try{var e=JSON.parse(localStorage.getItem("violin-facil-v2"))||{};if(e.appearance!=="light"&&e.appearance!=="dark")return;document.documentElement.dataset.theme=e.appearance;var n=e.appearance==="dark"?"#0F141B":"#B4461F";document.querySelectorAll('meta[name="theme-color"]').forEach(function(a){a.content=n})}catch{}})();</script>
+
 <!-- Hojas de estilo EN ORDEN DE CASCADA (el empaquetado debe respetar este orden):
      base, nav, learn, tabs, lesson, study, band, engage, director, chords, account, dashboard, groups, book, tips, pro, a11y, responsive, motion, perf -->
-<link rel="stylesheet" href="dist/app-75a83cb8b1.css">
-<link rel="modulepreload" href="dist/main-WNYFOOXY.js">
-<link rel="modulepreload" href="dist/chunk-VJ4AQR2H.js">
-<link rel="modulepreload" href="dist/chunk-F3ZWLYXD.js">
-<link rel="modulepreload" href="dist/chunk-LE3TLUUK.js">
-<link rel="modulepreload" href="dist/chunk-Q3XRXNRS.js">
-<link rel="modulepreload" href="dist/chunk-BM5WVSHO.js">
+<link rel="stylesheet" href="dist/app-5276e41a8a.css">
+<link rel="modulepreload" href="dist/main-ZQP5TNHL.js">
+<link rel="modulepreload" href="dist/chunk-WM4SLFGE.js">
+<link rel="modulepreload" href="dist/chunk-LMBFWREL.js">
+<link rel="modulepreload" href="dist/chunk-6XCNZ7VZ.js">
+<link rel="modulepreload" href="dist/chunk-KDZHQXMT.js">
+<link rel="modulepreload" href="dist/chunk-W34BWCSS.js">
 <link rel="modulepreload" href="dist/chunk-SJWVOYGB.js">
-<link rel="modulepreload" href="dist/chunk-2U5MO77A.js">
-<link rel="modulepreload" href="dist/chunk-F3OQU3DE.js">
-<link rel="modulepreload" href="dist/chunk-GM37V637.js">
+<link rel="modulepreload" href="dist/chunk-WMXAYXIO.js">
+<link rel="modulepreload" href="dist/chunk-VDJYXZIF.js">
+<link rel="modulepreload" href="dist/chunk-3EXCI7MK.js">
 <link rel="modulepreload" href="dist/chunk-7AWJ7NV3.js">
 <link rel="modulepreload" href="dist/chunk-3GV7AFFR.js">
-<link rel="modulepreload" href="dist/chunk-QZ3EOPWG.js">
-<link rel="modulepreload" href="dist/chunk-Q6XOPAO4.js">
-<link rel="modulepreload" href="dist/chunk-WBQTYP7B.js">
+<link rel="modulepreload" href="dist/chunk-EQL5CAU4.js">
+<link rel="modulepreload" href="dist/chunk-FGSCPMUV.js">
+<link rel="modulepreload" href="dist/chunk-4DNSQCTS.js">
 <link rel="modulepreload" href="dist/chunk-OUHRGTUX.js">
 <link rel="modulepreload" href="dist/chunk-UEVO3H7G.js">
 <link rel="modulepreload" href="dist/chunk-6CJFJF6W.js">
-<link rel="modulepreload" href="dist/chunk-TADSENPT.js">
-<link rel="modulepreload" href="dist/chunk-ULRHLOSC.js">
-<link rel="modulepreload" href="dist/chunk-2SMF7UCV.js">
-<link rel="modulepreload" href="dist/chunk-6FD2IWQK.js">
-<link rel="modulepreload" href="dist/chunk-WZMF45AV.js">
+<link rel="modulepreload" href="dist/chunk-MU363PCJ.js">
+<link rel="modulepreload" href="dist/chunk-HCQR56V7.js">
+<link rel="modulepreload" href="dist/chunk-WNO3EUKQ.js">
+<link rel="modulepreload" href="dist/chunk-Y6LZCLPD.js">
+<link rel="modulepreload" href="dist/chunk-TGPL7P3C.js">
+<link rel="modulepreload" href="dist/chunk-GJSOYNK5.js">
+<link rel="modulepreload" href="dist/chunk-L2SEIZRS.js">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
@@ -94,7 +99,7 @@
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
       <h1 class="sr-only">Aprender</h1>
-      <div class="seg three learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="pro">Pro</button></div>
+      <div class="seg four learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="lm">Lenguaje</button><button type="button" data-learn-view="pro">Pro</button></div>
       <div id="casualView">
         <div id="learnSide" class="learn-side">
           <div id="continueCard"></div>
@@ -105,6 +110,7 @@
         <div id="courseMap" class="course"></div>
       </div>
       <div id="bookView" class="book" hidden></div>
+      <div id="lmView" class="lm" hidden></div>
       <div id="proView" class="pro" hidden></div>
     </section>
 
@@ -574,6 +580,13 @@
       <div id="gymList" class="gym-list"></div>
     </section>
     <!-- Dictados: escuchar y tocar de oído -->
+    <!-- Ejercicio del curso de Lenguaje Musical (js/lm/screen.js) -->
+    <section id="lm" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver a la unidad">✕</button><div class="grow"><p id="lmEyebrow" class="eyebrow"></p><h1 id="lmTitle">Lenguaje musical</h1></div></div>
+      <p id="lmStatus" class="sr-only" role="status" aria-live="polite"></p>
+      <div id="lmBody" class="lm-run"></div>
+    </section>
+
     <section id="dictation" class="screen" hidden>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Dictados</h1></div>
       <p id="dictStatus" class="sr-only" role="status" aria-live="polite"></p>
@@ -609,6 +622,7 @@
 <div id="updateToast" class="toast toast-update" role="status" hidden><span>Hay una versión nueva</span><button type="button" id="updateNow" class="btn small">Actualizar</button></div>
 <div id="bookPrint" class="book-print" aria-hidden="true"></div>
 
-<script type="module" async src="dist/main-WNYFOOXY.js"></script>
+<script type="module" async src="dist/main-ZQP5TNHL.js"></script>
+
 </body>
 </html>

@@ -160,6 +160,12 @@ function renderProView() {
     () => toast('No se ha podido abrir Pro. Revisa la conexión.'));
 }
 
+// Lenguaje musical (curso común a todos los instrumentos) se descarga al elegir esa vista
+function renderLmView() {
+  import('../lm/view.js').then(m => { m.bindLm(); if (getState().learnView === 'lm') m.renderLm(); },
+    () => toast('No se ha podido abrir Lenguaje musical. Revisa la conexión.'));
+}
+
 // Casual: siguiente paso, objetivo de hoy y camino (lo demás, plegado en «Más»). Libro: el método página a página con medallas. Pro: el método de viento
 // con Libro, Relax y Práctica en cada nivel (opcional, aparte del curso).
 function render() {
@@ -168,7 +174,9 @@ function render() {
   $('casualView').hidden = view !== 'casual';
   $('bookView').hidden = view !== 'book';
   $('proView').hidden = view !== 'pro';
+  $('lmView').hidden = view !== 'lm';
   if (view === 'book') { renderBook(); return; }
+  if (view === 'lm') { renderLmView(); return; }
   if (view === 'pro') { renderProView(); return; }
   course = currentCourse();
   states = currentStates(course);

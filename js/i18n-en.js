@@ -8,9 +8,10 @@ import { BAND_EXACT, bandPatterns, bandFallbackPatterns } from './i18n-en-band.j
 import { COURSE_EXACT, coursePatterns } from './i18n-en-course.js';
 import { SCREENS_EXACT, screensPatterns } from './i18n-en-screens.js';
 import { DICTATION_EXACT, dictationPatterns } from './i18n-en-dictation.js';
+import { LM_EXACT, lmPatterns } from './i18n-en-lm.js';
 
 export const EXACT = {
-  ...DICTATION_EXACT, ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
+  ...LM_EXACT, ...DICTATION_EXACT, ...MESSAGES_EXACT, ...PRACTICE_EXACT, // primero: si una frase se repite aquí abajo, gana la de abajo
   ...BAND_EXACT, ...COURSE_EXACT, ...SCREENS_EXACT,
   'Lámina 1: la más larga, a la izquierda': 'Bar 1: the longest, on the left', 'Más grave que la lámina 1 (xilófono grande)': 'Lower than bar 1 (big xylophone)',
   'Fila de atrás, antes de la lámina 1 (xilófono grande)': 'Back row, before bar 1 (big xylophone)',
@@ -456,6 +457,8 @@ export const PATTERNS = [
   [/^(\d+) puntos para (.+)$/, (m, n, lvl) => `${n} points to ${lvl}`],
   [/^(Afinación|Técnica|Lectura|Ritmo|Acordes) (\d+)$/, (m, k, n) => `${({ Afinación: 'Tuning', Técnica: 'Technique', Lectura: 'Reading', Ritmo: 'Rhythm', Acordes: 'Chords' })[k]} ${n}`],
   [/^(.+) · (Clásica|Folk y country|Jazz y blues|Rock y pop|Navidad|Populares|Mis partituras|Flamenco)$/, (m, by, st) => `${tr(by)} · ${({ Clásica: 'Classical', 'Folk y country': 'Folk and country', 'Jazz y blues': 'Jazz and blues', 'Rock y pop': 'Rock and pop', Navidad: 'Christmas', Populares: 'Popular', 'Mis partituras': 'My scores', Flamenco: 'Flamenco' })[st]}`],
+  // y al revés, «estilo · autor» (antetítulo de las canciones y del modo audición, launch.js)
+  [/^(Clásica|Folk y country|Jazz y blues|Rock y pop|Navidad|Populares|Mis partituras|Flamenco) · (.+)$/, (m, st, by) => `${({ Clásica: 'Classical', 'Folk y country': 'Folk and country', 'Jazz y blues': 'Jazz and blues', 'Rock y pop': 'Rock and pop', Navidad: 'Christmas', Populares: 'Popular', 'Mis partituras': 'My scores', Flamenco: 'Flamenco' })[st]} · ${tr(by)}`],
   [/^(\d+) de (\d+) alumnos$/, (m, a, b) => `${a} of ${b} students`],
   // Textos que quedaban en español (revisión en inglés)
   [/^Unidad (\d+)$/, (m, n) => `Unit ${n}`],
@@ -468,6 +471,8 @@ export const PATTERNS = [
   [/^Sabes (\d+) acordes?: puedes tocar (\d+) de (\d+) canciones$/, (m, n, a, b) => `You know ${n} chord${n === '1' ? '' : 's'}: you can play ${a} of ${b} songs`],
   [/^(\d+) acordes · (\d+) de (\d+) canciones del cancionero$/, (m, n, a, b) => `${n} chords · ${a} of ${b} songbook songs`],
   [/^Precisión (\d+)$/, (m, n) => `Accuracy ${n}`],
+  // Lenguaje musical (curso común)
+  ...lmPatterns({ tr, noteEn }),
   // Asientos e instrumentos de la banda: los más generales, al final
   ...bandFallbackPatterns({ tr }),
 ];

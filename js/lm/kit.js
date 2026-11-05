@@ -1,0 +1,91 @@
+// Piezas de interfaz comunes a los ejercicios del curso: pentagrama de una partitura (con letra o nombres debajo),
+// leyenda y fichas de corrección (✓ ≈ ✕, como en Dictados), botones de nombres de nota y utilidades de espera.
+import { esc, icon } from '../ui.js';
+import { rng } from '../generate.js';
+import { noteCell, clefCell, gapCell, endCell } from './staff-lm.js';
+import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf } from './notes.js';
+
+export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
+export const MARK_TEXT = { ok: 'bien', near: 'casi', bad: 'mal' };
+export const CLEF = { sol: 'treble', fa: 'bass', treble: 'treble', bass: 'bass' };
+
+export const legendHtml = () => `<ul class="dict-legend lm-legend">
+  <li><span class="dict-sw ok" aria-hidden="true">✓</span>Bien</li>
+  <li><span class="dict-sw near" aria-hidden="true">≈</span>Cerca</li>
+  <li><span class="dict-sw bad" aria-hidden="true">✕</span>Mal o falta</li></ul>`;
+
+// Nombre accesible de una nota o silencio de la partitura (sin revelar nada que se pregunte: lo decide quien llama)
+export function tokenLabel(t, nom, { pitch = true } = {}) {
+  if (t.rest) return REST_NAME[t.dur.replace('.', '')] || 'Silencio';
+  const fig = FIGURE_NAME[t.dur] || 'Nota';
+  return pitch && t.name ? `${fig} ${noteText(t.name, nom)}` : fig;
+}
+
+// Pentagrama de una lista de notas: celdas en fila con barras de compás; under: texto bajo cada nota (letra, nombre)
+export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], current = -1, bars = true, label = '' } = {}) {
+  const barBeats = bars && meter ? barBeatsOf(meter) : null;
+  let sum = 0;
+  const cells = [`<span class="lm-sc">${clefCell(clef, meter)}</span>`];
+  tokens.forEach((t, i) => {
+    const cls = ['lm-sc', marks[i] || '', i === current ? 'now' : ''].join(' ');
+    cells.push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null })}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}</span>`);
+    sum += t.beats ?? 0;
+    if (barBeats && i < tokens.length - 1 && Math.abs(sum % barBeats) < 1e-6) cells.push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);
+  });
+  cells.push(`<span class="lm-sc">${endCell()}</span>`);
+  return `<div class="lm-staff"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${cells.join('')}</div>`;
+}
+
+// Fichas de corrección (una por elemento), con signo además del color
+export function chipsHtml(marks, labels = []) {
+  return `<div class="dict-chips lm-chips" role="list">${marks.map((m, i) => `<span role="listitem" class="dict-chip ${m}" aria-label="${esc(`${labels[i] || `${i + 1}`}: ${MARK_TEXT[m]}`)}"><span aria-hidden="true">${GLYPH[m]}</span><small aria-hidden="true">${i + 1}</small></span>`).join('')}</div>`;
+}
+
+// Botones con los nombres de nota (Do Re Mi… o C D E…)
+export function nameButtons(letters = LETTERS, nom = 'eu', attr = 'data-name') {
+  return `<div class="lm-names" role="group" aria-label="Nombres de nota">${letters.map(l => `<button type="button" class="lm-name" ${attr}="${l}">${esc(letterText(l, nom))}</button>`).join('')}</div>`;
+}
+
+export const playButton = (id, text = 'Escuchar') => `<button type="button" class="btn ghost lm-play" id="${id}"><span class="ic">${icon('speaker')}</span>${esc(text)}</button>`;
+
+// Barajado con semilla (el mismo ejercicio sale igual para toda la clase)
+export function shuffle(list, seed) {
+  const r = rng(seed);
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+export const seedOf = text => [...String(text)].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7);
+
+// Espera a que se pulse un botón del contenedor (resuelve con el botón)
+export function onceClick(host, selector) {
+  return new Promise(resolve => {
+    const handler = e => {
+      const b = e.target.closest(selector);
+      if (!b || !host.contains(b) || b.disabled) return;
+      host.removeEventListener('click', handler);
+      resolve(b);
+    };
+    host.addEventListener('click', handler);
+  });
+}
+
+// «Continuar» tras la corrección de una parte
+export async function continueButton(host, text = 'Continuar') {
+  const box = document.createElement('div');
+  box.className = 'controls lm-next';
+  box.innerHTML = `<button type="button" class="btn" data-lm-next>${esc(text)}</button>`;
+  host.append(box);
+  box.querySelector('button').focus();
+  await onceClick(box, '[data-lm-next]');
+  box.remove();
+}
+
+// Mensaje de corrección de una pregunta (signo + texto)
+export function whyHtml(mark, why = '') {
+  const lead = mark === 'ok' ? '¡Correcto!' : mark === 'near' ? 'Casi.' : 'No exactamente.';
+  return `<p class="quiz-why lm-why ${mark === 'ok' ? 'right' : 'wrong'}" role="status"><span class="dict-sw ${mark}" aria-hidden="true">${GLYPH[mark]}</span> <span>${lead}</span>${why ? ` <span>${esc(why)}</span>` : ''}</p>`;
+}

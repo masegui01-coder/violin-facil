@@ -8,6 +8,7 @@ import { analyzeLongTone, longToneTip } from '../analysis.js';
 import { getState, update, addTuningSamples, logPractice, recordLongtoneTake } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
+import { reportLmTool } from '../lm/bridge.js';
 
 const TICK_MS = 30;
 const RANGE_CENTS = 50;
@@ -19,6 +20,24 @@ let target = null;
 let frames = [];
 let timer = 0;
 let running = false;
+// Lanzado desde una unidad del curso de Lenguaje Musical: { id, secs }
+let lmCtx = null;
+// Nota de la toma en una unidad: se descuenta lo que la afinación media y la estabilidad se alejan de ±5 cents
+const LM_GOOD_CENTS = 5;
+const LM_PENALTY = 2;
+// Regulador p < f > p (temario de instrumento del curso): el centro de la toma debe sonar claramente más fuerte que
+// el principio y el final
+const SWELL_RATIO = 1.5;
+export function swellOk(levels) {
+  const n = levels.length;
+  if (n < 8) return false;
+  const mean = xs => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+  const q = Math.floor(n / 4);
+  const edges = (mean(levels.slice(0, q)) + mean(levels.slice(n - q))) / 2;
+  return mean(levels.slice(q + Math.floor(q / 2), n - q - Math.floor(q / 2))) > edges * SWELL_RATIO;
+}
+let swell = false;
+export const longtonePct = r => Math.max(0, Math.min(100, Math.round(100 - LM_PENALTY * (Math.max(0, Math.abs(r.mean) - LM_GOOD_CENTS) + Math.max(0, r.stability - LM_GOOD_CENTS)))));
 
 // Los colores del tema se leen una vez por toma (antes, getComputedStyle cada 30 ms)
 let palette = null;
@@ -78,10 +97,12 @@ function showResult() {
   $('ltStats').innerHTML = stat(signedCents(r.mean) + ' ¢', 'afinación media')
     + stat('±' + Math.round(r.stability) + ' ¢', 'estabilidad')
     + stat(r.vibrato ? `${r.vibrato.rate.toFixed(1)} Hz` : '—', r.vibrato ? `vibrato · ${Math.round(r.vibrato.width)} ¢` : 'sin vibrato');
+  if (swell) $('ltStats').innerHTML += stat(swellOk(frames.map(f => f.level)) ? '✓' : '✕', swellOk(frames.map(f => f.level)) ? 'regulador p < f > p' : 'regulador: crece más en el centro');
   addTuningSamples([{ midi: target, cents: r.mean }]);
   recordLongtoneTake(r);
   logPractice(r.seconds / 60);
   update({ longtones: getState().longtones + 1 });
+  if (lmCtx) reportLmTool(lmCtx, { pct: longtonePct(r), skills: { entonacion: longtonePct(r) }, mistakes: [r.mean > LM_GOOD_CENTS ? 'alta' : r.mean < -LM_GOOD_CENTS ? 'baja' : null, r.stability > LM_GOOD_CENTS ? 'inestable' : null] });
 }
 
 function tick() {
@@ -110,7 +131,9 @@ function start() {
   timer = setInterval(tick, TICK_MS);
 }
 
-function enter({ midi, secs: forcedSecs, routine } = {}) {
+function enter({ midi, secs: forcedSecs, routine, lm, dynamics } = {}) {
+  lmCtx = lm || null;
+  swell = dynamics === 'p<f>p';
   routineNext = routine || null;
   if (forcedSecs) secs = forcedSecs;
   $('ltNextStep').hidden = true;
@@ -128,7 +151,7 @@ function enter({ midi, secs: forcedSecs, routine } = {}) {
   $('ltMicError').hidden = true;
   frames = [];
   $('ltStats').innerHTML = '';
-  $('ltTip').textContent = '';
+  $('ltTip').textContent = swell ? 'Haz un regulador: empieza piano, crece hasta forte en la mitad y vuelve a piano.' : '';
   readPalette();
   draw();
 }

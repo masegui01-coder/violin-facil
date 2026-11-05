@@ -3,7 +3,7 @@
 // La app capta las notas y su instante por el micrófono, las cuantiza a la rejilla del nivel y las corrige nota a nota
 // (dictation-result.js).
 import { $, esc, toast, starsHtml } from '../ui.js';
-import { register } from '../router.js';
+import { register, back } from '../router.js';
 import { getState, update, logPractice } from '../store.js';
 import { instrumentById, foldOctave } from '../instruments.js';
 import { keyLabel, scaleNames, MAJOR } from '../generate.js';
@@ -15,6 +15,7 @@ import {
 } from '../dictation.js';
 import { quantizeBest, scoreDictation, dictationStars } from '../dictation-score.js';
 import { renderResult, expectedEvents, playDrums } from './dictation-result.js';
+import { reportLmTool } from '../lm/bridge.js';
 
 const TICK_MS = 20;
 const UI_MS = 50;
@@ -39,6 +40,8 @@ let run = null;     // dictado en curso: { dict, inst, listens, extra, startedAt
 let capture = null; // toma en curso
 let session = 0;    // cada fase nueva invalida las esperas de la anterior
 let stops = [];
+// Lanzado desde una unidad del curso de Lenguaje Musical: { id, level, meter, bars, seed } (sin elegir nivel)
+let lmCtx = null;
 
 const inst = () => instrumentById(getState().instrument);
 const saved = () => getState().dictation || {};
@@ -46,9 +49,9 @@ const bests = () => saved().best || {};
 // Aviso para el lector de pantalla (lo que se ve está en la propia pantalla)
 const setStatus = text => { $('dictStatus').textContent = text; };
 
-function normalizedOpts() {
+function normalizedOpts(src = saved().opts || {}) {
   const perc = !!inst().rhythmOnly;
-  const o = { level: 1, bars: 4, meter: null, ...(saved().opts || {}) };
+  const o = { level: 1, bars: 4, meter: null, ...src };
   const level = Math.min(LEVEL_COUNT, Math.max(1, Number(o.level) || 1));
   const meters = metersFor(level, perc);
   const meter = meters.includes(o.meter) ? o.meter : (meters.includes('4/4') ? '4/4' : meters[0]);
@@ -152,13 +155,17 @@ function pickOption(target) {
 
 function startDictation() {
   const i = inst();
-  const o = normalizedOpts();
-  saveOpts(o);
-  const dict = makeDictation(i, { ...o, seed: Math.floor(Math.random() * 1e9) });
-  if (!dict) { toast('Este dictado no cabe en el registro de tu instrumento'); return; }
+  const o = lmCtx ? normalizedOpts({ level: lmCtx.level, meter: lmCtx.meter, bars: lmCtx.bars }) : normalizedOpts();
+  if (!lmCtx) saveOpts(o);
+  const seed = lmCtx && Number.isFinite(lmCtx.seed) ? lmCtx.seed : Math.floor(Math.random() * 1e9);
+  const dict = makeDictation(i, { ...o, seed, ...(lmCtx && lmCtx.cells ? { cells: lmCtx.cells, meter: lmCtx.meter || o.meter } : {}) });
+  if (!dict) { toast('Este dictado no cabe en el registro de tu instrumento'); if (lmCtx) back(); return; }
   run = { dict, inst: i, listens: 0, extra: 0, startedAt: performance.now(), canPlay: false };
   listenCycle();
 }
+
+// Desde una unidad no se cambia de nivel: el botón vuelve a la unidad
+const setupButton = () => `<button id="dictBackSetup" class="btn ghost small" type="button">${lmCtx ? 'Volver a la unidad' : 'Cambiar nivel'}</button>`;
 
 // ---------- 2-3. Situarse y escuchar ----------
 const headerText = d => `Nivel ${d.level} · ${d.meter} · ${d.bars} compases`;
@@ -179,7 +186,7 @@ function renderListen() {
     <div class="controls">
       <button id="dictPlay" class="btn" type="button" ${run.canPlay ? '' : 'disabled'}>Tocar ahora</button>
       <button id="dictExtra" class="btn ghost" type="button" hidden>Otra escucha (−${EXTRA_LISTEN_PENALTY} puntos)</button>
-      <button id="dictBackSetup" class="btn ghost small" type="button">Cambiar nivel</button>
+      ${setupButton()}
     </div>
     <p class="muted small center"><span>${beforeText(d)}</span> <span>Entre escucha y escucha hay una pausa para pensar.</span></p>`;
 }
@@ -316,7 +323,7 @@ function renderPlay() {
       <p><strong>Necesito el micrófono</strong> para oír lo que tocas.</p>
       <p id="dictMicError" class="muted"></p>
       <div class="controls"><button id="dictMic" class="btn" type="button">Activar micrófono</button>${relistenButton('dictRelistenGate')}
-        <button id="dictBackSetup" class="btn ghost small" type="button">Cambiar nivel</button></div>
+        ${setupButton()}</div>
     </div>
     <div id="dictStage" class="dict-stage">
       <p id="dictCount" class="dict-count" tabindex="-1">Tu turno</p>
@@ -438,6 +445,7 @@ function finishPlaying() {
   });
   const rec = record(d, result);
   renderResult(body, { dict: d, inst: i, played, result, record: rec, nom: getState().nom }, resultActions());
+  if (lmCtx) reportLm(result);
   setStatus(d.rhythmOnly ? `Nota ${result.score} %` : `Nota ${result.score} % · altura ${result.pitchPct} % · ritmo ${result.rhythmPct} %`);
 }
 
@@ -449,7 +457,7 @@ function renderNothingHeard() {
     <div class="controls">
       <button id="dictRetry" class="btn" type="button">Volver a tocar</button>
       ${relistenButton() || (run.extra ? '' : `<button id="dictExtraEmpty" class="btn ghost" type="button">Otra escucha (−${EXTRA_LISTEN_PENALTY} puntos)</button>`)}
-      <button id="dictBackSetup" class="btn ghost small" type="button">Cambiar nivel</button>
+      ${setupButton()}
     </div></div>`;
   $('dictRetry').focus();
 }
@@ -470,10 +478,20 @@ function record(d, result) {
   return { prevBest, isRecord: improved, passed: result.passed };
 }
 
+// Unidad del curso: el resultado vuelve con el contrato y los botones son «Repetir» y «Volver a la unidad»
+function reportLm(result) {
+  const mistakes = result.pairs.map(x => (x.state === 'ok' ? null : x.e === null ? 'sobra' : `n${x.e + 1}`)).filter(Boolean);
+  reportLmTool(lmCtx, { pct: result.score, stars: result.stars, skills: { dictado: result.score, ritmo: result.rhythmPct }, mistakes });
+  const again = $('dictAgain');
+  const change = $('dictChange');
+  if (again) again.textContent = 'Repetir el dictado';
+  if (change) change.textContent = 'Volver a la unidad';
+}
+
 function resultActions() {
   return {
     again: () => startDictation(),
-    setup: () => renderSetup({ focus: true }),
+    setup: () => (lmCtx ? back() : renderSetup({ focus: true })),
     register: stop => stops.push(stop),
     stopAll: () => { stops.forEach(fn => { try { fn(); } catch (e) { /* ya parado */ } }); stops = []; },
   };
@@ -490,10 +508,13 @@ body.addEventListener('click', e => {
   else if (id === 'dictStop') finishPlaying();
   else if (id === 'dictRetry' || id === 'dictMic') startPlaying();
   else if (id === 'dictRelisten' || id === 'dictRelistenGate') relisten();
-  else if (id === 'dictBackSetup') renderSetup({ focus: true });
+  else if (id === 'dictBackSetup') { if (lmCtx) back(); else renderSetup({ focus: true }); }
 });
 
 register('dictation', {
-  enter() { renderSetup(); },
-  leave() { cancel(); run = null; },
+  enter(params = {}) {
+    lmCtx = params.lm || null;
+    if (lmCtx) startDictation(); else renderSetup();
+  },
+  leave() { cancel(); run = null; lmCtx = null; },
 });

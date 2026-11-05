@@ -7,6 +7,7 @@ import { instrumentById } from '../instruments.js';
 import { getState, logPractice } from '../store.js';
 import * as audio from '../audio.js';
 import { withMic } from './practice.js';
+import { reportLmTool, showLmDone, clearLmDone } from '../lm/bridge.js';
 
 const TICK_MS = 30;
 const SUCCESS_CENTS = 5;
@@ -35,6 +36,8 @@ let running = false;
 let hold = 0;
 let hits = 0;
 let cycleStart = 0;
+// Lanzado desde una unidad del curso de Lenguaje Musical: { id, root, interval, hits } (acorde y grado fijos)
+let lmCtx = null;
 
 // Nota escrita que toca el músico, en la octava más cómoda de su registro
 function writtenTarget() {
@@ -88,7 +91,19 @@ function tick() {
     hits++;
     $('chStatus').textContent = `¡Clavada! ${hits} ${hits === 1 ? 'vez' : 'veces'}`;
     logPractice(0.2, 3);
+    if (lmCtx && hits >= (lmCtx.hits || 1)) finishLm();
   }
+}
+
+// Unidad: se completa al clavar la nota las veces pedidas; si se para antes, cuenta lo conseguido
+function finishLm() {
+  if (!lmCtx || lmCtx.done) return;
+  const goal = lmCtx.hits || 1;
+  const pct = Math.round(100 * Math.min(hits, goal) / goal);
+  lmCtx = { ...lmCtx, done: true };
+  if (running) stop();
+  reportLmTool(lmCtx, { pct, skills: { entonacion: pct } });
+  showLmDone($('chord'), pct >= 100 ? '¡Ejercicio completado!' : 'Ejercicio guardado');
 }
 
 function stop() {
@@ -111,7 +126,13 @@ function start() {
 }
 
 register('chord', {
-  enter() {
+  enter(params = {}) {
+    lmCtx = params.lm || null;
+    clearLmDone($('chord'));
+    if (lmCtx) {
+      root = ROOTS.find(r => r.midi === lmCtx.root) || root;
+      interval = JUST_INTERVALS.find(i => i.id === lmCtx.interval) || interval;
+    }
     renderSegs();
     $('chGate').hidden = audio.micReady();
     $('chMicError').hidden = true;
@@ -144,4 +165,8 @@ document.querySelectorAll('[data-ch-mode]').forEach(b => b.addEventListener('cli
   renderSegs();
   if (mode === 'drone') toast('Usa auriculares: si el micrófono oye el acorde, se confunde');
 }));
-$('chGo').addEventListener('click', () => (running ? stop() : start()));
+$('chGo').addEventListener('click', () => {
+  if (!running) { start(); return; }
+  stop();
+  if (lmCtx && hits > 0) finishLm();
+});

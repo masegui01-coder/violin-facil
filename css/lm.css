@@ -1,0 +1,163 @@
+/* Curso de Lenguaje Musical: vista «Lenguaje» de Aprender (niveles, unidades, ejercicios y bloque de instrumento)
+   y la pantalla del ejercicio (pentagrama por celdas, escritor, STOP, agilidad, canto). Los aciertos van siempre con
+   su signo (✓ ≈ ✕), nunca solo con color; todo en rem para que crezca con el texto grande. */
+
+#lm, #lmView, .lm-tool-done { --dict-ok: var(--ok); --dict-near: var(--warn); --dict-bad: var(--bad); }
+
+/* ---------- Vista Lenguaje ---------- */
+.lm { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.lm-head h2 { font-size: 1.6rem; }
+.lm-level { display: flex; flex-direction: column; gap: 8px; }
+.lm-level h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 1.2rem; }
+.lm-level.soon { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 12px 14px; }
+.lm-units { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .lm-units { grid-template-columns: 1fr 1fr; } }
+.lm-unit-card {
+  display: grid; grid-template-columns: 3rem 1fr; gap: 12px; align-items: start; text-align: left; width: 100%; min-height: 64px;
+  padding: 12px 14px; border-radius: var(--r); border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit;
+}
+.lm-unit-num { width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; background: var(--unit); color: var(--on-color); }
+.lm-unit-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lm-unit-text b { font-size: 1.05rem; }
+.lm-unit-text small { color: var(--muted); line-height: 1.3; }
+.lm-unit-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lm-progress { height: 8px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; margin: 4px 0 0; }
+.lm-progress span { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
+.lm-skills { border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; background: var(--surface); }
+.lm-skills h2 { font-size: 1.1rem; margin-bottom: 6px; }
+.lm-skills ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lm-skills li { display: grid; grid-template-columns: minmax(6rem, auto) auto 1fr; gap: 8px; align-items: center; }
+.lm-skills li .lm-progress { margin: 0; }
+.lm-unit-head { border-radius: var(--r); padding: 16px; background: var(--unit); color: var(--on-color); display: flex; flex-direction: column; gap: 6px; }
+.lm-unit-head .eyebrow, .lm-unit-head p { color: inherit; }
+.lm-unit-head .lm-progress { background: rgba(255, 255, 255, .3); border: 0; }
+.lm-unit-head .lm-progress span { background: currentColor; }
+.lm-goals { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; background: var(--surface); }
+.lm-goals summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.lm-goals h4 { margin: 8px 0 4px; }
+.lm-back { align-self: flex-start; }
+.lm-section h3, .lm-instrument h3 { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; flex-wrap: wrap; }
+.lm-section h3 .ic { width: 1.4rem; height: 1.4rem; color: var(--accent); }
+.lm-ex-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lm-ex { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); }
+.lm-ex-text { flex: 1 1 12rem; min-width: 0; }
+.lm-ex-variants { display: flex; gap: 8px; flex-wrap: wrap; }
+.lm-ex-btn {
+  min-height: 48px; min-width: 6.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 6px 12px; border-radius: 12px; border: 1.5px solid var(--ctl-outline); background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 700;
+}
+.lm-ex-btn.medio { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.lm-ex-btn small { font-weight: 600; font-size: .78rem; }
+.lm-instrument { border-radius: var(--r); padding: 14px 16px; background: var(--accent-soft); border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line)); display: flex; flex-direction: column; gap: 6px; }
+.lm-inst-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.lm-inst-links .btn { min-height: 44px; }
+
+/* ---------- Pantalla del ejercicio ---------- */
+#lm .bar .grow { min-width: 0; }
+#lm .bar .eyebrow { margin: 0; }
+#lm .bar h1 { font-size: 1.25rem; margin: 0; }
+.lm-variant.medio { font-weight: 800; }
+.lm-run { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lm-run > *, .lm-item { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lm-q { font-size: 1.3rem; outline-offset: 4px; }
+.lm-card, .lm-card-sum, .lm-work { display: flex; flex-direction: column; gap: 8px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; background: var(--surface); }
+.lm-card-sum h3 { font-size: 1.05rem; }
+.lm-work-title { margin: 0; }
+.lm-facts { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.lm-listen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lm-extra summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.lm-play { align-self: flex-start; }
+.lm-next, .lm-result-actions { justify-content: flex-start; flex-wrap: wrap; }
+.lm-why { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+
+/* Pentagrama por celdas: cada nota, hueco o clave es una celda del mismo alto (en rem: crece con el texto) */
+.lm-staff { display: flex; flex-wrap: wrap; align-items: flex-start; row-gap: 6px; color: var(--ink); max-width: 100%; }
+.lm-sc { display: inline-flex; flex-direction: column; align-items: center; position: relative; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; }
+.lm-cell { height: 7.5rem; width: auto; display: block; overflow: visible; }
+.lm-st-line { stroke: var(--staff); stroke-width: 1.1; }
+.lm-head { fill: currentColor; stroke: currentColor; stroke-width: 1.2; }
+.lm-head.open { fill: var(--bg); }
+.lm-stem, .lm-flag, .lm-rest-line { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.lm-dot, .lm-rest { fill: currentColor; }
+.lm-bar { stroke: currentColor; stroke-width: 1.6; }
+.lm-bar-thick { fill: currentColor; }
+.lm-bar-hint { stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.lm-clef { font-family: var(--f-music); font-size: 64px; fill: currentColor; }
+.lm-clef.bass { font-size: 40px; }
+.lm-time { font-family: var(--f-display); font-size: 21px; font-weight: 700; fill: currentColor; }
+.lm-mark { font-size: 13px; font-weight: 800; fill: currentColor; }
+.lm-ghost { opacity: .4; }
+.lm-under { font-size: .85rem; font-weight: 700; min-height: 1.3em; color: var(--muted); max-width: 4.5rem; text-align: center; overflow-wrap: anywhere; }
+.lm-sc.now { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 8px; }
+.lm-sc.now .lm-under { color: var(--ink); }
+.lm-sc.ok, .lm-sc.ok .lm-under { color: var(--dict-ok); }
+.lm-sc.near, .lm-sc.near .lm-under { color: var(--dict-near); }
+.lm-sc.bad, .lm-sc.bad .lm-under { color: var(--dict-bad); }
+
+/* Escritor: notas que se pueden seleccionar y la celda donde se añade la siguiente */
+.lm-note-btn, .lm-insert, .lm-gap { cursor: pointer; border-radius: 8px; min-width: 44px; min-height: 44px; }
+.lm-note-btn.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 2px var(--accent); }
+.lm-insert { background: color-mix(in srgb, var(--accent) 8%, transparent); outline: 1.5px dashed var(--accent); outline-offset: -2px; }
+.lm-insert .lm-cell { height: 7.5rem; }
+.lm-note-btn:focus-visible, .lm-insert:focus-visible, .lm-gap:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.lm-cell-mark { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-weight: 800; font-size: .9rem; }
+.lm-cell-mark.ok { color: var(--dict-ok); } .lm-cell-mark.near { color: var(--dict-near); } .lm-cell-mark.bad { color: var(--dict-bad); }
+.lm-figs button { display: inline-flex; align-items: center; gap: 6px; }
+.lm-fig-ic .lm-cell { height: 2.6rem; }
+.lm-gap[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.lm-gap.ok { color: var(--dict-ok); } .lm-gap.bad { color: var(--dict-bad); }
+.lm-w-tools { flex-wrap: wrap; justify-content: flex-start; }
+
+/* Preguntas: nombres de nota, completar, emparejar, ordenar */
+.lm-names { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr)); gap: 8px; }
+.lm-name { min-height: 52px; border-radius: 14px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; font-weight: 800; font-size: 1.1rem; }
+.lm-name:active { background: var(--ctl-press); }
+.lm-complete { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lm-hole { display: grid; place-items: center; width: 3rem; height: 3rem; border: 2px dashed var(--accent); border-radius: 10px; font-weight: 800; font-size: 1.4rem; }
+.lm-opt-staff .lm-staff { pointer-events: none; }
+.lm-opt-staff .lm-cell { height: 4.5rem; }
+.lm-pairs { display: flex; flex-direction: column; gap: 8px; }
+.lm-pair { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lm-sign { font-family: var(--f-music), var(--f-display); font-size: 1.4rem; font-weight: 700; min-width: 3rem; text-align: center; font-style: italic; }
+.lm-pair select { min-height: 44px; flex: 1 1 10rem; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 6px 10px; }
+.lm-pair.ok select { border-color: var(--dict-ok); } .lm-pair.bad select { border-color: var(--dict-bad); }
+.lm-order { margin: 0; padding-left: 1.6em; display: flex; flex-direction: column; gap: 6px; }
+.lm-order li { display: flex; align-items: center; gap: 8px; }
+.lm-order-text { flex: 1; font-weight: 700; }
+.lm-order .icon-btn { min-width: 44px; min-height: 44px; }
+
+/* STOP, toques y agilidad */
+.lm-stop-phase { text-align: center; font-weight: 800; font-size: 1.15rem; min-height: 1.5em; margin: 0; }
+.lm-stop-btn { background: var(--bad); color: #fff; font-size: 1.6rem; letter-spacing: .08em; min-height: 5rem; }
+.lm-tap { min-height: 6rem; font-size: 1.3rem; user-select: none; touch-action: manipulation; }
+.lm-tap.hit { animation: lm-hit .12s ease-out; }
+@keyframes lm-hit { from { filter: brightness(1.25); transform: scale(.98); } to { filter: none; transform: none; } }
+.lm-ag-top { display: flex; justify-content: space-between; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lm-ag-stage { display: flex; justify-content: center; color: var(--ink); }
+.lm-ag-stage .lm-cell { height: 10rem; }
+.lm-ag-time { height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.lm-ag-time i { display: block; height: 100%; width: 100%; background: var(--accent); }
+.lm-ag-feedback { min-height: 1.6em; text-align: center; font-weight: 700; margin: 0; }
+
+/* Canto: aguja de afinación */
+.lm-sing-now { text-align: center; font-weight: 700; font-size: 1.15rem; }
+.lm-meter { position: relative; height: 12px; border-radius: 99px; background: linear-gradient(90deg, var(--bad-soft), var(--ok-soft) 40% 60%, var(--bad-soft)); border: 1px solid var(--line); }
+.lm-meter i { position: absolute; top: -4px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--muted); border: 2px solid var(--surface); }
+.lm-meter i.ok { background: var(--dict-ok); } .lm-meter i.near { background: var(--dict-near); } .lm-meter i.bad { background: var(--dict-bad); }
+.lm-lyrics { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+.lm-lyrics input { min-height: 44px; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 6px 10px; }
+
+/* Resultado */
+.lm-result { display: flex; flex-direction: column; gap: 12px; }
+.lm-ten { text-align: center; margin: 0; font-size: 1.1rem; }
+.lm-ten b { font-size: 1.6rem; font-family: var(--f-display); }
+.lm-mistakes { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; background: var(--surface); }
+.lm-mistakes h3 { font-size: 1rem; }
+.lm-legend { justify-content: center; }
+
+/* Herramientas lanzadas desde una unidad: aviso de terminado con vuelta a la unidad */
+.lm-tool-done { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--ok-soft); border: 1.5px solid var(--ok); margin-top: 12px; }
+.lm-tool-done p { margin: 0; font-weight: 700; }
+
+/* Lo que asignó el Aula, resaltado en la unidad */
+.lm-ex.assigned, .lm-section.assigned .lm-ex { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }

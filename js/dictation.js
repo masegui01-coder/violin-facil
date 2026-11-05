@@ -164,7 +164,12 @@ export function rhythmPlan(r, cfg, meter, barCount) {
   const barBeats = METER_BEATS[meter];
   const cells = namedCells(cfg, meter);
   const novel = novelCells(cfg, meter);
-  const end = [barBeats];
+  // nota final de compás entero, salvo que el nivel (limitado por el curso) aún no tenga esa figura: entonces, pulsos
+  const wholeBar = cells.some(c => c.cell.length === 1 && Math.abs(c.cell[0] - barBeats) < EPS);
+  const restOk = cells.some(c => c.key === 'rq');
+  const beats = Math.round(barBeats);
+  const pulses = Array.from({ length: beats }, (_, k) => (restOk && k === beats - 1 ? -1 : 1));
+  const end = !cfg.limited || wholeBar ? [barBeats] : pulses;
   let fallback = null;
   for (let attempt = 0; attempt < RHYTHM_TRIES; attempt++) {
     const used = new Set();
@@ -413,8 +418,18 @@ const repeatsOk = notes => notes.filter((n, i) => i && n.midi === notes[i - 1].m
 const melodyOk = notes => notes.every((n, i) => i === 0 || intervalOk(notes[i - 1], n, true)) && outlineOk(notes) && rangeOk(notes) && repeatsOk(notes);
 
 // Dictado melódico. opts: { level, meter, bars, seed }. null si el instrumento no da para la tonalidad.
-export function melodicDictation(inst, { level, meter, bars: barCount, seed }) {
-  const cfg = levelConfig(level, false);
+// Curso de Lenguaje Musical: un nivel con solo las figuras ya vistas (cells: claves de SIMPLE, p. ej. ['q', 'rq', 'ee'])
+// y, si las células lo permiten, un compás simple que el nivel aún no tenía (3/4 en el rítmico 3)
+export function limitedConfig(cfg, { cells = null, meter = null } = {}) {
+  if (!cells || !cells.length) return cfg;
+  const simple = cells.filter(k => SIMPLE[k]);
+  if (!simple.length) return cfg;
+  const meters = meter && SIMPLE_METERS.includes(meter) && !cfg.meters.includes(meter) ? [...cfg.meters, meter] : cfg.meters;
+  return { ...cfg, limited: true, simple, compound: [], novel: (cfg.novel || []).filter(k => simple.includes(k)), meters: meters.filter(m => m !== '6/8') };
+}
+
+export function melodicDictation(inst, { level, meter, bars: barCount, seed, cells = null }) {
+  const cfg = limitedConfig(levelConfig(level, false), { cells, meter });
   const r = rng(seed);
   const m = cfg.meters.includes(meter) ? meter : cfg.meters[0];
   const nBars = barsFor(level, m).includes(barCount) ? barCount : 4;
@@ -455,8 +470,8 @@ export function melodicDictation(inst, { level, meter, bars: barCount, seed }) {
 }
 
 // Dictado rítmico para percusión: todas las notas en Do5 (la línea del pentagrama de percusión)
-export function rhythmDictation({ level, meter, bars: barCount, seed }) {
-  const cfg = levelConfig(level, true);
+export function rhythmDictation({ level, meter, bars: barCount, seed, cells = null }) {
+  const cfg = limitedConfig(levelConfig(level, true), { cells, meter });
   const r = rng(seed);
   const m = cfg.meters.includes(meter) ? meter : cfg.meters[0];
   const nBars = barsFor(level, m, true).includes(barCount) ? barCount : 4;

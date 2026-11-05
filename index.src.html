@@ -47,6 +47,7 @@
 <link rel="stylesheet" href="css/tips.css">
 <link rel="stylesheet" href="css/pro.css">
 <link rel="stylesheet" href="css/dictation.css">
+<link rel="stylesheet" href="css/lm.css">
 <link rel="stylesheet" href="css/a11y.css">
 <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/motion.css">
@@ -98,7 +99,7 @@
     <!-- Pestaña Aprender -->
     <section id="learn" class="screen" hidden>
       <h1 class="sr-only">Aprender</h1>
-      <div class="seg three learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="pro">Pro</button></div>
+      <div class="seg four learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-view="casual">Casual</button><button type="button" data-learn-view="book">Libro</button><button type="button" data-learn-view="lm">Lenguaje</button><button type="button" data-learn-view="pro">Pro</button></div>
       <div id="casualView">
         <div id="learnSide" class="learn-side">
           <div id="continueCard"></div>
@@ -109,6 +110,7 @@
         <div id="courseMap" class="course"></div>
       </div>
       <div id="bookView" class="book" hidden></div>
+      <div id="lmView" class="lm" hidden></div>
       <div id="proView" class="pro" hidden></div>
     </section>
 
@@ -578,6 +580,13 @@
       <div id="gymList" class="gym-list"></div>
     </section>
     <!-- Dictados: escuchar y tocar de oído -->
+    <!-- Ejercicio del curso de Lenguaje Musical (js/lm/screen.js) -->
+    <section id="lm" class="screen lesson-screen" hidden>
+      <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver a la unidad">✕</button><div class="grow"><p id="lmEyebrow" class="eyebrow"></p><h1 id="lmTitle">Lenguaje musical</h1></div></div>
+      <p id="lmStatus" class="sr-only" role="status" aria-live="polite"></p>
+      <div id="lmBody" class="lm-run"></div>
+    </section>
+
     <section id="dictation" class="screen" hidden>
       <div class="bar"><button class="icon-btn" type="button" data-back aria-label="Volver">✕</button><h1>Dictados</h1></div>
       <p id="dictStatus" class="sr-only" role="status" aria-live="polite"></p>

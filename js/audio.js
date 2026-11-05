@@ -26,6 +26,10 @@ export function setInstrument(inst) {
   state.timbre = inst.timbre || null;
 }
 
+// Voz cantada (curso de Lenguaje Musical): el detector abarca de un bajo a una soprano, sea cual sea el instrumento
+const VOICE_HZ = [70, 1100];
+export function setVoiceInput(on) { state.voice = !!on; }
+
 export function ctx() {
   if (!state.ctx) state.ctx = new (window.AudioContext || window.webkitAudioContext)();
   if (state.ctx.state === 'suspended') state.ctx.resume();
@@ -134,7 +138,8 @@ export function readPitch() {
   const level = rms(state.buf);
   const bars = state.timbre === 'mallet';
   const f = level < (bars ? MIN_RMS_BARS : MIN_RMS) ? null
-    : (bars ? barPitch : detectPitch)(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
+    : state.voice ? detectPitch(state.buf, state.ctx.sampleRate, VOICE_HZ[0], VOICE_HZ[1])
+      : (bars ? barPitch : detectPitch)(state.buf, state.ctx.sampleRate, state.minHz, state.maxHz);
   if (!f) { state.recent = []; return { freq: null, midi: null, level }; }
   state.recent = [...state.recent, f].slice(-MEDIAN_FRAMES);
   const sorted = [...state.recent].sort((x, y) => x - y);
