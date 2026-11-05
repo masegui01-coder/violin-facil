@@ -243,6 +243,24 @@ async function deleteSchoolData(d, uid, school) {
   await d.run(`schools/${school.schoolId}`, () => batch.commit());
 }
 
+// Aula Pro (alumno): en cada clase, su ficha y su resumen con una plaza menos, y los comentarios a sus entregas
+async function deleteAulaData(d, uid, aula) {
+  const { db, fs } = d;
+  await Promise.all(((aula && aula.classes) || []).filter(c => c && c.sid && c.cid).map(async c => {
+    const feedback = await d.docs(`classes/${c.cid}/feedback`, fs.query(fs.collection(db, 'schools', c.sid, 'classes', c.cid, 'feedback'), fs.where('uid', '==', uid)));
+    await Promise.all(feedback.map(f => d.del(f.ref)));
+    const student = fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'students', uid);
+    const exists = await d.run(student.path, async () => (await fs.getDoc(student)).exists());
+    if (!exists) { await d.del(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', uid)); return; }
+    const classRef = fs.doc(db, 'schools', c.sid, 'classes', c.cid);
+    const batch = fs.writeBatch(db);
+    batch.delete(student);
+    batch.delete(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', uid));
+    if (await d.run(classRef.path, async () => (await fs.getDoc(classRef)).exists()) !== false) batch.update(classRef, { students: fs.increment(-1) });
+    await d.run(`classes/${c.cid}`, () => batch.commit());
+  }));
+}
+
 // Devuelve los documentos que no se han podido borrar ([] si todo ha ido bien)
 export async function deleteCloudData(uid, state = {}) {
   const { db, fs } = await getCloud();
@@ -256,6 +274,7 @@ export async function deleteCloudData(uid, state = {}) {
     deleteBandData(d, uid, state.band),
     ...(state.groups || []).filter(g => g && g.groupId).map(g => deleteGroupData(d, uid, g)),
     deleteSchoolData(d, uid, state.school),
+    deleteAulaData(d, uid, state.aula),
   ]);
   await Promise.all([
     code ? d.del(fs.doc(db, 'friendCodes', code)) : null,

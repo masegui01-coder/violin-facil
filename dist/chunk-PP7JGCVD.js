@@ -1,0 +1,1 @@
+import{T as e}from"./chunk-R7ZVGJUS.js";import{a as o}from"./chunk-7XJKJMHR.js";import{Q as t}from"./chunk-WOMAELSD.js";var h=()=>!!(t().proTester||t().adminUser);function s(){let r=o("toolRhythmBook");r&&(r.hidden=!h())}o("toolRhythmBook").addEventListener("click",()=>e("rhythmbook"));export{h as a,s as b};

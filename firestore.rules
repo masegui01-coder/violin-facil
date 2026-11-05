@@ -452,7 +452,10 @@ service cloud.firestore {
         || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid', 'ownerName'])
             && request.resource.data.ownerUid is string && request.resource.data.ownerUid != request.auth.uid
             && exists(schoolMember(sid, request.resource.data.ownerUid)) && shortText(request.resource.data.ownerName, 60))
-        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium']));
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['premium']))
+        // Aula Pro: el profesor pide la licencia (la ve el administrador en su panel), con la hora del servidor
+        || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proRequestedAt'])
+            && request.resource.data.proRequestedAt == request.time);
       allow delete: if schoolOwner(sid);
       match /members/{uid} {
         allow read: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid) || isAdmin();
@@ -472,6 +475,143 @@ service cloud.firestore {
           && request.resource.data.done is number && request.resource.data.total is number && shortText(request.resource.data.nickname, 30);
         allow delete: if schoolOwner(sid) || (signedIn() && uid == request.auth.uid);
       }
+
+      // ---------- Aula Pro: clases del profesor (js/aula-api.js) ----------
+      // Solo con la licencia de la escuela se crean clases y entran alumnos. El profesor ve SOLO sus clases; cada alumno,
+      // su ficha, su resumen y los comentarios a sus entregas (nunca a sus compañeros). Validación estricta de claves.
+      match /classes/{cid} {
+        function validClass(d) {
+          return d.keys().hasOnly(['name', 'code', 'teacherName', 'students', 'createdAt', 'archived', 'leftUid'])
+            && shortText(d.name, 60) && shortText(d.teacherName, 60) && validCode(d.code)
+            && d.students is int && d.students >= 0 && d.students <= aulaClassLimit()
+            && (!('archived' in d) || d.archived is bool) && (!('leftUid' in d) || shortText(d.leftUid, 128));
+        }
+        allow get: if schoolOwner(sid) || inClass(sid, cid);
+        allow list: if schoolOwner(sid);
+        allow create: if schoolOwner(sid) && aulaActive(sid) && validClass(request.resource.data)
+          && request.resource.data.students == 0 && request.resource.data.createdAt == request.time
+          && !('leftUid' in request.resource.data);
+        // El profesor cambia el nombre o la archiva; al dar de baja resta uno indicando quién sale (con su ficha borrada
+        // en la misma escritura). Un alumno que entra suma uno (si cabe) y uno que sale resta uno, junto a su ficha.
+        allow update: if validClass(request.resource.data) && (
+          (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'archived']))
+          || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students', 'leftUid'])
+              && request.resource.data.students == resource.data.students - 1 && resource.data.students >= 1
+              && exists(classStudent(sid, cid, request.resource.data.leftUid))
+              && !existsAfter(classStudent(sid, cid, request.resource.data.leftUid)))
+          || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students'])
+              && ((request.resource.data.students == resource.data.students + 1 && resource.data.students < aulaClassLimit()
+                   && !exists(classStudent(sid, cid, request.auth.uid)) && existsAfter(classStudent(sid, cid, request.auth.uid)))
+                || (request.resource.data.students == resource.data.students - 1 && resource.data.students >= 1
+                   && exists(classStudent(sid, cid, request.auth.uid)) && !existsAfter(classStudent(sid, cid, request.auth.uid))))));
+        allow delete: if schoolOwner(sid);
+
+        // Ficha del alumno en la clase: entra con el código de ESTA clase, ocupando una plaza en la misma escritura
+        match /students/{uid} {
+          allow get: if schoolOwner(sid) || isOwn(uid);
+          allow list: if schoolOwner(sid);
+          allow create: if isOwn(uid) && aulaActive(sid)
+            && request.resource.data.keys().hasOnly(['nickname', 'instrument', 'code', 'joinedAt'])
+            && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24)
+            && validCode(request.resource.data.code) && request.resource.data.joinedAt == request.time
+            && get(/databases/$(db)/documents/classCodes/$(request.resource.data.code)).data.classId == cid
+            && get(/databases/$(db)/documents/classCodes/$(request.resource.data.code)).data.schoolId == sid
+            && classSeatTaken(sid, cid);
+          allow update: if isOwn(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'instrument'])
+            && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24);
+          allow delete: if (isOwn(uid) || schoolOwner(sid)) && classSeatFreed(sid, cid);
+        }
+        // Tareas: las pone el profesor y las ve la clase
+        match /tasks/{tid} {
+          allow read: if schoolOwner(sid) || inClass(sid, cid);
+          allow create, update: if schoolOwner(sid) && validAulaTask(request.resource.data);
+          allow delete: if schoolOwner(sid);
+        }
+        // Resumen acotado que publica el alumno (aula-summary.js buildSummary); lo lee el profesor
+        match /summaries/{uid} {
+          allow get: if schoolOwner(sid) || isOwn(uid);
+          allow list: if schoolOwner(sid);
+          allow create, update: if isOwn(uid) && inClass(sid, cid) && validAulaSummary(request.resource.data);
+          allow delete: if schoolOwner(sid) || isOwn(uid);
+        }
+        // Comentario del profesor a una entrega («<tarea>_<uid>»): lo escribe él y lo lee ese alumno
+        match /feedback/{fid} {
+          allow read: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
+          allow create, update: if schoolOwner(sid) && validFeedback(request.resource.data)
+            && fid == request.resource.data.taskId + '_' + request.resource.data.uid;
+          allow delete: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
+        }
+      }
+    }
+
+    // ---------- Aula Pro: funciones comunes ----------
+    function aulaClassLimit() { return 60; }
+    function aulaActive(sid) { return get(schoolPath(sid)).data.get('premium', {}).get('active', false) == true; }
+    function classPath(sid, cid) { return /databases/$(db)/documents/schools/$(sid)/classes/$(cid); }
+    function classStudent(sid, cid, uid) { return /databases/$(db)/documents/schools/$(sid)/classes/$(cid)/students/$(uid); }
+    function inClass(sid, cid) { return signedIn() && exists(classStudent(sid, cid, request.auth.uid)); }
+    function classSeatTaken(sid, cid) {
+      let before = get(classPath(sid, cid)).data;
+      return before.students < aulaClassLimit() && getAfter(classPath(sid, cid)).data.students == before.students + 1;
+    }
+    function classSeatFreed(sid, cid) {
+      return !existsAfter(classPath(sid, cid))
+        || (get(classPath(sid, cid)).data.students >= 1
+          && getAfter(classPath(sid, cid)).data.students == get(classPath(sid, cid)).data.students - 1);
+    }
+    function optInt(d, k, lo, hi) { return !(k in d) || (d[k] is int && d[k] >= lo && d[k] <= hi); }
+    function optPct(d, k) { return !(k in d) || (d[k] is number && d[k] >= 0 && d[k] <= 100); }
+    // Tarea (aula.js normalizeTask): qué del temario, fecha «AAAA-MM-DD» o null, nota mínima, intentos y a quién
+    function validAulaRef(r) {
+      return r is map && r.keys().hasOnly(['level', 'unit', 'section', 'id', 'inst', 'book', 'label', 'ids'])
+        && optInt(r, 'level', 1, 20) && optInt(r, 'unit', 1, 50) && optInt(r, 'book', 1, 10)
+        && optText(r, 'section', 20) && optText(r, 'id', 80) && optText(r, 'inst', 24) && optText(r, 'label', 160)
+        && (!('ids' in r) || (r.ids is list && r.ids.size() >= 1 && r.ids.size() <= 20));
+    }
+    function validAulaTask(d) {
+      return d.keys().hasOnly(['title', 'kind', 'ref', 'due', 'minPct', 'maxAttempts', 'variant', 'to', 'note', 'createdAt', 'song'])
+        && shortText(d.title, 120) && d.kind in ['lm-unit', 'lm-section', 'lm-ex', 'lesson', 'book', 'method', 'xml']
+        && validAulaRef(d.ref)
+        && (d.due == null || (d.due is string && d.due.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && d.minPct is int && d.minPct >= 0 && d.minPct <= 100
+        && d.maxAttempts is int && d.maxAttempts >= 0 && d.maxAttempts <= 20
+        && d.variant in ['facil', 'medio', 'any']
+        && d.to is list && d.to.size() <= 60
+        && optText(d, 'note', 300) && d.createdAt is number
+        && (!('song' in d) || (d.kind == 'xml' && validSongPayload(d.song)));
+    }
+    // Resumen del alumno: claves fijas, textos cortos, % de 0 a 100 y mapas y listas con tope
+    function validAulaSkills(s) {
+      return s is map && s.keys().hasOnly(['ritmo', 'entonacion', 'lectura', 'teoria', 'dictado', 'audicion'])
+        && optPct(s, 'ritmo') && optPct(s, 'entonacion') && optPct(s, 'lectura')
+        && optPct(s, 'teoria') && optPct(s, 'dictado') && optPct(s, 'audicion');
+    }
+    function validAulaSummary(d) {
+      return d.keys().hasOnly(['nickname', 'instrument', 'at', 'term', 'days', 'streak', 'skills', 'mistakes', 'units', 'tasks', 'recent'])
+        && shortText(d.nickname, 30) && optText(d, 'instrument', 24) && shortText(d.term, 12)
+        && d.at is number && d.streak is int && d.streak >= 0 && d.streak <= 5000
+        && d.days is map && d.days.size() <= 92
+        && validAulaSkills(d.skills)
+        && d.mistakes is map && d.mistakes.size() <= 10
+        && d.units is map && d.units.size() <= 64
+        && d.tasks is map && d.tasks.size() <= 100
+        && d.recent is list && d.recent.size() <= 20;
+    }
+    function validFeedback(d) {
+      return d.keys().hasOnly(['uid', 'taskId', 'comment', 'at'])
+        && shortText(d.uid, 128) && shortText(d.taskId, 40) && shortText(d.comment, 500) && d.comment.size() > 0 && d.at is number;
+    }
+    // Para entrar en una clase: el código lleva a la escuela y la clase (lo crea el profesor junto a la clase)
+    match /classCodes/{code} {
+      allow get: if signedIn();
+      allow list, update: if false;
+      allow create: if signedIn() && validCode(code)
+        && request.resource.data.keys().hasOnly(['schoolId', 'classId', 'className', 'teacherName'])
+        && shortText(request.resource.data.schoolId, 40) && shortText(request.resource.data.classId, 40)
+        && shortText(request.resource.data.className, 60) && shortText(request.resource.data.teacherName, 60)
+        && get(schoolPath(request.resource.data.schoolId)).data.ownerUid == request.auth.uid
+        && getAfter(classPath(request.resource.data.schoolId, request.resource.data.classId)).data.code == code;
+      allow delete: if schoolOwner(resource.data.schoolId);
     }
   }
 }

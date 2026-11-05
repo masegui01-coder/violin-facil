@@ -1,11 +1,11 @@
-// Método Pro (opcional, no cambia el curso): en Aprender, la vista «Pro» lista los niveles del curso (viento, violín o
-// percusión) y cada
+// Pestaña Pro de Aprender = Aula (js/screens/aula-home.js) + Método Pro. El Método Pro (opcional, no cambia el curso)
+// lista los niveles del curso (viento, violín o percusión) y cada
 // nivel se abre con tres pestañas. Libro: descripción, solfeo, técnica de tu instrumento y consejo. Relax: retos
 // rápidos (pro-relax.js). Práctica: partitura, rutina de pasos, lo que escucha el micrófono y el botón para tocar.
-import { $, esc, icon, starsHtml } from '../ui.js';
+import { $, esc, icon, starsHtml, toast } from '../ui.js';
 import { register, go } from '../router.js';
 import { L } from '../tips-l10n.js';
-import { getState, instrumentProgress, recordPro, logPractice } from '../store.js';
+import { getState, update, instrumentProgress, recordPro, logPractice } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { parseScore } from '../music.js';
 import { createStaff } from '../staff.js';
@@ -56,9 +56,34 @@ const levels = () => buildMethod(inst(), getState().nom);
 const saved = () => (getState().pro || {})[getState().instrument] || {};
 const statesOf = list => levelStates(list, saved(), instrumentProgress(), getState().unlockAll || getState().proTester);
 
-// ---------- Lista de niveles (dentro de Aprender) ----------
+// ---------- Pestaña Pro de Aprender: Aula (aula-home.js) o Método Pro ----------
+// El Método Pro sigue entero aquí (y es temario asignable en el Aula). Quien ya lo usaba y no está en ninguna clase
+// ni tiene Aula entra directamente en él.
+const AULA_TXT = { switch: L('Aula o Método Pro', 'Classroom or Pro method'), aula: L('Aula', 'Classroom'), method: L('Método Pro', 'Pro method') };
+function proView() {
+  const s = getState();
+  if (s.aulaView === 'aula' || s.aulaView === 'method') return s.aulaView;
+  const usedMethod = Object.keys(saved()).length > 0;
+  const inAula = !!(s.aula && ((s.aula.classes || []).length || s.aula.schoolId)) || !!(s.school && s.school.role === 'teacher');
+  return usedMethod && !inAula ? 'method' : 'aula';
+}
+
 export function renderPro() {
   const box = $('proView');
+  const view = proView();
+  box.innerHTML = `<div class="seg aula-switch" role="group" aria-label="${esc(AULA_TXT.switch)}">
+      <button type="button" data-pro-view="aula" aria-pressed="${view === 'aula'}">${esc(AULA_TXT.aula)}</button>
+      <button type="button" data-pro-view="method" aria-pressed="${view === 'method'}">${esc(AULA_TXT.method)}</button></div>
+    <div id="proPane"></div>`;
+  box.querySelectorAll('[data-pro-view]').forEach(b => b.addEventListener('click', () => {
+    update({ aulaView: b.dataset.proView });
+    renderPro();
+  }));
+  if (view === 'method') renderMethodList($('proPane'));
+  else import('./aula-home.js').then(m => m.renderAulaHome($('proPane')), () => toast('No se ha podido abrir. Revisa la conexión.'));
+}
+
+function renderMethodList(box) {
   if (!hasMethod(inst())) {
     box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.soonEyebrow)}</p><h2>${esc(TXT.soon)}</h2><p>${esc(TXT.notYet)}</p>
       <button type="button" class="btn" id="proToCasual">${esc(TXT.toCasual)}</button></div>`;

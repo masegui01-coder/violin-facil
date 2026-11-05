@@ -1,0 +1,163 @@
+/* Aula Pro: «Mis tareas» del alumno, clases del profesor, tabla de seguimiento, ficha del alumno y formulario de tareas.
+   Solo tokens del tema (claro y oscuro salen solos). Las celdas de la tabla llevan siempre el % escrito y una marca. */
+.aula-switch { margin-top: 4px; }
+.aula-hero h2 { margin: 0; }
+.aula-hero p { margin: 0; color: var(--muted); }
+.aula-roles { display: grid; gap: 14px; }
+.aula-roles.compact { margin-top: 6px; }
+.aula-more > summary, .aula-done > summary, .aula-privacy > summary, .aula-settings > summary {
+  cursor: pointer; font-weight: 800; min-height: 48px; display: flex; align-items: center; gap: 8px; list-style: none;
+}
+.aula-more > summary::before, .aula-done > summary::before, .aula-privacy > summary::before, .aula-settings > summary::before {
+  content: '›'; display: inline-block; transition: transform .15s; font-size: 1.2em; color: var(--muted);
+}
+.aula-more[open] > summary::before, .aula-done[open] > summary::before, .aula-privacy[open] > summary::before, .aula-settings[open] > summary::before { transform: rotate(90deg); }
+.aula-more > summary::-webkit-details-marker, .aula-done > summary::-webkit-details-marker, .aula-privacy > summary::-webkit-details-marker, .aula-settings > summary::-webkit-details-marker { display: none; }
+.aula-empty { color: var(--muted); background: var(--surface-2); border-radius: 12px; padding: 12px 14px; margin: 0; }
+.aula-block-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.aula-block-head h2, .aula-block-head h3 { margin: 0; }
+.aula-block-head .eyebrow { margin: 0; }
+.code, .aula-code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .12em; font-weight: 800; }
+.code-input { text-transform: uppercase; letter-spacing: .2em; font-weight: 800; }
+
+/* ---------- Alumno ---------- */
+.aula-class-block { gap: 10px; }
+.aula-tasks { display: grid; gap: 10px; }
+.aula-task > .btn { justify-self: start; }
+@media (min-width: 600px) { .aula-tasks .aula-task { grid-template-columns: 1fr auto; } }
+.aula-task { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; background: var(--surface-2); border: 1.5px solid var(--line); border-left-width: 5px; border-radius: 14px; padding: 12px; }
+.aula-task.st-late { border-left-color: var(--bad); }
+.aula-task.st-progress { border-left-color: var(--warn); }
+.aula-task.st-done { border-left-color: var(--ok); }
+.aula-task.st-todo { border-left-color: var(--accent); }
+.aula-task h4 { margin: 2px 0 4px; font-size: 1.02rem; }
+.aula-task .eyebrow { margin: 0; overflow-wrap: anywhere; }
+.aula-task-main { min-width: 0; display: grid; gap: 6px; }
+.aula-task-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0; font-size: .85rem; color: var(--muted); }
+.aula-note { margin: 0; font-size: .9rem; }
+.aula-meter { display: flex; align-items: center; gap: 10px; }
+.aula-meter .prog-bar { flex: 1; }
+.aula-meter b { font-variant-numeric: tabular-nums; min-width: 3.4em; text-align: right; }
+.aula-privacy p { margin: 0; }
+
+/* ---------- Profesor: clases y presentación ---------- */
+.aula-teacher { display: grid; gap: 12px; }
+.aula-class-grid { display: grid; gap: 10px; }
+.aula-class-card { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 2px 10px; align-items: center; text-align: left; width: 100%;
+  min-height: 64px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; color: var(--ink); font: inherit; cursor: pointer; }
+.aula-class-card:hover { border-color: var(--ctl-outline); }
+.aula-class-card b { font-size: 1.05rem; }
+.aula-class-card small { color: var(--muted); grid-column: 1; }
+.aula-go { grid-row: 1 / 3; grid-column: 2; font-size: 1.6rem; color: var(--muted); }
+.aula-new-class .row { flex-wrap: nowrap; }
+.aula-new-class .input { flex: 1; min-width: 0; }
+.aula-pitch h2 { margin: 0; }
+.aula-benefits { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.aula-benefits li { display: grid; gap: 2px; padding-left: 14px; border-left: 3px solid var(--accent); }
+.aula-benefits span { color: var(--muted); font-size: .92rem; }
+.aula-requested { display: grid; gap: 6px; justify-items: start; background: var(--ok-soft); border-radius: 12px; padding: 12px 14px; }
+.aula-requested span { color: var(--ink); }
+
+/* ---------- Pantalla de la clase ---------- */
+.aula-head { min-width: 0; }
+.aula-head h1 { margin: 0; font-size: 1.35rem; overflow-wrap: anywhere; }
+.aula-head .eyebrow { margin: 0; }
+.aula { display: grid; gap: 14px; min-width: 0; }
+.aula h2 { margin: 6px 0 0; }
+.aula-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.aula-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.aula-invite { text-align: center; align-items: center; }
+.aula-invite h2 { margin: 0; }
+.aula-code { font-size: 2rem; margin: 0; color: var(--accent); }
+.aula-alerts { gap: 8px; }
+.aula-alerts p { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.aula-alerts .text-link { min-height: 40px; }
+.aula-filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+.aula-filters .count { font-variant-numeric: tabular-nums; }
+.aula-view-opts { align-items: center; gap: 8px; }
+.aula-view-opts .select { width: auto; }
+/* El segmentado lleva container-type (base.css): dentro de una fila necesita un ancho propio o se queda en 0 */
+.aula-view-opts .seg { flex: 1 1 18rem; max-width: 26rem; min-width: min(100%, 16rem); }
+.aula-names { display: inline; }
+.aula-table .aula-min { font-size: .84rem; }
+@media (max-width: 599px) {
+  .aula-name-col { min-width: 104px; }
+  .aula-table thead th { min-width: 78px; }
+}
+
+.aula-table-wrap { border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); max-width: 100%; }
+.aula-table-wrap:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.aula-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .9rem; }
+.aula-table th, .aula-table td { padding: 0; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle; }
+.aula-table thead th { font-size: .78rem; color: var(--muted); font-weight: 800; padding: 8px 6px; min-width: 92px; max-width: 150px; background: var(--surface-2); }
+.aula-table thead th small { display: block; font-weight: 600; }
+.aula-table tbody tr:last-child > * { border-bottom: 0; }
+.aula-name-col { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left !important; min-width: 128px; box-shadow: 1px 0 0 var(--line); }
+thead .aula-name-col { background: var(--surface-2); z-index: 2; }
+.aula-student-btn, .aula-th-btn, .aula-cell-btn { background: none; border: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; }
+.aula-student-btn { display: grid; text-align: left; padding: 6px 10px; gap: 1px; }
+.aula-student-btn small { color: var(--muted); font-size: .76rem; }
+.aula-th-btn { display: grid; gap: 2px; padding: 0; color: var(--ink); font-weight: 800; font-size: .8rem; }
+.aula-th-btn span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.aula-th-btn small { color: var(--muted); font-weight: 600; }
+.aula-min { padding: 6px 8px !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aula-min.zero { color: var(--bad); font-weight: 700; }
+.aula-cell { font-variant-numeric: tabular-nums; }
+.aula-cell > b { display: block; padding: 12px 6px; }
+.aula-cell-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px; }
+.aula-cell-btn i { font-style: normal; font-weight: 900; }
+.aula-cell.na { color: var(--muted); }
+.aula-cell.none { color: var(--muted); }
+.aula-cell.low { background: var(--bad-soft); color: color-mix(in srgb, var(--bad) 75%, var(--ink)); }
+.aula-cell.mid { background: color-mix(in srgb, var(--warn) 22%, var(--surface)); color: var(--ink); }
+.aula-cell.good { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); color: var(--ink); }
+.aula-cell.top { background: var(--ok-soft); color: color-mix(in srgb, var(--ok) 70%, var(--ink)); }
+.aula-cell.st-late:not(.top):not(.good) { box-shadow: inset 0 0 0 2px var(--bad); }
+.aula-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); }
+.aula-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.aula-legend .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid var(--line); }
+.sw.low { background: var(--bad-soft); } .sw.mid { background: color-mix(in srgb, var(--warn) 22%, var(--surface)); }
+.sw.good { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); } .sw.top { background: var(--ok-soft); }
+
+.aula-task-list { display: grid; gap: 10px; }
+.aula-task-row { display: grid; gap: 10px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.aula-task-row h3 { margin: 2px 0 6px; font-size: 1rem; }
+.aula-task-row .eyebrow { margin: 0; overflow-wrap: anywhere; }
+.aula-task-row p { margin: 4px 0 0; }
+.aula-task-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.aula-exports { gap: 8px; }
+.aula-settings { gap: 10px; }
+
+/* ---------- Ficha del alumno ---------- */
+.aula .panel h2 { margin: 0; }
+.aula .panel h2 small { font-family: var(--f-body); font-size: .8rem; font-weight: 600; }
+.aula .chart { width: 100%; height: auto; }
+.aula-mistakes, .aula-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.aula-mistakes li, .aula-history li { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.aula-mistakes li:last-child, .aula-history li:last-child { border-bottom: 0; }
+.aula-history li > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.aula-history b, .aula-mistakes b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Formulario de tareas ---------- */
+.aula-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width: 0; }
+.aula-form legend { font-weight: 800; padding: 0; margin-bottom: 6px; }
+.aula-form-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.aula-form-grid > div { display: grid; gap: 4px; }
+.aula-form #atSource { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.aula-form #atScope { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+
+@media (min-width: 700px) {
+  .aula-roles:not(.compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .aula-class-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .aula-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .aula-task-row { grid-template-columns: 1fr auto; align-items: center; }
+  .aula-task-actions { flex-direction: column; }
+}
+@media (min-width: 1024px) {
+  .aula-task-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aula-more > summary::before, .aula-done > summary::before, .aula-privacy > summary::before, .aula-settings > summary::before { transition: none; }
+}
+.aula-entry > span:last-child { align-items: flex-end; text-align: right; }
+.aula-fb { color: var(--ink) !important; }

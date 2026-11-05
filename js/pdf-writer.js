@@ -32,6 +32,11 @@ export function createPdf() {
       current.ops.push(`BT ${gray / 255} g /${bold ? 'F2' : 'F1'} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${s}) Tj ET`);
       return api;
     },
+    // Rectángulo relleno (barras de los informes); en milímetros desde arriba a la izquierda, gris 0-255
+    rect(xMm, yMm, wMm, hMm, { gray = 200 } = {}) {
+      current.ops.push(`${(gray / 255).toFixed(3)} g ${(xMm * MM).toFixed(2)} ${(A4.h - (yMm + hMm) * MM).toFixed(2)} ${(wMm * MM).toFixed(2)} ${(hMm * MM).toFixed(2)} re f 0 g`);
+      return api;
+    },
     // dataUrl JPEG; ancho y alto en milímetros
     image(dataUrl, xMm, yMm, wMm, hMm, pixelW, pixelH) {
       const name = `Im${images.length + 1}`;
