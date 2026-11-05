@@ -127,8 +127,8 @@ function settingsHtml(cls) {
     <form class="form" id="aulaRename" novalidate><label for="aulaNewName">${esc('Nombre de la clase')}</label><div class="row"><input id="aulaNewName" class="input" maxlength="60" value="${esc(cls.name)}"><button class="btn ghost small" type="submit">${esc('Guardar')}</button></div></form>
     <h3>${esc('Código de la clase')}</h3>
     <p class="muted small">${esc(cls.closed ? 'Las inscripciones están cerradas: nadie puede entrar. Crea un código nuevo para abrirlas.' : 'Cambia el código si se ha compartido de más o si no quieres que vuelva a entrar alguien a quien diste de baja. Cerrar las inscripciones invalida el código.')}</p>
-    <div class="row"><button type="button" class="btn ghost small" id="aulaNewCode">${esc(cls.closed ? 'Abrir con un código nuevo' : 'Cambiar el código')}</button>
-      ${cls.closed ? '' : `<button type="button" class="btn ghost small" id="aulaCloseCode">${esc('Cerrar inscripciones')}</button>`}</div>
+    ${ctx.readOnly ? `<p class="small">${esc('Con la licencia caducada nadie puede entrar en la clase.')}</p>` : `<div class="row"><button type="button" class="btn ghost small" id="aulaNewCode">${esc(cls.closed ? 'Abrir con un código nuevo' : 'Cambiar el código')}</button>
+      ${cls.closed ? '' : `<button type="button" class="btn ghost small" id="aulaCloseCode">${esc('Cerrar inscripciones')}</button>`}</div>`}
     <p class="muted small">${esc('Borrar la clase quita sus tareas, las entregas, los comentarios, las composiciones y las fichas de sus alumnos. No se puede deshacer.')}</p>
     <button type="button" class="btn ghost small danger" id="aulaDelete">${esc('Borrar la clase')}</button></details>`;
 }
@@ -140,7 +140,7 @@ function bindClass() {
   $('aulaNewTask')?.addEventListener('click', () => openAulaTaskForm({ ctx, onSaved: load }));
   $('aulaInvite')?.addEventListener('click', () => invite(cls));
   bindGrid(box, { onSkip: () => $('aulaTasksTitle').focus() });
-  $('aulaNewCode').addEventListener('click', async () => {
+  $('aulaNewCode')?.addEventListener('click', async () => {
     try { await api.changeCode(ctx.sid, cls, cls.teacherName); toast('Código nuevo listo'); load(); } catch (err) { toast(cloudErrorText(err)); }
   });
   $('aulaCloseCode')?.addEventListener('click', async e => {

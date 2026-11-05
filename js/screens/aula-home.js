@@ -14,7 +14,7 @@ import { classKey } from '../aula-summary.js';
 import { cacheTasks, publishSoon, myClasses } from '../aula-sync.js';
 import { VARIANT_NAMES } from '../aula-temario.js';
 import * as api from '../aula-api.js';
-import { dueLabel, statusPill, meter, fmtShort, subtitleHtml } from './aula-ui.js';
+import { dueLabel, statusPill, meter, fmtShort, fmtLong, subtitleHtml } from './aula-ui.js';
 import { startTask } from './aula-launch.js';
 
 const CONTACT = 'tizaestudiogames+violin@gmail.com';
@@ -125,7 +125,7 @@ function teacherBlock(school, access, classes) {
     : (classes || []).length ? `<div class="aula-class-grid">${classes.sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(c => `<button type="button" class="aula-class-card" data-open-class="${esc(c.id)}">
         <b>${esc(c.name)}</b><small><span>${esc(`${c.students || 0} ${c.students === 1 ? 'alumno' : 'alumnos'}`)}</span> · ${c.closed ? `<span>${esc('Inscripciones cerradas')}</span>` : `<span>${esc('código')}</span> <span class="code">${esc(c.code)}</span>`}</small><span class="aula-go" aria-hidden="true">›</span></button>`).join('')}</div>`
       : `<p class="aula-empty">${esc('Crea tu primera clase: tus alumnos entrarán con su código.')}</p>`;
-  const expired = access.expired ? `<div class="panel aula-expired" role="status"><b>${esc(`Tu licencia del Aula Pro venció el ${fmtShort(access.expiredAt)}`)}</b>
+  const expired = access.expired ? `<div class="panel aula-expired" role="status"><b>${esc(access.expiredAt ? `Tu licencia del Aula Pro venció el ${fmtLong(access.expiredAt)}` : 'Tu licencia del Aula Pro ya no está activa')}</b>
       <span>${esc('Tus clases y tus alumnos siguen aquí en solo lectura: hasta renovarla no puedes crear clases, tareas ni comentarios.')}</span>
       ${access.requested ? `<span class="pill ok">${esc('Renovación pedida')}</span>` : `<button type="button" class="btn small" id="aulaRenew">${esc('Pedir la renovación')}</button>`}</div>` : '';
   if (access.expired) return `<section class="aula-teacher"><div class="aula-block-head"><h3>${esc(school.name)}</h3><span class="pill late">${esc(until)}</span></div>${expired}${list}</section>`;

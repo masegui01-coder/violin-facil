@@ -78,7 +78,7 @@ async function deleteSchool(fs, db, space) {
     const lists = await Promise.all(['students', 'tasks', 'summaries', 'feedback', 'works'].map(n => listDocs(fs, db, 'schools', space.id, 'classes', cls.id, n)));
     const batch = fs.writeBatch(db);
     lists.flat().forEach(d => batch.delete(d.ref));
-    if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
+    if (cls.code && !cls.closed) batch.delete(fs.doc(db, 'classCodes', cls.code)); // cerrada: el código ya no existe
     batch.delete(c.ref);
     await batch.commit();
   }
