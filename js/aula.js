@@ -143,7 +143,9 @@ export function classRows({ students, tasks, summaries, today }) {
       id: st.id, nickname: st.nickname, instrument: st.instrument, summary: sum, cells, week,
       inactive: week === 0, overdue: mine.filter(c => c.status === 'late').length,
       done: mine.filter(c => c.status === 'done').length, assigned: mine.length,
-      avg: mean(mine.map(c => c.p || 0)),
+      // Promedio de lo exigible: no cuentan las tareas sin empezar que aún no han vencido (se ven aparte como pendientes)
+      avg: mean(mine.filter(c => c.status !== 'todo').map(c => c.p || 0)),
+      pending: mine.filter(c => c.status === 'todo').length,
       below: mine.some(c => c.status !== 'done' && c.n > 0 && (c.p || 0) < c.min),
       lastAt: sum ? sum.at || null : null, streak: sum ? sum.streak || 0 : 0,
     };

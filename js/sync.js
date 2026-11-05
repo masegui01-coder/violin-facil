@@ -247,16 +247,19 @@ async function deleteSchoolData(d, uid, school) {
 async function deleteAulaData(d, uid, aula) {
   const { db, fs } = d;
   await Promise.all(((aula && aula.classes) || []).filter(c => c && c.sid && c.cid).map(async c => {
-    const feedback = await d.docs(`classes/${c.cid}/feedback`, fs.query(fs.collection(db, 'schools', c.sid, 'classes', c.cid, 'feedback'), fs.where('uid', '==', uid)));
-    await Promise.all(feedback.map(f => d.del(f.ref)));
+    // Sus composiciones y los comentarios a sus entregas van en la MISMA escritura que su ficha (las reglas lo exigen)
+    const own = (await Promise.all(['feedback', 'works'].map(n => d.docs(`classes/${c.cid}/${n}`,
+      fs.query(fs.collection(db, 'schools', c.sid, 'classes', c.cid, n), fs.where('uid', '==', uid)))))).flat();
     const student = fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'students', uid);
     const exists = await d.run(student.path, async () => (await fs.getDoc(student)).exists());
-    if (!exists) { await d.del(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', uid)); return; }
     const classRef = fs.doc(db, 'schools', c.sid, 'classes', c.cid);
     const batch = fs.writeBatch(db);
-    batch.delete(student);
+    own.forEach(x => batch.delete(x.ref));
     batch.delete(fs.doc(db, 'schools', c.sid, 'classes', c.cid, 'summaries', uid));
-    if (await d.run(classRef.path, async () => (await fs.getDoc(classRef)).exists()) !== false) batch.update(classRef, { students: fs.increment(-1) });
+    if (exists) {
+      batch.delete(student);
+      if (await d.run(classRef.path, async () => (await fs.getDoc(classRef)).exists()) !== false) batch.update(classRef, { students: fs.increment(-1) });
+    }
     await d.run(`classes/${c.cid}`, () => batch.commit());
   }));
 }

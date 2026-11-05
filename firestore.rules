@@ -481,20 +481,24 @@ service cloud.firestore {
       // su ficha, su resumen y los comentarios a sus entregas (nunca a sus compañeros). Validación estricta de claves.
       match /classes/{cid} {
         function validClass(d) {
-          return d.keys().hasOnly(['name', 'code', 'teacherName', 'students', 'createdAt', 'archived', 'leftUid'])
+          return d.keys().hasOnly(['name', 'code', 'teacherName', 'students', 'createdAt', 'archived', 'leftUid', 'closed'])
             && shortText(d.name, 60) && shortText(d.teacherName, 60) && validCode(d.code)
             && d.students is int && d.students >= 0 && d.students <= aulaClassLimit()
-            && (!('archived' in d) || d.archived is bool) && (!('leftUid' in d) || shortText(d.leftUid, 128));
+            && (!('archived' in d) || d.archived is bool) && (!('closed' in d) || d.closed is bool)
+            && (!('leftUid' in d) || shortText(d.leftUid, 128));
         }
         allow get: if schoolOwner(sid) || inClass(sid, cid);
         allow list: if schoolOwner(sid);
         allow create: if schoolOwner(sid) && aulaActive(sid) && validClass(request.resource.data)
           && request.resource.data.students == 0 && request.resource.data.createdAt == request.time
           && !('leftUid' in request.resource.data);
-        // El profesor cambia el nombre o la archiva; al dar de baja resta uno indicando quién sale (con su ficha borrada
+        // El profesor cambia el nombre, la archiva, cambia el código o cierra las inscripciones (el código nuevo se crea en
+        // classCodes en la misma escritura); al dar de baja resta uno indicando quién sale (con su ficha borrada
         // en la misma escritura). Un alumno que entra suma uno (si cabe) y uno que sale resta uno, junto a su ficha.
         allow update: if validClass(request.resource.data) && (
-          (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'archived']))
+          (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'archived', 'code', 'closed']))
+          // tras dar de baja, el profesor borra «leftUid»: la clase no guarda el identificador de quien salió
+          || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leftUid']) && !('leftUid' in request.resource.data))
           || (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students', 'leftUid'])
               && request.resource.data.students == resource.data.students - 1 && resource.data.students >= 1
               && exists(classStudent(sid, cid, request.resource.data.leftUid))
@@ -524,7 +528,8 @@ service cloud.firestore {
         // Tareas: las pone el profesor y las ve la clase
         match /tasks/{tid} {
           allow read: if schoolOwner(sid) || inClass(sid, cid);
-          allow create, update: if schoolOwner(sid) && validAulaTask(request.resource.data);
+          // Con la licencia caducada el profesor solo lee (y puede borrar): no pone tareas nuevas ni las cambia
+          allow create, update: if schoolOwner(sid) && aulaActive(sid) && validAulaTask(request.resource.data);
           allow delete: if schoolOwner(sid);
         }
         // Resumen acotado que publica el alumno (aula-summary.js buildSummary); lo lee el profesor
@@ -537,7 +542,7 @@ service cloud.firestore {
         // Composición del curso de Lenguaje (creatividad) que el alumno envía a su profesor: «<uid>_<ejercicio>»
         match /works/{wid} {
           allow get: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
-          allow list: if schoolOwner(sid);
+          allow list: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
           allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid && inClass(sid, cid)
             && validAulaWork(request.resource.data) && wid == request.resource.data.uid + '_' + request.resource.data.exId;
           allow delete: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
@@ -545,16 +550,27 @@ service cloud.firestore {
         // Comentario del profesor a una entrega («<tarea>_<uid>»): lo escribe él y lo lee ese alumno
         match /feedback/{fid} {
           allow read: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
-          allow create, update: if schoolOwner(sid) && validFeedback(request.resource.data)
+          allow create, update: if schoolOwner(sid) && aulaActive(sid) && validFeedback(request.resource.data)
             && fid == request.resource.data.taskId + '_' + request.resource.data.uid;
-          allow delete: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid);
+          // El alumno no borra los comentarios de su profesor mientras sigue en la clase: solo al salir (o al borrar su cuenta),
+          // en la misma escritura que quita su ficha
+          allow delete: if schoolOwner(sid) || (signedIn() && resource.data.uid == request.auth.uid
+            && !existsAfter(classStudent(sid, cid, request.auth.uid)));
         }
       }
     }
 
     // ---------- Aula Pro: funciones comunes ----------
     function aulaClassLimit() { return 60; }
-    function aulaActive(sid) { return get(schoolPath(sid)).data.get('premium', {}).get('active', false) == true; }
+    // Licencia vigente: activa y sin caducar («until» AAAA-MM-DD, incluido ese día), igual que school.js premiumActive
+    function aulaActive(sid) {
+      let p = get(schoolPath(sid)).data.get('premium', {});
+      return p.get('active', false) == true && (p.get('until', null) == null || licenseLive(p.until));
+    }
+    function licenseLive(until) {
+      let d = string(until).split('-');
+      return d.size() == 3 && request.time < timestamp.date(int(d[0]), int(d[1]), int(d[2])) + duration.value(1, 'd');
+    }
     function classPath(sid, cid) { return /databases/$(db)/documents/schools/$(sid)/classes/$(cid); }
     function classStudent(sid, cid, uid) { return /databases/$(db)/documents/schools/$(sid)/classes/$(cid)/students/$(uid); }
     function inClass(sid, cid) { return signedIn() && exists(classStudent(sid, cid, request.auth.uid)); }
@@ -594,16 +610,22 @@ service cloud.firestore {
         && optPct(s, 'ritmo') && optPct(s, 'entonacion') && optPct(s, 'lectura')
         && optPct(s, 'teoria') && optPct(s, 'dictado') && optPct(s, 'audicion');
     }
+    // Resumen: lo que tiene muchas entradas viaja como texto (js/aula-wire.js) y aquí se valida ENTERO: cada %, 0-100;
+    // cada fecha, AAAA-MM-DD; cada contador, un número; nada de HTML ni de claves inventadas
     function validAulaSummary(d) {
-      return d.keys().hasOnly(['nickname', 'instrument', 'at', 'term', 'days', 'streak', 'skills', 'mistakes', 'units', 'tasks', 'recent'])
-        && shortText(d.nickname, 30) && optText(d, 'instrument', 24) && shortText(d.term, 12)
-        && d.at is number && d.streak is int && d.streak >= 0 && d.streak <= 5000
-        && d.days is map && d.days.size() <= 92
+      return d.keys().hasOnly(['nickname', 'instrument', 'at', 'term', 'days', 'streak', 'skills', 'mistakes', 'units', 'tasks', 'recent', 'prevTerm', 'prevSkills'])
+        && shortText(d.nickname, 30) && optText(d, 'instrument', 24)
+        && shortText(d.term, 12) && d.term.matches('[0-9]{4}-[0-9]{4}-[1-3]')
+        && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 600000
+        && d.streak is int && d.streak >= 0 && d.streak <= 5000
+        && shortText(d.days, 1500) && d.days.matches('([0-9]{4}-[01][0-9]-[0-3][0-9]=[0-9]{1,4};){0,92}')
         && validAulaSkills(d.skills)
-        && d.mistakes is map && d.mistakes.size() <= 10
-        && d.units is map && d.units.size() <= 64
-        && d.tasks is map && d.tasks.size() <= 100
-        && d.recent is list && d.recent.size() <= 20;
+        && shortText(d.mistakes, 260) && d.mistakes.matches('([A-Za-z0-9_#+.>-]{1,16}=[0-9]{1,4};){0,10}')
+        && shortText(d.units, 800) && d.units.matches('(l[0-9]{1,2}u[0-9]{1,2}=(100|[1-9]?[0-9]);){0,64}')
+        && shortText(d.tasks, 6000) && d.tasks.matches('([A-Za-z0-9_-]{1,40}=(100|[1-9]?[0-9]),[0-9]{1,3},[01],[0-9]{1,13},[01];){0,100}')
+        && shortText(d.recent, 1700) && d.recent.matches('([A-Za-z0-9_-]{1,60}=(100|[1-9]?[0-9])@[0-9]{1,13};){0,20}')
+        && (!('prevTerm' in d) || (shortText(d.prevTerm, 12) && d.prevTerm.matches('[0-9]{4}-[0-9]{4}-[1-3]')))
+        && (!('prevSkills' in d) || validAulaSkills(d.prevSkills));
     }
     // Composición: notas en texto («C4q D4h Rq», como js/lm/notes.js tokensText), letra opcional y lo que comprobó la app
     function validAulaWork(d) {

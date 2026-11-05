@@ -84,9 +84,46 @@ export function mistakeLabel(code, names = {}) {
   return code;
 }
 
+// Títulos de las lecciones que puede hacer un alumno de ese instrumento (curso, Libro y Método Pro), por id de lección:
+// el historial publicado solo trae identificadores y el nombre se pone aquí, en el idioma de quien lo mira
+const titleCache = new Map();
+export function lessonTitleMap(instId, styles, nom) {
+  const key = `${instId}|${(styles || []).join(',')}|${nom}`;
+  if (!titleCache.has(key)) {
+    const map = new Map();
+    courseUnits(instId, styles).forEach(u => u.lessons.forEach(l => map.set(l.id, l.title)));
+    bookList(instId, styles).forEach(b => b.pages.forEach(pg => { if (!map.has(pg.id)) map.set(pg.id, pg.title); }));
+    methodLevels(instId, nom).forEach(l => map.set('pro-' + l.id, `Método Pro · ${l.title}`));
+    titleCache.set(key, map);
+  }
+  return titleCache.get(key);
+}
+
+// Lo elegido del temario, en piezas y en el idioma de quien lo mira (no el texto que guardó el profesor):
+// se recalcula desde ref; si no se encuentra (otro instrumento, contenido retirado), se usa ref.label
+export function refParts(task, { styles = ['clasica'], nom = 'us' } = {}) {
+  const ref = task.ref || {};
+  if (LM_KIND_SET.has(task.kind)) {
+    const parts = [`Nivel ${ref.level}`, `Unidad ${ref.unit}`];
+    if (task.kind === 'lm-section' && ref.section) parts.push(SECTION_NAMES[ref.section] || ref.section);
+    if (task.kind === 'lm-ex') parts.push(`${(ref.ids || []).length} ${(ref.ids || []).length === 1 ? 'ejercicio' : 'ejercicios'}`);
+    return parts;
+  }
+  if (['lesson', 'book', 'method'].includes(task.kind) && ref.inst) {
+    try {
+      const titles = lessonTitleMap(ref.inst, styles, nom);
+      const title = titles.get(task.kind === 'method' ? 'pro-' + ref.id : ref.id);
+      if (title) return [instrumentById(ref.inst).name, ...(task.kind === 'book' && ref.book ? [`Libro ${ref.book}`] : []), ...title.split(' · ').filter(x => x !== 'Método Pro')];
+    } catch (e) { /* temario de otra versión: se usa el texto guardado */ }
+  }
+  return String(ref.label || '').split(' · ').filter(Boolean);
+}
+const LM_KIND_SET = new Set(['lm-unit', 'lm-section', 'lm-ex']);
+
 // Nombre de un intento del historial: el título que mandó el alumno, el del catálogo o el identificador
-export function attemptLabel(item, exercises = []) {
+export function attemptLabel(item, exercises = [], titles = null) {
   if (item.t) return item.t;
+  if (titles && titles.has(item.id)) return titles.get(item.id);
   const e = exercises.find(x => x.id === item.id);
   return e ? `N${e.level} · U${e.unit} · ${SECTION_NAMES[e.section] || e.section} · ${e.title}` : item.id;
 }

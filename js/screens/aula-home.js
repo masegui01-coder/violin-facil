@@ -36,17 +36,17 @@ export async function renderAulaHome(box) {
     Promise.all(myClasses().map(c => api.loadMyClass(c).then(d => ({ c, d }), err => ({ c, err })))),
   ]);
   const access = proAccess({ school });
-  const classes = access.active ? await api.listClasses(sid).catch(err => ({ err })) : null;
+  const classes = access.active || access.expired ? await api.listClasses(sid).catch(err => ({ err })) : null;
   if (my !== token || !box.isConnected) return;
   mine.forEach(({ c, d }) => { if (d) cacheTasks(c, d.tasks.filter(t => assignedTo(t, c.uid))); });
   if (mine.some(x => x.d)) publishSoon();
   const isStudent = myClasses().length > 0;
-  const isTeacher = access.active;
+  const isTeacher = access.active || !!access.expired;
   box.innerHTML = `${hero(isStudent, isTeacher)}
     ${isStudent ? mine.map(studentBlock).join('') : ''}
     ${isTeacher ? teacherBlock(school, access, classes) : ''}
     <div class="aula-roles${isStudent || isTeacher ? ' compact' : ''}">
-      ${isStudent ? `<details class="aula-more"><summary>Unirme a otra clase</summary>${joinForm()}</details>` : joinForm()}
+      ${isStudent || isTeacher ? `<details class="aula-more"><summary>${esc(isStudent ? 'Unirme a otra clase' : '¿También eres alumno? Unirme a una clase')}</summary>${joinForm()}</details>` : joinForm()}
       ${isTeacher ? '' : isStudent ? `<details class="aula-more"><summary>${esc('¿Eres profesor? Conoce el Aula Pro')}</summary>${pitch(school, access)}</details>` : pitch(school, access)}
     </div>`;
   bind(box, { school, mine, classes });
@@ -73,11 +73,11 @@ function taskCard(c, task, entry, feedback, today) {
     left !== null ? `<span>${esc(left === 1 ? 'Queda 1 intento' : `Quedan ${left} intentos`)}</span>` : '',
     task.maxAttempts && several ? `<span>${esc(`${task.maxAttempts} ${task.maxAttempts === 1 ? 'intento' : 'intentos'} por ejercicio`)}</span>` : '',
   ].filter(Boolean).join('');
-  const action = status === 'out' ? `<span class="muted small">${esc('Sin intentos')}</span>`
+  const action = status === 'out' ? `<span class="muted small">${esc('Intentos agotados')}</span>`
     : `<button type="button" class="btn${status === 'done' ? ' ghost' : ''} small" data-do="${esc(task.id)}" data-class="${esc(classKey(c))}"><span class="ic">${icon('play')}</span><span>${esc(status === 'done' ? 'Repetir' : 'Hacer')}</span></button>`;
   return `<article class="aula-task st-${status}">
     <div class="aula-task-main"><p class="eyebrow">${subtitleHtml(task)}</p><h4>${esc(task.title)}</h4>
-      <p class="aula-task-meta">${statusPill(status)}${meta}</p>
+      <p class="aula-task-meta">${status === 'late' ? '' : statusPill(status)}${meta}</p>
       ${entry && entry.n ? meter(p, task.title) : ''}
       ${task.note ? `<p class="aula-note"><b>${esc('Indicaciones:')}</b> <span>${esc(task.note)}</span></p>` : ''}
       ${feedback ? `<div class="stamp"><b>${esc('Comentario de tu profesor')}</b><span>${esc(feedback.comment)}</span></div>` : ''}
@@ -111,7 +111,8 @@ function studentBlock({ c, d, err }) {
 function joinForm() {
   return `<form class="panel form aula-join" id="aulaJoin" novalidate><h2>${esc('Soy alumno')}</h2>
     <label for="aulaJoinCode">${esc('Código de tu clase')}</label><input id="aulaJoinCode" class="input code-input" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ej.: K7P2QX" value="${esc(inviteCode)}">
-    <label for="aulaJoinNick">${esc('Tu nombre')}</label><input id="aulaJoinNick" class="input" maxlength="30" autocomplete="nickname" value="${esc(accountName())}">
+    <label for="aulaJoinNick">${esc('Tu nombre')}</label><input id="aulaJoinNick" class="input" maxlength="30" autocomplete="off" placeholder="${esc('Tu nombre de pila o un apodo')}" aria-describedby="aulaJoinNickHint">
+    <p class="muted small" id="aulaJoinNickHint">${esc('Tu profesor te verá con este nombre: basta con tu nombre de pila o un apodo, sin apellidos.')}</p>
     <label for="aulaJoinInst">${esc('Tu instrumento')}</label><select id="aulaJoinInst" class="select">${instOptions(getState().instrument)}</select>
     <p class="muted small"><span>${esc('Para ti es gratis.')}</span> <span>${esc(PRIVACY)}</span></p>
     <button class="btn" type="submit">${esc('Entrar en la clase')}</button><p id="aulaJoinError" class="warn" role="alert" hidden></p></form>`;
@@ -119,11 +120,15 @@ function joinForm() {
 
 // ---------- Profesor ----------
 function teacherBlock(school, access, classes) {
-  const until = access.until ? `Aula Pro activa hasta el ${fmtShort(access.until)}` : 'Aula Pro activa';
+  const until = access.expired ? 'Licencia caducada' : access.until ? `Aula Pro activa hasta el ${fmtShort(access.until)}` : 'Aula Pro activa';
   const list = classes && classes.err ? `<p class="warn">${esc(cloudErrorText(classes.err))}</p>`
     : (classes || []).length ? `<div class="aula-class-grid">${classes.sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(c => `<button type="button" class="aula-class-card" data-open-class="${esc(c.id)}">
-        <b>${esc(c.name)}</b><small><span>${esc(`${c.students || 0} ${c.students === 1 ? 'alumno' : 'alumnos'}`)}</span> · <span>${esc('código')}</span> <span class="code">${esc(c.code)}</span></small><span class="aula-go" aria-hidden="true">›</span></button>`).join('')}</div>`
+        <b>${esc(c.name)}</b><small><span>${esc(`${c.students || 0} ${c.students === 1 ? 'alumno' : 'alumnos'}`)}</span> · ${c.closed ? `<span>${esc('Inscripciones cerradas')}</span>` : `<span>${esc('código')}</span> <span class="code">${esc(c.code)}</span>`}</small><span class="aula-go" aria-hidden="true">›</span></button>`).join('')}</div>`
       : `<p class="aula-empty">${esc('Crea tu primera clase: tus alumnos entrarán con su código.')}</p>`;
+  const expired = access.expired ? `<div class="panel aula-expired" role="status"><b>${esc(`Tu licencia del Aula Pro venció el ${fmtShort(access.expiredAt)}`)}</b>
+      <span>${esc('Tus clases y tus alumnos siguen aquí en solo lectura: hasta renovarla no puedes crear clases, tareas ni comentarios.')}</span>
+      ${access.requested ? `<span class="pill ok">${esc('Renovación pedida')}</span>` : `<button type="button" class="btn small" id="aulaRenew">${esc('Pedir la renovación')}</button>`}</div>` : '';
+  if (access.expired) return `<section class="aula-teacher"><div class="aula-block-head"><h3>${esc(school.name)}</h3><span class="pill late">${esc(until)}</span></div>${expired}${list}</section>`;
   return `<section class="aula-teacher"><div class="aula-block-head"><h3>${esc(school.name)}</h3><span class="pill ok">${esc(until)}</span></div>${list}
     <form class="panel form aula-new-class" id="aulaNewClass" novalidate><label for="aulaClassName">${esc('Nueva clase')}</label>
       <div class="row"><input id="aulaClassName" class="input" maxlength="60" placeholder="Ej.: 1.º de Lenguaje · martes"><button class="btn" type="submit">${esc('Crear clase')}</button></div>
@@ -157,7 +162,11 @@ function bind(box, { school, mine }) {
     if (task) startTask(entry.c, task);
   }));
   box.querySelectorAll('[data-leave]').forEach(b => b.addEventListener('click', () => leave(b, box)));
-  box.querySelectorAll('[data-open-class]').forEach(b => b.addEventListener('click', () => go('aula', { sid: school.id, cid: b.dataset.openClass })));
+  const readOnly = !proAccess({ school }).active;
+  box.querySelectorAll('[data-open-class]').forEach(b => b.addEventListener('click', () => go('aula', { sid: school.id, cid: b.dataset.openClass, readOnly })));
+  $('aulaRenew')?.addEventListener('click', async () => {
+    try { await api.requestAccess({ schoolId: school.id }); toast('Solicitud enviada'); renderAulaHome(box); } catch (err) { toast(cloudErrorText(err)); }
+  });
   $('aulaJoin')?.addEventListener('submit', e => { e.preventDefault(); join(box); });
   $('aulaJoinCode')?.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
   $('aulaNewClass')?.addEventListener('submit', e => { e.preventDefault(); newClass(box, school); });

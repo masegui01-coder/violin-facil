@@ -12,7 +12,7 @@
 .pill { display: inline-block; font-size: .72rem; font-weight: 800; border-radius: 999px; padding: 2px 9px; background: var(--surface-2); border: 1px solid var(--line); white-space: nowrap; }
 .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .pill.warn { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.pill.late { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.pill.late { background: var(--bad-soft); color: color-mix(in srgb, var(--bad) 72%, var(--ink)); border-color: transparent; }
 .prog-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prog-table th, .prog-table td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
 .prog-table th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
