@@ -86,7 +86,7 @@ function openerHtml(chapter) {
   const notes = chapter.news.notes.map(n => `<span class="pill">${esc(noteLabel(n, nom()))}</span>`).join(' ');
   const chords = chapter.news.chords.map(c => `<span class="pill">${esc(chordLabel(c, nom()))}</span>`).join(' ');
   const concert = chapter.pages.find(pg => isConcert(chapter, pg));
-  return `<div class="bp-opener" style="--unit:${chapter.color}"><p class="eyebrow">Capítulo ${chapter.number}</p><h1>${esc(chapter.title)}</h1><p>${esc(chapter.sub)}</p>
+  return `<div class="bp-opener" style="--unit:${chapter.color}"><p class="eyebrow">Capítulo ${chapter.number}</p><h1>${esc(chordText(chapter.title))}</h1><p>${esc(chordText(chapter.sub))}</p>
     ${notes ? `<p class="small"><b>Notas nuevas:</b> ${notes}</p>` : ''}${chords ? `<p class="small"><b>Acordes nuevos:</b> ${chords}</p>` : ''}
     <p class="muted small">${chapter.pages.length} páginas${concert ? ` · concierto en la página ${concert.number}` : ''}${chapter.pages.some(pg => pg.lesson.chapterReview) ? ' · repaso al final' : ''}</p></div>`;
 }
@@ -145,7 +145,7 @@ function render() {
   const state = pageState(hit);
   $('bpWhere').textContent = `Libro ${hit.book.n} · cap. ${chapter.number} · pág. ${page.number} de ${flat.length}`;
   $('bpMedal').textContent = MEDAL_ICON[medal] || '';
-  $('bpBody').innerHTML = pageHtml(chapter, page) + `<div class="bp-medals"><div class="book-medals">${['bronze', 'silver', 'gold'].map((m, k) => `<span class="${k < ['none', 'bronze', 'silver', 'gold'].indexOf(medal) ? 'on' : ''}">${MEDAL_ICON[m]}<small>${MEDAL_NAME[m]}</small></span>`).join('')}</div>
+  $('bpBody').innerHTML = pageHtml(chapter, page) + `<div class="bp-medals"><div class="book-medals">${['bronze', 'silver', 'gold'].map((m, k) => `<span class="${k < ['none', 'bronze', 'silver', 'gold'].indexOf(medal) ? 'on' : ''}"><i class="medal-ic" aria-hidden="true">${MEDAL_ICON[m]}</i><small>${MEDAL_NAME[m]}</small></span>`).join('')}</div>
     <p class="small">${state === 'locked' ? (hit.book.n > 1 && i === 0 ? `Se abre al aprobar el examen del Libro ${hit.book.n - 1}.` : 'Se abre al pasar la página anterior.') : page.lesson.exam ? 'Apruebas con el 70 % de aciertos.' : esc(nextGoal(p, page.lesson.kind))}</p>${p && p.plays ? `<p class="muted small">Tocada ${p.plays} ${p.plays === 1 ? 'vez' : 'veces'} · mejor: ${p.best} ★</p>` : ''}</div>`;
   drawPage($('bpBody'), page);
   $('bpPlay').textContent = page.lesson.kind === 'theory' ? 'Leer y responder' : 'Tocar';

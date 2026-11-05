@@ -6,7 +6,7 @@ import { getState, instrumentProgress, knownChords } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { SONGBOOK, songbookStatus, songbookLesson, songbookById, chordsOf } from '../songbook.js';
 import { chordLabel } from '../chords.js';
-import { lessonKey } from '../course.js';
+import { lessonKey, chordText } from '../course.js';
 import { songLesson } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { initImporter, openGuide } from './importer.js';
@@ -95,9 +95,9 @@ function renderSongbook() {
     ${status.map(({ entry, missing }) => {
       const best = instrumentProgress()[lessonKey(songbookLesson(entry))] || 0;
       return missing.length
-        ? `<div class="song locked"><span class="song-art"><span class="ic">${icon('lock')}</span></span><div><b>${esc(entry.title)}</b><small>Te ${missing.length === 1 ? 'falta' : 'faltan'}: ${missing.map(c => esc(chordLabel(c, nom))).join(', ')}</small></div></div>`
+        ? `<div class="song locked"><span class="song-art"><span class="ic">${icon('lock')}</span></span><div><b>${esc(chordText(entry.title))}</b><small>Te ${missing.length === 1 ? 'falta' : 'faltan'}: ${missing.map(c => esc(chordLabel(c, nom))).join(', ')}</small></div></div>`
         : `<button type="button" class="song" data-songbook="${entry.id}" style="--chip:var(--u4)"><span class="song-art"><span class="ic">${icon('chord')}</span></span>
-            <div><b>${esc(entry.title)}</b><small>${esc(entry.by)} · ${chordsOf(entry).map(c => esc(chordLabel(c, nom))).join(' ')}</small></div><span class="song-side">${starsHtml(best)}</span></button>`;
+            <div><b>${esc(chordText(entry.title))}</b><small>${esc(entry.by)} · ${chordsOf(entry).map(c => esc(chordLabel(c, nom))).join(' ')}</small></div><span class="song-side">${starsHtml(best)}</span></button>`;
     }).join('')}`;
 }
 

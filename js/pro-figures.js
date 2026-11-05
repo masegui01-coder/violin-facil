@@ -36,7 +36,7 @@ function canvas({ width, height, clef, bottom = 120 }) {
       return x + 44;
     },
     time(x, num, den = 4) {
-      add(`<text x="${x}" y="${bottom - HALF * 4 - 1}" class="st-time">${num}</text><text x="${x}" y="${bottom + 1}" class="st-time">${den}</text>`);
+      add(`<text x="${x}" y="${bottom - HALF * 4 - 5}" class="st-time">${num}</text><text x="${x}" y="${bottom - 5}" class="st-time">${den}</text>`);
     },
     keySig(x, key) {
       const n = keyCount(key);
@@ -221,7 +221,8 @@ const FIGURES = {
       f.text(x, f.bottom + 34 + (i % 2) * 14, noteLabel(parseNote(stepToNote(s)), ctx.nom), 'fig-name');
     });
     f.label(x0 + 70, 22, T.ledger, x0 + 4, f.y(f.base - 2));
-    return '| ' + steps.slice(0, 8).map(s => stepToNote(s) + 'q').join(' ') + ' |';
+    // suena desde la segunda nota (Re4 en clave de sol): el flautín no tiene Do4
+    return '| ' + steps.slice(1, 9).map(s => stepToNote(s) + 'q').join(' ') + ' |';
   },
   5: (f, ctx) => {
     f.staff();

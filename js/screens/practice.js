@@ -1,7 +1,7 @@
 // Herramientas de práctica: afinador y metrónomo («Toca libre» está en free.js).
-import { $ } from '../ui.js';
+import { $, announcer } from '../ui.js';
 import { register, back } from '../router.js';
-import { STRINGS, CELLO_STRINGS, noteLabel, spell, bandTuningNotes } from '../music.js';
+import { STRINGS, CELLO_STRINGS, noteLabel, spell, bandTuningNotes, commonLabel, commonSpell, concertSpell, concertLabel } from '../music.js';
 import { instrumentById } from '../instruments.js';
 import { getState, update } from '../store.js';
 import * as audio from '../audio.js';
@@ -9,6 +9,8 @@ import { tunerMode } from '../tuner-state.js';
 
 const TICK_MS = 30;
 const IN_TUNE_CENTS = 5;
+// Más lejos que esto de la cuerda más cercana ya es otra nota: se dice cuál se oye, no «tensa 200 cents»
+const STRING_RANGE_CENTS = 150;
 const BPM_MIN = 30, BPM_MAX = 220, TAP_RESET_MS = 2000;
 const TEMPO_NAMES = [[60, 'Largo'], [66, 'Larghetto'], [76, 'Adagio'], [108, 'Andante'], [120, 'Moderato'], [156, 'Allegro'], [176, 'Vivace'], [200, 'Presto'], [Infinity, 'Prestissimo']];
 
@@ -16,6 +18,7 @@ let timer = 0;
 let lastSignalAt = -Infinity;
 let tunerMood = '';
 let permDenied = false; // el navegador ya tiene el micrófono bloqueado (API de permisos)
+const sayTuner = announcer('tunerLive');
 
 export async function withMic(gateId, errId) {
   try {
@@ -48,6 +51,8 @@ function showTuning(name, cents, sub) {
   $('tunerName').textContent = name;
   $('tunerName').style.color = ok ? 'var(--ok)' : '';
   $('tunerCents').textContent = (ok ? 'Afinada' : (cents > 0 ? 'Alta ' : 'Baja ') + Math.abs(Math.round(cents)) + ' cents') + (sub ? ' · ' + sub : '');
+  // Al lector solo le llega el cambio de nota o de estado (afinada, alta o baja), no cada lectura
+  sayTuner(`${name}: ${ok ? 'afinada' : cents > 0 ? 'alta' : 'baja'}`);
   return ok;
 }
 
@@ -78,14 +83,21 @@ function tunerTick() {
   const inst = instrumentById(getState().instrument);
   if (!isViolin()) {
     const near = Math.round(p.midi);
-    const real = near + inst.transpose;
-    showTuning(noteLabel({ midi: near }, nom, true), (p.midi - near) * 100, inst.transpose ? 'suena ' + noteLabel({ midi: real }, nom, true) : '');
+    showTuning(commonLabel(near, nom), (p.midi - near) * 100, inst.transpose ? 'suena ' + concertLabel(near, inst.transpose, nom) : '');
     return;
   }
   const det = p.midi;
   const near = openStrings().reduce((a, b) => (Math.abs(b.midi - det) < Math.abs(a.midi - det) ? b : a));
   const cents = (det - near.midi) * 100;
-  if (Math.abs(cents) > 300) { $('tunerCents').textContent = 'Oigo ' + noteLabel({ midi: Math.round(det) }, nom) + ': toca una cuerda al aire'; return; }
+  if (Math.abs(cents) > STRING_RANGE_CENTS) {
+    // Lejos de toda cuerda: el nombre grande y la aguja no se quedan con la cuerda anterior
+    $('tunerName').textContent = '–';
+    $('tunerName').style.color = '';
+    $('needle').style.transform = 'rotate(0deg)';
+    btns.forEach(b => b.classList.remove('on'));
+    $('tunerCents').textContent = 'Oigo ' + commonLabel(Math.round(det), nom) + ': toca una cuerda al aire';
+    return;
+  }
   const ok = showTuning(nom === 'us' ? near.us : near.eu, cents, '');
   if (!ok) $('tunerCents').textContent = (cents > 0 ? 'Alta: afloja ' : 'Baja: tensa ') + Math.abs(Math.round(cents)) + ' cents';
   btns.forEach(b => b.classList.toggle('on', Number(b.dataset.midi) === near.midi && ok));
@@ -99,7 +111,17 @@ function referenceNotes() {
 
 register('tuner', {
   enter() {
-    $('stringPick').innerHTML = referenceNotes().map(r => `<button type="button" data-midi="${r.midi}">${r.label}<small>${noteLabel(spell(r.midi + instrumentById(getState().instrument).transpose, !isViolin()), 'us')}</small></button>`).join('');
+    // Cuerdas: debajo, la misma nota con su octava. Viento: debajo, cómo suena de concierto. Sin aria-label: el nombre
+    // accesible es el texto visible («suena» solo para el lector), así coincide con lo que se ve (WCAG 2.5.3)
+    const nom = getState().nom;
+    const transpose = instrumentById(getState().instrument).transpose;
+    const withOctave = n => noteLabel(n, nom) + (nom === 'us' ? '' : n.oct);
+    // Solo los instrumentos transpositores enseñan «suena …» (en los demás la nota escrita ya es la real)
+    const transposes = !isViolin() && transpose !== 0;
+    $('stringPick').innerHTML = referenceNotes().map(r => {
+      if (transposes) return `<button type="button" data-midi="${r.midi}">${r.label} <small>suena ${withOctave(concertSpell(r.midi, transpose))}</small></button>`;
+      return `<button type="button" data-midi="${r.midi}">${r.label} <small aria-hidden="true">${withOctave(isViolin() ? spell(r.midi) : commonSpell(r.midi))}</small></button>`;
+    }).join('');
     $('tunerHelp').textContent = isViolin() ? `Pulsa una cuerda para oír su nota (La = ${getState().a4} Hz).` : instrumentById(getState().instrument).polyphonic ? `Afinador cromático (La = ${getState().a4} Hz).` : `Notas de afinación de banda (Si♭, La y Fa de concierto, escritas para tu instrumento). La = ${getState().a4} Hz.`;
     tunerMood = '';
     lastSignalAt = -Infinity;
@@ -138,6 +160,7 @@ const clampBpm = v => Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(v)));
 function renderMetro() {
   const { bpm, meter } = getState();
   $('bpmValue').textContent = bpm;
+  $('bpmRange').setAttribute('aria-valuetext', `${bpm} BPM`);
   $('toolBpm').textContent = bpm;
   $('bpmRange').value = bpm;
   $('tempoName').textContent = TEMPO_NAMES.find(([max]) => bpm < max)[1];

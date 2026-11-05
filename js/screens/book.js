@@ -30,6 +30,12 @@ export function library() {
   return cache.library;
 }
 
+// Abrir el Libro por primera vez costaba ~150 ms (buildLibrary): desde Casual se prepara en un rato libre
+export function warmLibrary() {
+  const idle = window.requestIdleCallback || (fn => setTimeout(fn, 1500));
+  idle(() => library(), { timeout: 5000 });
+}
+
 const flatOf = book => book.chapters.flatMap(chapter => chapter.pages.map(page => ({ book, chapter, page })));
 
 export function findInLibrary(lessonId) {
@@ -101,8 +107,9 @@ function pageButton(hit, state, p, review) {
     <span class="book-medal" aria-label="${locked ? 'Bloqueada' : MEDAL_NAME[medal]}">${locked ? '🔒' : MEDAL_ICON[medal] || '○'}</span></button>`;
 }
 
+// Estante: botones de alternar (uno pulsado), no pestañas: el libro elegido sustituye a toda la vista
 function shelfHtml(books, current) {
-  return `<div class="book-shelf" role="tablist" aria-label="Libros">${books.map((b, i) => `<button type="button" role="tab" class="book-spine${i === current ? ' on' : ''}" data-book="${b.n}" aria-selected="${i === current}">
+  return `<div class="book-shelf" role="group" aria-label="Libros">${books.map((b, i) => `<button type="button" class="book-spine${i === current ? ' on' : ''}" data-book="${b.n}" aria-pressed="${i === current}">
     <b>Libro ${b.n}</b><small>${esc(b.title.split('· ')[1])}</small>${isOpen(b.n) ? '' : '<span aria-label="Cerrado">🔒</span>'}</button>`).join('')}</div>`;
 }
 
@@ -119,10 +126,13 @@ export function renderBook() {
   const totals = book.chapters.reduce((t, c) => { const s = chapterStats(c, all); return { pages: t.pages + s.total, bronze: t.bronze + s.bronze, silver: t.silver + s.silver, gold: t.gold + s.gold }; }, { pages: 0, bronze: 0, silver: 0, gold: 0 });
   const stateOf = page => { const i = flat.findIndex(x => x.page === page); return pageState({ ...flat[i], flat, index: i }, states); };
   const currentChapter = book.chapters.find(c => c.pages.some(pg => stateOf(pg) === 'open')) || book.chapters[0];
+  // Solo se pintan las páginas del capítulo abierto; las demás, al desplegar su capítulo (abrir el Libro era una tarea larga)
+  const pagesHtml = chapter => chapter.pages.map(page => pageButton({ chapter, page }, stateOf(page), all[page.lesson.id], review)).join('');
   box.innerHTML = `${shelfHtml(books, current)}
     <div class="book-head"><p class="eyebrow">Modo libro · ${esc(inst().name)}</p><h1>${esc(book.title)}</h1>
       <p class="muted small">${esc(book.sub)}. Página a página, con partitura, armonización, teoría y consejos. Repetir premia: bronce al pasarla, plata al repetirla bien y oro al dominarla.</p>
-      <div class="book-tally"><span>🥇 ${totals.gold}</span><span>🥈 ${totals.silver}</span><span>🥉 ${totals.bronze}</span><span class="muted">de ${totals.pages} páginas</span>
+      <div class="book-tally">${[['🥇', totals.gold, 'medallas de oro'], ['🥈', totals.silver, 'medallas de plata'], ['🥉', totals.bronze, 'medallas de bronce']]
+        .map(([ic, n, what]) => `<span><span aria-hidden="true">${ic}</span> ${n} <span class="sr-only">${what}</span></span>`).join('')}<span class="muted">de ${totals.pages} páginas</span>
         <button type="button" class="btn ghost small" id="bookPrintBtn">Libro en PDF</button></div></div>
     ${open ? '' : schoolStudent() ? `<div class="panel book-locked"><b>Este libro es de un curso más avanzado</b>
       <span class="muted small">Tu escuela te lo abrirá cuando pases de curso. Mientras, completa tu libro y apruébalo.</span></div>` : `<div class="panel book-locked"><b>Este libro se abre al aprobar el examen del Libro ${book.n - 1}</b>
@@ -130,13 +140,17 @@ export function renderBook() {
       <button type="button" class="btn ghost small" id="bookForceOpen">Abrirlo ya</button></div>`}
     ${review ? `<button type="button" class="book-review" data-page="${esc(review.page.lesson.id)}"><span class="ic">↻</span><div><b>Repaso de hoy · página ${review.page.number}</b>
       <small>${esc(pageTitle(review.page.lesson))} · puntos ×${REVIEW_MULTIPLIER} · ${esc(nextGoal(review.p, review.page.lesson.kind))}</small></div></button>` : ''}
-    ${book.chapters.map(chapter => {
+    ${book.chapters.map((chapter, ci) => {
       const st = chapterStats(chapter, all);
-      return `<details class="book-chapter" ${chapter === currentChapter ? 'open' : ''} style="--unit:${chapter.color}">
-        <summary><span class="book-chap-num">${chapter.number}</span><span class="book-chap-text"><b>${esc(chapter.title)}</b><small>${esc(chapter.sub)} · ${st.started}/${st.total} páginas${st.gold ? ` · ${st.gold} de oro` : ''}</small></span>
+      return `<details class="book-chapter" data-chapter="${ci}" ${chapter === currentChapter ? 'open' : ''} style="--unit:${chapter.color}">
+        <summary><span class="book-chap-num">${chapter.number}</span><span class="book-chap-text"><b>${esc(chordText(chapter.title))}</b><small>${esc(chordText(chapter.sub))} · ${st.started}/${st.total} páginas${st.gold ? ` · ${st.gold} de oro` : ''}</small></span>
           ${st.stamp ? `<span class="book-stamp ${st.stamp}" title="${st.stamp === 'gold' ? 'Capítulo dominado' : 'Capítulo completado'}">${st.stamp === 'gold' ? '★' : '✓'}</span>` : ''}</summary>
-        <div class="book-pages">${chapter.pages.map(page => pageButton({ chapter, page }, stateOf(page), all[page.lesson.id], review)).join('')}</div></details>`;
+        <div class="book-pages">${chapter === currentChapter ? pagesHtml(chapter) : ''}</div></details>`;
     }).join('')}`;
+  box.querySelectorAll('details.book-chapter').forEach(d => d.addEventListener('toggle', () => {
+    const pages = d.querySelector('.book-pages');
+    if (d.open && !pages.childElementCount) pages.innerHTML = pagesHtml(book.chapters[Number(d.dataset.chapter)]);
+  }));
   $('bookPrintBtn').addEventListener('click', () => import('./book-page.js').then(m => m.printBook(book)));
   const force = $('bookForceOpen');
   if (force) force.addEventListener('click', () => {
@@ -152,6 +166,7 @@ $('bookView').addEventListener('click', e => {
     const s = getState();
     update({ bookShelf: { ...(s.bookShelf || {}), [s.instrument]: Number(spine.dataset.book) } });
     renderBook();
+    $('bookView').querySelector(`[data-book="${spine.dataset.book}"]`)?.focus(); // el estante se rehace: el foco vuelve al libro elegido
     return;
   }
   const btn = e.target.closest('[data-page]');

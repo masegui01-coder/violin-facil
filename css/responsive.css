@@ -160,7 +160,7 @@
     background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 18px 16px;
   }
   #lesson .target { width: 100%; }
-  #lesson .board { max-height: calc(100vh - 380px); min-height: 160px; width: auto; max-width: 100%; }
+  #lesson .board { max-height: min(calc(100vh - 380px), 260px); min-height: 160px; width: auto; max-width: 100%; }
   #lesson .staff { max-height: min(46vh, 380px); }
   #lesson .mic-gate { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
   #lesson .mic-gate > p:first-child { flex: 1 1 260px; }

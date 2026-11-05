@@ -4,7 +4,7 @@ import { parseChord } from './chords.js';
 
 // chart: compases separados por «|»; dos acordes en un compás se escriben «G D»
 export const SONGBOOK = [
-  { id: 'balada-mim', title: 'Balada en Mim', by: 'Ejercicio', time: 4, bpm: 70, chart: 'Em | Em | Am | Am | Em | Em | Am | Em' },
+  { id: 'balada-mim', title: 'Balada en {Em}', by: 'Ejercicio', time: 4, bpm: 70, chart: 'Em | Em | Am | Am | Em | Em | Am | Em' },
   { id: 'tom-dooley', title: 'Tom Dooley', by: 'Tradicional', time: 4, bpm: 90, chart: 'D | D | D | A | A | A | A | D | D | D | D | A | A | A | A | D' },
   { id: 'skip-lou', title: 'Skip to My Lou', by: 'Tradicional', time: 4, bpm: 100, chart: 'D | D | A | A | D | D | A | D' },
   { id: 'tres-mosqueteros', title: 'Los tres mosqueteros', by: 'Ejercicio', time: 4, bpm: 80, chart: 'A | D | E | A | A | D | E | A' },
@@ -24,7 +24,7 @@ export const SONGBOOK = [
   { id: 'grace-do', title: 'Amazing Grace (en Do)', by: 'Tradicional', time: 3, bpm: 84, chart: 'C | C | F | C | C | C | G | G | C | C | F | C | C | G | C | C' },
   { id: 'kumbaya-do', title: 'Kumbayá (en Do)', by: 'Tradicional', time: 4, bpm: 80, chart: 'C | F | C | C | C | F | G | G | C | F | C | C | F | C | G | C' },
   { id: 'saints-do', title: 'When the Saints (en Do)', by: 'Tradicional', time: 4, bpm: 110, chart: 'C | C | C | C | C | C | G7 | G7 | C | C7 | F | F | C | G7 | C | C' },
-  { id: 'vals-lam', title: 'Vals en Lam', by: 'Ejercicio', time: 3, bpm: 110, chart: 'Am | Am | Dm | Dm | E | E | Am | Am | Am | Am | Dm | Dm | Am | E | Am | Am' },
+  { id: 'vals-lam', title: 'Vals en {Am}', by: 'Ejercicio', time: 3, bpm: 110, chart: 'Am | Am | Dm | Dm | E | E | Am | Am | Am | Am | Dm | Dm | Am | E | Am | Am' },
   // Flamenco: formas tradicionales (de todos, sin autor) para acompañar
   { id: 'cadencia-andaluza', title: 'Cadencia andaluza', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 80, chart: 'Am | G | F | E | Am | G | F | E' },
   { id: 'por-tangos', title: 'Por tangos', by: 'Flamenco tradicional', style: 'flamenco', time: 4, bpm: 96, chart: 'Am | G | F | E | Am | G | F | E | Dm | Am | E | Am' },
@@ -34,7 +34,7 @@ export const SONGBOOK = [
   { id: 'uke-do-lam', title: 'Balada en Do y Lam', by: 'Ejercicio', time: 4, bpm: 76, chart: 'C | C | Am | Am | C | C | Am | C' },
   { id: 'aloha-oe', title: 'Aloha ʻOe', by: 'Liliʻuokalani, 1878', time: 4, bpm: 80, chart: 'C | C7 | F | C | G7 | G7 | C | C | C | C7 | F | Dm | C | G7 | C | C' },
   { id: 'blues-la', title: 'Blues en La', by: 'Ejercicio', time: 4, bpm: 96, chart: 'A7 | A7 | A7 | A7 | D7 | D7 | A7 | A7 | E7 | D7 | A7 | E7' },
-  { id: 'nana-lam', title: 'Nana en Lam', by: 'Ejercicio', time: 3, bpm: 90, chart: 'Am | Am | Dm | Dm | Am | Am | E7 | E7 | Am | Am | Dm | Dm | Am | E7 | Am | Am' },
+  { id: 'nana-lam', title: 'Nana en {Am}', by: 'Ejercicio', time: 3, bpm: 90, chart: 'Am | Am | Dm | Dm | Am | Am | E7 | E7 | Am | Am | Dm | Dm | Am | E7 | Am | Am' },
   { id: 'uke-reggae', title: 'Reggae en Do', by: 'Ejercicio', time: 4, bpm: 84, chart: 'C | Am | F | G | C | Am | F | G | Em7 | Am | F | G | C | Am | F | C' },
   { id: 'oh-susanna', title: 'Oh! Susanna', by: 'Stephen Foster, 1848', time: 4, bpm: 110, chart: 'C | C | C | G7 | C | C | G7 | C | F | F | C | G7 | C | C | G7 | C' },
   { id: 'sim-cejilla', title: 'Sim en movimiento', by: 'Ejercicio', time: 4, bpm: 80, chart: 'D | Bm | G | A | D | Bm | G | A' },

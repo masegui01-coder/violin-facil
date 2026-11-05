@@ -5,7 +5,7 @@
 export function pianoUnits({ theory, notes, exercise, song, chordsHold, changes, sbSong, slots }) {
   const bass = { clef: 'bass' };
   return [
-    { id: 'pu1', title: 'Posición de Do', sub: 'Cinco dedos, tu primera melodía', color: 'var(--u1)', lessons: [
+    { id: 'pu1', title: 'Posición de {C}', sub: 'Cinco dedos, tu primera melodía', color: 'var(--u1)', lessons: [
       theory('pu1-intro', 'Conoce el teclado', [
         { title: 'Encuentra el Do', text: 'Las teclas negras van en grupos de dos y de tres. El Do es la tecla blanca justo a la izquierda de cada grupo de dos. El del centro del piano es el Do central.', board: [60] },
         { title: 'Tus dedos tienen número', text: 'En las dos manos: 1 el pulgar, 2 el índice, 3 el medio, 4 el anular y 5 el meñique. Los verás debajo de cada nota.' },
@@ -56,7 +56,7 @@ export function pianoUnits({ theory, notes, exercise, song, chordsHold, changes,
       sbSong('pu4-grace', 'grace-do', 'En tres por cuatro'),
       sbSong('pu4-saints', 'saints-do', 'Con {C7}'),
     ] },
-    { id: 'pu5', title: 'Posición de Sol', sub: 'Tu primer sostenido', color: 'var(--u5)', lessons: [
+    { id: 'pu5', title: 'Posición de {G}', sub: 'Tu primer sostenido', color: 'var(--u5)', lessons: [
       theory('pu5-intro', 'Otra posición', [
         { title: 'Pulgar en Sol', text: 'Coloca el pulgar derecho en el Sol de arriba del Do central y los demás dedos en La, Si, Do y Re.', board: [67, 69, 71, 72, 74] },
         { title: 'Fa sostenido', text: 'En Sol mayor el Fa es sostenido: la tecla negra justo a la derecha del Fa. La armadura te lo recuerda al principio de cada línea.', board: [66] },

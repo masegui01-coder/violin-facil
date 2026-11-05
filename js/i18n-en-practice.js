@@ -6,10 +6,17 @@ export const PRACTICE_EXACT = {
   // ---------- Lección: digitaciones sin números ----------
   'Fuera de la primera posición': 'Outside first position', 'Digitación: consulta tu tabla o a tu profesor': 'Fingering: check your chart or ask your teacher',
   'El Do central': 'Middle C', 'Tecla': 'Key', 'Tecla a la izquierda del Do central': 'Key to the left of middle C', 'Tecla junto al Do central': 'Key next to middle C',
+  'Tecla tres octavas por debajo del Do central': 'Key three octaves below middle C', 'Tecla dos octavas por debajo del Do central': 'Key two octaves below middle C',
+  'Tecla una octava por debajo del Do central': 'Key one octave below middle C', 'Tecla una octava por encima del Do central': 'Key one octave above middle C',
+  'Tecla dos octavas por encima del Do central': 'Key two octaves above middle C', 'Tecla tres octavas por encima del Do central': 'Key three octaves above middle C',
   'Tecla octava grave': 'Key in the low octave', 'Tecla octava aguda': 'Key in the high octave', 'Tecla muy aguda': 'Very high key',
   'Todo abierto': 'All open', 'Sin pistones (al aire)': 'No valves (open)', 'Sin cilindros (al aire)': 'No valves (open)',
   // ---------- Afinador y metrónomo ----------
-  'Afinada': 'In tune', 'Micrófono sin permiso': 'Microphone blocked', 'Sin': 'None',
+  'Afinada': 'In tune', 'Micrófono sin permiso': 'Microphone blocked', 'Sin': 'None', 'estabilidad': 'steadiness',
+  'Cuerdas al aire, con La 440, 441 o 442': 'Open strings, with A 440, 441 or 442',
+  '← Baja': '← Flat', 'Alta →': 'Sharp →', 'No se ha podido calibrar': "Couldn't calibrate", 'Digitación en revisión': 'Fingering under review',
+  'medallas de oro': 'gold medals', 'medallas de plata': 'silver medals', 'medallas de bronce': 'bronze medals', 'suena': 'sounds',
+  'Todavía hay pocos datos: hacen falta al menos 3 tomas de una nota para saber si te sale alta o baja. Sigue tocando.': "There's not much data yet: a note needs at least 3 takes to tell whether it comes out sharp or flat. Keep playing.",
   // ---------- Mapa de afinación ----------
   'Tu afinación está muy equilibrada en todas las notas con datos suficientes.': 'Your tuning is very even across all the notes with enough data.',
   // ---------- Perfil: estadísticas, niveles y temas ----------
@@ -68,6 +75,7 @@ const SLIDE_HINT_EN = {
   'tiende a salir alta: corrígela con el oído': 'tends to be sharp: correct it by ear',
   'tiende a salir alta: usa el 4.º pistón si lo tienes': 'tends to be sharp: use the 4th valve if you have one',
 };
+const HAND_EN = { 'mano izq.': 'left hand', 'mano der.': 'right hand', 'meñique izq.': 'left little finger', 'meñique der.': 'right little finger' };
 const MEDAL_EN = { oro: 'Gold', plata: 'Silver', bronce: 'Bronze' };
 
 // Una pieza de una digitación de viento madera o flauta dulce («izq. 1-2-3», «llave Mi♭», «medio pulgar»…)
@@ -77,6 +85,14 @@ function woodwindPartEn(part, noteEn) {
     [/^todo abierto$/, () => 'all open'], [/^izq\. ([\d-]+)$/, (m, f) => `L ${f}`], [/^der\. ([\d-]+)$/, (m, f) => `R ${f}`],
     [/^agujeros? ([\d-]+)( \(alemana\))?$/, (m, h, de) => `${h.includes('-') ? 'holes' : 'hole'} ${h}${de ? ' (German)' : ''}`],
     [/^llave de (octava|registro)$/, (m, k) => (k === 'octava' ? 'octave key' : 'register key')],
+    [/^llave de palma (\S+) \((mano izq\.)\)$/, (m, k, h) => `palm ${noteEn(k)} key (${HAND_EN[h]})`],
+    [/^llave lateral (\S+) \((mano der\.)\)$/, (m, k, h) => `side ${noteEn(k)} key (${HAND_EN[h]})`],
+    [/^llave lateral de (\S+)\/(\S+) \(la de abajo\)$/, (m, a, b) => `lower side ${noteEn(a)}/${noteEn(b)} key`],
+    [/^llave (\S+)\/(\S+) \((meñique (?:izq|der)\.)\)$/, (m, a, b, h) => `${noteEn(a)}/${noteEn(b)} key (${HAND_EN[h]})`],
+    [/^llave de octava 2\.ª \(lateral\)$/, () => '2nd octave key (side)'],
+    [/^solo el agujero grande del (\d)$/, (m, h) => `only the big hole of ${h}`],
+    [/^medio agujero (\d)$/, (m, h) => `half hole ${h}`],
+    [/^medio agujero (izq|der)\. (\d)$/, (m, hand, f) => `half hole ${hand === 'izq' ? 'L' : 'R'} ${f}`],
     [/^llave (\S+)$/, (m, k) => `${noteEn(k)} key`],
   ];
   for (const [re, fn] of rules) {
@@ -106,6 +122,10 @@ export function practicePatterns({ tr, noteEn, notesEn }) {
     // Metal: pistones, cilindros y vara
     [/^(Pistón|Pistones|Cilindro|Cilindros) ([\d, ]+(?: y \d)?)(?: · (.+))?$/, (m, kind, list, hint) => `${/s$/.test(kind) ? 'Valves' : 'Valve'} ${list.replace(' y ', ' and ')}${hint ? ` · ${SLIDE_HINT_EN[hint] || tr(hint)}` : ''}`],
     [/^Vara en la (\d)\.ª posición$/, (m, n) => `Slide in ${ordinal(n)} position`],
+    // Nota con su octava («Do4», «Si♭ 3»): mapa de afinación y notas tenidas
+    [/^(Do|Re|Mi|Fa|Sol|La|Si)([♯♭]?)( ?)(\d)$/, (m, n, acc, gap, oct) => `${noteEn(n)}${acc}${gap}${oct}`],
+    // Llaves del diagrama de madera: «Re↑» de palma, «Mi♭→» lateral
+    [/^(Do|Re|Mi|Fa|Sol|La|Si)([♯♭]?[↑→])$/, (m, n, rest) => `${noteEn(n)}${rest}`],
     // Viento madera y flauta dulce: piezas separadas por « · »
     [/^[a-záéíóúñ.]+(?: [^·]+)?(?: · [^·]+)*$/i, (m, ...rest) => {
       const parts = m.split(' · ').map(p => woodwindPartEn(p, noteEn));
@@ -114,8 +134,11 @@ export function practicePatterns({ tr, noteEn, notesEn }) {
     // Afinador
     [/^(Alta|Baja) (\d+) cents(?: · suena (.+))?$/, (m, dir, c, real) => `${dir === 'Alta' ? 'Sharp' : 'Flat'} ${c} cents${real ? ` · sounds ${noteEn(real)}` : ''}`],
     [/^Afinada · suena (.+)$/, (m, real) => `In tune · sounds ${noteEn(real)}`],
+    [/^suena ((?:Do|Re|Mi|Fa|Sol|La|Si|[A-G])[♯♭]?\d)$/, (m, real) => `sounds ${noteEn(real)}`],
     [/^(Alta: afloja|Baja: tensa) (\d+) cents$/, (m, dir, c) => `${dir === 'Alta: afloja' ? 'Sharp: loosen' : 'Flat: tighten'} ${c} cents`],
     [/^Oigo (\S+): toca una cuerda al aire$/, (m, n) => `I hear ${noteEn(n)}: play an open string`],
+    // Lector de pantalla: estado del afinador y botones de referencia del viento
+    [/^(.+): (afinada|alta|baja)$/, (m, n, st) => `${tr(n)}: ${{ afinada: 'in tune', alta: 'sharp', baja: 'flat' }[st]}`],
     [/^Pulsa una cuerda para oír su nota \(La = (\d+) Hz\)\.$/, (m, hz) => `Tap a string to hear its note (A = ${hz} Hz).`],
     [/^Afinador cromático \(La = (\d+) Hz\)\.$/, (m, hz) => `Chromatic tuner (A = ${hz} Hz).`],
     [/^Notas de afinación de banda \(Si♭, La y Fa de concierto, escritas para tu instrumento\)\. La = (\d+) Hz\.$/, (m, hz) => `Band tuning notes (concert B♭, A and F, written for your instrument). A = ${hz} Hz.`],

@@ -20,8 +20,12 @@
 .tm-row { display: grid; grid-template-columns: 64px 1fr 72px; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; text-align: left; width: 100%; }
 .tm-row b { font-weight: 800; }
 .tm-row small { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+/* Leyenda alineada con las barras (mismas columnas que .tm-row: 64px · barra · 72px) */
+.tm-legend { display: flex; justify-content: space-between; gap: 8px; white-space: nowrap; padding: 0 calc(10px + 72px + 10px + 1.5px) 0 calc(10px + 64px + 10px + 1.5px); }
 .tm-bar { position: relative; height: 12px; background: var(--surface-2); border-radius: 6px; }
 .tm-bar::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .5; }
+/* Menos de 3 tomas: la barra se atenúa (aún no es un dato fiable); el texto mantiene su contraste */
+.tm-row.few .tm-bar i { opacity: .4; }
 .tm-bar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
 .seg.wrap { grid-template-columns: repeat(3, 1fr); border-radius: 18px; }
 .meter.wide { max-width: 100%; }

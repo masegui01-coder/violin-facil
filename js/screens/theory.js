@@ -23,10 +23,17 @@ let answers = [];
 const cardCount = () => ctx.lesson.cards.length;
 const total = () => cardCount() + questions.length;
 
-// Notas REALES: [60, 64, 67] suena a la vez; [[65], [66]] suena una detrás de otra
+// Notas REALES: [60, 64, 67] suena a la vez; [[65], [66]] suena una detrás de otra.
+// Los grupos pendientes se cancelan al cambiar de pregunta o salir (no siguen sonando en otra pantalla)
+let pending = [];
+function stopQuestion() {
+  pending.forEach(clearTimeout);
+  pending = [];
+}
 function playQuestion(play) {
+  stopQuestion();
   const groups = Array.isArray(play[0]) ? play : [play];
-  groups.forEach((g, i) => setTimeout(() => audio.playChord(g, TONE_S), i * SEQUENCE_GAP_MS));
+  pending = groups.map((g, i) => setTimeout(() => audio.playChord(g, TONE_S), i * SEQUENCE_GAP_MS));
 }
 
 function renderCard(card) {
@@ -68,6 +75,7 @@ function answer(i, chosen) {
 }
 
 function render() {
+  stopQuestion();
   $('theoryProg').style.width = ((page + 1) / total() * 100) + '%';
   if (page < cardCount()) renderCard(ctx.lesson.cards[page]);
   else renderQuestion(page - cardCount());
@@ -79,7 +87,7 @@ function render() {
 const EXAM_PASS = 0.7;
 const EXAM_TOP = 0.9;
 
-// Todas bien a la primera: 3 estrellas. Si fallas alguna, 2 (y esa pregunta vuelve antes en el repaso)
+// Todas bien a la primera: 3 estrellas. Al menos la mitad, 2; menos, 1 (y las falladas vuelven antes en el repaso)
 function finish() {
   const right = answers.filter(a => a.right).length;
   const allRight = right === questions.length;
@@ -92,7 +100,7 @@ function finish() {
     return;
   }
   const text = !questions.length ? 'Teoría repasada' : allRight ? '¡Todas las preguntas bien!' : `${right} de ${questions.length} bien: la repasaremos en tu rutina`;
-  finishLesson({ lesson: ctx.lesson, mode: 'learn', from: ctx.from, stars: allRight ? 3 : 2, text, title: lessonTitle(ctx.lesson) });
+  finishLesson({ lesson: ctx.lesson, mode: 'learn', from: ctx.from, stars: allRight ? 3 : right * 2 >= questions.length ? 2 : 1, text, title: lessonTitle(ctx.lesson) });
 }
 
 function enter(params) {
@@ -103,7 +111,7 @@ function enter(params) {
   render();
 }
 
-register('theory', { enter });
+register('theory', { enter, leave: stopQuestion });
 
 $('theoryPrev').addEventListener('click', () => { if (page > 0) { page--; render(); } });
 $('theoryNext').addEventListener('click', () => {

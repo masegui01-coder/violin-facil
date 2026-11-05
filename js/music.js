@@ -168,6 +168,28 @@ export function fingerText(midi, nom, instId = 'violin') {
   return 'Cuerda ' + stringLabel(f.string, nom, instId) + ' · ' + finger;
 }
 
+// Ortografía habitual de una nota suelta (afinador, notas tenidas): Do♯, Mi♭, Fa♯, Sol♯ y Si♭
+// Cents con signo tipográfico: «+12», «−8» (signo menos, no guion), «0»
+export const signedCents = v => { const n = Math.round(v); return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n); };
+
+// Es la única regla para las herramientas (afinador, notas tenidas, Toca libre, mapa de afinación…)
+export const prefersFlat = midi => [3, 10].includes(((midi % 12) + 12) % 12);
+export const commonSpell = midi => spell(midi, prefersFlat(midi));
+export const commonLabel = (midi, nom) => noteLabel(commonSpell(midi), nom);
+
+// Altura de concierto deletreada desde la nota escrita por el intervalo de transposición: en clarinete
+// el Si♭ escrito suena La♭ (no Sol♯) y el Mi♭, Re♭. Las letras se desplazan lo que manda el intervalo (Si♭: una).
+export function concertSpell(writtenMidi, transpose) {
+  const written = commonSpell(writtenMidi);
+  const midi = writtenMidi + transpose;
+  const letter = LETTERS[(((LETTERS.indexOf(written.letter) + Math.round(transpose * 7 / 12)) % 7) + 7) % 7];
+  let acc = ((midi - LETTER_PC[letter]) % 12 + 12) % 12;
+  if (acc > 6) acc -= 12;
+  if (Math.abs(acc) > 1) return commonSpell(midi); // nunca dobles alteraciones
+  return { letter, acc, oct: Math.floor((midi - acc - LETTER_PC[letter]) / 12) - 1, midi };
+}
+export const concertLabel = (writtenMidi, transpose, nom) => noteLabel(concertSpell(writtenMidi, transpose), nom);
+
 export function noteLabel(note, nom, flats = false) {
   const n = note.letter ? note : spell(note.midi, flats);
   const sign = ACC_SIGN[n.acc];

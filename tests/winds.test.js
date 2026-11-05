@@ -53,7 +53,8 @@ test('trumpet valves follow the standard chart', () => {
 test('woodwind fingering text names hands, thumb and keys', () => {
   assert.equal(fingeringText('flute', 67, 'eu'), 'pulgar · izq. 1-2-3 · llave Mi♭');
   assert.equal(fingeringText('sax', 74, 'eu'), 'llave de octava · izq. 1-2-3 · der. 1-2-3');
-  assert.match(fingeringText('oboe', 61, 'eu'), /consulta/);
+  assert.equal(fingeringText('oboe', 61, 'eu'), 'izq. 1-2-3 · der. 1-2-3 · llave Do♯');
+  assert.match(fingeringText('oboe', 93, 'eu'), /consulta/); // fuera de las tablas: se remite a la tabla del profesor
 });
 
 test('octave shift moves low songs up for the flute', () => {

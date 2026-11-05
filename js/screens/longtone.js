@@ -1,8 +1,9 @@
 // Notas tenidas: gráfica en vivo de afinación y volumen, con análisis de estabilidad, vibrato y dinámica.
 import { $ } from '../ui.js';
 import { register } from '../router.js';
-import { noteLabel, parseNote, isBowed } from '../music.js';
+import { commonLabel, parseNote, isBowed, signedCents } from '../music.js';
 import { instrumentById } from '../instruments.js';
+import { fingeringFor } from '../fingerings.js';
 import { analyzeLongTone, longToneTip } from '../analysis.js';
 import { getState, update, addTuningSamples, logPractice, recordLongtoneTake } from '../store.js';
 import * as audio from '../audio.js';
@@ -19,7 +20,14 @@ let frames = [];
 let timer = 0;
 let running = false;
 
-const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+// Los colores del tema se leen una vez por toma (antes, getComputedStyle cada 30 ms)
+let palette = null;
+const readPalette = () => {
+  const style = getComputedStyle(document.documentElement);
+  const v = name => style.getPropertyValue(name).trim();
+  palette = { '--ink': v('--ink'), '--muted': v('--muted'), '--u2': v('--u2'), '--accent': v('--accent') };
+};
+const css = name => { if (!palette) readPalette(); return palette[name]; };
 
 function draw() {
   const cv = $('ltCanvas');
@@ -67,8 +75,7 @@ function showResult() {
   $('ltNextStep').hidden = !routineNext;
   if (routineNext) $('ltNextStep').textContent = routineNext.label;
   if (!r) { $('ltStats').innerHTML = ''; return; }
-  const sign = v => (v >= 0 ? '+' : '') + Math.round(v);
-  $('ltStats').innerHTML = stat(sign(r.mean) + ' ¢', 'afinación media')
+  $('ltStats').innerHTML = stat(signedCents(r.mean) + ' ¢', 'afinación media')
     + stat('±' + Math.round(r.stability) + ' ¢', 'estabilidad')
     + stat(r.vibrato ? `${r.vibrato.rate.toFixed(1)} Hz` : '—', r.vibrato ? `vibrato · ${Math.round(r.vibrato.width)} ¢` : 'sin vibrato');
   addTuningSamples([{ midi: target, cents: r.mean }]);
@@ -95,6 +102,7 @@ function stop(done) {
 function start() {
   if (!audio.micReady()) { $('ltGate').hidden = false; return; }
   frames = [];
+  readPalette();
   running = true;
   $('ltGo').textContent = 'Parar';
   $('ltTip').textContent = 'Sostén la nota…';
@@ -108,16 +116,20 @@ function enter({ midi, secs: forcedSecs, routine } = {}) {
   $('ltNextStep').hidden = true;
   const inst = instrumentById(getState().instrument);
   const nom = getState().nom;
-  const options = [];
-  for (let m = inst.written[0]; m <= inst.written[1]; m++) options.push(m);
   target = midi ?? parseNote(inst.firstNotes[0]).midi;
-  $('ltNote').innerHTML = options.map(m => `<option value="${m}" ${m === target ? 'selected' : ''}>${noteLabel({ midi: m }, nom)}${nom === 'eu' ? ' ' + (Math.floor(m / 12) - 1) : ''}</option>`).join('');
+  // Madera y flauta dulce: solo las notas que tienen digitación en la tabla (más la que llega del mapa de afinación)
+  const table = inst.family === 'madera' || inst.id === 'recorder';
+  const options = [];
+  for (let m = inst.written[0]; m <= inst.written[1]; m++) if (!table || m === target || fingeringFor(inst.id, m)) options.push(m);
+  // Ortografía habitual (Do♯, Mi♭, Fa♯, Sol♯, Si♭): en clarinete no sale «La♯»
+  $('ltNote').innerHTML = options.map(m => `<option value="${m}" ${m === target ? 'selected' : ''}>${commonLabel(m, nom)}${nom === 'eu' ? ' ' + (Math.floor(m / 12) - 1) : ''}</option>`).join('');
   document.querySelectorAll('[data-lt-secs]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.ltSecs) === secs));
   $('ltGate').hidden = audio.micReady();
   $('ltMicError').hidden = true;
   frames = [];
   $('ltStats').innerHTML = '';
   $('ltTip').textContent = '';
+  readPalette();
   draw();
 }
 

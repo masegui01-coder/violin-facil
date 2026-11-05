@@ -62,3 +62,19 @@ test('review prefers questions you got wrong', () => {
   assert.equal(q.id, 'fig-half');
   assert.equal(reviewQuestion([], {}, 1), null);
 });
+
+test('todo paso de curso hereda la clave de su lección y los pasos de canción llevan sus dedos', () => {
+  ['piano', 'cello', 'trombone', 'tuba', 'violin', 'guitar'].map(instrumentById).forEach(inst => {
+    const lessons = buildCourse(['clasica', 'populares'], inst.id).flatMap(u => u.lessons);
+    lessons.filter(l => !l.step && l.clef).forEach(parent => {
+      const steps = lessons.filter(l => l.step && l.id.startsWith(parent.id + '-p'));
+      steps.forEach(s => assert.equal(s.clef, parent.clef, `${inst.id} ${s.id}`));
+      if (parent.fingers && parent.kind === 'song') {
+        steps.filter(s => s.kind === 'song').forEach(s => assert.ok(s.fingers, `${inst.id} ${s.id} sin dedos`));
+      }
+    });
+  });
+  const oda = buildCourse(['clasica'], 'piano').flatMap(u => u.lessons).filter(l => l.id.startsWith('pu2-oda-p'));
+  assert.ok(oda.length >= 3);
+  assert.equal(oda.find(l => l.id === 'pu2-oda-p1').fingers, '3 3 2 1 1 2 3 4');
+});

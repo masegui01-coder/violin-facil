@@ -26,13 +26,15 @@ export async function launch() {
 }
 
 // Contexto aparte en cada prueba: almacenamiento, service worker y cachés limpios
-export async function openApp(env, { viewport = MOBILE, seed = {}, path = '' } = {}) {
+// init: función que se ejecuta en la página antes que la app (p. ej. un micrófono simulado)
+export async function openApp(env, { viewport = MOBILE, seed = {}, path = '', init = null } = {}) {
   const context = await env.browser.createBrowserContext();
   const page = await context.newPage();
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   await page.setViewport(viewport);
+  if (init) await page.evaluateOnNewDocument(init);
   await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), { ...SEED, ...seed });
   await page.goto(env.server.url + path, { waitUntil: 'networkidle0' });
   // El aviso para crear usuario se abre a los 600 ms: se espera y se cierra

@@ -22,6 +22,9 @@ const HEAD_RX = 8; // radio horizontal de la cabeza de la nota
 const SHARP_STEPS = [38, 35, 39, 36, 33, 37, 34];
 const FLAT_STEPS = [34, 37, 33, 36, 32, 35, 31];
 const ACC_GLYPH = { sharp: '♯', flat: '♭', natural: '♮' };
+const KEY_X = 54;              // primera alteración de la armadura
+const KEY_GAP = 12;
+const TIME_INSET = 5;          // cada cifra del compás, centrada en sus dos espacios (no toca la línea de abajo)
 
 let base = E4;                 // nota de la línea inferior según la clave
 const y = step => BOTTOM_Y - (step - base) * HALF;
@@ -63,13 +66,14 @@ function drawPrefix(g, key, time, clef) {
   const n = keyCount(key);
   const shift = clef === 'bass' ? BASS_SIG_SHIFT : 0;
   const steps = (n >= 0 ? SHARP_STEPS.slice(0, n) : FLAT_STEPS.slice(0, -n)).map(st => st - shift);
-  steps.forEach((s, i) => text(g, 46 + i * 10, y(s) + (n >= 0 ? 5 : 3), n >= 0 ? '♯' : '♭', { class: 'st-acc' }));
-  const tx = 54 + steps.length * 10;
+  // La armadura empieza pasada la clave (que llega a x ≈ 48) y con el mismo cuerpo que las alteraciones de las notas
+  steps.forEach((s, i) => text(g, KEY_X + i * KEY_GAP, y(s) + (n >= 0 ? 7 : 4), n >= 0 ? '♯' : '♭', { class: 'st-acc' }));
+  const tx = KEY_X + 8 + steps.length * KEY_GAP;
   if (time) {
     // time: pulsos de negra (3 → 3/4) o [numerador, denominador] para compases como el 6/8
     const [num, den] = Array.isArray(time) ? time : [time, 4];
-    text(g, tx, BOTTOM_Y - HALF * 4 - 1, String(num), { class: 'st-time' });
-    text(g, tx, BOTTOM_Y + 1, String(den), { class: 'st-time' });
+    text(g, tx, BOTTOM_Y - HALF * 4 - TIME_INSET, String(num), { class: 'st-time' });
+    text(g, tx, BOTTOM_Y - TIME_INSET, String(den), { class: 'st-time' });
   }
   return tx + (time ? 22 : 6);
 }
@@ -297,5 +301,13 @@ export function createStaff(svg) {
     scrollTo(n.start);
   }
 
-  return { render, scrollTo, setState, focus };
+  // Rastro (Toca libre): la última nota pegada a la derecha; mientras quepan todas, sin desplazar
+  function showEnd() {
+    const n = notes[notes.length - 1];
+    if (!n) return;
+    scroller.style.transition = 'none';
+    scroller.style.transform = `translateX(${Math.min(0, WIDTH - NOTE_PAD * 2 - xOfBeat(n.start))}px)`;
+  }
+
+  return { render, scrollTo, setState, focus, showEnd };
 }

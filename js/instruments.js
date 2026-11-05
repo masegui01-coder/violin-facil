@@ -59,7 +59,8 @@ export const INSTRUMENTS = [
     blurb: 'En Si♭, una octava más grave',
   },
   {
-    id: 'piccolo', name: 'Flautín', family: 'madera', transpose: 12, written: [60, 86], minHz: 500, maxHz: 2450,
+    // El flautín no tiene pata de Do: su nota más grave es el Re4 escrito
+    id: 'piccolo', name: 'Flautín', family: 'madera', transpose: 12, written: [62, 86], minHz: 500, maxHz: 2450,
     board: 'keys', fingers: 'flute', firstNotes: ['B4', 'A4', 'G4', 'C5', 'D5'], bandKey: 'Bb',
     blurb: 'Suena una octava más aguda',
   },

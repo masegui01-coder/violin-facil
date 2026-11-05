@@ -16,6 +16,22 @@ export function starsHtml(raw, max = 3) {
   return `<span class="stars" role="img" aria-label="${n} de ${max} estrellas">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>`;
 }
 
+// Anuncio moderado para lectores de pantalla (lecturas en vivo del afinador, Toca libre…): solo cuando el texto
+// cambia y como mucho cada gapMs; el elemento es un aria-live="polite" oculto
+export function announcer(id, gapMs = 1500) {
+  let last = '';
+  let at = 0;
+  const say = text => {
+    const now = Date.now();
+    if (text === last || now - at < gapMs) return;
+    last = text;
+    at = now;
+    $(id).textContent = text;
+  };
+  say.reset = () => { last = ''; at = 0; $(id).textContent = ''; };
+  return say;
+}
+
 let toastTimer = 0;
 export function toast(msg) {
   const el = $('toast');

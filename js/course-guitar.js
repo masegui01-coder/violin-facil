@@ -5,9 +5,9 @@
 
 export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes, sbSong, slots }) {
   return [
-    { id: 'gu1', title: 'Tus primeros acordes', sub: 'Mim y Lam: tu primera canción hoy', color: 'var(--u1)', lessons: [
+    { id: 'gu1', title: 'Tus primeros acordes', sub: '{Em} y {Am}: tu primera canción hoy', color: 'var(--u1)', lessons: [
       theory('gu1-intro', 'Conoce tu guitarra', [
-        { title: 'Seis cuerdas', text: 'De grave a aguda: Mi, La, Re, Sol, Si y Mi. Se numeran al revés: la 1.ª es la Mi aguda (la más fina) y la 6.ª la Mi grave.', board: [52, 57, 62, 67, 71, 76] },
+        { title: 'Seis cuerdas', text: 'De grave a aguda: {E}, {A}, {D}, {G}, {B} y {E}. Se numeran al revés: la 1.ª es la {E} aguda (la más fina) y la 6.ª la {E} grave.', board: [52, 57, 62, 67, 71, 76] },
         { title: 'Afina siempre antes', text: 'Una guitarra desafinada suena mal aunque lo hagas todo bien. Usa el afinador de la pestaña Estudio cada vez que empieces.' },
         { title: 'Las yemas duelen al principio', text: 'Es normal. Con 10 o 15 minutos al día salen callos en dos o tres semanas y deja de doler. Mejor poco cada día que mucho un día.' },
         { title: 'Cómo te escucha la app', text: 'Deja el móvil a medio metro. En los acordes, rasguea y deja sonar: cuando el acorde suene limpio, se pondrá verde.' },
@@ -22,7 +22,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       changes('gu1-ch', 'Em', 'Am', 20),
       sbSong('gu1-song', 'balada-mim', 'Tu primera canción'),
     ] },
-    { id: 'gu2', title: 'Re, La y Mi', sub: 'Tres acordes, decenas de canciones', color: 'var(--u2)', lessons: [
+    { id: 'gu2', title: '{D}, {A} y {E}', sub: 'Tres acordes, decenas de canciones', color: 'var(--u2)', lessons: [
       theory('gu2-intro', 'Tres acordes nuevos', [
         { title: '{D}', text: 'Triángulo con los dedos 1, 3 y 2 en las tres cuerdas agudas. Rasguea solo desde la 4.ª cuerda (Re) hacia abajo.', chord: 'D' },
         { title: '{A}', text: 'Los dedos 1, 2 y 3 en fila en el traste 2. Si no caben, inclínalos un poco. Rasguea desde la 5.ª cuerda.', chord: 'A' },
@@ -34,11 +34,11 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       sbSong('gu2-tom', 'tom-dooley', 'Dos acordes, una canción entera'),
       chordsHold('gu2-ae', '{A} y {E}', 'Con dedo ancla', ['A', 'E', 'A', 'E', 'D', 'A', 'E', 'A']),
       changes('gu2-ch-ae', 'A', 'E', 25),
-      sbSong('gu2-mosq', 'tres-mosqueteros', 'Re, La y Mi juntos'),
+      sbSong('gu2-mosq', 'tres-mosqueteros', '{D}, {A} y {E} juntos'),
       slots(1, 1),
     ] },
-    { id: 'gu3', title: 'Sol y Do', sub: 'Los acordes de mil canciones', color: 'var(--u3)', lessons: [
-      theory('gu3-intro', 'Sol y Do', [
+    { id: 'gu3', title: '{G} y {C}', sub: 'Los acordes de mil canciones', color: 'var(--u3)', lessons: [
+      theory('gu3-intro', '{G} y {C}', [
         { title: '{G}', text: 'Dedo 2 en el traste 3 de la 6.ª, dedo 1 en el 2 de la 5.ª y dedo 3 en el 3 de la 1.ª. Suenan las seis cuerdas.', chord: 'G' },
         { title: '{C}', text: 'Una escalera: dedo 3 en la 5.ª (traste 3), dedo 2 en la 4.ª (traste 2) y dedo 1 en la 2.ª (traste 1). No toques la 6.ª.', chord: 'C' },
       ]),
@@ -64,7 +64,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
     { id: 'gu5', title: 'Punteo', sub: 'Melodías nota a nota', color: 'var(--u5)', lessons: [
       theory('gu5-intro', 'Tocar melodías', [
         { title: 'Primera posición', text: 'Cada dedo se encarga de un traste: el 1 del primero, el 2 del segundo y el 3 del tercero. Pulsa con la púa hacia abajo.', board: [76, 77, 79] },
-        { title: 'Las cuerdas 1 y 2', text: 'Cuerda 1: Mi (al aire), Fa (traste 1) y Sol (traste 3). Cuerda 2: Si (al aire), Do (traste 1) y Re (traste 3).', board: [71, 72, 74] },
+        { title: 'Las cuerdas 1 y 2', text: 'Cuerda 1: {E} (al aire), {F} (traste 1) y {G} (traste 3). Cuerda 2: {B} (al aire), {C} (traste 1) y {D} (traste 3).', board: [71, 72, 74] },
       ]),
       notes('gu5-e', 'Cuerda 1', 'Mi, Fa y Sol', 'E5 F5 G5 F5 E5 F5 G5 G5 F5 E5 E5 G5 F5 E5'),
       notes('gu5-b', 'Cuerda 2', 'Si, Do y Re', 'B4 C5 D5 C5 B4 C5 D5 D5 C5 B4 D5 E5 D5 C5 B4'),
@@ -97,7 +97,7 @@ export function guitarUnits({ theory, notes, exercise, song, chordsHold, changes
       sbSong('gu7-blues', 'blues-mi', 'Doce compases de blues'),
       slots(1, 2),
     ] },
-    { id: 'gu8', title: 'La cejilla', sub: 'Fa y Sim: el gran salto', color: 'var(--u8)', lessons: [
+    { id: 'gu8', title: 'La cejilla', sub: '{F} y {Bm}: el gran salto', color: 'var(--u8)', lessons: [
       theory('gu8-intro', 'La cejilla', [
         { title: 'El dedo 1 como cejuela', text: 'Estira el dedo 1 sobre todas las cuerdas en el traste 1, un poco de lado (el hueso, no la yema). Presiona con el peso del brazo, no apretando el pulgar.', chord: 'F' },
         { title: 'Paciencia', text: 'La cejilla tarda semanas en sonar limpia. Toca primero solo las cuerdas agudas y ve añadiendo. Todos los guitarristas han pasado por aquí.' },

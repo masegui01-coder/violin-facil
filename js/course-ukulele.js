@@ -5,7 +5,7 @@
 
 export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, changes, sbSong, slots }) {
   return [
-    { id: 'uk1', title: 'Tu primer acorde', sub: 'Do con un dedo y tu primera canción', color: 'var(--u1)', lessons: [
+    { id: 'uk1', title: 'Tu primer acorde', sub: '{C} con un dedo y tu primera canción', color: 'var(--u1)', lessons: [
       theory('uk1-intro', 'Conoce tu ukelele', [
         { title: 'Sol, Do, Mi, La', text: 'Las cuatro cuerdas, de la de arriba (la 4.ª) a la de abajo (la 1.ª). El Sol es agudo, no grave: por eso el ukelele suena tan alegre y brillante.', board: [67, 60, 64, 69] },
         { title: 'Cómo se sujeta', text: 'Apoya el cuerpo contra el pecho y sujétalo suave con el antebrazo derecho. El mástil, un poco hacia arriba. El pulgar izquierdo, detrás del mástil, sin apretar.' },
@@ -23,7 +23,7 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
       changes('uk1-ch', 'C', 'Am', 30),
       sbSong('uk1-song', 'uke-do-lam', 'Tu primera canción'),
     ] },
-    { id: 'uk2', title: 'Fa y Sol', sub: 'Los cuatro acordes mágicos', color: 'var(--u2)', lessons: [
+    { id: 'uk2', title: '{F} y {G}', sub: 'Los cuatro acordes mágicos', color: 'var(--u2)', lessons: [
       theory('uk2-intro', 'Dos acordes nuevos', [
         { title: '{F}', text: 'Dedo 1 en el traste 1 de la 2.ª cuerda (Mi) y dedo 2 en el traste 2 de la 4.ª (Sol). Truco: de {Am} a {F} el dedo 2 no se mueve, solo añades el 1.', chord: 'F' },
         { title: '{G}', text: 'Un triángulo: dedo 1 en el traste 2 de la 3.ª, dedo 2 en el traste 2 de la 1.ª y dedo 3 en el traste 3 de la 2.ª. Es el más difícil de los cuatro: dale tiempo.', chord: 'G' },
@@ -51,8 +51,8 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
       sbSong('uk3-saints', 'saints-do', 'Con {C7} y {G7}'),
       slots(1, 2),
     ] },
-    { id: 'uk4', title: 'Re, La y el blues', sub: 'Nuevas tonalidades', color: 'var(--u4)', lessons: [
-      theory('uk4-intro', 'Acordes de Re y La', [
+    { id: 'uk4', title: '{D}, {A} y el blues', sub: 'Nuevas tonalidades', color: 'var(--u4)', lessons: [
+      theory('uk4-intro', 'Acordes de {D} y {A}', [
         { title: '{D}', text: 'Dedos 1, 2 y 3 en el traste 2 de las cuerdas 4, 3 y 2. Si no caben, prueba a pisar las tres con el dedo 1 estirado.', chord: 'D' },
         { title: '{A}', text: 'Dedo 2 en el traste 2 de la 4.ª y dedo 1 en el traste 1 de la 3.ª. {A7} es todavía más fácil: solo el dedo 1.', chord: 'A' },
         { title: 'El blues: {A7}, {D7} y {E7}', text: 'Doce compases con tres séptimas. {D7}: traste 2 en las cuerdas 4 y 2. {E7}: trastes 1, 2 y 2 en las cuerdas 4, 3 y 1.', chord: 'E7' },
@@ -101,7 +101,7 @@ export function ukuleleUnits({ theory, notes, exercise, song, chordsHold, change
       sbSong('uk7-balada', 'pop-cejilla', 'Balada con {Em}', { title: 'Balada en La menor' }),
       slots(1, 2),
     ] },
-    { id: 'uk8', title: 'Cejilla y Si♭', sub: 'Acordes móviles', color: 'var(--u8)', lessons: [
+    { id: 'uk8', title: 'Cejilla y {Bb}', sub: 'Acordes móviles', color: 'var(--u8)', lessons: [
       theory('uk8-intro', 'La cejilla', [
         { title: 'Mucho más fácil que en guitarra', text: 'Solo son cuatro cuerdas y están poco tensas. Estira el dedo 1 sobre todas, un poco de lado, y presiona con el peso del brazo.' },
         { title: '{Bb}', text: 'Cejilla en el traste 1 con el dedo 1, dedo 2 en el traste 2 de la 3.ª y dedo 3 en el traste 3 de la 4.ª.', chord: 'Bb' },

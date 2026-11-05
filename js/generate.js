@@ -30,6 +30,19 @@ export function scaleNames(tonic, steps) {
   });
 }
 
+// Tonalidad mayor (nombre de MAJOR_KEYS) de una tónica dada en midi
+export const majorKeyOf = midi => MAJOR_KEYS.find(k => ((LETTER_PC[k[0]] + (k.includes('#') ? 1 : k.includes('b') ? -1 : 0)) % 12 + 12) % 12 === ((midi % 12) + 12) % 12);
+
+// Ortografía de una nota a «degree» grados (letras) de la tónica: la 3.ª menor de Si♭ es Re♭, no Do♯.
+// Devuelve { letter, acc, oct, midi } como spell() de music.js
+export function spellFromTonic(tonicMidi, midi, degree) {
+  const key = majorKeyOf(tonicMidi);
+  const letter = LETTERS[(LETTERS.indexOf(key[0]) + degree) % 7];
+  let acc = ((midi - LETTER_PC[letter]) % 12 + 12) % 12;
+  if (acc > 6) acc -= 12;
+  return { letter, acc, oct: Math.floor((midi - acc - LETTER_PC[letter]) / 12) - 1, midi };
+}
+
 // Notas de la escala desde una octava concreta (con el salto de octava al pasar de Si a Do)
 function scaleFrom(tonic, steps, octave, degrees) {
   const names = scaleNames(tonic, steps);
@@ -121,7 +134,7 @@ const LEVELS = {
   3: { keys: 4, rhythms: [[0.5, 0.5, 0.5, 0.5], [1.5, 0.5], [0.75, 0.25, 1], [1, 'r1'], [0.5, 0.5, 1], [2]], leap: 4, minor: true, time: [4, 3, 2] },
 };
 export const DUR = { 4: 'w', 3: 'h.', 2: 'h', 1.5: 'q.', 1: 'q', 0.75: 'e.', 0.5: 'e', 0.25: 's' };
-const NEAR_KEYS = { C: ['F', 'G', 'Bb', 'D'], G: ['C', 'D', 'F', 'A'], Bb: ['F', 'Eb', 'C', 'G'], D: ['G', 'A', 'C', 'E'] };
+const NEAR_KEYS = { C: ['F', 'G', 'Bb', 'D'], F: ['C', 'Bb', 'G', 'Eb'], G: ['C', 'D', 'F', 'A'], Bb: ['F', 'Eb', 'C', 'G'], D: ['G', 'A', 'C', 'E'] };
 
 function pickRhythmBar(r, level, time) {
   const cells = LEVELS[level].rhythms;
@@ -136,6 +149,15 @@ function pickRhythmBar(r, level, time) {
   return out;
 }
 
+// Grados que abarca cada nivel (0 = tónica) y registro cómodo: el del instrumento o la hora y media más grave
+const SIGHT_SPAN = { 1: [-1, 5], 2: [-2, 7], 3: [-2, 9] };
+const OCTAVE = [0, 1, 2, 3, 4, 5, 6, 7];
+const COMFORT_SPAN = 21;
+// El piano lee alrededor del Do central (su registro escrito empieza muy abajo); el ukelele, en los primeros trastes
+// (como mucho el Sol del traste 10 de la cuerda La)
+const SIGHT_COMFORT = { piano: [55, 79], ukulele: [60, 79] };
+export const comfortRange = inst => inst.comfort || SIGHT_COMFORT[inst.id] || [inst.written[0], Math.min(inst.written[1], inst.written[0] + COMFORT_SPAN)];
+
 export function sightReading(level, inst, seed) {
   const r = rng(seed);
   const cfg = LEVELS[level];
@@ -147,28 +169,42 @@ export function sightReading(level, inst, seed) {
   const tonic = minor ? scaleNames(key, MAJOR)[5] : { letter: key[0], acc: key.includes('#') ? 1 : key.includes('b') ? -1 : 0 };
   const tonicName = tonic.letter + ACC[tonic.acc];
   const time = cfg.time[Math.floor(r() * cfg.time.length)];
-  const degreesRange = [-2, 9];
-  const all = fit(tonicName, steps, Array.from({ length: degreesRange[1] - degreesRange[0] + 1 }, (_, i) => i + degreesRange[0]), inst)
-    || fit(tonicName, steps, [0, 1, 2, 3, 4, 5, 6, 7], inst);
-  const lowDeg = all.length > 8 ? degreesRange[0] : 0;
-  let deg = 0;
-  const tokens = [];
+  // Ámbito según el nivel y dentro del registro cómodo del instrumento (sin agudos ni posiciones altas al empezar)
+  const [lo, hi] = SIGHT_SPAN[level];
+  const degrees = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => i + a);
+  const comfy = { ...inst, written: comfortRange(inst) };
+  // Si el ámbito no cabe en el registro cómodo, se estrecha antes de salir de él
+  // (primero sin los grados por debajo de la tónica: mejor eso que subir una octava entera)
+  const spans = [degrees(lo, hi), degrees(0, hi), degrees(Math.max(lo, -1), Math.min(hi, 7)), OCTAVE, degrees(0, 5)];
+  const placed = [comfy, inst].flatMap(where => spans.map(degs => ({ degs, where })))
+    .map(({ degs, where }) => ({ degs, notes: fit(tonicName, steps, degs, where) })).find(x => x.notes);
+  const all = placed.notes;
+  const lowDeg = placed.degs[0];
+  const highDeg = lowDeg + all.length - 1;
   const BARS = 8;
-  for (let b = 0; b < BARS; b++) {
-    const rhythm = b === BARS - 1 ? [time] : pickRhythmBar(r, level, time);
-    rhythm.forEach((x, i) => {
-      if (typeof x === 'string') { tokens.push({ tok: 'R' + DUR[Number(x.slice(1))], beats: Number(x.slice(1)) }); return; }
-      const last = b === BARS - 1;
-      if (last) deg = 0;
-      else if (tokens.length) {
-        const leap = r() < 0.25 ? cfg.leap : 1;
-        deg += (r() < 0.5 ? -1 : 1) * leap;
-        deg = Math.max(lowDeg, Math.min(lowDeg + all.length - 1, deg));
+  const rhythms = Array.from({ length: BARS }, (_, b) => (b === BARS - 1 ? [time] : pickRhythmBar(r, level, time)));
+  const pitched = rhythms.flat().filter(x => typeof x !== 'string').length;
+  // Se termina en la tónica (la de abajo o la de arriba, la más cercana) llegando por grados: nunca un salto final
+  const tonics = [0, 7].filter(d => d >= lowDeg && d <= highDeg);
+  let deg = 0;
+  let played = 0;
+  const tokens = [];
+  rhythms.forEach(rhythm => rhythm.forEach(x => {
+    if (typeof x === 'string') { tokens.push({ tok: 'R' + DUR[Number(x.slice(1))], beats: Number(x.slice(1)) }); return; }
+    const left = pitched - played - 1; // notas que quedan después de esta
+    if (played) {
+      const leap = r() < 0.25 ? cfg.leap : 1;
+      let next = Math.max(lowDeg, Math.min(highDeg, deg + (r() < 0.5 ? -1 : 1) * leap));
+      const home = tonics.reduce((a, b) => (Math.abs(b - next) < Math.abs(a - next) ? b : a));
+      if (Math.abs(next - home) > left) {
+        const goal = tonics.reduce((a, b) => (Math.abs(b - deg) < Math.abs(a - deg) ? b : a));
+        next = deg + Math.sign(goal - deg);
       }
-      const name = all[deg - lowDeg];
-      tokens.push({ tok: name + DUR[x], beats: x });
-    });
-  }
+      deg = next;
+    }
+    played++;
+    tokens.push({ tok: all[deg - lowDeg] + DUR[x], beats: x });
+  }));
   const label = minor ? keyLabel(tonicName + 'm') : keyLabel(key);
   return {
     id: `sight-${level}-${seed}`, title: `Primera vista n.º ${seed % 1000}`, by: `Nivel ${level} · ${label}`, style: null, difficulty: level,

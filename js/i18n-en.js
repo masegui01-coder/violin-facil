@@ -19,7 +19,7 @@ export const EXACT = {
   'Beta': 'Beta', 'Versión de prueba: seguimos desarrollando la app': 'Test version: we are still building the app',
   'Cambiar de instrumento': 'Change instrument', 'Puntos': 'Points', 'pts': 'pts', 'Días seguidos practicando': 'Days in a row practising',
   // ---------- Aprender ----------
-  'Cómo quieres aprender': 'How do you want to learn', 'Casual': 'Casual', 'Libro': 'Book',
+  'Cómo quieres aprender': 'How do you want to learn', 'Casual': 'Casual', 'Libro': 'Book', 'Práctica': 'Practice',
   'Curso completado': 'Course completed', '¡Has terminado todas las lecciones!': 'You have finished every lesson!',
   'Sigue con la biblioteca de canciones o sube la exigencia de afinación en tu perfil.': 'Carry on with the song library or raise the tuning strictness in your profile.',
   'Ir a ensayarla': 'Go and rehearse it', 'Tu siguiente paso · Tarea de tu banda': 'Your next step · Band task',
@@ -55,7 +55,7 @@ export const EXACT = {
   // ---------- Estudio ----------
   'Herramientas para mejorar cada día, también si ya tienes nivel.': 'Tools to improve every day, even if you already play well.',
   '¿Para qué sirve cada una?': 'What is each one for?', 'Cada día': 'Every day', 'Para subir de nivel': 'To level up',
-  'Afinador': 'Tuner', 'Cromático, con La 440 o 442': 'Chromatic, with A 440 or 442', 'Metrónomo': 'Metronome', 'BPM · compás y tap': 'BPM · time signature and tap',
+  'Afinador': 'Tuner', 'Cromático, con La 440, 441 o 442': 'Chromatic, with A 440, 441 or 442', 'Metrónomo': 'Metronome', 'BPM · compás y tap': 'BPM · time signature and tap',
   'Notas tenidas': 'Long tones', 'Gráfica en vivo de afinación, volumen y vibrato': 'Live graph of pitch, volume and vibrato',
   'Toca libre': 'Free play', 'Escribe lo que tocas y compáralo con una canción': 'Writes down what you play and compares it with a song',
   'Mapa de afinación': 'Tuning map', 'Qué notas te salen altas o bajas': 'Which notes come out sharp or flat',

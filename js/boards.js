@@ -1,6 +1,6 @@
 // Diagramas de guitarra, ukelele y piano: mástil con la nota, caja de acorde y teclado con las teclas que se tocan.
 import { chordShape, isFretted, pianoMidis, chordLabel } from './chords.js';
-import { stringName, isNaturalBar } from './fingerings.js';
+import { stringName, isNaturalBar, fretFinger } from './fingerings.js';
 import { noteLabel } from './music.js';
 
 // Grosor de cada cuerda por su número: en la guitarra crece de la 1.ª a la 6.ª; en el ukelele (Sol agudo) la 3.ª es la más gruesa
@@ -24,15 +24,19 @@ function reset(svg, w, h, label) {
   svg.setAttribute('aria-label', label);
 }
 
-// Mástil en horizontal (cuerda 1 arriba, como lo ves al mirar hacia abajo) con las posiciones {string, fret}
+// Mástil en horizontal (cuerda 1 arriba, como lo ves al mirar hacia abajo) con las posiciones {string, fret}.
+// Muestra cinco trastes; si la nota está más arriba (ukelele agudo), la ventana sube y la cejuela pasa a ser un traste más.
+const INLAYS = [3, 5, 7, 10, 12, 15];
 export function drawFretboard(svg, positions, strings = 6, { nom = 'eu' } = {}) {
   const instId = strings === 4 ? 'ukulele' : 'guitar';
   const W = 268, X0 = 58, FRET_W = 40, Y0 = 18, GAP = 17, FRETS = 5;
   const H = Y0 + GAP * (strings - 1) + 33;
+  const top = Math.max(FRETS, ...positions.map(p => p.fret));
+  const shift = top - FRETS;
   reset(svg, W, H, strings === 4 ? 'Mástil del ukelele' : 'Mástil de la guitarra');
   el('rect', { x: X0, y: Y0 - 6, width: FRET_W * FRETS, height: GAP * (strings - 1) + 12, rx: 4, class: 'gb-neck' }, svg);
-  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0 + f * FRET_W, x2: X0 + f * FRET_W, y1: Y0 - 6, y2: Y0 + GAP * (strings - 1) + 6, class: f ? 'gb-fret' : 'gb-nut' }, svg);
-  [3, 5].forEach(f => el('circle', { cx: X0 + (f - 0.5) * FRET_W, cy: Y0 + GAP * (strings - 1) / 2, r: 4, class: 'gb-inlay' }, svg));
+  for (let f = 0; f <= FRETS; f++) el('line', { x1: X0 + f * FRET_W, x2: X0 + f * FRET_W, y1: Y0 - 6, y2: Y0 + GAP * (strings - 1) + 6, class: f || shift ? 'gb-fret' : 'gb-nut' }, svg);
+  INLAYS.filter(f => f > shift && f <= top).forEach(f => el('circle', { cx: X0 + (f - shift - 0.5) * FRET_W, cy: Y0 + GAP * (strings - 1) / 2, r: 4, class: 'gb-inlay' }, svg));
   for (let s = 1; s <= strings; s++) {
     const y = Y0 + (s - 1) * GAP;
     el('line', { x1: X0, x2: X0 + FRET_W * FRETS, y1: y, y2: y, class: 'gb-string', 'stroke-width': widthOf(instId, s) }, svg);
@@ -42,11 +46,11 @@ export function drawFretboard(svg, positions, strings = 6, { nom = 'eu' } = {}) 
     const y = Y0 + (string - 1) * GAP;
     if (fret === 0) el('circle', { cx: X0 - 9, cy: y, r: 6, class: 'gb-open' }, svg);
     else {
-      el('circle', { cx: X0 + (fret - 0.5) * FRET_W, cy: y, r: 7.5, class: 'kd-on' }, svg);
-      el('text', { x: X0 + (fret - 0.5) * FRET_W, y: y + 4, class: 'kd-chip' }, svg, String(Math.min(4, fret)));
+      el('circle', { cx: X0 + (fret - shift - 0.5) * FRET_W, cy: y, r: 7.5, class: 'kd-on' }, svg);
+      el('text', { x: X0 + (fret - shift - 0.5) * FRET_W, y: y + 4, class: 'kd-chip' }, svg, String(fretFinger(fret)));
     }
   });
-  for (let f = 1; f <= FRETS; f++) el('text', { x: X0 + (f - 0.5) * FRET_W, y: H - 4, class: 'kd-label' }, svg, String(f));
+  for (let f = 1; f <= FRETS; f++) el('text', { x: X0 + (f - 0.5) * FRET_W, y: H - 4, class: 'kd-label' }, svg, String(f + shift));
 }
 
 // Caja de acorde en vertical, como en los cancioneros: de la 6.ª cuerda (guitarra) o la 4.ª (ukelele, el Sol agudo) a la izquierda

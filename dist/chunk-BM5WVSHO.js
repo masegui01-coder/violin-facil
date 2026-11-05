@@ -1,0 +1,1 @@
+import{Pb as e,fa as o,jb as t}from"./chunk-WZMF45AV.js";var h=()=>!!(t().proTester||t().adminUser);function s(){let r=o("toolRhythmBook");r&&(r.hidden=!h())}o("toolRhythmBook").addEventListener("click",()=>e("rhythmbook"));export{h as a,s as b};

@@ -55,6 +55,8 @@
 /* Letra muy grande: el chip del instrumento se queda con su icono (el nombre se lee igual con lector de pantalla) */
 @container topbar (max-width: 17rem) {
   .chip-stat.inst b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* solo con icono: más grande, que los instrumentos alargados (flauta, clarinete) no parezcan una raya */
+  .chip-stat.inst .ic { width: 30px; height: 30px; }
 }
 
 .tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }

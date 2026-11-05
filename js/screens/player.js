@@ -426,7 +426,9 @@ function enter({ lesson, mode, from, eyebrow }) {
   $('tHint').hidden = !!lesson.noHints;
   document.querySelector('#tempoBar .seg').hidden = !!lesson.fixedSpeed;
   const showBoard = getState().showBoard && !lesson.noHints;
-  $('lessonBoard').hidden = !showBoard;
+  // <svg> no tiene la propiedad hidden: hay que poner el atributo. En audición tampoco se ven el nombre ni la siguiente
+  $('lessonBoard').toggleAttribute('hidden', !showBoard);
+  $('lesson').classList.toggle('no-hints', !!lesson.noHints);
   document.querySelector('#lesson .target-row').classList.toggle('no-board', !showBoard);
   setStatus(mode === 'tempo' ? 'Elige la velocidad y pulsa Empezar' : 'Toca la nota marcada');
   setMeter(null);

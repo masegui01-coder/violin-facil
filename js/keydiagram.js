@@ -16,6 +16,12 @@ function el(tag, attrs, parent, text) {
   return node;
 }
 
+// Medio agujero: el círculo vacío con la mitad izquierda rellena
+function halfHole(svg, cx, cy, r) {
+  el('circle', { cx, cy, r, class: 'kd-off' }, svg);
+  el('path', { d: `M${cx} ${cy - r} a${r} ${r} 0 0 0 0 ${2 * r} z`, class: 'kd-on' }, svg);
+}
+
 function drawValves(svg, f, instId) {
   [1, 2, 3].forEach((v, i) => {
     const x = 33 + i * 42;
@@ -49,7 +55,12 @@ function drawRecorder(svg, f) {
   if (f.thumb === 'half') el('path', { d: 'M24 37 a9 9 0 0 0 0 18 z', class: 'kd-on' }, svg);
   [1, 2, 3, 4, 5, 6, 7].forEach((h, i) => {
     const cy = 40 + i * 21 + (i >= 3 ? 10 : 0);
-    el('circle', { cx: 75, cy, r: 8, class: f.holes.includes(h) ? 'kd-on' : 'kd-off' }, svg);
+    // El 6 y el 7 son dobles: uno grande y uno pequeño; «solo el grande» deja el pequeño abierto
+    if (h >= 6) {
+      const big = f.holes.includes(h) || (f.half || []).includes(h);
+      el('circle', { cx: 71, cy, r: 6.5, class: big ? 'kd-on' : 'kd-off' }, svg);
+      el('circle', { cx: 84, cy, r: 4, class: f.holes.includes(h) ? 'kd-on' : 'kd-off' }, svg);
+    } else el('circle', { cx: 75, cy, r: 8, class: f.holes.includes(h) ? 'kd-on' : 'kd-off' }, svg);
     el('text', { x: 108, y: cy + 4, class: 'kd-label' }, svg, String(h));
   });
   el('line', { x1: 62, x2: 88, y1: 99, y2: 99, class: 'kd-split' }, svg);
@@ -60,14 +71,18 @@ function drawKeys(svg, f, instId) {
   if (f.thumb) el('circle', { cx: 28, cy: 46, r: 9, class: f.thumbOn ? 'kd-on' : 'kd-off' }, svg);
   if (f.thumb) el('text', { x: 28, y: 30, class: 'kd-label' }, svg, 'pulgar');
   el('rect', { x: 104, y: 36, width: 38, height: 16, rx: 8, class: f.octave ? 'kd-on' : 'kd-off' }, svg);
-  el('text', { x: 123, y: 30, class: 'kd-label' }, svg, f.octaveName === 'registro' ? 'registro' : '8va');
-  Object.entries(HOLE_Y).forEach(([hole, y]) => el('circle', { cx: 75, cy: y, r: 10, class: f.holes.includes(hole) ? 'kd-on' : 'kd-off' }, svg));
-  el('line', { x1: 56, x2: 94, y1: 116, y2: 116, class: 'kd-split' }, svg);
-  f.extras.slice(0, 3).forEach((name, i) => {
-    el('rect', { x: 102, y: 120 + i * 24, width: 46, height: 19, rx: 9.5, class: 'kd-on' }, svg);
-    el('text', { x: 125, y: 133 + i * 24, class: 'kd-chip' }, svg, name);
+  el('text', { x: 123, y: 30, class: 'kd-label' }, svg, f.octave2 ? '8va 2' : f.octaveName === 'registro' ? 'reg.' : '8va');
+  Object.entries(HOLE_Y).forEach(([hole, y]) => {
+    if ((f.half || []).includes(hole)) halfHole(svg, 75, y, 10);
+    else el('circle', { cx: 75, cy: y, r: 10, class: f.holes.includes(hole) ? 'kd-on' : 'kd-off' }, svg);
   });
-  if (!fingeringsReviewed(instId)) el('text', { x: 4, y: 192, class: 'kd-beta' }, svg, 'β');
+  el('line', { x1: 56, x2: 94, y1: 116, y2: 116, class: 'kd-split' }, svg);
+  // Hasta cuatro llaves extra (el Fa agudo del saxo usa cuatro)
+  f.extras.slice(0, 4).forEach((name, i) => {
+    el('rect', { x: 102, y: 112 + i * 21, width: 46, height: 19, rx: 9.5, class: 'kd-on' }, svg);
+    el('text', { x: 125, y: 125 + i * 21, class: 'kd-chip' }, svg, name);
+  });
+  if (!fingeringsReviewed(instId)) el('title', {}, el('text', { x: 4, y: 192, class: 'kd-beta' }, svg, 'β'), 'Digitación en revisión');
 }
 
 // Dibuja la digitación de la nota escrita; devuelve false si no hay dato.
@@ -76,6 +91,7 @@ export function renderDiagram(svg, instId, midis, nom) {
   const ok = drawDiagram(svg, instId, midis, nom);
   const [, , w, h] = (svg.getAttribute('viewBox') || '').split(' ').map(Number);
   svg.classList?.toggle('board-wide', w > h * 1.3);
+  svg.classList?.toggle('kd-wind', w === W && h === H); // llaves, pistones, vara y flauta dulce
   return ok;
 }
 

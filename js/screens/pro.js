@@ -23,7 +23,8 @@ const TXT = {
   eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), eyebrowViolin: L('Método Pro · Violín', 'Pro method · Violin'),
   eyebrowPerc: L('Método Pro · Percusión', 'Pro method · Percussion'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
   intro: L('Un camino aparte del curso, para estudiar como en el conservatorio pero desde el móvil. Cada nivel tiene tres pestañas: Libro para entender el solfeo y la técnica, Relax para practicarlo como un juego (leer, escribir notas y marcar ritmos) y Práctica para tocarlo con el micrófono.', 'A path separate from the course, to study as in a music school but from your phone. Each level has three tabs: Book to understand reading and technique, Relax to practise it as a game (reading, writing notes and tapping rhythms) and Practice to play it with the microphone.'),
-  notWind: L('El método Pro está, de momento, para violín, percusión e instrumentos de viento. Elige uno de ellos en tu perfil para verlo.', 'The Pro method is, for now, for violin, percussion and wind instruments. Choose one of them in your profile to see it.'),
+  soonEyebrow: L('Método Pro', 'Pro method'), soon: L('Próximamente', 'Coming soon'), toCasual: L('Ir a Casual', 'Go to Casual'),
+  notYet: L('El método Pro para tu instrumento está en preparación. Mientras tanto, sigue el curso en Casual o en Libro: tu progreso cuenta igual.', 'The Pro method for your instrument is in the works. In the meantime, follow the course in Casual or Book: your progress counts just the same.'),
   introPerc: L('Un camino aparte del curso para aprender caja como en el conservatorio, pero jugando. Libro para entender el ritmo y la técnica de baquetas, Relax para practicarlo como un videojuego (ordenar las manos, tocar con dos pads, sumar rachas) y Práctica para tocarlo en el pad con el micrófono.', 'A path separate from the course to learn snare as in a music school, but playing. Book to understand rhythm and stick technique, Relax to practise it like a video game (ordering hands, playing two pads, building streaks) and Practice to play it on the pad with the microphone.'),
   hands: L('Las manos de este nivel', 'The sticking in this level'), surface: L('Superficie:', 'Surface:'), bestPoints: L('Tu récord:', 'Your record:'), points: L('puntos', 'points'),
   playMic: L('Tocar con el micrófono', 'Play with the microphone'),
@@ -59,7 +60,14 @@ const statesOf = list => levelStates(list, saved(), instrumentProgress(), getSta
 export function renderPro() {
   const box = $('proView');
   if (!hasMethod(inst())) {
-    box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.eyebrow)}</p><h2>${esc(TXT.course)}</h2><p>${esc(TXT.notWind)}</p></div>`;
+    box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.soonEyebrow)}</p><h2>${esc(TXT.soon)}</h2><p>${esc(TXT.notYet)}</p>
+      <button type="button" class="btn" id="proToCasual">${esc(TXT.toCasual)}</button></div>`;
+    // Salida: el mismo segmentado de Aprender, en «Casual»
+    $('proToCasual').addEventListener('click', () => {
+      const casual = document.querySelector('[data-learn-view="casual"]');
+      casual.click();
+      casual.focus();
+    });
     return;
   }
   const list = levels();

@@ -9,7 +9,7 @@ import { placementCardHtml, bindPlacementCard } from './placement-ui.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
-import { renderBook } from './book.js';
+import { renderBook, warmLibrary } from './book.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -46,7 +46,7 @@ function continueCard() {
   const song = lessonSong(next);
   const color = next.slot && song ? styleById(song.style).color : unit.color;
   return `<div class="continue" style="--unit:${color}">
-    <div class="continue-meta"><div><p class="eyebrow">${isLevel(next) ? `Nivel ${lv.index(next.id)} de ${lv.total}` : 'Tu siguiente paso'} · ${esc(unit.title)}</p><h2>${esc(lessonTitle(next))}</h2>${next.sub ? `<p>${esc(chordText(next.sub))}</p>` : ''}</div>
+    <div class="continue-meta"><div><p class="eyebrow">${isLevel(next) ? `Nivel ${lv.index(next.id)} de ${lv.total}` : 'Tu siguiente paso'} · ${esc(chordText(unit.title))}</p><h2>${esc(lessonTitle(next))}</h2>${next.sub ? `<p>${esc(chordText(next.sub))}</p>` : ''}</div>
     <span class="continue-note" aria-hidden="true">${next.kind === 'song' ? '♫' : '♪'}</span></div>
     ${progressBar(lv)}
     <button type="button" class="btn" id="continueBtn"><span class="ic">${icon('play')}</span>Continuar</button></div>`;
@@ -78,7 +78,7 @@ function unitHtml(unit, ui, eager) {
   const done = unit.lessons.filter(l => states[l.id] === 'done').length;
   return `<section class="unit"${eager ? '' : ` data-lazy-unit="${ui}"`} style="--n:${unit.lessons.length}">
     <div class="unit-banner" style="--unit:${unit.color}">
-      <div><p class="eyebrow">Unidad ${ui + 1}</p><h2>${esc(unit.title)}</h2><p>${esc(unit.sub)}</p></div>
+      <div><p class="eyebrow">Unidad ${ui + 1}</p><h2>${esc(chordText(unit.title))}</h2><p>${esc(chordText(unit.sub))}</p></div>
       <span class="unit-pct">${done}/${unit.lessons.length}</span>
     </div>
     <div class="path">${eager ? pathHtml(unit) : ''}</div>
@@ -186,6 +186,7 @@ function render() {
   celebrateUnlock();
   const btn = $('continueBtn');
   if (btn && next) btn.addEventListener('click', () => launch(next, { from: 'course' }));
+  warmLibrary();
 }
 
 register('learn', { enter: render });

@@ -258,7 +258,14 @@ function makeSteps(inst) {
       const perc = { ...(lesson.tones ? { tones: true } : {}) };
       const copy = (id, fields) => ({ ...base, id, ...fields });
       const notesIn = scoreNotes(base.score);
-      const steps = inst.rhythmOnly ? [] : newNoteSteps(lesson, notesIn, lesson.clef ? { clef: lesson.clef } : {}, null, uniq(notesIn.map(keyOf)).length);
+      // La clave y los dedos de la lección (piano, mano izquierda) pasan a cada paso; las frases llevan solo sus dedos
+      const clef = lesson.clef ? { clef: lesson.clef } : {};
+      const fingerList = lesson.fingers ? lesson.fingers.split(' ') : null;
+      const hand = (a, b) => {
+        const part = a === undefined ? fingerList : sliceSticking(fingerList, base.score, a, b);
+        return { ...clef, ...(part ? { fingers: part.join(' ') } : {}) };
+      };
+      const steps = inst.rhythmOnly ? [] : newNoteSteps(lesson, notesIn, clef, null, uniq(notesIn.map(keyOf)).length);
       const bars = barsOf(base.score);
       const half = Math.ceil(bars.length / 2);
       // las notas largas (redondas y blancas) no se trocean: son ejercicios de aire, no frases
@@ -270,20 +277,20 @@ function makeSteps(inst) {
         const body = barsOf(base.score).slice(a === 0 && base.pickup ? 1 : a, b).join('|') + [].concat(sticking || []).join('');
         push(steps, step(lesson, i + 1, {
           kind: 'song', title: inst.rhythmOnly ? (i ? 'Segunda mitad' : 'Primera mitad') : `Frase ${i + 1}`, sub: title, mode: 'learn', ...from, ...perc,
-          ...(sticking ? { sticking } : {}),
+          ...(sticking ? { sticking } : {}), ...hand(a, b),
           song: copy(id, { title, score: sliceScore(base.score, a, b), pickup: a === 0 ? base.pickup || 0 : 0, others: undefined }),
         }), 'phrase#' + body);
       });
       // canción corta a tempo: antes, entera y nota a nota
       if (!inst.rhythmOnly && !parts.length && hasShortNotes(base.score)) {
-        push(steps, step(lesson, 'l', { kind: 'song', title: 'Nota a nota', sub: title, mode: 'learn', ...from, song: copy(`${lesson.id}-pl`, { title }) }));
+        push(steps, step(lesson, 'l', { kind: 'song', title: 'Nota a nota', sub: title, mode: 'learn', ...from, ...hand(), song: copy(`${lesson.id}-pl`, { title }) }));
       }
       const sticking = lesson.sticking ? { sticking: lesson.sticking } : {};
       if (hasShortNotes(base.score)) {
-        push(steps, step(lesson, 's', { kind: 'song', title: 'Despacio', sub: title, speedOverride: slowFactor(base.bpm), fixedSpeed: true, ...from, ...perc, ...sticking, song: copy(`${lesson.id}-ps`, { title }) }));
+        push(steps, step(lesson, 's', { kind: 'song', title: 'Despacio', sub: title, speedOverride: slowFactor(base.bpm), fixedSpeed: true, ...from, ...perc, ...sticking, ...hand(), song: copy(`${lesson.id}-ps`, { title }) }));
       }
       if (inst.rhythmOnly && hitsPerSecond(base.score, base.bpm) > FAST_HITS_PER_SECOND) {
-        push(steps, step(lesson, 'c', { kind: 'song', title: 'Casi a tempo', sub: title, speedOverride: 0.85, fixedSpeed: true, ...perc, ...sticking, song: copy(`${lesson.id}-pc`, { title }) }));
+        push(steps, step(lesson, 'c', { kind: 'song', title: 'Casi a tempo', sub: title, speedOverride: 0.85, fixedSpeed: true, ...perc, ...sticking, ...hand(), song: copy(`${lesson.id}-pc`, { title }) }));
       }
       return { steps, shift };
     }

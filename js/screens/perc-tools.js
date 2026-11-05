@@ -61,6 +61,7 @@ $('gymList').addEventListener('click', e => {
 
 // ---------- Estudio según el instrumento ----------
 // Qué cubren los consejos de técnica de cada familia
+const OPEN_STRING_TUNER = new Set(['violin', 'cello', 'guitar', 'ukulele']);
 const TIPS_TOOL_TEXT = {
   viento: 'Embocadura, postura y respiración, y qué corregir según cómo tocas',
   cuerda: 'Postura, arco y mano izquierda, y qué corregir según cómo tocas',
@@ -76,40 +77,72 @@ register('practice', {
     // Guitarra y piano: la afinación la da el instrumento; notas tenidas y afinar en acorde no les sirven
     if (instrumentById(getState().instrument).polyphonic) document.querySelectorAll('#practice [data-melodic]').forEach(el => { el.hidden = true; });
     $('tipsToolText').textContent = TIPS_TOOL_TEXT[instrumentById(getState().instrument).family] || TIPS_TOOL_TEXT.viento;
+    // Violín, chelo, guitarra y ukelele se afinan por sus cuerdas al aire; el resto, con el cromático
+    $('tunerToolText').textContent = OPEN_STRING_TUNER.has(getState().instrument) ? 'Cuerdas al aire, con La 440, 441 o 442' : 'Cromático, con La 440, 441 o 442';
     $('dictToolText').textContent = perc ? 'Escucha un ritmo y tócalo de oído, en 10 niveles' : 'Escucha una melodía y tócala de oído, en 10 niveles';
     $('gymToolText').textContent = perc ? 'Pulso, golpes simples y dobles, paradiddle y acentos' : 'Escalas, arpegios y terceras en las 12 tonalidades';
   },
 });
 
 // ---------- Calibración: el móvil se escucha a sí mismo y mide el retraso de ida y vuelta ----------
+// Cerrar la hoja (Escape incluido) la cancela: se paran los golpes y la escucha. Al terminar (bien, mal o cancelada) el
+// micrófono se apaga siempre: Estudio no lo usa y micReady() también es cierto con el micro solo «concedido» de antes.
+let calRun = 0;
+let calibrating = false; // un doble clic en «Calibrar» no arranca dos intentos
+
+function calibrationEnd(body) {
+  $('sheetBody').innerHTML = `<div class="sheet-body">${body}</div>`;
+  $('sheetBody').querySelector('[data-close]')?.addEventListener('click', () => $('sheet').close());
+  // Reintentar reutiliza la hoja abierta: cerrarla y reabrirla hacía que el cierre (que llega después) cancelase el intento nuevo
+  $('sheetBody').querySelector('[data-retry]')?.addEventListener('click', () => calibrate());
+  $('sheetBody').querySelector('button')?.focus();
+}
+
 async function calibrate() {
-  if (!audio.micReady()) {
-    try { await audio.startMic(); } catch (err) { toast(audio.micErrorText(err)); return; }
-  }
+  if (calibrating) return;
+  calibrating = true;
+  try { await audio.startMic(); } catch (err) { calibrating = false; toast(audio.micErrorText(err)); return; }
+  const run = ++calRun;
   $('sheetBody').innerHTML = `<div class="sheet-body"><h2>Calibrando…</h2>
     <p class="muted">Sube el volumen y no hagas ruido: van a sonar ${CALIBRATION_HITS} golpes y el micrófono medirá cuánto tardan en llegar.</p>
-    <p id="calStatus" class="status">Escuchando…</p></div>`;
-  $('sheet').showModal();
+    <p id="calStatus" class="status" role="status">Escuchando…</p>
+    <button type="button" class="btn ghost small" data-close>Cancelar</button></div>`;
+  $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
   const heard = [];
-  audio.startOnsetCapture(hits => heard.push(...hits));
   const spb = 60 / CALIBRATION_BPM;
   const t0 = audio.audioTime() + 0.6;
   const scheduled = Array.from({ length: CALIBRATION_HITS }, (_, i) => t0 + i * spb);
-  scheduled.forEach(t => audio.drumHit(t, true));
-  await new Promise(r => setTimeout(r, (0.6 + CALIBRATION_HITS * spb + 0.6) * 1000));
-  audio.stopOnsetCapture();
+  const hits = scheduled.map(t => audio.drumHit(t, true));
+  const listening = new AbortController(); // el aviso de «cerrar» se quita al terminar: no se acumula en cada intento
+  const finish = () => {
+    calibrating = false;
+    listening.abort();
+    audio.stopOnsetCapture();
+    audio.stopMic();
+  };
+  const cancelled = new Promise(resolve => $('sheet').addEventListener('close', () => resolve(true), { once: true, signal: listening.signal }));
+  if (!$('sheet').open) $('sheet').showModal();
+  audio.startOnsetCapture(found => heard.push(...found));
+  const wait = new Promise(resolve => setTimeout(() => resolve(false), (0.6 + CALIBRATION_HITS * spb + 0.6) * 1000));
+  if (await Promise.race([wait, cancelled]) || run !== calRun) {
+    hits.forEach(stop => stop());
+    finish();
+    return;
+  }
+  finish();
   const delays = scheduled.map(t => heard.map(h => h.time - t).filter(d => d >= 0 && d < MATCH_S).sort((a, b) => a - b)[0]).filter(d => d !== undefined).sort((a, b) => a - b);
   if (delays.length < MIN_MATCHES) {
-    $('calStatus').textContent = 'No he oído bien los golpes. Sube el volumen del móvil, quita los auriculares y vuelve a intentarlo.';
+    calibrationEnd(`<h2>No se ha podido calibrar</h2>
+      <p role="alert">No he oído bien los golpes. Sube el volumen del móvil, quita los auriculares y vuelve a intentarlo.</p>
+      <div class="row"><button type="button" class="btn small" data-retry>Reintentar</button><button type="button" class="btn ghost small" data-close>Cerrar</button></div>`);
     return;
   }
   const latency = delays[Math.floor(delays.length / 2)];
   update({ percLatency: latency });
-  $('sheetBody').innerHTML = `<div class="sheet-body"><h2>¡Calibrado!</h2>
+  calibrationEnd(`<h2>¡Calibrado!</h2>
     <p>El retraso de tu móvil es de <b>${Math.round(latency * 1000)} ms</b>. Lo tendré en cuenta para medir tus golpes.</p>
     <p class="muted small">Si cambias de móvil o usas auriculares Bluetooth, vuelve a calibrar.</p>
-    <button type="button" class="btn small" data-close>Entendido</button></div>`;
-  $('sheetBody').querySelector('[data-close]').addEventListener('click', () => $('sheet').close());
+    <button type="button" class="btn small" data-close>Entendido</button>`);
 }
 
 $('toolCalibrate').addEventListener('click', calibrate);

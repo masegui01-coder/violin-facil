@@ -13,8 +13,9 @@
 .countdown { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 4.5rem; color: var(--accent); background: color-mix(in srgb, var(--surface) 75%, transparent); }
 .st-line { stroke: var(--staff); stroke-width: 1.2; }
 .st-clef { font-family: var(--f-music); font-size: 74px; fill: var(--staff); }
-.st-acc { font-family: var(--f-music), sans-serif; font-size: 23px; fill: var(--staff); }
-.st-time { font-family: var(--f-display); font-size: 26px; fill: var(--staff); }
+.st-acc { font-family: var(--f-music), sans-serif; font-size: 30px; fill: var(--staff); stroke: var(--staff); stroke-width: .5px; }
+/* Cifras del compás: de caja alta (las «elzevirianas» bajaban de la línea) y centradas en su mitad del pentagrama */
+.st-time { font-family: var(--f-display); font-size: 26px; fill: var(--staff); font-variant-numeric: lining-nums; }
 .st-note { color: var(--staff); }
 .st-note.future { opacity: .82; }
 .st-note.current { color: var(--accent); }
@@ -29,7 +30,7 @@
 .st-tuplet { font-family: var(--f-music), var(--f-body); font-size: 13px; font-style: italic; font-weight: 700; fill: currentColor; }
 .st-playhead { fill: var(--accent); opacity: .7; }
 @media (prefers-reduced-motion: reduce) { .st-scroll { transition: none !important; } .node.current .bubble, .ob-staff .n { animation: none; } }
-.target-row { display: grid; grid-template-columns: 1fr 118px; gap: 12px; align-items: center; }
+.target-row { display: grid; grid-template-columns: 1fr 140px; gap: 12px; align-items: center; }
 .target-row.no-board { grid-template-columns: 1fr; }
 /* mástil, teclado o láminas (dibujos apaisados): debajo de «Ahora» y a todo el ancho, para que sus letras se lean */
 .target-row:has(> .board-wide) { grid-template-columns: 1fr; }
@@ -87,8 +88,9 @@
 .needle { transform-origin: 100px 100px; transition: transform .1s linear; }
 .tuner-name { text-align: center; font-family: var(--f-display); font-size: 3rem; line-height: 1; }
 .tuner-cents { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
-.string-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.string-pick button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 4px; font-weight: 800; }
+/* Hasta cuatro por fila y centrados (el viento tiene tres notas de referencia; la guitarra, seis cuerdas) */
+.string-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.string-pick button { flex: 0 1 calc(25% - 6px); min-width: 64px; border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 4px; font-weight: 800; }
 .string-pick button small { display: block; font-weight: 500; color: var(--muted); font-size: .8rem; }
 .string-pick button.on { border-color: var(--ok); color: var(--ok); }
 .bpm { display: flex; align-items: center; justify-content: center; gap: 18px; }
@@ -117,7 +119,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .mode-btn small { color: var(--muted); font-size: .82rem; line-height: 1.3; }
 .mode-btn.primary { border-color: var(--accent); background: var(--accent-soft); }
 textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 10px 14px; resize: vertical; }
-.toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: .9rem; z-index: 40; max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: .9rem; z-index: 40; width: max-content; max-width: calc(100vw - 32px); text-align: center; }
+/* Sin barra de pestañas (lección, resultado) abajo están los botones de la pantalla: el aviso sale arriba para no taparlos */
+body:has(#tabbar[hidden]) .toast { bottom: auto; top: calc(16px + env(safe-area-inset-top, 0px)); }
 
 /* Pulso visual: un péndulo que va de lado a lado y marca cada pulso en los extremos */
 .pulse { position: relative; height: 34px; border-radius: 999px; background: var(--surface); border: 1.5px solid var(--line); overflow: hidden; }
@@ -158,11 +162,14 @@ textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px so
 .title-input { width: 100%; font: inherit; font-weight: 700; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); }
 
 @media (max-width: 380px) {
-  .target-row { grid-template-columns: 1fr 96px; }
+  .target-row { grid-template-columns: 1fr 124px; } /* el diagrama de viento necesita ~124 px para leerse */
   .target .name, .now .name { font-size: 3rem; }
   .stats { grid-template-columns: 1fr 1fr 1fr; }
   .stat b { font-size: 1.4rem; }
 }
+
+/* Modo audición: sin ayudas en pantalla (ni la nota que toca ni la siguiente) */
+#lesson.no-hints .now-next { display: none; }
 
 /* Diagramas de digitación (pistones y llaves) */
 .kd-on { fill: var(--accent); stroke: var(--accent); stroke-width: 1.5; }
@@ -177,6 +184,12 @@ textarea { width: 100%; min-height: 130px; border-radius: 12px; border: 1.5px so
 .kd-chip { font: 800 10px var(--f-body); fill: var(--accent-ink); text-anchor: middle; }
 .kd-caption { font: 700 12px var(--f-body); fill: var(--muted); text-anchor: middle; }
 .kd-beta { font: 800 14px var(--f-body); fill: var(--warn); }
+/* Diagramas de viento (150 × 196, se ven a unos 140 px de ancho): letras más grandes para que se lean en el móvil */
+.kd-wind .kd-label { font-size: 15px; }
+.kd-wind .kd-chip { font-size: 13px; }
+.kd-wind .kd-caption { font-size: 16px; }
+.kd-wind .kd-num { font-size: 18px; }
+.kd-wind .kd-beta { font-size: 22px; }
 
 /* Contraste del reproductor (≥ 4,5:1 en ambos temas): «Ahora» algo más oscuro que el acento, la tarjeta
    «Siguiente» sin transparencia (sigue siendo discreta por el borde discontinuo y el gris) y el nombre del acompañamiento en tinta */

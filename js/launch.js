@@ -1,5 +1,5 @@
 // Arranca lecciones y calcula la siguiente del curso.
-import { buildCourse, lessonStates, lessonSong } from './course.js';
+import { buildCourse, lessonStates, lessonSong, chordText } from './course.js';
 import { styleById } from './songs.js';
 import { getState, instrumentProgress } from './store.js';
 import { instrumentById } from './instruments.js';
@@ -38,7 +38,7 @@ function eyebrowFor(lesson, from) {
   if (from === 'course') {
     const unit = unitOf(lesson.id);
     if (lesson.slot && song) return 'Tu música · ' + (styleById(song.style)?.name || '');
-    return unit ? unit.title : '';
+    return unit ? chordText(unit.title) : '';
   }
   if (song && !song.style) return song.by || '';
   return song && song.style ? styleById(song.style).name + ' · ' + song.by : '';

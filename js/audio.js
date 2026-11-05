@@ -369,6 +369,7 @@ export function drumHit(time, accent = false, level = 1) {
   src.connect(filt).connect(gain).connect(c.destination);
   src.start(time);
   src.stop(time + 0.15);
+  return () => gain.disconnect(); // para callar un golpe ya programado (calibración cancelada)
 }
 
 // ¿Este instante coincide con un clic del metrónomo? (para no confundirlo con un golpe)

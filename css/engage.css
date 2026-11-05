@@ -27,8 +27,8 @@
 
 /* Instrumento: siempre visible y fácil de cambiar */
 .chip-stat.inst { cursor: pointer; color: var(--ink); gap: 4px; max-width: 46vw; }
-.chip-stat.inst b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chip-stat.inst .ic { width: 18px; height: 18px; color: var(--accent); }
+.chip-stat.inst b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-stat.inst .ic { width: 18px; height: 18px; color: var(--accent); flex: none; } /* con texto grande no se aplasta: se recorta el nombre */
 .inst-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; padding: 8px; flex: none; }
 .inst-ic svg { width: 100%; height: 100%; }
 .inst-opt { position: relative; align-items: flex-start; }

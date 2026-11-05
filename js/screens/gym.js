@@ -63,8 +63,22 @@ window.addEventListener('lesson-finished', e => {
   if (lesson.fromGym) update({ gymOpts: { ...opts(), bpm: lesson.gym.bpm } });
 });
 
-$('gymKinds').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });
-$('gymFigures').addEventListener('click', e => { const b = e.target.closest('[data-figure]'); if (b) { update({ gymOpts: { ...opts(), figure: b.dataset.figure } }); render(); } });
+// render() rehace los segmentados: el foco vuelve al botón equivalente (si no, se iba al <body>)
+const refocus = (box, attr, value) => $(box).querySelector(`[${attr}="${value}"]`)?.focus();
+$('gymKinds').addEventListener('click', e => {
+  const b = e.target.closest('[data-kind]');
+  if (!b) return;
+  kind = b.dataset.kind;
+  render();
+  refocus('gymKinds', 'data-kind', kind);
+});
+$('gymFigures').addEventListener('click', e => {
+  const b = e.target.closest('[data-figure]');
+  if (!b) return;
+  update({ gymOpts: { ...opts(), figure: b.dataset.figure } });
+  render();
+  refocus('gymFigures', 'data-figure', b.dataset.figure);
+});
 const nudge = delta => { update({ gymOpts: { ...opts(), bpm: clampBpm(opts().bpm + delta) } }); render(); };
 $('gymSlower').addEventListener('click', () => nudge(-STEP_BPM));
 $('gymFaster').addEventListener('click', () => nudge(STEP_BPM));

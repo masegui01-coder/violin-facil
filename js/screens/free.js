@@ -1,7 +1,7 @@
 // «Toca libre» y modo «De memoria»: escribe en el pentagrama lo que tocas, lo guarda y lo compara con una canción.
-import { $, esc, toast } from '../ui.js';
+import { $, esc, toast, announcer } from '../ui.js';
 import { register } from '../router.js';
-import { noteLabel, parseScore, spell, isBowed } from '../music.js';
+import { parseScore, commonSpell, commonLabel, signedCents } from '../music.js';
 import { fingeringText } from '../fingerings.js';
 import { renderDiagram } from '../keydiagram.js';
 import { instrumentById } from '../instruments.js';
@@ -16,6 +16,8 @@ import { finishLesson } from './result.js';
 import { openSongPicker } from './sheet.js';
 import { dateLocale } from './band-ui.js';
 
+const sayFree = announcer('freeLive');
+
 const TICK_MS = 30;
 const TRAIL_SHOWN = 10;
 
@@ -24,15 +26,16 @@ let free = { all: [], tracker: null, lesson: null, from: 'practice' };
 let timer = 0;
 
 const tokenOf = midi => {
-  const n = spell(midi, !isBowed(getState().instrument));
+  const n = commonSpell(midi); // la misma ortografía que el afinador y el mapa de afinación
   return `${n.letter}${n.acc > 0 ? '#' : n.acc < 0 ? 'b' : ''}${n.oct}q`;
 };
 
 function renderTrail() {
   const shown = free.all.slice(-TRAIL_SHOWN);
   const score = parseScore('| ' + (shown.length ? shown.map(tokenOf) : ['Rq']).join(' ') + ' |');
-  freeStaff.render(score, { key: 'C', time: null, mode: 'learn' });
-  if (shown.length) freeStaff.focus(shown.length - 1);
+  // En la clave del instrumento: tuba, chelo, trombón… leen en fa
+  freeStaff.render(score, { key: 'C', time: null, mode: 'learn', clef: instrumentById(getState().instrument).clef || 'treble' });
+  if (shown.length) { freeStaff.focus(shown.length - 1); freeStaff.showEnd(); }
   $('freeCount').textContent = free.all.length ? `${free.all.length} ${free.all.length === 1 ? 'nota tocada' : 'notas tocadas'}` : '';
 }
 
@@ -41,7 +44,7 @@ function renderRecordings() {
   const recs = getState().recordings;
   $('recordings').innerHTML = !free.lesson && recs.length
     ? '<h2>Guardadas</h2>' + recs.map(r => `<div class="recording"><div><b>${new Date(r.date).toLocaleString(dateLocale(), { dateStyle: 'medium', timeStyle: 'short' })} · ${r.notes.length} notas</b>
-      <small>${esc(r.notes.slice(0, 12).map(m => noteLabel({ midi: m }, nom)).join(' '))}${r.notes.length > 12 ? '…' : ''}</small></div>
+      <small>${esc(r.notes.slice(0, 12).map(m => commonLabel(m, nom)).join(' '))}${r.notes.length > 12 ? '…' : ''}</small></div>
       <div class="row"><button type="button" class="btn ghost small" data-rec-compare="${r.id}">Comparar</button><button type="button" class="btn ghost small" data-rec-delete="${r.id}" aria-label="Borrar grabación">✕</button></div></div>`).join('')
     : '';
 }
@@ -54,9 +57,11 @@ function freeTick() {
     const near = Math.round(det);
     const cents = (det - near) * 100;
     const nom = getState().nom;
-    $('freeName').textContent = noteLabel({ midi: near }, nom, !isBowed(getState().instrument));
+    const name = commonLabel(near, nom);
+    $('freeName').textContent = name;
+    sayFree(name); // al lector, solo la nota cuando cambia (como mucho cada segundo y medio)
     $('freeHint').textContent = fingeringText(getState().instrument, near, nom);
-    $('freeCents').textContent = (cents >= 0 ? '+' : '') + Math.round(cents) + ' cents';
+    $('freeCents').textContent = signedCents(cents) + ' cents';
     $('freeDot').style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
     $('freeDot').style.background = Math.abs(cents) <= 15 ? 'var(--ok)' : Math.abs(cents) <= 30 ? 'var(--warn)' : 'var(--bad)';
   } else {
@@ -101,7 +106,10 @@ function enter({ lesson = null, from = 'practice' } = {}) {
   renderTrail();
   renderRecordings();
   renderDiagram($('freeBoard'), getState().instrument, [], getState().nom);
-  $('freeBoard').hidden = !getState().showBoard;
+  // <svg> no tiene la propiedad hidden: se pone el atributo (si no, el hueco del diagrama se quedaba)
+  $('freeBoard').toggleAttribute('hidden', !getState().showBoard);
+  document.querySelector('#free .target-row').classList.toggle('no-board', !getState().showBoard);
+  sayFree.reset();
   $('freeGate').hidden = audio.micReady();
   $('freeMicError').hidden = true;
   timer = setInterval(freeTick, TICK_MS);

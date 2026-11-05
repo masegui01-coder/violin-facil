@@ -28,9 +28,12 @@
 .book-text .tag.review { background: var(--accent); }
 .book-medal { font-size: 1.3rem; }
 .book-medals { display: flex; gap: 14px; justify-content: center; }
-.book-medals span { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; opacity: .3; filter: grayscale(1); }
-.book-medals span.on { opacity: 1; filter: none; }
-.book-medals small { font-size: .75rem; font-weight: 700; }
+/* Sin ganar: solo el icono se apaga; el nombre queda en gris legible (≥ 4,5:1) */
+.book-medals span { display: flex; flex-direction: column; align-items: center; font-size: 1.8rem; }
+.book-medals .medal-ic { font-style: normal; opacity: .3; filter: grayscale(1); }
+.book-medals span.on .medal-ic { opacity: 1; filter: none; }
+.book-medals small { font-size: .75rem; font-weight: 700; color: var(--muted); }
+.book-medals span.on small { color: var(--ink); }
 
 /* ---------- Estantería de libros ---------- */
 .book-shelf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }

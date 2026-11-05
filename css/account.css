@@ -29,10 +29,11 @@
 .react { border: 1.5px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 4px 10px; font-size: .95rem; }
 .react.on { border-color: var(--accent); background: var(--accent-soft); }
 .react-sum { display: block; margin-top: 6px; font-size: .9rem; }
-.board { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.board li { display: grid; grid-template-columns: 26px 38px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; }
-.board li.me { border-color: var(--accent); }
-.board .pos { font-weight: 800; color: var(--muted); text-align: center; }
+/* Clasificación de amigos (solo la lista: .board también es la clase de los diagramas de digitación) */
+ol.board { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+ol.board li { display: grid; grid-template-columns: 26px 38px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+ol.board li.me { border-color: var(--accent); }
+ol.board .pos { font-weight: 800; color: var(--muted); text-align: center; }
 .inbox { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .inbox li small { display: block; color: var(--muted); }
 
