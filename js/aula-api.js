@@ -90,7 +90,8 @@ export async function deleteClass(sid, cls) {
   const lists = await Promise.all(CLASS_SUBS.map(n => fs.getDocs(sub(fs, db, sid, cls.id, n))));
   const batch = fs.writeBatch(db);
   lists.forEach(snap => snap.docs.forEach(d => batch.delete(d.ref)));
-  if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
+  // Con las inscripciones cerradas el código ya no existe: no se borra otra vez (un lote con un borrado inválido falla entero)
+  if (cls.code && !cls.closed) batch.delete(fs.doc(db, 'classCodes', cls.code));
   batch.delete(classRef(fs, db, sid, cls.id));
   await batch.commit();
 }
@@ -148,7 +149,7 @@ export async function closeJoining(sid, cls) {
   const { db, fs } = await refs();
   const batch = fs.writeBatch(db);
   batch.update(classRef(fs, db, sid, cls.id), { closed: true });
-  if (cls.code) batch.delete(fs.doc(db, 'classCodes', cls.code));
+  if (cls.code && !cls.closed) batch.delete(fs.doc(db, 'classCodes', cls.code));
   await batch.commit();
 }
 

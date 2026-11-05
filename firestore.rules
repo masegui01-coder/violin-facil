@@ -520,6 +520,8 @@ service cloud.firestore {
             && validCode(request.resource.data.code) && request.resource.data.joinedAt == request.time
             && get(/databases/$(db)/documents/classCodes/$(request.resource.data.code)).data.classId == cid
             && get(/databases/$(db)/documents/classCodes/$(request.resource.data.code)).data.schoolId == sid
+            && get(classPath(sid, cid)).data.get('closed', false) == false
+            && get(classPath(sid, cid)).data.code == request.resource.data.code
             && classSeatTaken(sid, cid);
           allow update: if isOwn(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'instrument'])
             && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24);
@@ -618,12 +620,12 @@ service cloud.firestore {
         && shortText(d.term, 12) && d.term.matches('[0-9]{4}-[0-9]{4}-[1-3]')
         && d.at is int && d.at > 0 && d.at <= request.time.toMillis() + 600000
         && d.streak is int && d.streak >= 0 && d.streak <= 5000
-        && shortText(d.days, 1500) && d.days.matches('([0-9]{4}-[01][0-9]-[0-3][0-9]=[0-9]{1,4};){0,92}')
+        && shortText(d.days, 1500) && d.days.matches('([0-9]{4}-[01][0-9]-[0-3][0-9]=[0-9]{1,4};)*')
         && validAulaSkills(d.skills)
-        && shortText(d.mistakes, 260) && d.mistakes.matches('([A-Za-z0-9_#+.>-]{1,16}=[0-9]{1,4};){0,10}')
-        && shortText(d.units, 800) && d.units.matches('(l[0-9]{1,2}u[0-9]{1,2}=(100|[1-9]?[0-9]);){0,64}')
-        && shortText(d.tasks, 6000) && d.tasks.matches('([A-Za-z0-9_-]{1,40}=(100|[1-9]?[0-9]),[0-9]{1,3},[01],[0-9]{1,13},[01];){0,100}')
-        && shortText(d.recent, 1700) && d.recent.matches('([A-Za-z0-9_-]{1,60}=(100|[1-9]?[0-9])@[0-9]{1,13};){0,20}')
+        && shortText(d.mistakes, 260) && d.mistakes.matches('([A-Za-z0-9_#+.>-]{1,16}=[0-9]{1,4};)*')
+        && shortText(d.units, 800) && d.units.matches('(l[0-9]{1,2}u[0-9]{1,2}=(100|[1-9]?[0-9]);)*')
+        && shortText(d.tasks, 6000) && d.tasks.matches('([A-Za-z0-9_-]{1,40}=(100|[1-9]?[0-9]),[0-9]{1,3},[01],[0-9]{1,13},[01];)*')
+        && shortText(d.recent, 1700) && d.recent.matches('([A-Za-z0-9_-]{1,60}=(100|[1-9]?[0-9])@[0-9]{1,13};)*')
         && (!('prevTerm' in d) || (shortText(d.prevTerm, 12) && d.prevTerm.matches('[0-9]{4}-[0-9]{4}-[1-3]')))
         && (!('prevSkills' in d) || validAulaSkills(d.prevSkills));
     }
@@ -650,7 +652,8 @@ service cloud.firestore {
         && shortText(request.resource.data.className, 60) && shortText(request.resource.data.teacherName, 60)
         && get(schoolPath(request.resource.data.schoolId)).data.ownerUid == request.auth.uid
         && getAfter(classPath(request.resource.data.schoolId, request.resource.data.classId)).data.code == code;
-      allow delete: if schoolOwner(resource.data.schoolId);
+      // Un código que ya no existe (inscripciones cerradas) se puede «borrar» sin error: así no falla el lote que borra la clase
+      allow delete: if resource == null || schoolOwner(resource.data.schoolId);
     }
   }
 }

@@ -169,7 +169,7 @@ test('casos inválidos: las reglas rechazan HTML, % fuera de 0-100, booleanos fa
     units: ['l1u1=<a href=x>;', 'l1u1=101;', 'l1u1=-5;', 'x=10;', 'l1u1=50'],
     tasks: ['T1=<img src=x>,1,0,0,0;', 'T1=101,1,0,0,0;', 'T1=90,1,2,0,0;', 'T1=90,1,1,0,0;T2=;', 'T<1>=90,1,1,0,0;', 'T1=90,1,1,0;'],
     days: ['2026-11-05=<b>;', '26-11-05=10;', '2026-11-05=12345;', '2026-11-05=10'],
-    mistakes: ['<script>=1;', 'a=1;'.repeat(11), 'a=b;'],
+    mistakes: ['<script>=1;', 'a=b;'], // cuántos: lo acota el tamaño (shortText), no la expresión (RE2)
     recent: ['x=50@<img>;', 'x=200@1;', '<b>=5@1;'],
   };
   for (const [field, list] of Object.entries(bad)) list.forEach(text => assert.equal(accepts(field, text), false, `${field}: ${text}`));
@@ -209,6 +209,18 @@ test('código de clase: cambiarlo o cerrar inscripciones invalida el anterior', 
   const change = api.slice(api.indexOf('export async function changeCode'), api.indexOf('export async function closeJoining'));
   assert.match(change, /batch\.update\(classRef\(fs, db, sid, cls\.id\), \{ code, closed: false \}\)/);
   assert.match(change, /batch\.delete\(fs\.doc\(db, 'classCodes', cls\.code\)\)/);
-  assert.match(api, /batch\.update\(classRef\(fs, db, sid, cls\.id\), \{ closed: true \}\);\s*if \(cls\.code\) batch\.delete\(fs\.doc\(db, 'classCodes', cls\.code\)\)/);
+  assert.match(api, /batch\.update\(classRef\(fs, db, sid, cls\.id\), \{ closed: true \}\);\s*if \(cls\.code && !cls\.closed\) batch\.delete\(fs\.doc\(db, 'classCodes', cls\.code\)\)/);
   assert.match(rule(block('students/{uid}'), 'create'), /classCodes\/\$\(request\.resource\.data\.code\)\)\.data\.classId == cid/, 'sin documento de código no se entra');
+});
+
+test('evaluación 2: inscripciones cerradas, código actual y borrado de clases cerradas sin fallar el lote', () => {
+  const join = rule(block('students/{uid}'), 'create');
+  assert.match(join, /get\(classPath\(sid, cid\)\)\.data\.get\('closed', false\) == false/);
+  assert.match(join, /get\(classPath\(sid, cid\)\)\.data\.code == request\.resource\.data\.code/);
+  assert.match(rule(block('classCodes/{code}'), 'delete'), /resource == null \|\| schoolOwner\(resource\.data\.schoolId\)/);
+  const del = api.slice(api.indexOf('export async function deleteClass'), api.indexOf('export async function createTask'));
+  assert.match(del, /if \(cls\.code && !cls\.closed\) batch\.delete\(fs\.doc\(db, 'classCodes', cls\.code\)\)/);
+  const spaces = readFileSync(new URL('../js/spaces-api.js', import.meta.url), 'utf8');
+  assert.match(spaces, /if \(cls\.code && !cls\.closed\) batch\.delete/);
+  assert.match(flat, /request\.time < timestamp\.date\(int\(d\[0\]\), int\(d\[1\]\), int\(d\[2\]\)\) \+ duration\.value\(1, 'd'\)/);
 });

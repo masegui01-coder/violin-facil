@@ -203,3 +203,16 @@ test('evaluación 1: licencia caducada, promedio de lo exigible y competencias d
   const rep = termReport({ summary: sum, tasks: [], uid: 'x', term: { ...term }, today: TODAY });
   assert.equal(rep.rows[0].pct, 80, 'el informe del 1.er trimestre usa las competencias guardadas');
 });
+
+test('evaluación 2: último día de licencia válido, licencia quitada = caducada y sin datos no es un 1', () => {
+  const lastDay = Date.parse('2026-08-31T18:00:00Z');
+  assert.equal(proAccess({ school: { premium: { active: true, until: '2026-08-31' } }, now: lastDay }).active, true, 'vale todo el último día, como las reglas');
+  assert.equal(proAccess({ school: { premium: { active: true, until: '2026-08-31' } }, now: Date.parse('2026-09-01T00:00:01Z') }).active, false);
+  const revoked = proAccess({ school: { premium: { active: false } } });
+  assert.deepEqual([revoked.active, revoked.expired, revoked.revoked, revoked.expiredAt], [false, true, true, null]);
+  assert.equal(proAccess({ school: { name: 'x' } }).expired, undefined, 'sin licencia nunca: presentación, no caducada');
+  const term = termOf(new Date(2026, 10, 5));
+  const rep = termReport({ summary: null, tasks: [task({ id: 'a', due: '2026-10-01', createdAt: Date.parse('2026-09-20') })], uid: 'x', term, today: TODAY });
+  assert.equal(rep.overall, null);
+  assert.ok(rep.rows.every(r => r.grade === null));
+});

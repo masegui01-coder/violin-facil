@@ -106,7 +106,8 @@ export const AULA_EXACT = {
   'Saltar la tabla': 'Skip the table', 'Muévete por la tabla con las flechas. Intro abre el alumno o la entrega.': 'Move around the table with the arrow keys. Enter opens the student or the submission.',
   'Última actividad': 'Last activity', 'Nota del trimestre, de 1 a 10': 'Term mark, 1 to 10', 'Nota del trimestre': 'Term mark',
   'El promedio solo cuenta lo exigible: no baja por tareas sin empezar que aún no han vencido. Los datos los registra la app de cada alumno al practicar.': "The average only counts what is due: tasks not started that aren't due yet don't lower it. The data is recorded by each student's app while practising.",
-  '1 vencida': '1 overdue', 'Los minutos, los % y los intentos los registra la app del alumno mientras practica.': "Minutes, % and attempts are recorded by the student's app while practising.",
+  '1 vencida': '1 overdue', 'Tu licencia del Aula Pro ya no está activa': 'Your Classroom Pro licence is no longer active',
+  'Con la licencia caducada nadie puede entrar en la clase.': 'With the licence expired nobody can join the class.', 'Los minutos, los % y los intentos los registra la app del alumno mientras practica.': "Minutes, % and attempts are recorded by the student's app while practising.",
   // ---------- PDF ----------
   'Minutos de práctica': 'Practice minutes', 'Días de práctica': 'Practice days', 'Nota media': 'Average mark', 'Apartado': 'Area', 'Nota': 'Mark', 'Calificación': 'Grade',
   'Tareas': 'Tasks', 'Constancia': 'Consistency', 'Tareas del trimestre': "This term's tasks", 'Sin tareas este trimestre.': 'No tasks this term.',

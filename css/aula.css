@@ -187,3 +187,14 @@ thead .aula-name-col { background: var(--surface-2); z-index: 2; }
 .aula-filters { flex-wrap: wrap; overflow: visible; }
 .aula-cell small { color: inherit; }
 .pill.bad { color: color-mix(in srgb, var(--bad) 72%, var(--ink)); }
+
+/* ---------- Evaluación 2 ---------- */
+/* Los textos solo para lector (position:absolute) se quedan dentro de la tabla, que es la que se desplaza */
+.aula-table-wrap { position: relative; }
+.aula-filters .chip-btn { flex: 0 1 auto; max-width: 100%; white-space: normal; text-align: left; }
+/* Comentario del profesor (y sello) sobre su fondo verde suave: más oscuro para llegar a 4,5:1 */
+.stamp > b { color: color-mix(in srgb, var(--ok) 70%, var(--ink)); }
+@media (min-width: 700px) { .aula-tiles { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); } }
+.aula-sort { max-width: 100%; min-width: 0; }
+.aula-sort .select { max-width: 100%; min-width: 0; text-overflow: ellipsis; }
+@container aula (max-width: 20em) { .aula-sort { flex: 1 1 100%; } .aula-sort .select { flex: 1 1 0; width: 100%; } }

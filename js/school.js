@@ -18,10 +18,12 @@ export function nextSchoolYear(year) {
   return `${start}-${start + 1}`;
 }
 
-// Premium vigente: activado por el administrador y no caducado
+// Premium vigente: activado por el administrador y no caducado. Vale TODO el último día (hasta las 24:00 UTC del «until»),
+// igual que firestore.rules (aulaActive / licenseLive)
+const DAY_MS = 864e5;
 export function premiumActive(school, now = Date.now()) {
   const p = school && school.premium;
-  return !!(p && p.active && (!p.until || Date.parse(p.until) >= now));
+  return !!(p && p.active && (!p.until || Date.parse(p.until) + DAY_MS > now));
 }
 
 export const studentLimit = school => (premiumActive(school) ? PREMIUM_STUDENTS : TRIAL_STUDENTS);

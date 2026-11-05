@@ -18,14 +18,19 @@ export function proAccess({ school = null, purchase = null, now = Date.now() } =
     const until = school.premium.until ? Date.parse(school.premium.until) : null;
     return { active: true, source: PRO_SOURCE.license, until: Number.isFinite(until) ? until : null, requested: false };
   }
-  // Licencia que existió y ya venció: el profesor conserva sus clases en solo lectura (y puede pedir renovarla)
+  // Licencia que existió y ya no vale (venció o el administrador la quitó): el profesor conserva sus clases en solo lectura,
+  // puede exportarlas y borrar datos, y pedir la renovación
   const p = school && school.premium;
-  const ended = p && p.until ? Date.parse(p.until) : NaN;
   const requested = !!(school && school.proRequestedAt);
-  const at = school && school.proRequestedAt;
+  if (!p) return { active: false, source: null, until: null, requested };
+  const ended = p.until ? Date.parse(p.until) : NaN;
+  const at = school.proRequestedAt;
   const askedMs = at && typeof at.toMillis === 'function' ? at.toMillis() : Number(at) || 0;
-  if (p && Number.isFinite(ended)) return { active: false, source: null, until: null, requested: askedMs > ended, expired: true, expiredAt: ended };
-  return { active: false, source: null, until: null, requested };
+  return {
+    active: false, source: null, until: null, expired: true, revoked: !p.active,
+    expiredAt: Number.isFinite(ended) && p.active ? ended : null,
+    requested: askedMs > (Number.isFinite(ended) ? ended : 0),
+  };
 }
 
 // Escuela en la que el profesor tiene su Aula: la de la pestaña Escuela si es suya, o la que se creó al pedir el acceso

@@ -63,6 +63,8 @@ export function termReport({ summary, tasks, uid, term, today }) {
     { id: 'tareas', label: 'Tareas', pct: tasksPct, grade: grade10(tasksPct) },
     { id: 'constancia', label: 'Constancia', pct: days.length ? consistency : 0, grade: grade10(days.length ? consistency : 0) },
   ];
+  // Sin resumen (el alumno aún no ha abierto la app con la clase): no hay datos, no un 1
+  if (!summary) rows.forEach((r, i) => { rows[i] = { ...r, pct: null, grade: null }; });
   const graded = rows.filter(r => r.grade !== null);
   const overall = graded.length ? Math.round(graded.reduce((s, r) => s + r.grade, 0) / graded.length * 10) / 10 : null;
   return {
