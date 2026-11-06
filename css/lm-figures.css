@@ -103,28 +103,30 @@
 .lmf-tap { fill: transparent; }
 .lmf-tap-hint { fill: var(--f-muted); font-size: 11px; font-weight: 700; }
 
-/* ---------- Animaciones (sutiles; el estado fijo es el dibujo completo) ---------- */
-.lmf-beat { transform-box: fill-box; transform-origin: center; animation: lmf-beat var(--cyc, 3s) var(--ease, ease-out) infinite; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
+/* ---------- Animaciones (sutiles; el estado fijo es el dibujo completo) ----------
+   Ninguna se repite sin fin: una vuelta (dos las muy cortas), unos 5 s como mucho (WCAG 2.2.2); al acabar queda el
+   dibujo completo, que explica lo mismo */
+.lmf-beat { transform-box: fill-box; transform-origin: center; animation: lmf-beat var(--cyc, 3s) var(--ease, ease-out) 1; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
 @keyframes lmf-beat { 0% { transform: scale(1.22); opacity: 1; } 12% { transform: scale(1); } 100% { transform: scale(1); } }
-.lmf-glow { animation: lmf-glow var(--cyc, 3s) ease-out infinite; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
+.lmf-glow { animation: lmf-glow var(--cyc, 3s) ease-out 1; animation-delay: calc(var(--i, 0) * var(--beat, .75s)); }
 @keyframes lmf-glow { 0% { opacity: 1; } 18% { opacity: 1; } 30%, 100% { opacity: .35; } }
-.lmf-sweep { transform-box: fill-box; transform-origin: left center; animation: lmf-sweep var(--cyc, 3s) linear infinite; }
+.lmf-sweep { transform-box: fill-box; transform-origin: left center; animation: lmf-sweep var(--cyc, 3s) linear 1; }
 @keyframes lmf-sweep { 0% { transform: scaleX(0); } 50%, 100% { transform: scaleX(1); } }
-.lmf-draw { stroke-dasharray: var(--len, 300); animation: lmf-draw 3.2s ease-in-out infinite; }
+.lmf-draw { stroke-dasharray: var(--len, 300); animation: lmf-draw 3.2s ease-in-out 1; }
 @keyframes lmf-draw { 0% { stroke-dashoffset: var(--len, 300); } 45%, 100% { stroke-dashoffset: 0; } }
 .lmf-drawonce { stroke-dasharray: var(--len, 400); animation: lmf-drawonce 1.2s ease-out both; animation-delay: calc(var(--i, 0) * .15s); }
 @keyframes lmf-drawonce { from { stroke-dashoffset: var(--len, 400); } to { stroke-dashoffset: 0; } }
-.lmf-breathe { transform-box: fill-box; transform-origin: center; animation: lmf-breathe 2.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .2s); }
+.lmf-breathe { transform-box: fill-box; transform-origin: center; animation: lmf-breathe 2.4s ease-in-out 1; animation-delay: calc(var(--i, 0) * .2s); }
 @keyframes lmf-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(var(--amp, 1.08)); } }
-.lmf-flow { stroke-dasharray: 6 6; animation: lmf-flow 1.6s linear infinite; }
+.lmf-flow { stroke-dasharray: 6 6; animation: lmf-flow 1.6s linear 2; }
 @keyframes lmf-flow { to { stroke-dashoffset: -24; } }
-.lmf-slide-r { animation: lmf-slide-r 4s ease-in-out infinite; }
-.lmf-slide-l { animation: lmf-slide-l 4s ease-in-out infinite; }
+.lmf-slide-r { animation: lmf-slide-r 4s ease-in-out 1; }
+.lmf-slide-l { animation: lmf-slide-l 4s ease-in-out 1; }
 @keyframes lmf-slide-r { 0%, 15% { transform: translateX(-14px); } 45%, 100% { transform: none; } }
 @keyframes lmf-slide-l { 0%, 15% { transform: translateX(14px); } 45%, 100% { transform: none; } }
-.lmf-hold { transform-box: fill-box; transform-origin: left center; animation: lmf-hold 4s ease-out infinite; }
+.lmf-hold { transform-box: fill-box; transform-origin: left center; animation: lmf-hold 4s ease-out 1; }
 @keyframes lmf-hold { 0% { transform: scaleX(.2); } 55%, 100% { transform: scaleX(1); } }
-.lmf-fade { animation: lmf-fade 3s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 1.5s); }
+.lmf-fade { animation: lmf-fade 3s ease-in-out 1; animation-delay: calc(var(--i, 0) * 1.5s); }
 @keyframes lmf-fade { 0%, 100% { opacity: .25; } 30%, 60% { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {

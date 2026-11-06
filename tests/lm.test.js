@@ -603,9 +603,12 @@ test('ningún ejercicio que se puntúa pide notas no enseñadas: cada lista de n
 });
 
 test('elegir: las opciones se barajan en cada intento y la correcta cae en cualquier sitio (reparto casi uniforme)', async () => {
-  const { shuffledChoice } = await import('../js/lm/tasks-quiz.js');
+  const { shuffledChoice, isOrdered } = await import('../js/lm/tasks-quiz.js');
   const items = allLmExercises().flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])])
-    .filter(it => (it.tipo === 'elegir' || /^escuchar/.test(it.tipo)) && it.options && it.options.length === 3);
+    .filter(it => (it.tipo === 'elegir' || /^escuchar/.test(it.tipo)) && it.options && it.options.length === 3 && !isOrdered(it));
+  // las listas con orden propio no se barajan
+  const ordinal = { id: 'x', options: ['La primera', 'La segunda'], answer: 1 };
+  assert.deepEqual(shuffledChoice(ordinal, 3).options, ordinal.options);
   const seen = [0, 0, 0];
   for (let attempt = 1; attempt <= 20; attempt++) {
     items.forEach(it => {
@@ -627,4 +630,66 @@ test('variedad: al menos el 40 % de las preguntas de teoría y audición son act
   const active = unique.filter(q => q.tipo !== 'elegir' && !/^escuchar/.test(q.tipo));
   assert.ok(active.length / unique.length >= 0.4, `${active.length} de ${unique.length}`);
   ['senalar', 'contar', 'tocarPentagrama', 'completar', 'ordenar', 'barras'].forEach(t => assert.ok(unique.some(q => q.tipo === t), t));
+});
+
+// ---------- Evaluación 5 ----------
+test('toda pregunta con «play» suena: se programan notas (también «dos versiones» con su matiz)', async () => {
+  const { notesOfPlay, gainsOf } = await import('../js/lm/tasks-quiz.js');
+  const env = { songScore: ref => (lmSong(1, ref) || {}).partitura || null };
+  const silent = [];
+  allLmExercises().forEach(e => [...(e.params.items || []), ...(e.params.preguntas || [])].forEach(q => {
+    if (!q.play) return;
+    const notes = notesOfPlay(q.play, env).filter(n => !n.rest);
+    if (!notes.length) silent.push(`${e.id}: ${q.id}`);
+  }));
+  assert.deepEqual(silent, []);
+  const two = { versiones: ['f', 'p'] };
+  const notes = notesOfPlay(two, env);
+  const gains = gainsOf(two, notes);
+  const half = notes.length / 2;
+  assert.ok(gains[0] > gains[half], 'la primera (f) suena más fuerte que la segunda (p)');
+  assert.ok(notes[half].start > notes[half - 1].start + notes[half - 1].beats, 'con un silencio entre las dos');
+});
+
+test('creatividad AB con anacrusa pegada a la nota larga, como «Cumpleaños feliz» (C5h G4q): la respuesta acaba en do', async () => {
+  const { extraRules } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const song = toks('G4q | A4q G4q C5q | B4h G4q | A4q G4q D5q | C5h G4q | E4q E4q F4q | G4h F4q | E4q D4q B4q | C4h');
+  const rules = Object.fromEntries(extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 3, bars: 8, dyn: [] }).map(r => [r.id, r.ok]));
+  assert.deepEqual([rules.pregunta, rules.respuesta, rules.formaB], [true, true, true]);
+});
+
+test('canciones: la letra seguida (guiones y PDF) coincide letra a letra con las sílabas de cada estrofa', async () => {
+  const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
+  const letters = s => String(s).toLowerCase().normalize('NFD').replace(/[^a-zñ]/g, '');
+  LM_LEVELS[0].units.forEach(u => {
+    const s = u.song;
+    assert.equal(letters(SONG_WORDS[s.titulo]), letters(s.letra.flat().join('')), `${s.titulo}: estrofa 1`);
+    if (s.letra2) assert.equal(letters(SONG_WORDS2[s.titulo]), letters(s.letra2.flat().join('')), `${s.titulo}: estrofa 2`);
+    // una sílaba por nota en cada compás
+    const notes = {};
+    scoreTokens(s.partitura).forEach(t => { if (!t.rest) notes[t.bar] = (notes[t.bar] || 0) + 1; });
+    [s.letra, s.letra2].filter(Boolean).forEach(L => L.forEach((bar, b) => assert.equal(bar.length, notes[b] || 0, `${s.titulo}, compás ${b + 1}`)));
+  });
+});
+
+test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato), la nota es baja', async () => {
+  const { gradeReading } = await import('../js/lm/tasks-duo.js');
+  const { ostinatoTokens } = await import('../js/lm/gen.js');
+  const p = lmExercise('lm1-u7-ritmo-a-medio').params;
+  const reading = scoreTokens(p.partitura);
+  const ost = ostinatoTokens(reading, p).filter(t => !t.rest);
+  const spb = 60 / p.tempo;
+  const expected = reading.filter(t => !t.rest).map(t => t.start * spb);
+  const ostinatoTimes = ost.map(t => t.start * spb);
+  const tol = 0.08;
+  const echo = gradeReading({ expected, hits: ostinatoTimes, tol, mic: true, ostinatoTimes });
+  assert.ok(pctOf(echo.marks.filter(Boolean), echo.extra) < 20, `solo el eco: ${pctOf(echo.marks.filter(Boolean), echo.extra)} %`);
+  const own = echo.marks.filter(Boolean).length;
+  assert.ok(own >= expected.length / 2, `la voz 2 tiene notas propias: ${own} de ${expected.length}`);
+  const perfect = gradeReading({ expected, hits: expected, tol, mic: true, ostinatoTimes });
+  assert.equal(pctOf(perfect.marks.filter(Boolean), perfect.extra), 100);
+  // tocando la pantalla se corrigen todas
+  assert.equal(gradeReading({ expected, hits: expected, tol }).marks.length, expected.length);
 });

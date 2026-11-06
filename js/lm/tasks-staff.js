@@ -170,10 +170,13 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 }
 
 // ---------- Tocar notas en el pentagrama y construir una escala ----------
+const BIG_STAFF_NOTES = 2;
 export async function tocarPentagrama(host, item, env) {
   const clef = CLEF[item.clave] || 'treble';
   const want = item.respuesta;
-  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2><div class="lm-writer"></div>
+  // una o dos notas: pentagrama al doble de alto (20 px por línea o espacio), para acertar con el dedo
+  const big = want.length <= BIG_STAFF_NOTES;
+  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2><div class="lm-writer${big ? ' lm-big' : ''}"></div>
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   host.querySelector('.lm-q').focus();
   const w = createStaffWriter(host.querySelector('.lm-writer'), { clef, figures: ['w'], max: want.length, nom: env.nom, say: env.say });

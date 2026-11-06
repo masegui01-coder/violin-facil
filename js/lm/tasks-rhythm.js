@@ -7,6 +7,7 @@ import { barBeatsOf } from './notes.js';
 import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
+import { follow } from './systems.js';
 
 const TAP_TOLERANCE_MS = { facil: 120, medio: 80 };
 const AFTER_END_S = 0.8;
@@ -77,7 +78,7 @@ export async function stopGame(host, p, env) {
       <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
       ${stopScore(tokens, ostinato, p.base, env)}
       <p class="lm-stop-phase" id="lmStopPhase" aria-live="polite">Preparado</p>
-      <div class="controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
+      <div class="controls lm-sticky-controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
     host.querySelector('#lmStopGo').focus();
     await onceClick(host, '#lmStopGo');
     host.querySelector('.controls').innerHTML = '<button type="button" class="btn big lm-stop-btn" id="lmStop" aria-keyshortcuts="Space">STOP</button>';
@@ -87,6 +88,8 @@ export async function stopGame(host, p, env) {
     phase('Claqueta…');
     const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
     const { end, beats } = playStopRound(round, { t0, spb, barBeats, pickup: p.base.anacrusa || 0 });
+    // el compás que suena, resaltado y a la vista (con el STOP fijo abajo)
+    const unfollow = follow(host, () => (now() - t0) / spb - round.offset, { barBeats, pickup: p.base.anacrusa || 0 });
     clicks(Math.ceil(beats), bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
     const lat = outputLatency();
     const pressed = await new Promise(resolve => {
@@ -98,6 +101,7 @@ export async function stopGame(host, p, env) {
       }, 50);
       stopBtn.addEventListener('click', () => done((now() - lat - t0) / spb), { once: true });
     });
+    unfollow();
     stopSound();
     if (!env.alive()) return null;
     // pulsar durante la claqueta (pulso negativo) también es parar antes de tiempo

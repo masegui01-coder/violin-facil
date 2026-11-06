@@ -229,20 +229,20 @@ export function hyphenate(syllables, words) {
 
 // La letra seguida de cada canción del Nivel 1 (para los guiones entre sílabas)
 export const SONG_WORDS = {
-  'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces como caramelo Venga, ¡ven! venga, ¡ven! que se acaban, ¡ya!',
-  'Robots en el patio': 'Pipipí, robot mueve el brazo Pipipí, robot mueve el pie, ¡clac! Gira la cabeza, gira sin parar Se me acaba la pila ¡clic!',
-  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Los barcos vuelven ya a casa Duerme, duerme, mar',
-  'Vals de los relojes': 'Tic tac tic tac Baila el reloj Dame la mano damos la vuelta',
-  'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa se dan la mano, si do también la mano. ¡Ya lo sabes! ¡Do!',
-  'La brisa y el mar': 'La brisa me canta suave y lento; el mar me responde ¡fuerte, fuerte! ¡bum! Las olas suenan más y más, y más, ¡más! Se va la ola, se va, se va.',
-  'Saloma del barco fantasma': 'Iza la vela, ¡eho! Tira del cabo, ¡eho! Niebla en el agua, no se ve; rumbo al puerto, ¡ya!',
+  'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces, frescas, buenas, grandes, Venga, ¡ven! venga, ¡ven! ¡Lleva todas, ¡ven! ¡ya!',
+  'Robots en el patio': 'Pipipí, robot prende la luz, Pipipí, robot mueve el pie, ¡clac! Gira la cabeza, gira sin parar Me quedo sin pila, ¡ay, no! ¡clic!',
+  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Los barcos vuelven ya a dormir Duerme, duerme, mar',
+  'Vals de los relojes': 'Tic tac tic tac Baila el reloj Vamos a girar y se acabó ¡ya!',
+  'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa muy juntos van, ¡sí! si do también juntos, ¡sí! ¡Ya lo sabes! ¡Do!',
+  'La brisa y el mar': 'La brisa me canta su canción de paz; el mar me responde ¡fuerte, fuerte! ¡bum! Las olas suenan más y más, y más, ¡más! La ola se va, se va, se va.',
+  'Saloma del barco fantasma': '¡Vamos, barco, al mar, ¡eho! ¡Tira del timón, ¡eho! Densa niebla, todo está gris; rumbo al puerto, ¡ya!',
   '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
 };
 
 // La 2.ª estrofa (letra2) de las canciones que la tienen
 export const SONG_WORDS2 = {
   'Vals de los relojes': 'Tic tac tic tac Marca el compás Uno, dos, tres, ¡pum! y vuelta a empezar',
-  'Saloma del barco fantasma': 'Sopla viento sur, ¡eho! Lleva el barquito, ¡eho! Cantan las gaviotas al ver tierra a la vista.',
+  'Saloma del barco fantasma': 'Sopla viento sur, ¡eho! Lleva el barco al sol, ¡eho! Cantan las gaviotas al ver tierra, tierra, ¡sí!',
 };
 
 // Resultado de una toma cantada según el contrato (marcas → porcentaje y errores)

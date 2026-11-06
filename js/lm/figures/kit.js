@@ -5,6 +5,7 @@
 
 export const W = 360;          // ancho común del lienzo (viewBox): cabe en la tarjeta del móvil sin escalar casi nada
 export const BEAT = 0.75;      // segundos por pulso en las animaciones (80 por minuto, el tempo de los ejemplos)
+const MAX_MOTION_S = 5;        // ninguna animación dura más (WCAG 2.2.2)
 export const FIG_EN = {};      // diccionario es → en de los rótulos (para i18n.js, como TIPS_EN)
 
 const EU = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
@@ -230,5 +231,7 @@ export function svg(o, { h, alt, body, interactive = false, cls = '' }) {
 export function moveAlong(o, d, dur, { r = 7, cls = 'lmf-ball', begin = '0s', keyTimes = null, keyPoints = null } = {}) {
   if (o?.still) return '';
   const kp = keyTimes ? ` keyTimes="${keyTimes}" keyPoints="${keyPoints}" calcMode="linear"` : '';
-  return `<circle r="${r}" class="${cls}"><animateMotion dur="${dur}s" begin="${begin}" repeatCount="indefinite" path="${d}"${kp}/></circle>`;
+  // unos 5 s como mucho (WCAG 2.2.2) y la pelota se queda al final del camino
+  const times = Math.max(1, Math.floor(MAX_MOTION_S / dur));
+  return `<circle r="${r}" class="${cls}"><animateMotion dur="${dur}s" begin="${begin}" repeatCount="${times}" fill="freeze" path="${d}"${kp}/></circle>`;
 }

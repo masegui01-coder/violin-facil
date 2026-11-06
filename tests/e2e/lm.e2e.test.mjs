@@ -103,7 +103,9 @@ async function answer(page, item) {
     for (const g of item.respuesta) await click(page, `[data-gap="${g}"]`);
     await click(page, '[data-check]');
   } else if (item.tipo === 'completar') {
-    await click(page, `[data-opt="${item.correctas[0]}"]`);
+    // un hueco tras otro (cada opción guarda su número del catálogo aunque se barajen)
+    const holes = (item.partitura.match(/\?/g) || []).length;
+    for (let k = 0; k < holes; k++) await click(page, `.lm-item [data-opt="${holes > 1 ? item.correctas[k] : item.correctas[0]}"]:not([disabled])`);
   } else if (item.tipo === 'contar') {
     await setCount(page, item.respuesta);
   } else if (item.tipo === 'senalar') {

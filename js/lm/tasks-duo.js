@@ -1,21 +1,24 @@
-// Lectura rítmica a dos voces (U7): la app toca SIEMPRE la voz 1 (el ostinato) y el alumno palmea o toca la voz 2,
-// leyendo las dos en un sistema compás a compás. Con micrófono, un golpe que coincide con una nota del ostinato y con
-// ninguna del alumno es el altavoz de la app (no cuenta); con auriculares o tocando la pantalla no hay ese problema.
+// Lectura rítmica en la pantalla del curso: a dos voces (U7 Media: la app toca SIEMPRE la voz 1, el ostinato, y el
+// alumno la voz 2, leídas en un sistema compás a compás) o a una voz con sus comas de respiración (U7 Fácil).
+// Mientras suena, el compás que toca se resalta y se mantiene a la vista, y el botón de tocar queda fijo abajo.
+// Micrófono: solo con auriculares (si no, se toca la pantalla). Aun así, por si el micrófono oye el altavoz, a dos
+// voces solo se corrigen las notas propias de la voz 2 (las que no suenan a la vez que el ostinato) y se descartan
+// los golpes que caen en una nota del ostinato: el eco de la app no puede dar puntos.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
 import { getState } from '../store.js';
 import { pctOf, mistakeCodes } from './grade.js';
 import { ostinatoTokens } from './gen.js';
 import { barBeatsOf, scoreTokens } from './notes.js';
-import { onceClick } from './kit.js';
+import { onceClick, staffHtml, tokenLabel, withBreaths } from './kit.js';
 import { twoVoices } from './tasks-rhythm.js';
+import { follow } from './systems.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 
 const TOLERANCE_MS = { facil: 120, medio: 80 };
 const BLEED_MS = 60;          // ventana del eco del ostinato en el micrófono
 const OSTINATO_GAIN = 0.45;
 const LEGATO = 0.9;
-const PULSE_LEVEL = 0.25;
 const AFTER_END_S = 0.8;
 
 // Notas del alumno marcadas ✓ ≈ ✕ a partir de los golpes (en segundos del reloj de audio)
@@ -31,29 +34,43 @@ export function gradeHits(expected, hits, tol) {
   return { marks, extra: hits.length - used.size };
 }
 
-// Golpes del micrófono que son el eco del ostinato: coinciden con una nota de la app y con ninguna del alumno
-export function withoutBleed(hits, ostinatoTimes, expected, tol) {
+// Corrección de la lectura. Con micrófono y ostinato: solo cuentan las notas propias del alumno y ningún golpe que
+// caiga en una nota del ostinato (podría ser el altavoz). Devuelve una marca por nota esperada (null = no se corrige)
+export function gradeReading({ expected, hits, tol, mic = false, ostinatoTimes = [] }) {
   const near = (x, list, w) => list.some(t => Math.abs(x - t) <= w);
-  return hits.filter(x => !(near(x, ostinatoTimes, BLEED_MS / 1000) && !near(x, expected, tol * 2)));
+  if (!mic || !ostinatoTimes.length) return gradeHits(expected, hits, tol);
+  const own = expected.map(at => !near(at, ostinatoTimes, tol));
+  const heard = hits.filter(x => !near(x, ostinatoTimes, BLEED_MS / 1000));
+  const graded = gradeHits(expected.filter((_, i) => own[i]), heard, tol);
+  let k = 0;
+  return { marks: expected.map((_, i) => (own[i] ? graded.marks[k++] : null)), extra: graded.extra };
+}
+
+function scoreHtml(tokens, ostinato, p, env, marks = []) {
+  const base = { compas: p.compas, anacrusa: p.anacrusa || 0 };
+  if (ostinato) return twoVoices(tokens, ostinato, base, env, marks);
+  return staffHtml(tokens, { meter: p.compas, pickup: p.anacrusa || 0, marks, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
 }
 
 export async function lecturaDosVoces(host, ex, env) {
   const p = ex.params;
-  const tokens = scoreTokens(p.partitura);
-  const ostinato = ostinatoTokens(tokens, p);
+  const tokens = withBreaths(scoreTokens(p.partitura), p.comas || [], p.anacrusa || 0);
+  const ostinato = p.voz1 ? ostinatoTokens(tokens, p) : null;
   const barBeats = barBeatsOf(p.compas || '4/4');
   const bpm = p.tempo || 72;
   const spb = 60 / bpm;
   const tol = (TOLERANCE_MS[env.variant] || TOLERANCE_MS.facil) / 1000;
-  const base = { compas: p.compas, anacrusa: p.anacrusa || 0 };
   host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>
-    ${twoVoices(tokens, ostinato, base, env)}
-    <p class="muted small">Con el micrófono, mejor con auriculares: así la app no se oye a sí misma. Sin auriculares, los golpes que solo coinciden con el ostinato no cuentan.</p>
+    ${scoreHtml(tokens, ostinato, p, env)}
+    <label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
+    <p class="muted small">Sin auriculares, el micrófono oiría también a la app: toca la pantalla.</p>
     <p class="lm-stop-phase" id="lmDuoPhase" aria-live="polite">Elige cómo vas a tocar</p>
-    <div class="controls"><button type="button" class="btn big" id="lmDuoMic">Palmas (micrófono)</button><button type="button" class="btn ghost" id="lmDuoTap">Tocar la pantalla</button></div>`;
-  host.querySelector('#lmDuoMic').focus();
+    <div class="controls lm-sticky-controls"><button type="button" class="btn big" id="lmDuoTap">Tocar la pantalla</button><button type="button" class="btn ghost" id="lmDuoMic" disabled>Palmas (micrófono)</button></div>`;
+  const phones = host.querySelector('#lmDuoPhones');
+  phones.addEventListener('change', () => { host.querySelector('#lmDuoMic').disabled = !phones.checked; });
+  host.querySelector('#lmDuoTap').focus();
   const chosen = await onceClick(host, '#lmDuoMic, #lmDuoTap');
-  let useMic = chosen.id === 'lmDuoMic';
+  let useMic = chosen.id === 'lmDuoMic' && phones.checked;
   if (useMic) {
     try { await audio.startMic(); } catch (err) {
       useMic = false;
@@ -62,9 +79,11 @@ export async function lecturaDosVoces(host, ex, env) {
     }
   }
   if (!env.alive()) return null;
+  host.querySelector('#lmDuoPhones').closest('label').remove();
+  host.querySelector('.muted.small')?.remove();
   const hits = [];
   const lat = audio.outputLatency();
-  host.querySelector('.controls').innerHTML = useMic ? '' : '<button type="button" class="btn big lm-tap" id="lmTap">Toca aquí</button>';
+  host.querySelector('.controls').innerHTML = useMic ? '<p class="muted center">Da palmas: la app te escucha</p>' : '<button type="button" class="btn big lm-tap" id="lmTap">Toca aquí</button>';
   const pad = host.querySelector('#lmTap');
   if (pad) {
     const onTap = e => { e.preventDefault(); hits.push(now() - lat); pad.classList.remove('lm-hit'); void pad.offsetWidth; pad.classList.add('lm-hit'); };
@@ -74,25 +93,27 @@ export async function lecturaDosVoces(host, ex, env) {
     pad.focus();
   }
   if (useMic) audio.startOnsetCapture(found => found.forEach(h => hits.push(h.time - (getState().percLatency || 0))));
+  // claqueta de un compás; después solo suena el ostinato (el pulso lo marca él): nada más que el micrófono pueda oír
   const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
   const offset = p.anacrusa ? barBeats - p.anacrusa : 0;
   const at = t => t0 + (offset + t.start) * spb;
-  playEvents(ostinato.filter(t => !t.rest).map(t => ({ midi: t.midi, at: (offset + t.start) * spb, dur: t.beats * spb * LEGATO, gain: OSTINATO_GAIN })), { at: t0 });
+  if (ostinato) playEvents(ostinato.filter(t => !t.rest).map(t => ({ midi: t.midi, at: (offset + t.start) * spb, dur: t.beats * spb * LEGATO, gain: OSTINATO_GAIN })), { at: t0 });
   const last = tokens[tokens.length - 1];
   const end = t0 + (offset + last.start + last.beats) * spb;
-  clicks(Math.round((end - t0) / spb), bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
-  host.querySelector('#lmDuoPhase').textContent = '¡Ahora! Tu voz es la de abajo';
+  const unfollow = follow(host, () => (now() - t0) / spb - offset, { barBeats, pickup: p.anacrusa || 0 });
+  host.querySelector('#lmDuoPhase').textContent = ostinato ? '¡Ahora! Tu voz es la de abajo' : '¡Ahora!';
   await wait((end - now() + AFTER_END_S) * 1000);
+  unfollow();
   if (useMic) audio.stopOnsetCapture();
   stopSound();
   if (pad) pad.disabled = true;
   if (!env.alive()) return null;
   const sounding = tokens.filter(t => !t.rest);
-  const expected = sounding.map(at);
-  const heard = useMic ? withoutBleed(hits, ostinato.filter(t => !t.rest).map(at), expected, tol) : hits;
-  const { marks, extra } = gradeHits(expected, heard, tol);
+  const { marks, extra } = gradeReading({ expected: sounding.map(at), hits, tol, mic: useMic, ostinatoTimes: ostinato ? ostinato.filter(t => !t.rest).map(at) : [] });
+  const graded = marks.filter(Boolean);
   const allMarks = tokens.map(t => (t.rest ? null : marks[sounding.indexOf(t)]));
-  host.querySelector('.lm-system').outerHTML = twoVoices(tokens, ostinato, base, env, allMarks).replace(/^[\s\S]*?(<div class="lm-system")/, '$1');
-  host.querySelector('#lmDuoPhase').textContent = `${marks.filter(m => m === 'ok').length} de ${marks.length} a tiempo`;
-  return { pct: pctOf(marks, extra), marks, mistakes: mistakeCodes([extra ? 'q>Rq' : null, marks.includes('bad') ? 'Rq>q' : null]) };
+  const fresh = scoreHtml(tokens, ostinato, p, env, allMarks);
+  host.querySelector('.lm-system, .lm-staff').outerHTML = ostinato ? fresh.replace(/^[\s\S]*?(<div class="lm-system")/, '$1') : fresh;
+  host.querySelector('#lmDuoPhase').textContent = `${graded.filter(m => m === 'ok').length} de ${graded.length} a tiempo`;
+  return { pct: pctOf(graded, extra), marks: graded, mistakes: mistakeCodes([extra ? 'q>Rq' : null, graded.includes('bad') ? 'Rq>q' : null]) };
 }

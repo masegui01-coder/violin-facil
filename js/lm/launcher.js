@@ -179,8 +179,9 @@ export function openLmExercise(idOrEx) {
   const ex = typeof idOrEx === 'string' ? lmExercise(idOrEx) : idOrEx;
   if (!ex) { toast('Este ejercicio todavía no está disponible'); return; }
   active = { ex, startedAt: performance.now() };
-  // la lectura a dos voces se hace en la pantalla del curso: sistema de dos pentagramas y ostinato siempre sonando
-  if (TYPES[ex.type] === 'lm' || (ex.type === 'lectura-ritmica' && ex.params.voz1)) go('lm', { ex });
+  // la lectura a dos voces (o con comas de respiración) se hace en la pantalla del curso: sistema de dos pentagramas,
+  // ostinato siempre sonando y las comas escritas
+  if (TYPES[ex.type] === 'lm' || (ex.type === 'lectura-ritmica' && (ex.params.voz1 || ex.params.comas))) go('lm', { ex });
   else openTool(ex);
 }
 

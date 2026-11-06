@@ -170,3 +170,33 @@ test('la ficha de la unidad en PDF lleva la ilustración de cada tarjeta de teor
   assert.deepEqual(errors, []);
   await close();
 });
+
+// «Señalar» como el resto de pentagramas del curso: clave en cada renglón y nada más ancho que la pantalla (375 px y
+// letra al 200 %); «completar» con sus huecos en su sitio
+for (const big of [false, true]) {
+  test(`señalar el compás a 375 px${big ? ' con la letra al 200 %' : ''}: clave en cada renglón y sin cortes`, async () => {
+    const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
+    if (big) await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+    await page.$eval('[data-learn-view="lm"]', b => b.click());
+    await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
+    await page.$eval('.lm-unit-card[data-unit="8"]', b => b.click());
+    // la teoría Fácil de U8 empieza, tras sus fichas, por «toca la anacrusa»
+    await page.waitForSelector('[data-ex="lm1-u8-teoria-a-facil"]', { timeout: STEP_TIMEOUT });
+    await page.$eval('[data-ex="lm1-u8-teoria-a-facil"]', b => b.click());
+    const ex = lmExercise('lm1-u8-teoria-a-facil').params;
+    assert.equal(ex.items[0].tipo, 'senalar');
+    for (let k = 0; k < ex.ficha.length; k++) { await page.waitForSelector('[data-lm-next]', { timeout: STEP_TIMEOUT }); await page.$eval('[data-lm-next]', b => b.click()); }
+    await page.waitForSelector('.lm-pick-bars', { timeout: STEP_TIMEOUT });
+    await new Promise(r => setTimeout(r, 300));
+    const lay = await page.$eval('.lm-pick-bars', s => {
+      const groups = [...s.querySelectorAll(':scope > .lm-bargroup')];
+      const tops = [...new Set(groups.map(g => g.offsetTop))];
+      const firstOfLine = tops.map(t => groups.find(g => g.offsetTop === t));
+      return { lines: tops.length, clefs: firstOfLine.every(g => g.querySelector('.lm-clefcell')), wide: s.scrollWidth > s.clientWidth + 1 || document.documentElement.scrollWidth > innerWidth + 1 };
+    });
+    assert.ok(lay.clefs, `cada renglón con su clave (${lay.lines} renglones)`);
+    assert.ok(!lay.wide, 'nada se sale');
+    assert.deepEqual(errors, []);
+    await close();
+  });
+}

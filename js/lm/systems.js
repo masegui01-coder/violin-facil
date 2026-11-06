@@ -19,6 +19,22 @@ function fitWidth(staff, groups) {
   if (widest > room) staff.style.setProperty('--lm-fit', String(Math.max(MIN_FIT, Math.floor(room / widest * 100) / 100)));
 }
 
+// A dos voces, al menos dos compases por renglón (para leer el sistema mientras suena): se reduce lo justo, sin
+// bajar de MIN_SYSTEM_FIT; si ni así caben dos, al menos que quepa uno entero
+const MIN_SYSTEM_FIT = 0.6;
+function fitPairs(sys, cols) {
+  sys.style.removeProperty('--lm-fit');
+  const room = sys.clientWidth;
+  const cell = sys.querySelector('.lm-cell');
+  if (!room || !cell) return;
+  const clefW = cell.getBoundingClientRect().height * CLEF_RATIO;
+  const w = cols.map(c => c.getBoundingClientRect().width);
+  const one = Math.max(...w) + clefW;
+  const two = Math.max(...w.slice(1).map((x, i) => x + w[i])) + clefW;
+  const fit = Math.min(1, two > room ? Math.max(MIN_SYSTEM_FIT, room / two) : 1, room / one);
+  if (fit < 1) sys.style.setProperty('--lm-fit', String(Math.max(MIN_FIT, Math.floor(fit * 100) / 100)));
+}
+
 function fitStaff(staff) {
   staff.querySelectorAll(':scope > .lm-bargroup > .lm-sysclef').forEach(c => c.remove());
   const groups = [...staff.querySelectorAll(':scope > .lm-bargroup')];
@@ -40,7 +56,7 @@ function fitSystem(sys) {
   sys.querySelectorAll('.lm-sysclef').forEach(c => c.remove());
   const cols = [...sys.querySelectorAll(':scope > .lm-sysbar')];
   if (!cols.length) return;
-  fitWidth(sys, cols);
+  fitPairs(sys, cols);
   let lineTop = cols[0].offsetTop;
   cols.slice(1).forEach(c => {
     c.classList.remove('lm-sysstart');
@@ -74,3 +90,22 @@ export function watchSystems(root) {
   if (ro) ro.observe(root);
   return () => { mo.disconnect(); if (ro) ro.disconnect(); };
 }
+
+const FOLLOW_MS = 60;
+// El compás que suena, resaltado y a la vista
+export function follow(host, beatAt, { barBeats, pickup }) {
+  let shown = -1;
+  const smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const timer = setInterval(() => {
+    const beat = beatAt();
+    if (beat < 0) return;
+    const bar = pickup ? (beat < pickup ? 0 : 1 + Math.floor((beat - pickup) / barBeats)) : Math.floor(beat / barBeats);
+    if (bar === shown) return;
+    shown = bar;
+    const cols = host.querySelectorAll('[data-sysbar], .lm-staff > .lm-bargroup');
+    cols.forEach((c, k) => c.classList.toggle('lm-now', k === bar));
+    cols[bar]?.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+  }, FOLLOW_MS);
+  return () => { clearInterval(timer); host.querySelectorAll('.lm-now').forEach(c => c.classList.remove('lm-now')); };
+}
+

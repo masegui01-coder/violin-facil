@@ -65,17 +65,30 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
 // una columna). voices: [{ tokens, label, marks }]. Es lo que se lee a dos voces (ostinato de la app + voz del alumno).
 export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label = '' } = {}) {
   const barBeats = meter ? barBeatsOf(meter) : null;
-  const byBar = voices.map(v => {
+  const key = x => Math.round(x * 1000);
+  // cada voz: sus notas por compás con el instante en que suenan (las notas a la vez van en la misma columna)
+  const voiceBars = voices.map(v => {
     const lay = layoutTokens(v.tokens, { barBeats, pickup, clef });
+    let at = 0;
     const bars = [];
-    v.tokens.forEach((t, i) => (bars[lay[i].bar] ||= []).push(`<span class="lm-sc ${(v.marks || [])[i] || ''}">${noteCell({ ...t, clef, mark: (v.marks || [])[i] || null, beam: lay[i].beam, up: lay[i].up })}</span>`));
+    v.tokens.forEach((t, i) => {
+      const start = t.start ?? at;
+      at = start + (t.beats ?? 0);
+      (bars[lay[i].bar] ||= []).push({ start, html: `<span class="lm-sc ${(v.marks || [])[i] || ''}">${noteCell({ ...t, clef, mark: (v.marks || [])[i] || null, beam: lay[i].beam, up: lay[i].up, breath: !!t.breath })}</span>` });
+    });
     return bars;
   });
-  const count = Math.max(...byBar.map(b => b.length));
+  const count = Math.max(...voiceBars.map(b => b.length));
   const cols = Array.from({ length: count }, (_, b) => {
     const last = b === count - 1;
-    const rows = byBar.map(bars => `<span class="lm-sysrow">${b === 0 ? `<span class="lm-sc">${clefCell(clef, meter)}</span>` : ''}${(bars[b] || []).join('')}<span class="lm-sysfill" aria-hidden="true"></span><span class="lm-sc">${last ? endCell(false) : gapCell(true, null, 14)}</span></span>`).join('');
-    return `<span class="lm-sysbar${b === 0 ? ' lm-sysstart' : ''}">${rows}</span>`;
+    // rejilla común del compás: todos los instantes en que empieza alguna nota de alguna voz
+    const slots = [...new Set(voiceBars.flatMap(bars => (bars[b] || []).map(n => key(n.start))))].sort((x, y) => x - y);
+    const rows = voiceBars.map(bars => {
+      const by = new Map((bars[b] || []).map(n => [key(n.start), n.html]));
+      const cells = slots.map(k => by.get(k) || `<span class="lm-sc lm-syshole" aria-hidden="true">${noteCell({ step: null })}</span>`).join('');
+      return `<span class="lm-sysrow">${b === 0 ? `<span class="lm-sc">${clefCell(clef, meter)}</span>` : ''}${cells}<span class="lm-sc">${last ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
+    }).join('');
+    return `<span class="lm-sysbar${b === 0 ? ' lm-sysstart' : ''}" data-sysbar="${b}">${rows}</span>`;
   }).join('');
   const names = voices.map(v => v.label).filter(Boolean).join(' · ');
   return `<div class="lm-system" role="img" aria-label="${esc(label || names)}">${cols}</div>`;
@@ -85,9 +98,16 @@ export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label =
 // los renglones se juntan (clase lm-tight). Notas de do4 a re5 en clave de sol
 const TIGHT_LOW = stepOf('C4');
 const TIGHT_HIGH = stepOf('D5');
-function tight(tokens, clef, marks = [], dynamics = null) {
+export function tight(tokens, clef = 'treble', marks = [], dynamics = null) {
   return clef === 'treble' && !(marks || []).some(Boolean) && !(dynamics && dynamics.length)
     && tokens.every(t => t.rest || t.step === undefined || (t.step >= TIGHT_LOW && t.step <= TIGHT_HIGH));
+}
+
+// Comas de respiración (n.º de compás, desde 1): la última nota de esos compases lleva la coma
+export function withBreaths(tokens, comas = [], pickup = 0) {
+  if (!comas.length) return tokens;
+  const bars = tokens.map(t => t.bar + (pickup ? 0 : 1));
+  return tokens.map((t, i) => (comas.includes(bars[i]) && bars[i + 1] !== bars[i] ? { ...t, breath: true } : t));
 }
 
 // Fichas de corrección (una por elemento), con signo además del color

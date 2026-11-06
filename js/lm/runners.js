@@ -13,7 +13,7 @@ import { pctOf, mistakeCodes } from './grade.js';
 import { creatividad } from './creative.js';
 import { scoreTokens, barBeatsOf, noteText, solfaToName } from './notes.js';
 import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
-import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel } from './kit.js';
+import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel, withBreaths } from './kit.js';
 import { playEvents, stopSound } from './sound.js';
 import { figureHtml, bindFigures, CARD_FIGURE } from './figures/index.js';
 import { currentLang } from '../i18n.js';
@@ -50,7 +50,7 @@ function cardFigure(card, i, env, still) {
 const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
 // El ejemplo de la tarjeta con su compás (el suyo o el primero de la unidad), sus barras y, si la hay, su anacrusa
 function cardExample(card, env, text = card.ejemplo) {
-  const ex = scoreTokens(text);
+  const ex = withBreaths(scoreTokens(text), card.comas || [], card.anacrusa || 0);
   const meter = card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
   return staffHtml(ex, { meter, pickup: card.anacrusa || 0, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
 }
@@ -101,7 +101,7 @@ const agilidad = (host, ex, env) => agilityTask(host, ex.params, env);
 // ---------- Entonación y canción cantada ----------
 async function entonacion(host, ex, env) {
   const p = ex.params;
-  const tokens = scoreTokens(p.partitura);
+  const tokens = withBreaths(scoreTokens(p.partitura), p.comas || [], p.anacrusa || 0);
   // lectura melódica: hay que leer las notas en el pentagrama (sin el nombre escrito debajo ni dicho por la app)
   // lectura en Fácil: con apoyo (la primera nota y un botón para oír la nota que toca), nunca en eco
   const reading = ex.skills.includes('lectura');
@@ -123,7 +123,7 @@ const SUPPORT = {
 };
 async function cancionCantada(host, ex, env) {
   const song = ex.params.cancion;
-  const tokens = scoreTokens(song.partitura);
+  const tokens = withBreaths(scoreTokens(song.partitura), song.comas || [], song.anacrusa || 0);
   const names = /nombre de notas/.test(ex.params.modo || '');
   // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
   const take = await singSong(host, {

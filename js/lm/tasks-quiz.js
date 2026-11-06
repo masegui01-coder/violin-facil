@@ -4,7 +4,7 @@
 import { esc } from '../ui.js';
 import { orderMark } from './grade.js';
 import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME } from './notes.js';
-import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel } from './kit.js';
+import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel, tight } from './kit.js';
 import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
 import { playNotes, clicks, stopSound } from './sound.js';
 import { DYN_GAIN } from './gen.js';
@@ -29,7 +29,16 @@ export function figureNotes(text) {
   });
   return out;
 }
-function notesOfPlay(play, env) {
+// «Dos versiones» de la misma frase, cada una con su matiz (pp…ff), con un silencio entre ellas
+const VERSION_PHRASE = '| G4q A4q B4q C5q | G4h Rh |';
+const VERSION_GAP_BEATS = 2;
+function versionNotes(play) {
+  const phrase = scoreTokens(play.partitura || VERSION_PHRASE);
+  const span = phrase.reduce((s, t) => Math.max(s, t.start + t.beats), 0) + VERSION_GAP_BEATS;
+  return play.versiones.flatMap((v, k) => phrase.map(t => ({ midi: t.midi, start: t.start + k * span, beats: t.beats, rest: t.rest, gain: DYN_GAIN[v] ?? DYN_GAIN.mf })));
+}
+export function notesOfPlay(play, env) {
+  if (play.versiones) return versionNotes(play);
   if (play.notas) return play.notas.map((n, i) => ({ midi: midiOf(n), start: i * 1.2, beats: 1, rest: false }));
   const text = play.cancion ? env.songScore(play.cancion) : play.partitura;
   if (!text) return [];
@@ -38,6 +47,7 @@ function notesOfPlay(play, env) {
 }
 // Volumen por nota: un matiz fijo (pp…ff) o un regulador (cresc/dim) de punta a punta
 export function gainsOf(play, notes) {
+  if (play.versiones) return notes.map(n => n.gain);
   const dyn = play.dinamica || play.dyn;
   if (!dyn) return null;
   if (dyn in DYN_GAIN) return notes.map(() => DYN_GAIN[dyn]);
@@ -90,7 +100,12 @@ async function choose(host, item, env, { options, correct, extraHtml = '', optio
 }
 
 // Opciones barajadas en cada intento (semilla del intento + la pregunta): la correcta no cae siempre en el mismo sitio
+// Las listas con un orden propio (números, «la primera / la segunda», «de dos / de tres», matices de suave a fuerte)
+// se dejan en su orden: barajarlas confunde
+const ORDERED = /^(\d+|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|ninguno|ninguna|la primera|la segunda|el primero|el segundo|de dos|de tres|de cuatro|ppp|pp|p|mp|mf|f|ff|fff)$/i;
+export const isOrdered = item => !!item.orden || item.options.every(o => ORDERED.test(String(o).trim()));
 export function shuffledChoice(item, seed) {
+  if (isOrdered(item)) return { options: [...item.options], correct: [item.answer] };
   const order = shuffle(item.options.map((_, i) => i), (seed >>> 0) + seedOf(item.id || item.q));
   return { options: order.map(i => item.options[i]), correct: [order.indexOf(item.answer)] };
 }
@@ -134,12 +149,13 @@ function barButtons(item, env) {
     const lay = layoutTokens(tokens, { clef: 'treble' });
     const cells = tokens.map((t, i) => `<span class="lm-sc">${noteCell({ ...t, clef: 'treble', beam: lay[i].beam, up: lay[i].up, fermata: item.calderon === k && i === tokens.length - 1 })}</span>`).join('');
     const close = k === bars.length - 1 ? endCell(false) : gapCell(true, null, 14);
-    return `<button type="button" class="lm-bar-btn" data-bar="${k}" aria-label="${esc(`Compás ${k + 1}: ${tokens.map(t => tokenLabel(t, env.nom)).join(', ')}`)}">${cells}<span class="lm-sc">${close}</span></button>`;
+    // cada compás es un grupo (la clave de cada renglón y la reducción a lo ancho los pone systems.js) con su botón
+    return `<span class="lm-bargroup"><button type="button" class="lm-bar-btn" data-bar="${k}" aria-label="${esc(`Compás ${k + 1}: ${tokens.map(t => tokenLabel(t, env.nom)).join(', ')}`)}">${cells}<span class="lm-sc">${close}</span></button></span>`;
   }).join('');
 }
 async function senalar(host, item, env) {
   host.innerHTML = `${headHtml(item)}${item.play ? playButton('lmQPlay') : ''}
-    <div class="lm-staff lm-pick-bars" role="group" aria-label="Compases"><span class="lm-bargroup"><span class="lm-sc" aria-hidden="true">${clefCell('treble', item.compas || null)}</span></span>${barButtons(item, env)}</div>
+    <div class="lm-staff lm-pick-bars${tight(scoreTokens(item.partitura)) ? ' lm-tight' : ''}" role="group" aria-label="Compases">${barButtons(item, env).replace('<span class="lm-bargroup">', `<span class="lm-bargroup"><span class="lm-sc" aria-hidden="true">${clefCell('treble', item.compas || null)}</span>`)}</div>
     <div class="lm-feedback"></div>`;
   if (item.play) host.querySelector('#lmQPlay').addEventListener('click', () => playQuestion(item.play, env));
   host.querySelector('.lm-q').focus();
@@ -156,16 +172,57 @@ async function senalar(host, item, env) {
   return { mark, mistake: mark === 'ok' ? null : item.id || 'senalar' };
 }
 
-// ---------- Completar el compás con una figura ----------
+// ---------- Completar: cada «?» es un hueco en su sitio del pentagrama ----------
+// Un hueco: vale cualquiera de las correctas. Varios (orden: true): se rellenan uno a uno y la correcta de cada
+// hueco es correctas[k]. Las opciones se barajan en cada intento (data-opt guarda su número del catálogo)
 function optionCells(text, env) {
   const tokens = scoreTokens(`| ${text} |`);
-  return `<span class="lm-opt-staff" aria-hidden="true">${staffHtml(tokens, { bars: false })}</span><span class="sr-only">${esc(tokens.map(t => (t.rest ? REST_NAME[t.dur] : FIGURE_NAME[t.dur])).join(' y '))}</span>`;
+  return `<span class="lm-opt-staff" aria-hidden="true">${staffHtml(tokens, { bars: false })}</span><span class="sr-only">${esc(tokens.map(t => (t.rest ? REST_NAME[t.dur] : FIGURE_NAME[t.dur])).join(', '))}</span>`;
 }
-function completar(host, item, env) {
-  const known = item.partitura.replace(/\?/g, '').replace(/\|\s*\|/g, '|');
-  const tokens = scoreTokens(known);
-  const staff = `<div class="lm-complete">${staffHtml(tokens, { meter: item.compas, bars: false, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') })}<span class="lm-hole" aria-label="Hueco">?</span></div>`;
-  return choose(host, item, env, { options: item.opciones, correct: item.correctas, extraHtml: staff, optionHtml: o => optionCells(o, env) });
+function holeStaff(item, fills, now) {
+  const bars = item.partitura.split('|').map(x => x.trim()).filter(Boolean);
+  let hole = 0;
+  const cells = bars.map((bar, b) => {
+    const parts = bar.split(/\s+/).flatMap(tok => {
+      if (tok !== '?') return scoreTokens(`| ${tok} |`).map(t => ({ t }));
+      const k = hole++;
+      return fills[k] ? scoreTokens(`| ${fills[k]} |`).map(t => ({ t, filled: true })) : [{ hole: k }];
+    });
+    const lay = layoutTokens(parts.map(x => x.t || { dur: 'q', beats: 1 }), { clef: 'treble' });
+    const html = parts.map((x, i) => (x.hole !== undefined
+      ? `<span class="lm-sc lm-hole-sc${x.hole === now ? ' lm-now' : ''}" aria-hidden="true">${noteCell({ step: null })}<span class="lm-hole-q">?</span></span>`
+      : `<span class="lm-sc${x.filled ? ' lm-filled' : ''}">${noteCell({ ...x.t, clef: 'treble', beam: lay[i].beam, up: lay[i].up })}</span>`)).join('');
+    return `<span class="lm-bargroup">${b === 0 ? `<span class="lm-sc">${clefCell('treble', item.compas || null)}</span>` : ''}${html}<span class="lm-sc">${b === bars.length - 1 ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
+  }).join('');
+  return `<div class="lm-staff lm-complete" role="img" aria-label="${esc(`Partitura con ${hole} ${hole === 1 ? 'hueco' : 'huecos'}`)}">${cells}</div>`;
+}
+async function completar(host, item, env) {
+  const holes = (item.partitura.match(/\?/g) || []).length;
+  const order = shuffle(item.opciones.map((_, i) => i), ((env.attempt ?? env.seed ?? 0) >>> 0) + seedOf(item.id || item.q));
+  const fills = [];
+  const picks = [];
+  for (let k = 0; k < holes; k++) {
+    host.innerHTML = `${headHtml(item)}${holes > 1 ? `<p class="eyebrow">Hueco ${k + 1} de ${holes}</p>` : ''}${holeStaff(item, fills, k)}
+      <div class="quiz-options lm-options" role="group" aria-label="Respuestas">${order.map(i => `<button type="button" class="quiz-opt" data-opt="${i}">${optionCells(item.opciones[i], env)}</button>`).join('')}</div>
+      <div class="lm-feedback"></div>`;
+    host.querySelector('.lm-q').focus();
+    const b = await onceClick(host, '[data-opt]');
+    if (!env.alive()) return null;
+    picks.push(Number(b.dataset.opt));
+    fills.push(item.opciones[Number(b.dataset.opt)]);
+  }
+  const right = picks.map((p, k) => (holes > 1 ? p === item.correctas[k] : item.correctas.includes(p)));
+  const ok = right.filter(Boolean).length;
+  const mark = ok === holes ? 'ok' : ok > 0 ? 'near' : 'bad';
+  host.querySelector('.lm-complete').outerHTML = holeStaff(item, fills, -1);
+  host.querySelectorAll('[data-opt]').forEach(x => {
+    const i = Number(x.dataset.opt);
+    x.disabled = true;
+    if (holes === 1 ? item.correctas.includes(i) && (i === picks[0] || mark === 'bad') : item.correctas.includes(i)) x.classList.add('right');
+    else if (picks.includes(i)) x.classList.add('wrong');
+  });
+  host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why);
+  return { mark, mistake: mark === 'ok' ? null : item.id || 'completar' };
 }
 
 // ---------- Emparejar ----------

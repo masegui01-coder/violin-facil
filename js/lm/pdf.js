@@ -17,6 +17,13 @@ const FIGURE_W = 96; // ancho de cada ilustración en el papel (mm)
 const LIGHT_UNITS = ['#B4461F', '#17798A', '#5D4A9C', '#2B7A4B', '#A3385A', '#2F55A4', '#8C5A12', '#3B4A5E'];
 const PAPER = '--surface:#FFFFFF;--surface-2:#F5F7FA;--ink:#141B26;--muted:#5A6678;--staff:#2F3947;--ok:#16804F;--bad:#C2372F;--u2:#17798A;--accent:#B4461F';
 
+// Comas de respiración (n.º de compás) en la partitura del PDF: «@breath» delante de la primera nota del compás siguiente
+function breathMarks(score, comas) {
+  if (!comas.length) return score;
+  const bars = score.split('|').map(x => x.trim()).filter(Boolean);
+  return `| ${bars.map((bar, k) => (comas.includes(k) ? `@breath ${bar}` : bar)).join(' | ')} |`;
+}
+
 // La ilustración fija de una tarjeta como imagen: se pinta fuera de la vista con los colores del papel y se rasteriza
 async function figureImage(dibujo, unit) {
   const html = figureHtml(dibujo, { lang: currentLang(), nom: getState().nom, still: true });
@@ -82,7 +89,7 @@ export async function unitPdf(unit) {
     room(40);
     para(`${t('Canción de la unidad')}: ${plain(unit.song.titulo)}`, { size: 12, bold: true });
     const [num, den] = String(unit.song.compas).split('/').map(Number);
-    for (const markup of engrave(parseScore(unit.song.partitura), { key: 'C', meter: [num, den], clef: 'treble', tempo: { unit: 'q', bpm: unit.song.tempo } })) {
+    for (const markup of engrave(parseScore(breathMarks(unit.song.partitura, unit.song.comas || [])), { key: 'C', meter: [num, den], clef: 'treble', tempo: { unit: 'q', bpm: unit.song.tempo } })) {
       const img = await svgToPng(svgElement(markup));
       const h = WIDTH * img.ratio;
       room(h);
@@ -97,7 +104,8 @@ export async function unitPdf(unit) {
     } else if (words) para(ascii(words), { size: 9, gray: 60, gap: 4 });
     // 2.ª estrofa (se canta en la segunda vuelta, tras la barra de repetición)
     const words2 = SONG_WORDS2[unit.song.titulo];
-    if (words2) para(`${t('2.ª estrofa')}: ${ascii(words2)}`, { size: 9, gray: 60, gap: 4 });
+    if (words2) para(`${t('2.ª estrofa')}: ${ascii(words2)}`, { size: 9, gray: 60, gap: currentLang() === 'en' ? 1 : 4 });
+    if (words2 && currentLang() === 'en' && t(words2) !== words2) para(`Meaning: ${plain(words2)}`, { size: 9, gray: 60, gap: 4 });
   }
   para(t('Ejercicios'), { size: 12, bold: true });
   // la sección solo si el título no empieza ya por ella («Teoría · El latido», no «Teoría · Teoría · El latido»)
