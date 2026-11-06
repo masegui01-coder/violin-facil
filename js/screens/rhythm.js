@@ -84,6 +84,14 @@ function onHits(hits) {
   });
 }
 
+// Sílabas de apoyo (Fácil del curso de Lenguaje): la de la figura que toca ahora
+const SYLLABLE = { q: 'ta', e: 'ti', h: 'taa-a', w: 'taa-a-a-a' };
+function syllableAt(beat) {
+  const n = run.notes.find(x => beat >= x.start && beat < x.start + x.beats);
+  if (!n) return '';
+  return n.rest ? 'sh' : SYLLABLE[String(n.dur || '').replace('.', '')] || 'ta';
+}
+
 // ---------- Ciclo ----------
 function tick() {
   if (!run.playing) return;
@@ -95,7 +103,7 @@ function tick() {
   staff.scrollTo(Math.max(0, beat), false);
   const k = Math.floor(beat - run.pickup);
   const inBar = ((k % run.time) + run.time) % run.time;
-  $('rhCounter').textContent = beat < 0 && left <= 0 ? '' : String(inBar + 1);
+  $('rhCounter').textContent = beat < 0 && left <= 0 ? '' : `${inBar + 1}${run.syllables ? ` · ${syllableAt(beat)}` : ''}`;
   $('rhBeat').classList.toggle('on', beat - Math.floor(beat) < 0.15);
   $('rhBeat').classList.toggle('down', inBar === 0 && beat - Math.floor(beat) < 0.15);
   pulse.draw(beat - run.pickup, run.time);
@@ -108,15 +116,17 @@ function start() {
   if (!run.touch && !audio.micReady()) { $('rhGate').hidden = false; setStatus('Activa el micrófono para empezar', 'var(--bad)'); return; }
   run.spb = 60 / tempoBpm();
   run.onsets = [];
-  run.countEnd = audio.countIn(run.time, tempoBpm(), true);
+  run.countEnd = audio.countIn(run.lm && run.lm.oneClick ? 1 : run.time, tempoBpm(), true);
   run.t0 = run.countEnd;
   run.expected = run.playable.map(i => run.t0 + run.notes[i].start * run.spb);
   run.notes.forEach((n, i) => { if (!n.rest) staff.setState(i, 'future'); });
   if (!run.touch) audio.startOnsetCapture(onHits);
   if (run.stopAccomp) run.stopAccomp();
   run.stopAccomp = $('rhVbToggle').checked && run.accompaniment.length ? audio.playAccompaniment(run.accompaniment, run.t0, run.spb) : null;
-  if (getState().metroClick) {
-    audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: true });
+  // Lecturas del curso de Lenguaje: el metrónomo hace lo que pide la variante (todos los pulsos, solo el 1.º o nada)
+  const metro = run.lm ? run.lm.metro : getState().metroClick ? 'all' : 'none';
+  if (metro !== 'none') {
+    audio.configureMetronome({ bpm: tempoBpm(), meter: run.time, sound: true, firstOnly: metro === 'first' });
     audio.startMetronome(run.t0 + run.pickup * run.spb);
   }
   run.playing = true;
@@ -200,9 +210,15 @@ function enter({ lesson, from, eyebrow }) {
     bpm: song.bpm, time: song.time, pickup: song.pickup || 0, speed: lesson.speedOverride ?? (lesson.fixedSpeed ? 1 : getState().speed),
     playing: false, onsets: [], expected: [],
     accompaniment: lesson.accompaniment || (song.others || []).map(o => ({ ...o, notes: decodeScore(o.enc).notes })),
+    lm: lesson.lmMode || null, syllables: !!(lesson.lmMode && lesson.lmMode.syllables),
   };
+  // Desde el curso de Lenguaje no es percusión: lectura rítmica con palmas, sin manos D/I, y la consigna de la variante
+  $('rhChip').textContent = run.lm ? 'Lectura rítmica' : 'Percusión';
+  $('rhHint').textContent = run.lm ? run.lm.hint : 'Golpea en la caja, en un pad o en la mesa. Las letras D e I indican la mano derecha o izquierda.';
+  if (lesson.ostinato) $('rhVbToggle').checked = true;
   $('rhVbRow').hidden = !run.accompaniment.length;
-  $('rhVbRow').querySelector('span').textContent = lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
+  $('rhVbRow').querySelector('span').textContent = lesson.ostinato ? 'Voz 1: la app toca el ostinato y tú palmeas la voz 2 (mejor con auriculares)'
+    : lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
   $('rhEyebrow').textContent = eyebrow || '';
   $('rhTitle').textContent = run.title;
   $('rhTouch').checked = !!getState().rhythmTouch;

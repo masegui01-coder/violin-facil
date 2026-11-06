@@ -8,7 +8,7 @@ export function blanca(o = {}) {
   const big = figure(60, 104, 'h', { s: 13 });
   let b = big.svg;
   b += callout(big.sx, 52, 96, 44, t(o, 'plica', 'stem'));
-  b += callout(64, 104, 96, 92, t(o, 'cabeza hueca', 'hollow head'));
+  b += callout(64, 106, 92, 122, t(o, 'cabeza hueca', 'hollow head'));
   b += figure(196, 78, 'h', { s: 6.5 }).svg + text(222, 72, '=', { cls: 'l' });
   b += figure(250, 78, 'q', { s: 6.5 }).svg + text(276, 72, '+', { cls: 'l' }) + figure(302, 78, 'q', { s: 6.5 }).svg;
   b += text(258, 106, t(o, 'dos negras juntas', 'two quarter notes together'), { cls: 'b hi' });
@@ -28,8 +28,8 @@ export function silencioBlanca(o = {}) {
   const S = staff(122, 12);
   let b = S.lines(16, 176) + S.line(3, 16, 176, 'hi') + S.rest(96, 'h', 'hi');
   b += text(182, S.lineY(3) + 4, t(o, '3.ª línea', 'line 3'), { anchor: 'start', cls: 'b hi' });
-  b += hat(290, 64) + text(290, 86, t(o, 'sentado encima,', 'sitting on top,'), { cls: 's' }) + text(290, 100, t(o, 'como un sombrero', 'like a hat'), { cls: 's' });
-  b += arrow(262, 52, 116, S.lineY(3) - 16, { cls: 'hi', bend: 18 });
+  b += hat(290, 76) + text(290, 100, t(o, 'sentado encima,', 'sitting on top,'), { cls: 's' }) + text(290, 115, t(o, 'como un sombrero', 'like a hat'), { cls: 's' });
+  b += arrow(262, 62, 116, S.lineY(3) - 16, { cls: 'hi', bend: 18 });
   b += rhythmStrip([
     { f: 'q', n: 1, syl: ['ta'], cls: 'ink' },
     { f: 'Rh', n: 2, syl: ['(sss', 's)'], cls: 'hi' },
@@ -74,7 +74,7 @@ export function doLineaAdicional(o = {}) {
   const notes = [[100, 2], [142, 4], [184, 2], [226, 0]];
   notes.forEach(([x, st]) => { b += S.note(x, st, 'q', { cls: st === 0 ? 'hi' : '', ledgerCls: 'hi' }); });
   b += S.bar(254) + S.note(282, 0, 'h', { cls: 'hi', ledgerCls: 'hi' }) + S.final(344);
-  b += arrow(150, S.y(0) + 30, 204, S.y(0) + 3, { cls: 'hi', bend: -8 });
+  b += arrow(166, S.y(0) + 26, 206, S.y(0) + 3, { cls: 'hi', bend: -8 });
   b += text(96, S.y(0) + 40, t(o, 'línea adicional:', 'ledger line:'), { cls: 'b hi' });
   b += text(96, S.y(0) + 56, t(o, 'una rayita solo para esa nota', 'a little line just for that note'), { cls: 'm s' });
   b += house(282, S.y(0) + 52, 1) + text(282, S.y(0) + 70, t(o, '¡en casa!', 'home!'), { cls: 'b hi' });
@@ -103,7 +103,7 @@ export function compas34(o = {}) {
   const S = staff(124, 7);
   let m = S.lines(176, 350) + S.time(188, 3, 4, 'hi');
   m += S.note(228, 4, 'q', { cls: 'hi' }) + S.note(258, 4) + S.note(288, 4) + S.bar(308) + S.note(330, 4, 'h', { cls: 'hi' });
-  m += [[228, 'UN', 'ONE'], [258, 'dos', 'two'], [288, 'tres', 'three']].map(([x, es, en], k) => text(x, S.bottom + 26, t(o, es, en), { cls: k ? 'm s' : 'b hi' })).join('');
+  m += [[228, 'UN', '1'], [258, 'dos', '2'], [288, 'tres', '3']].map(([x, es, en], k) => text(x, S.bottom + 26, t(o, es, en), { cls: k ? 'm s' : 'b hi' })).join('');
   b += tapAll(o, 172, 40, 182, 120, '| G4q G4q G4q | G4h G4q |', m, ' data-sound="acento:3"');
   return svg(o, { h: 206, alt: ALT.compas34, body: b, interactive: true });
 }
@@ -114,8 +114,8 @@ export function queCabe(o = {}) {
   let b = `<rect x="${x0}" y="34" width="${box}" height="262" rx="10" class="lmf-zone"/><rect x="${x0}" y="34" width="${box}" height="262" rx="10" class="lmf-box hi"/>`;
   for (let k = 0; k < 3; k++) b += heart(x0 + cw * (k + 0.5), 20, 16, 'lmf-heart') + (k ? `<line x1="${x0 + cw * k}" x2="${x0 + cw * k}" y1="34" y2="296" class="lmf-guide"/>` : '');
   const rows = [
-    [t(o, 'tres negras', 'three quarter notes'), [['q', 1], ['q', 1], ['q', 1]], true],
-    [t(o, 'blanca + negra', 'half note + quarter note'), [['h', 2], ['q', 1]], true],
+    [t(o, 'tres negras', 'three quarters'), [['q', 1], ['q', 1], ['q', 1]], true],
+    [t(o, 'blanca + negra', 'half + quarter'), [['h', 2], ['q', 1]], true],
     [t(o, 'seis corcheas', 'six eighth notes'), [['e2', 1], ['e2', 1], ['e2', 1]], true],
     [t(o, 'una redonda', 'a whole note'), [['w', 4]], false],
     [t(o, 'dos blancas', 'two half notes'), [['h', 2], ['h', 2]], false],

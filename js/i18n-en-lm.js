@@ -15,6 +15,12 @@ const SECTION_EN = {
 
 export const LM_EXACT = {
   ...FIG_EN, ...SECTION_EN,
+  // ---------- Lectura rítmica del curso y teoría (evaluación 3) ----------
+  'Palmas al micrófono o toques en la pantalla': 'Clap into the microphone or tap the screen',
+  'Voz 1: la app toca el ostinato y tú palmeas la voz 2 (mejor con auriculares)': 'Voice 1: the app plays the ostinato and you clap voice 2 (best with headphones)',
+  Percusión: 'Percussion', Escuchar: 'Listen',
+  'La llamada acaba en la nota que pide': 'The call ends on the note asked for', 'La pregunta acaba en el aire (no en do)': 'The question ends up in the air (not on C)',
+  'La respuesta acaba en do': 'The answer ends on C', 'La parte B es distinta de la A': 'Part B is different from A',
   // ---------- Vista Lenguaje ----------
   Lenguaje: 'Music', 'Lenguaje musical': 'Music theory', 'Gratis para todos': 'Free for everyone',
   'Ritmo, lectura, entonación, dictado y audición: lo común a todos los instrumentos, unidad a unidad, y aplicado en el tuyo.':
@@ -101,7 +107,7 @@ export const LM_EXACT = {
   'Coma de respiración puesta': 'Breath mark added', 'Coma de respiración quitada': 'Breath mark removed', Volumen: 'Volume', 'Ayuda: oír la nota que toca': 'Help: hear the current note',
   'Lectura con apoyo: la app da la tonalidad y la primera nota; si dudas, puedes oír la nota que toca (cuenta como «casi»).': 'Reading with support: the app gives the key and the first note; if you are unsure, you can hear the current note (it counts as “close”).',
   'Ordenamiento de la unidad, de oído: canta los nombres.': 'The unit ordering exercise, by ear: sing the names.',
-  'Voz 1: la app (el ostinato)': 'Voice 1: the app (the ostinato)', 'Voz 2: tú (palméala o cántala mientras escuchas)': 'Voice 2: you (clap or sing it while you listen)',
+  'Voz 1: la app (el ostinato, se repite)': 'Voice 1: the app (the ostinato, it repeats)', 'Voz 2: tú (palméala o cántala mientras escuchas)': 'Voice 2: you (clap or sing it while you listen)',
   'una pregunta de teoría': 'a theory question', 'no reconoció la canción por su ritmo': "didn't recognise the song by its rhythm", 'una nota en otra altura': 'a note at the wrong pitch',
   'una redonda con otra figura': 'a whole note written as another value', 'una blanca con otra figura': 'a half note written as another value', 'una negra con otra figura': 'a quarter note written as another value',
   'una corchea con otra figura': 'an eighth note written as another value', 'una blanca con puntillo con otra figura': 'a dotted half note written as another value', 'una negra con puntillo con otra figura': 'a dotted quarter note written as another value',
@@ -118,7 +124,7 @@ export const LM_EXACT = {
   'Las notas llegan con el metrónomo, cada vez más deprisa: nómbralas antes de la siguiente.': 'The notes arrive with the metronome, faster and faster: name each one before the next.',
   'La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!': 'The app plays this rhythm over the beat, but it will make a mistake at some point. Press STOP as soon as you notice!',
   'Un compás sonó con el matiz cambiado': 'A bar was played with the wrong dynamic', 'No esperó en el calderón': "It didn't wait on the fermata",
-  'Una nota de la voz cambió de altura': 'A note of the voice changed pitch', 'La anacrusa cayó en la parte fuerte': 'The upbeat fell on the downbeat', 'y respondiste': 'and you answered', 'y cantaste': 'and you sang', 'y escribiste': 'and you wrote', 'y salió': 'and it came out as', 'no distinguió el tono del semitono al oírlo': "couldn't tell a tone from a semitone by ear", 'Notas tenidas con regulador': 'Long tones with a swell', 'Afinar en acorde: la tercera': 'Chord tuning: the third', 'Afinar en acorde: la tónica': 'Chord tuning: the root', Gimnasio: 'Gym', 'Responder tocando la pantalla (sin micrófono)': 'Answer by tapping the screen (no microphone)',
+  'Una nota del ostinato (voz 1) cambió de altura': 'A note of the ostinato (voice 1) changed pitch', 'La anacrusa cayó en la parte fuerte': 'The upbeat fell on the downbeat', 'y respondiste': 'and you answered', 'y cantaste': 'and you sang', 'y escribiste': 'and you wrote', 'y salió': 'and it came out as', 'no distinguió el tono del semitono al oírlo': "couldn't tell a tone from a semitone by ear", 'Notas tenidas con regulador': 'Long tones with a swell', 'Afinar en acorde: la tercera': 'Chord tuning: the third', 'Afinar en acorde: la tónica': 'Chord tuning: the root', Gimnasio: 'Gym', 'Responder tocando la pantalla (sin micrófono)': 'Answer by tapping the screen (no microphone)',
   ' · Los matices se miden con el micrófono': ' · Dynamics are measured with the microphone', 'Toca aquí': 'Tap here', 'regulador p < f > p': 'swell p < f > p', 'regulador: crece más en el centro': 'swell: grow more in the middle',
   'Haz un regulador: empieza piano, crece hasta forte en la mitad y vuelve a piano.': 'Make a swell: start piano, grow to forte in the middle and go back to piano.', 'Más dictados como este': 'More dictations like this', '¡Ejercicio completado!': 'Exercise completed!', 'Ejercicio guardado': 'Exercise saved',
   // Vara del trombón (keydiagram.js): «Vara» y las siete posiciones

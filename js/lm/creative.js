@@ -19,7 +19,14 @@ export const RULE_NAME = {
   final: 'Final', saltos: 'Sin saltos', incluye: 'Figuras o notas obligatorias', semitonos: 'Los semitonos', tiempo1: 'Nota en el primer tiempo',
   signos: 'Los matices y el calderón', repeticion: 'Barra de repetición', comas: 'Coma de respiración', anacrusa: 'Empieza en anacrusa',
   letra: 'Letra', eco: 'El eco repite la llamada', cambiar: 'Solo cambia el final', empieza: 'Empieza igual que la pregunta',
+  llamada: 'La llamada acaba en la nota que pide', pregunta: 'La pregunta acaba en el aire (no en do)', respuesta: 'La respuesta acaba en do',
+  formaB: 'La parte B es distinta de la A',
 };
+const SOLFA_INDEX = { do: 0, re: 1, mi: 2, fa: 3, sol: 4, la: 5, si: 6 };
+const letterOf = step => (((step - stepOf('C4')) % 7) + 7) % 7;
+const lastSound = bar => [...(bar || [])].reverse().find(t => !t.rest) || null;
+const endsOn = (bar, letter) => { const t = lastSound(bar); return !!t && letterOf(t.step) === letter; };
+const MIN_B_CHANGES = 2; // compases de B distintos de los de A para que B sea «otra parte»
 const DYN = [['pp', 'pp'], ['p', 'p'], ['mp', 'mp'], ['mf', 'mf'], ['f', 'f'], ['ff', 'ff'], ['cresc', 'cresc.'], ['dim', 'dim.']];
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
 const plain = t => ({ rest: !!t.rest, dur: t.dur, ...(t.rest ? {} : { step: t.step }) });
@@ -159,6 +166,26 @@ export function extraRules({ rs, p, tokens, given, signs, state, lyrics, barBeat
     out.push({ id: 'cambiar', ok: gb.length === tb.length && gb.slice(0, -1).every((bar, k) => same(bar, tb[k] || [])) });
   }
   if (/empiece igual/i.test(p.consigna || '') && given) out.push({ id: 'empieza', ok: !!tokens[0] && !tokens[0].rest && tokens[0].step === given[0].step });
+  out.push(...formRules({ rs, p, tokens, state, barBeats, bars }));
+  return out;
+}
+
+// Reglas de forma: «llamada (acaba en sol)» y AB = A (pregunta + respuesta) y B distinta. Compases enteros desde 0
+// (con anacrusa, el compás 0 es la anacrusa y los enteros empiezan en el 1)
+function formRules({ rs, p, tokens, state, barBeats, bars }) {
+  const out = [];
+  const b = byBars(tokens, barBeats, state.pickup);
+  const off = state.pickup ? 1 : 0;
+  const call = /llamada \(acaba en (do|re|mi|fa|sol|la|si)\)/i.exec(p.consigna || '');
+  if (call) out.push({ id: 'llamada', ok: endsOn(b[off + Math.floor(bars / 2) - 1], SOLFA_INDEX[call[1].toLowerCase()]) });
+  if (/^AB$/i.test(rs.forma || '') && bars >= 8) {
+    const half = bars / 2;
+    const a = b.slice(off, off + half);
+    const bPart = b.slice(off + half, off + bars);
+    out.push({ id: 'pregunta', ok: !!lastSound(a[half / 2 - 1]) && !endsOn(a[half / 2 - 1], 0) });
+    out.push({ id: 'respuesta', ok: endsOn(a[half - 1], 0) });
+    out.push({ id: 'formaB', ok: bPart.length === half && bPart.filter((bar, k) => !same(bar || [], a[k] || [])).length >= MIN_B_CHANGES });
+  }
   return out;
 }
 

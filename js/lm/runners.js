@@ -38,16 +38,24 @@ async function runItems(host, items, env, title = 'Pregunta') {
 
 // ---------- Teoría: ficha (tarjetas) y práctica interactiva ----------
 // Ilustración de la tarjeta (su campo «dibujo» o, si falta, la de su posición en la unidad); fija con «reducir movimiento»
+// Letra grande (125 % o más): la explicación del dibujo también va escrita, porque el texto del SVG no crece
+const BIG_TEXT_PX = 20;
+const bigText = () => parseFloat(getComputedStyle(document.documentElement).fontSize) >= BIG_TEXT_PX;
 const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 function cardFigure(card, i, env, still) {
   const dibujo = card.dibujo || CARD_FIGURE[`lm${env.level}-u${env.unit}-${i + 1}`];
-  return figureHtml(dibujo, { lang: currentLang(), nom: env.nom, still: still || reduceMotion() });
+  return figureHtml(dibujo, { lang: currentLang(), nom: env.nom, still: still || reduceMotion(), big: bigText() });
 }
 const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
+// El ejemplo de la tarjeta con su compás (el suyo o el primero de la unidad), sus barras y, si la hay, su anacrusa
+function cardExample(card, env) {
+  const ex = scoreTokens(card.ejemplo);
+  const meter = card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
+  return staffHtml(ex, { meter, pickup: card.anacrusa || 0, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
+}
 function cardHtml(card, i, env) {
-  const ex = card.ejemplo ? scoreTokens(card.ejemplo) : null;
-  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2>${cardFigure(card, i, env, false)}<p>${esc(card.texto)}</p>
-    ${ex ? `${staffHtml(ex, { label: ex.map(t => tokenLabel(t, env.nom)).join(', ') })}${playButton('lmCardPlay', 'Escuchar el ejemplo')}` : ''}`;
+  const example = card.ejemplo ? `<div class="lm-card-ex">${cardExample(card, env)}${playButton('lmCardPlay', 'Escuchar el ejemplo')}</div>` : '';
+  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}</div>`;
 }
 async function showCards(host, cards, env, summary) {
   const unitColor = `--unit:var(--u${((env.unit - 1) % 8) + 1})`;

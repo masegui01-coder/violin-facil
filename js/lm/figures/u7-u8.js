@@ -20,13 +20,13 @@ export function hermanas(o = {}) {
     b += tap(x - 24, 30, 120, 96, play, `${name}: ${mood}`, g);
   });
   b += `<path d="M${kb.cx(7)} 218 Q${(kb.cx(7) + kb.cx(5)) / 2} 246 ${kb.cx(5) + 6} 220" class="lmf-arrow two"/>` + arrow(kb.cx(5) + 14, 226, kb.cx(5) + 5, 219, { cls: 'two', head: 6 });
-  b += text(kb.cx(6), 260, t(o, 'do → si → la: 3 notas más abajo', 'C → B → A: 3 notes down'), { cls: 's b two' });
+  b += text(356, 260, t(o, 'do → si → la: 3 notas más abajo', 'C → B → A: 3 notes down'), { anchor: 'end', cls: 's b two' });
   return svg(o, { h: 268, alt: ALT.hermanas, body: b, interactive: true });
 }
 
 // Escalera con nombres y medio tono marcado (½) donde toca
 function scaleStairs(o, x0, base, from, semis, label, cls) {
-  const st = stairs(x0, base, 36, semis.map(s => s * 7), { first: 17, hiRise: i => semis[i - 1] === 1 });
+  const st = stairs(x0, base, 36, semis.map(s => s * 7), { first: 20, hiRise: i => semis[i - 1] === 1 });
   let b = st.svg + text(x0, base - 108, label, { anchor: 'start', cls: `b ${cls}` });
   st.xs.forEach((x, i) => {
     b += text(x, st.tops[i] - 6, nn(o, from + i), { cls: 's b' }) + text(x, base - 4, i + 1, { cls: 's m' });
@@ -105,8 +105,9 @@ export function anacrusa(o = {}) {
   b += moveAlong(o, jump, 1.5, { r: 6 });
   const beats = [[108, '(4)'], [164, '1'], [200, '2'], [236, '3'], [272, '4']];
   b += beats.map(([x, n], i) => text(x + (i === 1 || i === 2 ? 8 : 0), S.bottom + 34, n, { cls: i === 1 ? 'b l hi' : i ? 'm b' : 'hi b' })).join('');
-  b += [[108, '¿Te'], [172, 'VIE-'], [208, 'nes…']].map(([x, s], i) => text(x, S.bottom + 54, s, { cls: i === 1 ? 'b' : 's' })).join('');
-  b += text(108, S.bottom + 76, t(o, 'anacrusa', 'pick-up'), { cls: 'b hi' }) + text(218, S.bottom + 76, t(o, '1.er tiempo fuerte', 'first strong beat'), { cls: 'b' });
+  const words = [[108, t(o, '¿Te', 'the')], [172, t(o, 'VIE-', 'SUN')], [224, t(o, 'nes…', 'comes…')]];
+  b += words.map(([x, s], i) => text(x, S.bottom + 54, s, { cls: i === 1 ? 'b' : 's' })).join('');
+  b += text(108, S.bottom + 76, t(o, 'anacrusa', 'upbeat'), { cls: 'b hi' }) + text(218, S.bottom + 76, t(o, '1.er tiempo fuerte', 'first strong beat'), { cls: 'b' });
   return svg(o, { h: 206, alt: ALT.anacrusa, body: tap(84, 10, 220, 192, '| G4q | C5q B4q A4q G4q | A4h G4q |', t(o, 'Escuchar el ejemplo', 'Listen to the example'), b), interactive: true });
 }
 
@@ -119,7 +120,7 @@ const piece = (x, y, n, cls, cw = 44) => `<rect x="${x}" y="${y}" width="${n * c
 export function anacrusaFinal(o = {}) {
   let b = text(40, 24, t(o, 'al empezar', 'at the start'), { cls: 's m' }) + text(282, 24, t(o, 'al terminar', 'at the end'), { cls: 's m' });
   b += piece(18, 34, 1, '') + text(162, 60, '· · ·', { cls: 'l m' }) + piece(216, 34, 3, 'two');
-  b += text(40, 92, t(o, 'anacrusa: 1', 'pick-up: 1'), { cls: 's b hi' }) + text(282, 92, t(o, 'último compás: 3', 'last bar: 3'), { cls: 's b two' });
+  b += text(40, 92, t(o, 'anacrusa: 1', 'upbeat: 1'), { cls: 's b hi' }) + text(282, 92, t(o, 'último compás: 3', 'last bar: 3'), { cls: 's b two' });
   b += arrow(282, 100, 200, 124, { cls: 'two', bend: 8 }) + arrow(40, 100, 236, 124, { cls: 'hi', bend: -20 });
   b += `<g class="lmf-slide-r">${piece(92, 132, 3, 'two')}</g><g class="lmf-slide-l">${piece(224, 132, 1, '')}</g>`;
   b += `<path d="M92 182 v8 H268 v-8" class="lmf-outline m"/>`;
@@ -133,9 +134,9 @@ function bubble(o, x, y, w, notes, end, tail, cls, title) {
   let g = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18" class="lmf-soft${cls === 'two' ? ' two' : ''}"/>`;
   g += `<path d="M${tail[0]} ${y + h - 1} l${tail[1]} 18 l${tail[2]} -18" class="lmf-soft${cls === 'two' ? ' two' : ''}"/>`;
   g += text(x + 14, y + 22, title, { anchor: 'start', cls: `b ${cls}` });
-  const pts = notes.map((s, i) => [x0 + i * dx, y + 82 - s * 8]);
+  const pts = notes.map((s, i) => [x0 + i * dx, y + 82 - s * 7]);
   g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" class="lmf-outline m"/>`;
-  pts.forEach(([px, py], i) => { const last = i === pts.length - 1; g += `<circle cx="${r1(px)}" cy="${r1(py)}" r="${last ? 7 : 5}" class="${last ? `lmf-solid${cls === 'two' ? ' two' : ''}` : 'lmf-solid ink'}"/>` + text(px, py + (last ? 26 : 18), nn(o, notes[i]), { cls: 's m' }); });
+  pts.forEach(([px, py], i) => { const last = i === pts.length - 1; g += `<circle cx="${r1(px)}" cy="${r1(py)}" r="${last ? 7 : 5}" class="${last ? `lmf-solid${cls === 'two' ? ' two' : ''}` : 'lmf-solid ink'}"/>` + text(px, !last && notes[i + 1] < notes[i] ? py - 11 : py + (last ? 26 : 19), nn(o, notes[i]), { cls: 's m' }); });
   const [lx, ly] = pts[pts.length - 1];
   g += end(lx, ly);
   return g;
@@ -174,8 +175,8 @@ export const ALT = {
   escalaLaMenor: { es: 'Dos escaleras de ocho peldaños. Do mayor tiene los peldaños cortos (½) entre el 3.º y 4.º y entre el 7.º y 8.º. La menor, con las mismas notas, los tiene entre el 2.º y 3.º y entre el 5.º y 6.º.', en: 'Two eight-step staircases. C major has its short steps (½) between steps 3-4 and 7-8. A minor, with the same notes, has them between steps 2-3 and 5-6.' },
   tercerasModo: { es: 'Dos trozos de teclado. De do a mi hay cuatro saltitos de medio tono: tercera mayor, suena abierta. De la a do hay tres: tercera menor, suena cerrada. La tercera nota desde la tónica decide si el modo es mayor o menor.', en: 'Two pieces of keyboard. From C to E there are four half-step hops: a major third, sounds open. From A to C there are three: a minor third, sounds closed. The third note above the tonic decides whether the mode is major or minor.' },
   comaRespiracion: { es: 'Dos frases de cuatro compases cada una, como dos partes de una oración: «Había una vez un gato, que cantaba al despertar». Un arco cubre cada frase y al final de cada una hay una coma de respiración con un soplo de aire.', en: 'Two phrases of four bars each, like two parts of a sentence: “Once upon a time a cat, sang as soon as it woke”. An arc covers each phrase and at the end of each there is a breath mark with a puff of air.' },
-  anacrusa: { es: 'Pentagrama en 4/4. Antes de la primera barra hay una sola nota, resaltada en una zona punteada: la anacrusa (cuenta 4). Una flecha salta por encima de la barra hasta el primer tiempo fuerte (1). Debajo, la letra: «¿Te | VIE-nes…».', en: 'A staff in 4/4. Before the first bar line there is a single highlighted note in a dotted zone: the pick-up (counted 4). An arrow jumps over the bar line to the first strong beat (1). Below, the words: “¿Te | VIE-nes…”.' },
-  anacrusaFinal: { es: 'Arriba, la anacrusa del principio (una casilla de un pulso) y el último compás (tres casillas). Abajo, las dos piezas encajan como un puzle: 3 + 1 = 4, un compás completo.', en: 'Top: the pick-up at the start (one one-beat box) and the last bar (three boxes). Bottom: the two pieces fit together like a puzzle: 3 + 1 = 4, one whole bar.' },
+  anacrusa: { es: 'Pentagrama en 4/4. Antes de la primera barra hay una sola nota, resaltada en una zona punteada: la anacrusa (cuenta 4). Una flecha salta por encima de la barra hasta el primer tiempo fuerte (1). Debajo, la letra: «¿Te | VIE-nes…».', en: 'A staff in 4/4. Before the first bar line there is a single highlighted note in a dotted zone: the upbeat (counted 4). An arrow jumps over the bar line to the first strong beat (1). Below, the words: “the | SUN comes…”.' },
+  anacrusaFinal: { es: 'Arriba, la anacrusa del principio (una casilla de un pulso) y el último compás (tres casillas). Abajo, las dos piezas encajan como un puzle: 3 + 1 = 4, un compás completo.', en: 'Top: the upbeat at the start (one one-beat box) and the last bar (three boxes). Bottom: the two pieces fit together like a puzzle: 3 + 1 = 4, one whole bar.' },
   preguntaRespuesta: { es: 'Dos bocadillos de diálogo con el dibujo de la melodía. La pregunta sube mi, fa, sol, la y acaba en re, en el aire, con un signo de interrogación. La respuesta hace mi, fa, sol, re y acaba en do, junto a una casita y un punto final.', en: 'Two speech bubbles with the shape of the melody. The question goes up E, F, G, A and ends on D, up in the air, with a question mark. The answer goes E, F, G, D and ends on C, next to a little house and a full stop.' },
   bocadilloAba: { es: 'A la izquierda, forma AB: un bloque A y un bloque B distintos. A la derecha, forma ABA como un bocadillo: pan A arriba, relleno B en medio y pan A abajo. Debajo, la línea del tiempo A, B, A.', en: 'Left: AB form, two different blocks A and B. Right: ABA form like a sandwich: bread A on top, filling B in the middle and bread A at the bottom. Below, the timeline A, B, A.' },
 };

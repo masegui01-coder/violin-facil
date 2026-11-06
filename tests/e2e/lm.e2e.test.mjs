@@ -312,6 +312,19 @@ test('herramienta de siempre lanzada desde la unidad: la lectura rítmica abre e
   await waitVisible(page, 'rhythm');
   const notes = await page.$$eval('#rhythmStaff .note, #rhythmStaff ellipse', n => n.length);
   assert.ok(notes > 0, 'la partitura de la unidad está en el pentagrama');
+  // es lectura rítmica, no percusión: sin manos D/I y con la consigna de la variante
+  assert.equal(await page.$eval('#rhChip', e => e.textContent), 'Lectura rítmica');
+  assert.equal(await page.$eval('#rhHint', e => e.textContent), lmExercise('lm1-u1-ritmo-a-facil').params.modo);
+  await click(page, '#rhExit');
+  await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
+  // U7 Media, a dos voces: la app toca el ostinato (voz 1) mientras el alumno palmea la voz 2
+  await page.$eval('[data-lm-back]', b => b.click());
+  await openUnit(page, 7);
+  await openExercise(page, 'lm1-u7-ritmo-a-medio');
+  await waitVisible(page, 'rhythm');
+  assert.ok(await page.$eval('#rhVbToggle', c => c.checked), 'el ostinato suena');
+  assert.ok(!(await page.$eval('#rhVbRow', r => r.hidden)), 'y se puede quitar');
+  assert.match(await page.$eval('#rhVbRow span', s => s.textContent), /ostinato/);
   await click(page, '#rhExit');
   await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
   // Notas tenidas desde «En tu instrumento» (violín: cuerda frotada) con su vuelta a la unidad
@@ -440,7 +453,7 @@ const CREATIVE = {
   'lm1-u7-creatividad-a-facil': { raise: { index: 8, steps: 5 } },
   'lm1-u7-creatividad-a-medio': { score: '| A4q B4q C5q B4q | A4h E4h | A4q G4q F4q E4q | A4w |', breathAfter: 5, lyrics: 'I-za la ve-la, e-ho' },
   'lm1-u8-creatividad-a-facil': { score: '| G4q A4q G4q E4q | D4q E4q C4h |' },
-  'lm1-u8-creatividad-a-medio': { meter: '2/4', pickup: 1, score: '| G4q | C5q C5q | B4q A4q | G4q E4q | G4h | A4q B4q | C5q D5q | C5q G4q | C5q |', lyrics: 'Te vie-nes, ya' },
+  'lm1-u8-creatividad-a-medio': { meter: '2/4', pickup: 1, score: '| G4q | C5q C5q | B4q A4q | G4q E4q | C5h | A4q B4q | C5q D5q | C5q G4q | C5q |', lyrics: 'Te vie-nes, ya' },
 };
 const setControl = (page, sel, apply, ...args) => page.$eval(sel, apply, ...args);
 

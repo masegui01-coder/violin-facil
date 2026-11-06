@@ -484,7 +484,7 @@ function scheduler() {
   const c = state.ctx;
   while (metro.nextTime < c.currentTime + LOOKAHEAD_S) {
     const beat = metro.beat % metro.meter;
-    scheduleClick(metro.nextTime, beat === 0 && metro.meter > 1, metro.sound);
+    scheduleClick(metro.nextTime, beat === 0 && metro.meter > 1, metro.sound && (!metro.firstOnly || beat === 0));
     metro.queue.push({ time: metro.nextTime, beat });
     metro.nextTime += 60 / metro.bpm;
     metro.beat = beat + 1;
@@ -502,7 +502,9 @@ export function metronome() {
   return { on: metro.on, bpm: metro.bpm, meter: metro.meter, sound: metro.sound };
 }
 
-export function configureMetronome({ bpm, meter, sound }) {
+// firstOnly: solo suena el primer pulso de cada compás (lecturas del curso de Lenguaje); por defecto, todos
+export function configureMetronome({ bpm, meter, sound, firstOnly = false }) {
+  metro.firstOnly = !!firstOnly;
   if (bpm) metro.bpm = bpm;
   if (meter) { metro.meter = meter; metro.beat = 0; }
   if (sound !== undefined) metro.sound = sound;

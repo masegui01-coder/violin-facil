@@ -8,6 +8,7 @@ import { t, currentLang } from '../i18n.js';
 import { getState } from '../store.js';
 import { SECTION_NAME, VARIANT_NAME } from './catalog.js';
 import { figureHtml, CARD_FIGURE } from './figures/index.js';
+import { SONG_WORDS } from './tasks-voice.js';
 
 const MARGIN = 16;
 const WIDTH = 178;
@@ -29,7 +30,10 @@ async function figureImage(dibujo, unit) {
 }
 const BOTTOM = 280;
 const CHARS_PER_MM = 0.52; // Helvetica 10 pt, aproximado
-const plain = s => String(t(s)).replace(/[«»“”]/g, '"').replace(/[♯]/g, '#').replace(/[♭]/g, 'b').replace(/—/g, '-').replace(/…/g, '...');
+// La fuente del PDF (Helvetica, WinAnsi) no tiene todos los signos: comillas, raya y apóstrofo curvo pasan a sus
+// equivalentes rectos (la coma de respiración ’ sale como ')
+const ascii = s => String(s).replace(/[«»“”]/g, '"').replace(/[‘’]/g, "'").replace(/[♯]/g, '#').replace(/[♭]/g, 'b').replace(/[—–]/g, '-').replace(/…/g, '...');
+const plain = s => ascii(t(s));
 
 function wrap(text, size) {
   const max = Math.floor(WIDTH * CHARS_PER_MM * 10 / size);
@@ -85,7 +89,12 @@ export async function unitPdf(unit) {
       doc.image(img.data, MARGIN, y, WIDTH, h, img.w, img.h);
       y += h + 1;
     }
-    if (unit.song.letra) para(unit.song.letra.map(bar => bar.join('')).filter(Boolean).join(' / '), { size: 9, gray: 60, gap: 4 });
+    // La letra con sus palabras (no sílaba a sílaba); en inglés se canta igual, en español, y se da su significado
+    const words = SONG_WORDS[unit.song.titulo] || unit.song.letra?.map(bar => bar.join(' ')).filter(Boolean).join(' / ');
+    if (words && currentLang() === 'en') {
+      para(`Lyrics (sung in Spanish): ${ascii(words)}`, { size: 9, gray: 60, gap: 1 });
+      if (t(words) !== words) para(`Meaning: ${plain(words)}`, { size: 9, gray: 60, gap: 4 });
+    } else if (words) para(ascii(words), { size: 9, gray: 60, gap: 4 });
   }
   para(t('Ejercicios'), { size: 12, bold: true });
   unit.exercises.forEach(e => para(`${plain(SECTION_NAME[e.section])} · ${plain(e.title)} (${plain(VARIANT_NAME[e.variant])})`, { size: 9, gap: 0.6 }));

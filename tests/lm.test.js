@@ -13,7 +13,7 @@ import {
 import {
   interval, scale, degreeNote, centsAnyOctave, voiceTonic, parseTokens, tokensText, tokensToNotes, positionText, stepOf, scoreTokens, barBeatsOf, solfaToName,
 } from '../js/lm/notes.js';
-import { stopRoundOf, stopKinds, stopWindow, stopBase, gainsFor, genRhythm, genMelody, meterQuestions, semitoneQuestions, modeQuestions } from '../js/lm/gen.js';
+import { stopRoundOf, stopKinds, stopWindow, stopBase, ostinatoTokens, gainsFor, genRhythm, genMelody, meterQuestions, semitoneQuestions, modeQuestions } from '../js/lm/gen.js';
 import { agilityPlan } from '../js/lm/tasks-agility.js';
 import { getState } from '../js/store.js';
 import { readFileSync } from 'node:fs';
@@ -239,8 +239,11 @@ test('STOP: cada error del catálogo cambia el ritmo de la lectura de su unidad'
     const barBeats = barBeatsOf(e.params.base.compas);
     const kinds = stopKinds(e.params.errores);
     const opts = { kinds, barBeats, matices: e.params.base.matices || [], pickup: e.params.base.anacrusa || 0 };
-    const sound = r => JSON.stringify([r.offset, r.played.map(t => [t.rest, t.dur, t.midi, Math.round((t.gain || 0) * 100), t.hold || 0])]);
-    const correct = sound({ offset: opts.pickup ? barBeats - opts.pickup : 0, played: stopBase(base, { matices: opts.matices, voice: kinds.includes('voz') }) });
+    const ost = kinds.includes('voz') ? ostinatoTokens(base, e.params.base) : null;
+    const voice = list => (list || []).map(t => [t.rest, t.dur, t.midi, Math.round((t.gain || 0) * 100), t.hold || 0]);
+    const sound = r => JSON.stringify([r.offset, voice(r.played), voice(r.ostinato)]);
+    const correct = sound({ offset: opts.pickup ? barBeats - opts.pickup : 0, played: stopBase(base, { matices: opts.matices }), ostinato: ost });
+    opts.ostinato = ost;
     const avoid = new Set();
     for (let k = 0; k < (e.params.rondas || 3); k++) {
       const r = stopRoundOf(base, { ...opts, seed: 11 + k * 101, avoid });
@@ -416,8 +419,12 @@ test('STOP con matiz, calderón, voz y anacrusa: el error se oye y se sabe dónd
   const loud = mat.played.filter(t => t.bar === bar).map(t => t.gain);
   const good = stopBase(base, { matices }).filter(t => t.bar === bar).map(t => t.gain);
   assert.notDeepEqual(loud, good);
-  const voz = stopRoundOf(base, { kinds: ['voz'], seed: 3, barBeats: 4 });
-  assert.notEqual(voz.played[voz.index].midi, stopBase(base, { voice: true })[voz.index].midi);
+  // voz cambiada: la lectura del alumno suena igual y la nota cambiada es del ostinato de la app
+  const ost = ostinatoTokens(base, { compas: '4/4' });
+  const voz = stopRoundOf(base, { kinds: ['voz'], seed: 3, barBeats: 4, ostinato: ost });
+  assert.deepEqual(voz.played.map(t => t.midi), stopBase(base).map(t => t.midi));
+  assert.notEqual(voz.ostinato[voz.index].midi, ost[voz.index].midi);
+  assert.equal(voz.errorBeat, ost[voz.index].start);
   const pick = scoreTokens('| C5q | C5q C5q C5q C5q | C5h C5h | C5q C5q C5h | C5h. |');
   const ana = stopRoundOf(pick, { kinds: ['anacrusa'], seed: 4, barBeats: 4, pickup: 1 });
   assert.deepEqual([ana.offset, ana.errorBeat], [0, 0], 'la anacrusa cae en el primer pulso');
@@ -537,4 +544,19 @@ test('sonido de las ilustraciones: calderón, notas a la vez y matices', async (
   assert.ok(pp < ff);
   const cresc = gainsOf({ dyn: 'cresc' }, [{}, {}, {}]);
   assert.ok(cresc[0] < cresc[2]);
+});
+
+test('U7 a dos voces: la voz 1 es el ostinato del ejercicio (su ritmo, repetido), no la lectura del alumno', () => {
+  const lectura = lmExercise('lm1-u7-ritmo-a-medio').params;
+  const reading = scoreTokens(lectura.partitura);
+  const ost = ostinatoTokens(reading, lectura);
+  const pattern = scoreTokens(lectura.voz1);
+  assert.deepEqual(ost.slice(0, pattern.length).map(t => t.dur), pattern.map(t => t.dur));
+  assert.notDeepEqual(ost.slice(0, 6).map(t => t.dur), reading.slice(0, 6).map(t => t.dur), 'ritmo propio');
+  const end = t => t.start + t.beats;
+  assert.equal(end(ost[ost.length - 1]), end(reading[reading.length - 1]), 'dura lo mismo que la lectura');
+  // la lectura fácil (3/4) no trae voz1: la app le pone un ostinato de un compás
+  const facil = lmExercise('lm1-u7-ritmo-a-facil').params;
+  const ostF = ostinatoTokens(scoreTokens(facil.partitura), facil);
+  assert.ok(ostF.length > 0 && ostF.every(t => t.midi === 60));
 });

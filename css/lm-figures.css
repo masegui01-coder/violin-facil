@@ -13,10 +13,10 @@
 .lmf-svg { display: block; width: 100%; max-width: 30rem; height: auto; margin-inline: auto; overflow: visible; }
 
 /* Texto */
-.lmf-t { font-family: var(--f-body); font-size: 13px; font-weight: 600; fill: var(--f-ink); }
+.lmf-t { font-family: var(--f-body); font-size: 15px; font-weight: 600; fill: var(--f-ink); }
 .lmf-t.b { font-weight: 800; }
 .lmf-t.m { fill: var(--f-muted); font-weight: 600; }
-.lmf-t.s { font-size: 11px; }
+.lmf-t.s { font-size: 14.5px; }
 .lmf-t.l { font-size: 17px; font-weight: 800; }
 .lmf-t.xl { font-size: 24px; font-weight: 800; font-family: var(--f-display); }
 .lmf-t.hi { fill: var(--f-hi); }
@@ -24,6 +24,8 @@
 .lmf-t.bad { fill: var(--f-bad); }
 .lmf-t.ok { fill: var(--f-ok); }
 .lmf-t.on { fill: var(--f-paper); }
+/* Números dentro de una insignia (círculo o pastilla de color): caben en su forma, más pequeños */
+.lmf-t.s.on { font-size: 12px; }
 .lmf-t.dyn { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-weight: 700; font-size: 26px; }
 .lmf-t.music { font-family: var(--f-music); }
 
@@ -83,18 +85,21 @@
 .lmf-heart.soft { fill: var(--f-hi-soft); stroke: var(--f-hi); stroke-width: 1.4; }
 
 /* Teclado */
-.lmf-white { fill: var(--f-paper); stroke: var(--f-ink); stroke-width: 1.4; }
-.lmf-black { fill: var(--f-ink); }
-.lmf-key.hi .lmf-white { fill: var(--f-hi-soft); stroke: var(--f-ink); }
-.lmf-key.hi2 .lmf-white { fill: var(--f-2-soft); }
-.lmf-key.off .lmf-white { fill: var(--surface-2, var(--f-paper)); }
-.lmf-key.off .lmf-keyname { fill: var(--f-muted); text-decoration: line-through; }
+/* El teclado es un piano de verdad en los dos temas: teclas blancas claras y negras oscuras */
+.lmf { --key-white: #F7F5EF; --key-black: #1B2029; --key-ink: #141B26; --key-edge: #3A4352; }
+.lmf-white { fill: var(--key-white); stroke: var(--key-edge); stroke-width: 1.4; }
+.lmf-black { fill: var(--key-black); }
+.lmf-key.hi .lmf-white { fill: color-mix(in srgb, var(--f-hi) 26%, var(--key-white)); }
+.lmf-key.hi2 .lmf-white { fill: color-mix(in srgb, var(--f-2) 26%, var(--key-white)); }
+.lmf-key.off .lmf-white { fill: #E3E6EB; }
+.lmf-t.lmf-keyname { fill: var(--key-ink); }
+.lmf-key.off .lmf-keyname { fill: #5A6678; text-decoration: line-through; }
 .lmf-keyname { font-weight: 800; }
 
 /* Interacción: tocar para oír (la zona tocable se nota y tiene foco visible) */
 .lmf [role="button"] { cursor: pointer; outline: none; }
 .lmf [role="button"]:focus-visible > :first-child { stroke: var(--accent); stroke-width: 3; }
-.lmf [role="button"].lmf-playing { filter: drop-shadow(0 0 4px var(--f-hi)); }
+.lmf .lmf-tapgrp:has(.lmf-playing) { filter: drop-shadow(0 0 4px var(--f-hi)); }
 .lmf-tap { fill: transparent; }
 .lmf-tap-hint { fill: var(--f-muted); font-size: 11px; font-weight: 700; }
 
@@ -129,3 +134,14 @@
 .lmf-fill.two { fill: var(--f-2); }
 .lmf-hint { text-align: center; font-size: .8rem; font-weight: 700; color: var(--muted); margin-top: 4px; }
 .lmf-cut { fill: var(--f-paper); }
+
+/* Botones de las zonas pequeñas (teclas, notas sueltas): a tamaño de dedo, con su nombre */
+.lmf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+.lmf-chip { min-width: 48px; min-height: 48px; padding: 6px 12px; border-radius: 24px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.lmf-chip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.lmf-chip.lmf-playing { border-color: var(--f-hi); box-shadow: 0 0 0 2px var(--f-hi-soft); }
+/* La explicación escrita del dibujo: solo con la letra grande (el texto del SVG no crece con ella) */
+.lmf-words { display: none; margin: 8px 0 0; font-size: .95rem; line-height: 1.45; color: var(--ink); }
+.lmf.big .lmf-words { display: block; }
+/* En el móvil el dibujo ocupa todo el ancho de la tarjeta (la letra del dibujo no baja de 14 px) */
+.lm-card .lmf, .lm-card-sum .lmf { margin-inline: -10px; }

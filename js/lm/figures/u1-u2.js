@@ -5,9 +5,9 @@ import { W, t, nn, text, arrow, callout, heart, beatRow, beatStyle, figure, beam
 export function corazonesPulso(o = {}) {
   const xs = [60, 140, 220, 300];
   let b = xs.map((x, k) => heart(x, 52, 46, 'lmf-heart lmf-beat', beatStyle(k)) + text(x, 100, 'tum', { cls: 'b l' })).join('');
-  b += arrow(20, 124, 344, 124, { cls: 'ink', head: 8 });
+  b += arrow(20, 124, 308, 124, { cls: 'ink', head: 8 });
   b += xs.map(x => `<line x1="${x}" x2="${x}" y1="117" y2="131" class="lmf-bar"/>`).join('');
-  b += text(344, 112, t(o, 'tiempo', 'time'), { anchor: 'end', cls: 'm s' });
+  b += text(313, 129, t(o, 'tiempo', 'time'), { anchor: 'start', cls: 'm s' });
   for (let k = 0; k < 3; k++) b += arrow(xs[k] + 8, 144, xs[k + 1] - 8, 144, { cls: 'hi', head: 5 }) + arrow(xs[k + 1] - 8, 144, xs[k] + 8, 144, { cls: 'hi', head: 5 });
   b += text(180, 168, t(o, 'siempre a la misma distancia: eso es el pulso', 'always the same distance apart: that is the beat'), { cls: 'hi' });
   const body = tap(0, 0, W, 176, '| C5q C5q C5q C5q |', t(o, 'Escuchar el pulso', 'Listen to the beat'), b, ' data-sound="pulso"');
@@ -44,16 +44,16 @@ export function silencioNegra(o = {}) {
 // U1 · «La casa de las notas»: líneas y espacios numerados de abajo arriba, nota en línea y nota en espacio
 export function pentagrama(o = {}) {
   const S = staff(150, 13), x0 = 66, x1 = 286;
-  let b = [1, 2, 3, 4, 5].map(n => `<line x1="${x0}" x2="${x1}" y1="${S.lineY(n)}" y2="${S.lineY(n)}" class="lmf-line lmf-drawonce" style="--i:${n - 1};--len:230"/>`).join('');
+  let b = [1, 2, 3, 4, 5].map(n => `<line x1="${x0}" x2="${x1}" y1="${S.lineY(n)}" y2="${S.lineY(n)}" class="lmf-line"/>`).join('');
   b += text(x0 - 22, 26, t(o, 'líneas', 'lines'), { cls: 'b' }) + text(x1 + 20, 26, t(o, 'espacios', 'spaces'), { cls: 'b hi' });
   for (let n = 1; n <= 5; n++) b += `<circle cx="${x0 - 22}" cy="${S.lineY(n)}" r="9" class="lmf-solid ink"/>` + text(x0 - 22, S.lineY(n) + 4.5, n, { cls: 'b on s' });
   for (let n = 1; n <= 4; n++) b += `<rect x="${x1 + 13}" y="${S.lineY(n) - 21}" width="22" height="16" rx="8" class="lmf-solid"/>` + text(x1 + 24, S.lineY(n) - 9, n, { cls: 'b on s' });
-  b += tap(116, S.lineY(3) - 4, 44, 64, '| G4q |', `${nn(o, 4)}: ${t(o, 'nota en línea', 'note on a line')}`, S.note(138, 4, 'q'));
-  b += tap(200, S.lineY(3) - 4, 44, 64, '| A4q |', `${nn(o, 5)}: ${t(o, 'nota en espacio', 'note in a space')}`, S.note(222, 5, 'q', { cls: 'hi' }));
-  b += text(138, 176, t(o, 'en línea:', 'on a line:'), { cls: 'b s' }) + text(138, 190, t(o, 'la raya la cruza', 'line through it'), { cls: 'm s' });
-  b += text(222, 176, t(o, 'en espacio:', 'in a space:'), { cls: 'b s hi' }) + text(222, 190, t(o, 'entre dos rayas', 'between lines'), { cls: 'm s' });
+  b += tap(108, S.lineY(3) - 4, 60, 64, '| G4q |', `${nn(o, 4)}: ${t(o, 'nota en línea', 'note on a line')}`, S.note(138, 4, 'q'));
+  b += tap(192, S.lineY(3) - 4, 60, 64, '| A4q |', `${nn(o, 5)}: ${t(o, 'nota en espacio', 'note in a space')}`, S.note(222, 5, 'q', { cls: 'hi' }));
+  b += text(118, 176, t(o, 'en línea:', 'on a line:'), { cls: 'b s' }) + text(118, 191, t(o, 'la raya la cruza', 'line through it'), { cls: 'm s' });
+  b += text(252, 176, t(o, 'en espacio:', 'in a space:'), { cls: 'b s hi' }) + text(252, 191, t(o, 'entre dos rayas', 'between lines'), { cls: 'm s' });
   b += arrow(346, 150, 346, 58, { cls: 'hi', head: 7 });
-  b += text(358, 50, t(o, 'agudo', 'higher'), { anchor: 'end', cls: 's b hi' }) + text(358, 166, t(o, 'grave', 'lower'), { anchor: 'end', cls: 's b m' });
+  b += text(358, 44, t(o, 'agudo', 'higher'), { anchor: 'end', cls: 's b hi' }) + text(358, 166, t(o, 'grave', 'lower'), { anchor: 'end', cls: 's b m' });
   return svg(o, { h: 200, alt: ALT.pentagrama, body: b, interactive: true });
 }
 
@@ -143,7 +143,7 @@ export function notaLa(o = {}) {
   let b = S.lines(14, 346) + S.clef(18);
   b += arrow(150, S.y(4) - 14, 198, S.y(5) - 14, { cls: 'hi', bend: -12 }) + text(172, S.top - 8, t(o, 'paso ↑', 'step ↑'), { cls: 'b hi' });
   b += arrow(224, S.y(5) - 14, 292, S.y(2) - 12, { cls: 'two', bend: -30 }) + text(262, S.top - 8, t(o, 'salto ↓', 'leap ↓'), { cls: 'b two' });
-  b += tap(116, 40, 56, 130, '| G4q |', nn(o, 4), S.note(140, 4, 'n') + text(140, 170, nn(o, 4), { cls: 'b' }));
+  b += tap(112, 40, 60, 130, '| G4q |', nn(o, 4), S.note(140, 4, 'n') + text(140, 170, nn(o, 4), { cls: 'b' }));
   b += tap(180, 40, 60, 130, '| A4q |', `${nn(o, 5)}: ${t(o, '2.º espacio', 'space 2')}`, `<rect x="186" y="${S.lineY(3)}" width="48" height="${2 * S.h}" rx="4" class="lmf-zone"/>` + S.note(210, 5, 'n', { cls: 'hi' })
     + text(210, 170, `${nn(o, 5)} · ${t(o, '2.º espacio', 'space 2')}`, { cls: 'b hi' }));
   b += tap(270, 40, 60, 130, '| E4q |', nn(o, 2), S.note(300, 2, 'n') + text(300, 170, nn(o, 2), { cls: 'b' }));

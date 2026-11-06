@@ -1,7 +1,7 @@
 // Generadores puros del curso (sin DOM, con semilla: toda la clase recibe lo mismo): rondas del juego STOP a partir de
 // la lectura rítmica de la unidad, ritmos con las figuras permitidas y preguntas de discriminación auditiva.
 import { rng } from '../generate.js';
-import { FIGURE_BEATS, scale, midiOf, stepOf } from './notes.js';
+import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens } from './notes.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
@@ -18,8 +18,10 @@ const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false,
 // «Rq>q» = calló una negra, «q>Rq» = sonó en un silencio).
 export const DYN_GAIN = { ppp: 0.2, pp: 0.28, p: 0.42, mp: 0.55, mf: 0.68, f: 0.85, ff: 1, fff: 1 };
 const DEFAULT_GAIN = DYN_GAIN.mf;
-const OSTINATO = [72, 67, 69, 67]; // Do5 Sol4 La4 Sol4: la «voz» que la app repite
-const WRONG_STEP = 3;               // la nota cambiada, una tercera menor por encima
+// Voz 1 de la lectura a dos voces: el ostinato del ejercicio (campo voz1) o, si no lo trae, uno de un compás
+const DEFAULT_OSTINATO = { 2: '| C4q C4e C4e |', 3: '| C4q C4e C4e C4q |', 4: '| C4q C4e C4e C4q C4e C4e |' };
+const OSTINATO_GAIN = 0.5;
+const WRONG_STEP = 4;               // la nota cambiada del ostinato: una tercera mayor por encima (do → mi)
 
 // Volumen de cada nota según los matices (compases desde 1; t.bar desde 0): el último matiz fijo vale hasta el
 // siguiente y los reguladores (cresc, dim) van de piano a forte o al revés a lo largo de sus compases
@@ -44,18 +46,32 @@ export function gainsFor(ts, matices = []) {
   });
 }
 
-// Interpretación correcta de la lectura: volumen por compás (matices y reguladores), calderón y melodía si hace falta
-export function stopBase(base, { matices = [], voice = false } = {}) {
+// El ostinato que toca la app (voz 1) debajo de la lectura del alumno (voz 2): su patrón repetido desde el primer
+// compás entero hasta el final de la lectura. reading: los tokens de la lectura; base: { voz1, compas, anacrusa }
+export function ostinatoTokens(reading, { voz1 = null, compas = '4/4', anacrusa = 0 } = {}) {
+  const barBeats = Math.round(Number(String(compas).split('/')[0]) * 4 / Number(String(compas).split('/')[1] || 4));
+  const pattern = scoreTokens(voz1 || DEFAULT_OSTINATO[barBeats] || DEFAULT_OSTINATO[4]);
+  const span = pattern.reduce((s, t) => s + t.beats, 0);
+  const last = reading[reading.length - 1];
+  const end = last ? last.start + last.beats : 0;
+  const out = [];
+  for (let at = anacrusa; span > 0 && at < end - EPS; at += span) {
+    pattern.forEach(t => { if (at + t.start < end - EPS) out.push({ ...t, start: at + t.start, bar: Math.floor((at + t.start - anacrusa) / barBeats) + (anacrusa ? 1 : 0), gain: OSTINATO_GAIN, hold: 0 }); });
+  }
+  return out;
+}
+
+// Interpretación correcta de la lectura: volumen por compás (matices y reguladores) y calderón
+export function stopBase(base, { matices = [] } = {}) {
   const ts = withStarts(base);
   const gains = gainsFor(ts, matices);
   const fermata = (matices.find(m => m.signo === 'calderon') || {}).compas;
-  let k = 0;
   return ts.map((t, j) => {
     const bar = (t.bar ?? 0) + 1;
     const gain = gains[j];
     const lastInBar = !ts.some(x => x.bar === t.bar && x.start > t.start);
     const hold = fermata && bar === fermata && lastInBar && !t.rest ? t.beats : 0;
-    const midi = t.rest ? 0 : voice ? OSTINATO[k++ % OSTINATO.length] : 72;
+    const midi = t.rest ? 0 : 72;
     return { ...t, gain, hold, midi };
   });
 }
@@ -92,12 +108,15 @@ export function stopKinds(errores = []) {
 // avoid: rondas ya jugadas («código:posición»), para no repetir la misma.
 // round: número de ronda. Se sortea primero el TIPO de error (los de la unidad por turnos, así salen todos) y
 // después la posición
-export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set(), round = null }) {
-  const ts = stopBase(base, { matices, voice: kinds.includes('voz') });
+export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set(), round = null, ostinato = null }) {
+  const ts = stopBase(base, { matices });
+  // el error «voz cambiada» cae en el ostinato de la app (voz 1); los demás, en la lectura (voz 2)
+  const ost = ostinato || (kinds.includes('voz') ? ostinatoTokens(ts, { compas: `${barBeats}/4`, anacrusa: pickup }) : null);
+  const target = k => (k === 'voz' ? ost || [] : ts);
   const r = rng(seed);
   const offset = pickup ? barBeats - pickup : 0;
   const options = kinds.flatMap(k => (k === 'anacrusa' ? (pickup ? [{ k, i: 0 }] : [])
-    : ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean)));
+    : target(k).map((t, i) => (i > 0 && MUTATIONS[k].can(target(k), i, barBeats) ? { k, i } : null)).filter(Boolean)));
   const fallback = ts.map((t, i) => (i > 0 && MUTATIONS['q>ee'].can(ts, i) ? { k: 'q>ee', i } : null)).filter(Boolean);
   const all = options.length ? options : fallback;
   let fresh = all.filter(o => !avoid.has(`${o.k}:${o.i}`));
@@ -115,12 +134,14 @@ export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pic
   const { k, i } = pool[Math.floor(r() * pool.length)];
   const key = `${k}:${i}`;
   // anacrusa en tiempo fuerte: la anacrusa cae en el primer pulso, todo se adelanta y los acentos cambian de sitio
-  if (k === 'anacrusa') return { played: withStarts(ts), offset: 0, errorBeat: 0, code: k, index: 0, key };
+  if (k === 'anacrusa') return { played: withStarts(ts), ostinato: ost, offset: 0, errorBeat: 0, code: k, index: 0, bar: 0, key };
   const m = MUTATIONS[k];
-  const span = m.wholeBar ? ts.filter(t => t.bar === ts[i].bar).length : (m.span || 1);
-  const played = withStarts([...ts.slice(0, i), ...m.apply(ts, i), ...ts.slice(i + span)]);
-  const errorBeat = offset + (m.at === 'end' ? ts[i].start + ts[i].beats : ts[i].start + m.at);
-  return { played, offset, errorBeat, code: k, index: i, key };
+  const src = target(k);
+  const span = m.wholeBar ? src.filter(t => t.bar === src[i].bar).length : (m.span || 1);
+  const mutated = [...src.slice(0, i), ...m.apply(src, i), ...src.slice(i + span)];
+  const errorBeat = offset + (m.at === 'end' ? src[i].start + src[i].beats : src[i].start + m.at);
+  if (k === 'voz') return { played: ts, ostinato: mutated, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
+  return { played: withStarts(mutated), ostinato: ost, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
 }
 
 // Ventana para parar a tiempo según la tolerancia del ejercicio («1 compás», «½ pulso», «1 pulso»)

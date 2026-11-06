@@ -12,8 +12,8 @@ import { sightReading, rhythmReading, technique, keyLabel } from '../generate.js
 import { octaveShiftFor } from '../songs.js';
 import { launch, currentCourse } from '../launch.js';
 import { LANGUAGE } from '../book-theory.js';
-import { barBeatsOf } from './notes.js';
-import { genRhythm } from './gen.js';
+import { barBeatsOf, scoreTokens } from './notes.js';
+import { genRhythm, ostinatoTokens } from './gen.js';
 import { lmExercise, lmUnit, lmSong, TYPES } from './catalog.js';
 import { recordLmResult } from './results.js';
 import { LM_TOOL_EVENT } from './bridge.js';
@@ -44,13 +44,25 @@ function rhythmLesson(ex, song) {
   return lessonBase(ex, { id: `rhythm-${ex.id}`, kind: 'song', title: ex.title, song, fixedSpeed: true });
 }
 
-// Lectura rítmica con palmas: el ensayo rítmico de siempre (micrófono, metrónomo y corrección golpe a golpe)
+// Lo que pide cada variante de la lectura rítmica (campo «modo»): cómo suena el metrónomo, si hay cuenta previa
+// entera o un solo clic de entrada, y si se ven las sílabas de apoyo (ta, ti, sh…) en Fácil
+export function readingMode(ex) {
+  const modo = ex.params.modo || '';
+  const metro = /solo marca el 1|pie en el primer tiempo/.test(modo) ? 'first' : /ninguna pista|sin cuenta previa/.test(modo) ? 'none' : 'all';
+  const hint = modo || 'Palmas al micrófono o toques en la pantalla';
+  return { metro, oneClick: /sin cuenta previa/.test(modo), syllables: ex.variant === 'facil' && !!ex.params.vocablos, hint };
+}
+
+// Lectura rítmica con palmas: el ensayo rítmico de siempre (micrófono, metrónomo y corrección golpe a golpe).
+// A dos voces (voz1), la app toca el ostinato mientras el alumno palmea su voz
 function openTool(ex) {
   const p = ex.params;
   if (ex.type === 'lectura-ritmica') {
     const time = Number(String(p.compas || '4/4').split('/')[0]);
-    const song = { id: ex.id, title: ex.title, by: '', key: 'C', time, bpm: p.tempo || 72, score: p.partitura };
-    go('rhythm', { lesson: { ...rhythmLesson(ex, song), ...(p.matices ? { dynamics: p.matices } : {}) }, from: 'lm', eyebrow: 'Lenguaje musical' });
+    const song = { id: ex.id, title: ex.title, by: '', key: 'C', time, bpm: p.tempo || 72, score: p.partitura, pickup: p.anacrusa || 0 };
+    const ostinato = p.voz1 ? [{ notes: ostinatoTokens(scoreTokens(p.partitura), p).map(t => ({ start: t.start, beats: t.beats, midi: t.midi, rest: t.rest })) }] : null;
+    const lesson = { ...rhythmLesson(ex, song), lmMode: readingMode(ex), ...(p.matices ? { dynamics: p.matices } : {}), ...(ostinato ? { accompaniment: ostinato, ostinato: true } : {}) };
+    go('rhythm', { lesson, from: 'lm', eyebrow: 'Lenguaje musical' });
     return;
   }
   toast('Este ejercicio todavía no está disponible');

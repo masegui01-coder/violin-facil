@@ -180,7 +180,9 @@ export function keyboard(x0, y0, kw, kh, from, to, { o = {}, mark = {}, names = 
   const n = to - from + 1;
   for (let i = 0; i < n; i++) {
     const step = from + i, x = x0 + i * kw, m = mark[step] || '';
-    const play = playable ? ` role="button" tabindex="0" data-play="| ${pitch(step)}q |" aria-label="${esc(nn(o, step))}"` : '';
+    // Una tecla es más estrecha que un dedo: se puede tocar en el dibujo, y su botón de verdad va debajo (chips)
+    const play = playable ? ` data-play="| ${pitch(step)}q |"` : '';
+    if (playable && m !== 'off') addChip(`| ${pitch(step)}q |`, nn(o, step)); // las tachadas no tienen botón
     white += `<g class="lmf-key ${m}"${play}><rect x="${r1(x)}" y="${r1(y0)}" width="${r1(kw)}" height="${r1(kh)}" rx="3" class="lmf-white"/>`
       + (names ? text(x + kw / 2, y0 + kh - 8, nn(o, step), { cls: 'lmf-keyname', size: Math.min(12, kw * 0.42) }) : '') + '</g>';
     const letter = ((step % 7) + 7) % 7;
@@ -192,18 +194,35 @@ export function keyboard(x0, y0, kw, kh, from, to, { o = {}, mark = {}, names = 
   return { svg: white + black, cx: step => x0 + (step - from + 0.5) * kw, x0, kw };
 }
 
-// Zona «toca para oír»: rectángulo invisible (recibe el anillo de foco) + contenido. play en el formato de los ejemplos
-// del curso («| G4q E4q |»); extra: atributos como data-dyn="pp" o data-sound="pulso".
+// Zona «toca para oír». play en el formato de los ejemplos del curso («| G4q E4q |»); extra: atributos como
+// data-dyn="pp" o data-sound="pulso". El botón (role="button") es solo el rectángulo, encima del dibujo: así su
+// nombre accesible no choca con los rótulos que tapa. Si la zona es más pequeña que un dedo (MIN_TAP a lo ancho de
+// la tarjeta del móvil), en el dibujo solo responde al toque y su botón de verdad va debajo, en la fila de chips.
+export const MIN_TAP = 58;
+let chips = null;
+let buttons = 0;
+function addChip(play, label, extra = '') {
+  if (chips && !chips.some(c => c.play === play && c.extra === extra)) chips.push({ play, label, extra });
+}
+// figureHtml abre y cierra la recogida de chips de cada dibujo
+export function beginFigure() { chips = []; buttons = 0; }
+export function endFigure() { const out = chips || []; chips = null; return out; }
+
 export function tap(x, y, w, h, play, label, inner, extra = '') {
-  return `<g role="button" tabindex="0" data-play="${esc(play)}" aria-label="${esc(label)}"${extra}>`
-    + `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="10" class="lmf-tap"/>${inner}</g>`;
+  const rect = cls => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="10" class="${cls}"`;
+  if (w < MIN_TAP || h < MIN_TAP) {
+    addChip(play, label, extra);
+    return `<g class="lmf-tapgrp">${inner}${rect('lmf-tap')} data-play="${esc(play)}"${extra} aria-hidden="true"/></g>`;
+  }
+  buttons++;
+  return `<g class="lmf-tapgrp">${inner}<g role="button" tabindex="0" data-play="${esc(play)}" aria-label="${esc(label)}"${extra}>${rect('lmf-tap')}/></g></g>`;
 }
 
 // ---------- Lienzo ----------
 // Interactivo: role="group" con zonas role="button" (data-play); si no, role="img". Siempre con <title> y aria-label.
 export function svg(o, { h, alt, body, interactive = false, cls = '' }) {
   const label = o?.lang === 'en' ? alt.en : alt.es;
-  return `<svg class="lmf-svg ${cls}" viewBox="0 0 ${W} ${h}" role="${interactive ? 'group' : 'img'}" aria-label="${esc(label)}" focusable="false">`
+  return `<svg class="lmf-svg ${cls}" viewBox="0 0 ${W} ${h}" role="${interactive && buttons ? 'group' : 'img'}" aria-label="${esc(label)}" focusable="false">`
     + `<title>${esc(label)}</title>${body}</svg>`;
 }
 

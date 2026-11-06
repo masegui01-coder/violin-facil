@@ -7,6 +7,7 @@ import * as A from './u1-u2.js';
 import * as B from './u3-u4.js';
 import * as C from './u5-u6.js';
 import * as D from './u7-u8.js';
+import { beginFigure, endFigure, esc } from './kit.js';
 export { FIG_EN } from './kit.js';
 
 const ALT = { ...A.ALT, ...B.ALT, ...C.ALT, ...D.ALT };
@@ -67,11 +68,21 @@ export const CARD_FIGURE = {
 export function figureHtml(dibujo, o = {}) {
   const f = FIGURES[dibujo];
   if (!f?.draw) return '';
-  const hint = f.interactive ? `<figcaption class="lmf-hint">${o.lang === 'en' ? 'Tap the drawing to hear it' : 'Toca el dibujo para oírlo'}</figcaption>` : '';
-  return `<figure class="lmf${o.still ? ' still' : ''}" data-fig="${dibujo}">${f.draw(o)}${hint}</figure>`;
+  beginFigure();
+  const drawn = f.draw(o);
+  const chips = endFigure();
+  const en = o.lang === 'en';
+  const hint = f.interactive ? `<figcaption class="lmf-hint">${en ? 'Tap the drawing to hear it' : 'Toca el dibujo para oírlo'}</figcaption>` : '';
+  // Los botones de las zonas pequeñas (teclas, notas sueltas…): de verdad, a tamaño de dedo y con su nombre visible
+  const row = chips.length ? `<div class="lmf-chips" role="group" aria-label="${en ? 'Listen' : 'Escuchar'}">${chips
+    .map(c => `<button type="button" class="lmf-chip" data-play="${esc(c.play)}"${c.extra}>${esc(c.label)}</button>`).join('')}</div>` : '';
+  // Con la letra grande, la explicación del dibujo también va escrita debajo (el texto del SVG no crece)
+  const words = `<p class="lmf-words" aria-hidden="true">${esc(en ? f.alt.en : f.alt.es)}</p>`;
+  return `<figure class="lmf${o.still ? ' still' : ''}${o.big ? ' big' : ''}" data-fig="${dibujo}">${drawn}${hint}${row}${words}</figure>`;
 }
 
-// «Toca para oír»: clic, Intro o Espacio en cada zona [data-play]. play la pone la app (p. ej. playQuestion del curso).
+// «Toca para oír»: clic (y en las zonas role="button" del dibujo, también Intro o Espacio) en cada [data-play].
+// play la pone la app (p. ej. playQuestion del curso).
 export function bindFigures(root, play) {
   const fire = async el => {
     el.classList.add('lmf-playing');
@@ -80,6 +91,7 @@ export function bindFigures(root, play) {
   };
   root.querySelectorAll('.lmf [data-play]').forEach(el => {
     el.addEventListener('click', e => { e.stopPropagation(); fire(el); });
+    if (el.tagName === 'BUTTON') return; // un botón ya responde a Intro y Espacio con su clic
     el.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();

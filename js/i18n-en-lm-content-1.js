@@ -524,7 +524,6 @@ export const LM_CONTENT_EN_1 = {
   'Matices en el instrumento: más/menos arco, aire, peso del brazo o altura de la baqueta, sin desafinar ni cambiar el tempo.': 'Dynamics on the instrument: more/less bow, air, arm weight or stick height, without going out of tune or changing the tempo.',
   'Mayor': 'Major',
   'Mayor (más grande)': 'Major (bigger)',
-  'Mayor o menor: escucha la 3.ª': 'Major or minor: listen to the 3rd',
   'Medio': 'Medium',
   'Medio pulso': 'Half a beat',
   'Melodía': 'Melody',

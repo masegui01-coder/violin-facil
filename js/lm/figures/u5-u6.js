@@ -47,7 +47,7 @@ export function tonosSemitonos(o = {}) {
   b += text(180, 162, t(o, 'T = tono (paso grande) · ½ = semitono (paso corto)', 'T = tone (big step) · ½ = semitone (short step)'), { cls: 's b' });
   const st = stairs(x0, 292, kw, STEPS_MAJOR.map(s => s * 8), { first: 10, hiRise: i => STEPS_MAJOR[i - 1] === 1 });
   b += st.svg;
-  [3, 7].forEach(i => { b += text(st.xs[i], st.tops[i] - 8, t(o, 'corto', 'short'), { cls: 's b hi' }); });
+  [3, 7].forEach(i => { b += text(st.xs[i], st.tops[i] - 8, '½', { cls: 'b hi' }); });
   b += text(x0 + 4, 180, t(o, 'Sin tecla negra en medio = medio tono', 'No black key in between = half step'), { anchor: 'start', cls: 's b hi' });
   return svg(o, { h: 300, alt: ALT.tonosSemitonos, body: b, interactive: true });
 }
@@ -76,6 +76,7 @@ export function redonda(o = {}) {
   const x0 = 46, cw = 75;
   let b = '';
   const rows = [['w', 4, '1'], ['h', 2, '2'], ['q', 1, '4'], ['e2', 1, '8']];
+  const names = { w: t(o, '1 redonda', '1 whole note'), h: t(o, '2 blancas', '2 half notes'), q: t(o, '4 negras', '4 quarter notes'), e2: t(o, '8 corcheas', '8 eighth notes') };
   rows.forEach(([f, n, count], r) => {
     const y = 50 + r * 52, play = { w: '| C5w |', h: '| C5h C5h |', q: '| C5q C5q C5q C5q |', e2: '| C5e C5e C5e C5e C5e C5e C5e C5e |' }[f];
     let row = text(16, y + 4, count, { cls: r ? 'b l' : 'b l hi' });
@@ -84,14 +85,14 @@ export function redonda(o = {}) {
       row += f === 'e2' ? beamed([cx - 11, cx + 9], y, { s: 4.6 }) : figure(cx, y, f, { s: f === 'w' ? 7 : 4.6, cls: r ? '' : 'hi' }).svg;
       row += durBar(x0 + cw * k * n + 5, y + 13, cw * n - 10, r ? 'ink' : '', 4);
     }
-    b += tap(8, y - 36, 344, 52, play, `${count} ${t(o, 'figuras', 'notes')}`, row);
+    b += tap(8, y - 36, 344, 52, play, names[f], row);
   });
   b += beatRow(x0, 236, 4, cw, { size: 16 });
   const S = staff(304, 7);
   b += S.lines(20, 340) + S.rest(90, 'w', 'hi') + S.rest(250, 'h');
-  b += text(90, 330, t(o, 'redonda: cuelga de la 4.ª', 'whole note: hangs from line 4'), { cls: 's b hi' });
-  b += text(250, 330, t(o, 'blanca: se sienta en la 3.ª', 'half note: sits on line 3'), { cls: 's b' });
-  return svg(o, { h: 338, alt: ALT.redonda, body: b, interactive: true });
+  b += text(90, 330, t(o, 'silencio de redonda:', 'whole rest:'), { cls: 's b hi' }) + text(90, 347, t(o, 'cuelga de la 4.ª', 'hangs from line 4'), { cls: 's hi' });
+  b += text(250, 330, t(o, 'silencio de blanca:', 'half rest:'), { cls: 's b' }) + text(250, 347, t(o, 'se sienta en la 3.ª', 'sits on line 3'), { cls: 's' });
+  return svg(o, { h: 356, alt: ALT.redonda, body: b, interactive: true });
 }
 
 // ---------- Unidad 6 ----------
@@ -153,7 +154,7 @@ export function calderon(o = {}) {
   b += lane(96, false, t(o, 'negra: 1 latido', 'quarter note: 1 beat'));
   b += lane(196, true, t(o, 'con calderón: ¡más larga!', 'with a fermata: longer!'));
   b += beatRow(x0, 228, 4, cw, { size: 14, anim: false });
-  b += text(260, 254, t(o, 'no cuentes: mira al director', "don't count: watch the conductor"), { cls: 's b hi' });
+  b += text(354, 254, t(o, 'no cuentes: mira al director', "don't count: watch the conductor"), { anchor: 'end', cls: 's b hi' });
   return svg(o, { h: 262, alt: ALT.calderon, body: tap(4, 4, 352, 256, '| G4q A4q B4q C5h^ |', t(o, 'Escuchar una nota con calderón', 'Listen to a note with a fermata'), b), interactive: true });
 }
 

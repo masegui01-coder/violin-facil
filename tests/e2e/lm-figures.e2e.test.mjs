@@ -6,6 +6,17 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch, openApp } from './helpers.mjs';
 import { lmExercise } from '../../js/lm/catalog.js';
+import { scoreTokens } from '../../js/lm/notes.js';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+// axe en la tarjeta: fallos graves (también el nombre accesible de las zonas que no coincide con su texto visible)
+async function axeCard(page) {
+  if (!(await page.evaluate(() => !!window.axe))) await page.evaluate(AXE);
+  const r = await page.evaluate(() => window.axe.run(document.querySelector('#lmBody'), { resultTypes: ['violations'] }));
+  return r.violations.filter(v => v.impact === 'serious' || v.impact === 'critical').map(v => v.id);
+}
 
 const PHONE_375 = { width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 const STEP_TIMEOUT = 8000;
@@ -49,9 +60,28 @@ function overlapsIn(svg) {
   return [...new Set(out)];
 }
 
-async function checkAllUnits(lang) {
-  const { page, errors, close } = await openApp(env, { viewport: PHONE_375, seed: { lang } });
-  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
+// Lo que se mide de cada tarjeta en la página: zonas táctiles, ejemplo con compás y barras, nada más ancho que ella
+function cardLayout(c) {
+  const box = c.getBoundingClientRect();
+  const small = [...c.querySelectorAll('.lmf [role="button"], .lmf-chip')].map(el => el.getBoundingClientRect())
+    .filter(r => r.width < 47.5 || r.height < 47.5).map(r => `${Math.round(r.width)}×${Math.round(r.height)}`);
+  const wide = [...c.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > box.right + 1).map(el => el.tagName.toLowerCase() + '.' + (el.getAttribute('class') || ''));
+  const ex = c.querySelector('.lm-card-ex .lm-staff');
+  const art = c.querySelector('.lm-card-art');
+  const text = c.querySelector('.lm-card-text');
+  return {
+    small, wide: [...new Set(wide)].slice(0, 3),
+    example: ex ? { time: ex.querySelectorAll('.lm-clefcell .lm-time').length, bars: ex.querySelectorAll('.lm-gapcell .lm-bar').length, clefs: ex.querySelectorAll('.lm-clefcell').length,
+      lines: new Set([...ex.querySelectorAll(':scope > .lm-bargroup')].map(g => g.offsetTop)).size } : null,
+    side: art && text ? art.getBoundingClientRect().right <= text.getBoundingClientRect().left + 1 : false,
+    words: getComputedStyle(c.querySelector('.lmf-words')).display !== 'none',
+  };
+}
+
+async function checkAllUnits(lang, { dark = true, big = false, viewport = PHONE_375 } = {}) {
+  const { page, errors, close } = await openApp(env, { viewport, seed: { lang } });
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
+  if (big) await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
   await page.$eval('[data-learn-view="lm"]', b => b.click());
   await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
   const problems = [];
@@ -67,7 +97,7 @@ async function checkAllUnits(lang) {
       await page.evaluate(() => document.fonts.ready);
       const card = await page.$eval('#lmBody .lm-card', (c, src) => {
         const svg = c.querySelector('figure.lmf svg');
-        const ink = getComputedStyle(svg.querySelector('text') || svg).fill;
+        const ink = getComputedStyle(svg.querySelector('text:not(.lmf-keyname)') || svg).fill;
         return {
           fig: c.querySelector('figure.lmf').dataset.fig,
           role: svg.getAttribute('role'),
@@ -84,8 +114,19 @@ async function checkAllUnits(lang) {
       if (card.fig !== ficha[k].dibujo) problems.push(`${where}: dibujo ${card.fig} en vez de ${ficha[k].dibujo}`);
       if (!/^(img|group)$/.test(card.role) || card.alt.length < MIN_ALT || card.title !== card.alt) problems.push(`${where}: texto alternativo`);
       if (card.animated) problems.push(`${where}: se mueve con «reducir movimiento»`);
-      if (card.ink === 'rgb(20, 27, 38)') problems.push(`${where}: rótulos con la tinta del tema claro en oscuro`);
+      if (dark && card.ink === 'rgb(20, 27, 38)') problems.push(`${where}: rótulos con la tinta del tema claro en oscuro`);
       card.overlaps.forEach(o => problems.push(`${where}: ${o}`));
+      const lay = await page.$eval('#lmBody .lm-card', cardLayout);
+      if (lay.small.length) problems.push(`${where}: zonas táctiles de menos de 48 px: ${lay.small.join(', ')}`);
+      if (lay.wide.length) problems.push(`${where}: más ancho que la tarjeta: ${lay.wide.join(', ')}`);
+      if (ficha[k].ejemplo) {
+        const bars = new Set(scoreTokens(ficha[k].ejemplo).map(t => t.bar)).size;
+        const e = lay.example;
+        if (!e || e.time !== 2 || e.bars < bars - 1 || e.clefs < e.lines) problems.push(`${where}: ejemplo sin compás, barras o clave en cada renglón ${JSON.stringify(e)}`);
+      }
+      if (viewport.width >= 600 && !lay.side) problems.push(`${where}: en tableta, dibujo y texto no van en dos columnas`);
+      (await axeCard(page)).forEach(v => problems.push(`${where}: axe ${v}`));
+      if (big && !lay.words) problems.push(`${where}: con la letra grande falta la explicación escrita del dibujo`);
       if (k === 0) {
         const zone = await page.$('#lmBody .lmf [data-play]');
         if (zone) await zone.evaluate(z => z.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
@@ -106,6 +147,8 @@ async function checkAllUnits(lang) {
 
 test('teoría ilustrada: las 33 tarjetas de las 8 unidades con su dibujo accesible y sin solapes (375 px, oscuro)', () => checkAllUnits('es'));
 test('teoría ilustrada en inglés: las 33 tarjetas sin solapes (375 px, oscuro)', () => checkAllUnits('en'));
+test('teoría ilustrada con la letra al 200 %: nada se corta y el dibujo se explica también por escrito', () => checkAllUnits('es', { dark: false, big: true }));
+test('teoría ilustrada en tableta (800 px): tarjeta en dos columnas, dibujo | texto y ejemplo', () => checkAllUnits('en', { dark: false, viewport: { width: 800, height: 1100, deviceScaleFactor: 1, isMobile: true, hasTouch: true } }));
 
 test('la ficha de la unidad en PDF lleva la ilustración de cada tarjeta de teoría', async () => {
   const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });

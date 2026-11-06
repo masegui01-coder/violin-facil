@@ -13,10 +13,12 @@ import { gradeTen, starsFor } from './grade.js';
 import { legendHtml, chipsHtml, seedOf } from './kit.js';
 import { noteText, letterText, solfaToName } from './notes.js';
 import { stopSound } from './sound.js';
+import { watchSystems } from './systems.js';
 
 const say = announcer('lmStatus', 600);
 let session = 0;
 let current = null;
+let watching = false;
 
 const body = () => $('lmBody');
 
@@ -139,6 +141,7 @@ async function run(ex) {
 function enter({ ex } = {}) {
   current = ex || null;
   if (!current) { back(); return; }
+  if (!watching) { watchSystems(body()); watching = true; } // una clave al principio de cada renglón
   run(current).catch(() => {}); // el error ya se ha enseñado en pantalla
 }
 

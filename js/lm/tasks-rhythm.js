@@ -2,8 +2,8 @@
 // a tiempo) y la lectura rítmica tocando la pantalla (repaso), con la tolerancia del contrato (±120 ms / ±80 ms).
 import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
-import { stopKinds, stopRoundOf, stopWindow, stopBase } from './gen.js';
-import { barBeatsOf, stepOf } from './notes.js';
+import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
+import { barBeatsOf } from './notes.js';
 import { staffHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
@@ -14,22 +14,19 @@ const STOP_NAMES = {
   'q>ee': 'Una negra se partió en dos corcheas', 'ee>q': 'Dos corcheas se juntaron en una negra', 'Rq>q': 'Sonó un silencio donde había una negra',
   'q>Rq': 'Sonó una negra donde había un silencio', 'h-corta': 'Una blanca duró solo un pulso', 'w-corta': 'Una redonda se cortó a la mitad',
   'Rw-salto': 'Se saltó el silencio', compas: 'Un compás tuvo un pulso de más', matiz: 'Un compás sonó con el matiz cambiado',
-  calderon: 'No esperó en el calderón', voz: 'Una nota de la voz cambió de altura', anacrusa: 'La anacrusa cayó en la parte fuerte',
+  calderon: 'No esperó en el calderón', voz: 'Una nota del ostinato (voz 1) cambió de altura', anacrusa: 'La anacrusa cayó en la parte fuerte',
 };
 
-// Lo que se lee en el STOP: la lectura con sus matices, calderón y anacrusa; si el error es de voz, también la voz
-// de la app (el ostinato) en su pentagrama, encima del ritmo
-function stopScore(tokens, kinds, base, env) {
+// Lo que se lee en el STOP: la lectura con sus matices, calderón y anacrusa; si el error es de voz, encima va el
+// ostinato que toca la app (voz 1), con su propio ritmo repetido, y debajo la voz del alumno (voz 2)
+function stopScore(tokens, ostinato, base, env) {
   const meter = base.compas || '4/4';
   const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0 };
   const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
-  if (!kinds.includes('voz')) return rhythm;
-  const voice = stopBase(tokens, { matices: base.matices || [], voice: true }).map(t => (t.rest ? t : { ...t, name: nameOf(t.midi), step: stepOf(nameOf(t.midi)) }));
-  return `<div class="lm-staff-two"><p class="dict-staff-label">Voz 1: la app (el ostinato)</p>${staffHtml(voice, { ...opts, label: voice.map(t => tokenLabel(t, env.nom)).join(', ') })}
+  if (!ostinato) return rhythm;
+  return `<div class="lm-staff-two"><p class="dict-staff-label">Voz 1: la app (el ostinato, se repite)</p>${staffHtml(ostinato, { meter, pickup: base.anacrusa || 0, label: ostinato.map(t => tokenLabel(t, env.nom)).join(', ') })}
     <p class="dict-staff-label">Voz 2: tú (palméala o cántala mientras escuchas)</p>${rhythm}</div>`;
 }
-const NAMES = { 72: 'C5', 67: 'G4', 69: 'A4', 70: 'Bb4', 75: 'Eb5' };
-const nameOf = midi => NAMES[midi] || 'C5';
 
 const PULSE_LEVEL = 0.25;
 const LEGATO = 0.92;
@@ -45,6 +42,8 @@ function playStopRound(round, { t0, spb, barBeats, pickup }) {
     if (!t.rest) events.push({ midi: t.midi || 72, at, dur: (t.beats + (t.hold || 0)) * spb * LEGATO, gain: (t.gain ?? 0.68) * (downbeat ? ACCENT : 1) });
     extra += t.hold || 0;
   });
+  // la voz 1 (ostinato), más suave y más grave, a la vez que la lectura
+  (round.ostinato || []).forEach(t => { if (!t.rest) events.push({ midi: t.midi, at: (round.offset + t.start) * spb, dur: t.beats * spb * LEGATO, gain: t.gain ?? 0.5 }); });
   const last = round.played[round.played.length - 1];
   const beats = round.offset + (last ? last.start + last.beats : 0) + extra;
   return { end: playEvents(events, { at: t0 }).end, beats };
@@ -60,16 +59,17 @@ export async function stopGame(host, p, env) {
   const spb = 60 / bpm;
   const window = stopWindow(p.tolerancia, barBeats);
   const kinds = stopKinds(p.errores);
+  const ostinato = kinds.includes('voz') ? ostinatoTokens(tokens, p.base) : null;
   const rounds = [];
   const played = new Set(); // rondas ya jugadas: no se repite la misma
   const total = p.rondas || 3;
   for (let k = 0; k < total; k++) {
     if (!env.alive()) return null;
-    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played, round: k });
+    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played, round: k, ostinato });
     played.add(round.key);
     host.innerHTML = `<p class="eyebrow">Ronda ${k + 1} de ${total}</p>
       <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
-      ${stopScore(tokens, kinds, p.base, env)}
+      ${stopScore(tokens, ostinato, p.base, env)}
       <p class="lm-stop-phase" id="lmStopPhase" aria-live="polite">Preparado</p>
       <div class="controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
     host.querySelector('#lmStopGo').focus();
@@ -98,7 +98,7 @@ export async function stopGame(host, p, env) {
     const r = { errorBeat: round.errorBeat, pressBeat: pressed, code: round.code };
     rounds.push(r);
     const mark = stopMark(r.errorBeat, r.pressBeat, window);
-    const where = ((tokens[round.index] || {}).bar ?? Math.floor(round.errorBeat / barBeats)) + 1;
+    const where = (round.bar ?? Math.floor(round.errorBeat / barBeats)) + 1;
     const msg = mark === 'ok' ? '¡Parada a tiempo!' : r.pressBeat === null ? 'No has parado la música' : r.pressBeat < r.errorBeat ? 'Has parado antes del error' : 'Has parado tarde';
     host.querySelector('.controls').innerHTML = '';
     host.querySelector('#lmStopPhase').innerHTML = `<span class="dict-sw ${mark}" aria-hidden="true">${GLYPH[mark]}</span> <span>${esc(msg)}</span>`;
