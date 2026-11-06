@@ -16,6 +16,7 @@ import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
 import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel, withBreaths } from './kit.js';
 import { playEvents, stopSound } from './sound.js';
 import { figureHtml, bindFigures, CARD_FIGURE } from './figures/index.js';
+import { fitSystems } from './systems.js';
 import { currentLang } from '../i18n.js';
 
 const STAFF_KINDS = { tocarPentagrama, escala: tocarPentagrama, barras };
@@ -27,6 +28,7 @@ async function runItems(host, items, env, title = 'Pregunta') {
   const mistakes = [];
   for (let i = 0; i < items.length; i++) {
     if (!env.alive()) return null;
+    stopSound(); // lo que sonaba en la pregunta anterior (una canción entera, por ejemplo) no sigue en esta
     host.innerHTML = `<p class="eyebrow lm-count">${esc(title)} ${i + 1} de ${items.length}</p><div class="lm-item"></div>`;
     const r = await runItem(host.querySelector('.lm-item'), items[i], env);
     if (!r || !env.alive()) return null;
@@ -34,6 +36,7 @@ async function runItems(host, items, env, title = 'Pregunta') {
     mistakes.push(r.mistake);
     await continueButton(host, i + 1 < items.length ? 'Siguiente' : 'Ver el resultado');
   }
+  stopSound();
   return { marks, mistakes: mistakeCodes(mistakes), labels: items.map((it, i) => `${title} ${i + 1}`) };
 }
 
@@ -73,6 +76,7 @@ async function showCards(host, cards, env, summary) {
   for (let i = 0; i < cards.length; i++) {
     if (!env.alive()) return;
     host.innerHTML = `<p class="eyebrow">Ficha ${i + 1} de ${cards.length}</p><div class="lm-card" style="${unitColor}">${cardHtml(cards[i], i, env)}</div>`;
+    fitSystems(host); // la clave de cada renglón del ejemplo, ya al pintar (sin esperar al siguiente fotograma)
     bindFigures(host, playFigure(env));
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
@@ -128,7 +132,8 @@ async function cancionCantada(host, ex, env) {
   // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
   const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
-    under: lyricsUnder(tokens, song.letra, env.nom, names, SONG_WORDS[song.titulo] || ''), intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    // «con nombre de notas»: los nombres se leen en el pentagrama, no se escriben debajo (ni los dice la app)
+    under: names ? [] : lyricsUnder(tokens, song.letra, env.nom, false, SONG_WORDS[song.titulo] || ''), hideNames: names, intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
     // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición), siempre con su letra
     under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, SONG_WORDS2[song.titulo] || '') : null,
     dynamics: Array.isArray(song.matices) ? song.matices : null,
@@ -201,7 +206,7 @@ function workHtml(a, id) {
     <h2 class="lm-q" tabindex="-1">${esc(a.compositor)}</h2><p class="muted small"><span>${esc(a.vida || '')}</span>${a.genero ? ` · <span>${esc(a.genero)}</span>` : ''}</p>
     <p class="lm-work-title"><b>${esc(a.obra)}</b></p>
     <ul class="lm-facts">${(a.ficha || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    ${frag ? `<div class="lm-listen"><p class="muted small"><span>${frag.voces.map(v => esc(v.nombre)).join(' · ')}</span></p>
+    ${frag ? `<div class="lm-listen"><p class="muted small">${frag.voces.map(v => `<span>${esc(v.nombre)}</span>`).join(' · ')}</p>
       ${playButton(id, 'Escuchar el fragmento')}<button type="button" class="btn ghost small" data-stop-audio>Parar</button>
       ${frag.nota ? `<p class="muted small">${esc(frag.nota)}</p>` : ''}</div>` : ''}
   </article>`;

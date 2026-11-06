@@ -208,7 +208,8 @@
 .lm-dynpick label { display: flex; align-items: center; gap: 6px; }
 .lm-dynpick select { min-height: 48px; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 4px 8px; }
 .lm-dynpick label.ok select { border-color: var(--dict-ok); } .lm-dynpick label.bad select { border-color: var(--dict-bad); }
-.lm-check { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-weight: 600; }
+.lm-check { display: flex; justify-content: flex-start; align-items: center; gap: 8px; min-height: 48px; width: 100%; text-align: start; font-weight: 600; }
+.lm-phones-note { width: 100%; text-align: start; margin: 0; }
 .lm-check input { width: 22px; height: 22px; }
 .lm-locked-notes [data-del], .lm-locked-notes [data-up], .lm-locked-notes [data-down] { display: none; }
 
@@ -262,3 +263,16 @@
 .lm-sticky-controls { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
 .lm-writer.lm-big .lm-cell, .lm-writer.lm-big .lm-insert .lm-cell { height: calc(15rem * var(--lm-fit, 1)); }
 .lm-run .lm-system, .lm-run > .lm-system { flex-direction: row; flex-wrap: wrap; align-items: stretch; gap: 10px 0; }
+.lm-w-cursor { margin: 2px 0 0; min-height: 1.4em; font-weight: 800; color: var(--accent); text-align: center; }
+/* Señalar: las líneas del pentagrama siguen por detrás de los botones de compás (sin cortes entre uno y otro) */
+.lm-pick-bars .lm-bargroup {
+  background-image: linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff));
+  background-repeat: no-repeat; background-size: 100% 1.1px;
+  background-position: 0 calc(var(--cell-h) * 0.3333 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.4167 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5833 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.6667 + var(--cell-shift));
+}
+/* Completar: el «?» dentro del pentagrama, en su hueco; las opciones, en dos columnas y con el pentagrama más grande */
+.lm-hole-sc { position: relative; }
+.lm-hole-q { position: absolute; left: 50%; top: calc(var(--cell-h) * 0.5 + var(--cell-shift)); transform: translate(-50%, -50%); font-weight: 800; font-size: 1.3rem; color: var(--muted); }
+.lm-hole-sc.lm-now .lm-hole-q { color: var(--accent); }
+.lm-item .lm-options:has(.lm-opt-staff) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lm-item .lm-options .lm-opt-staff .lm-cell { height: 6.75rem; }

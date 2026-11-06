@@ -20,6 +20,7 @@ const BLEED_MS = 60;          // ventana del eco del ostinato en el micrófono
 const OSTINATO_GAIN = 0.45;
 const LEGATO = 0.9;
 const AFTER_END_S = 0.8;
+const EXTRA_WEIGHT = 1.5;
 
 // Notas del alumno marcadas ✓ ≈ ✕ a partir de los golpes (en segundos del reloj de audio)
 export function gradeHits(expected, hits, tol) {
@@ -62,10 +63,10 @@ export async function lecturaDosVoces(host, ex, env) {
   const tol = (TOLERANCE_MS[env.variant] || TOLERANCE_MS.facil) / 1000;
   host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>
     ${scoreHtml(tokens, ostinato, p, env)}
-    <label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
-    <p class="muted small">Sin auriculares, el micrófono oiría también a la app: toca la pantalla.</p>
     <p class="lm-stop-phase" id="lmDuoPhase" aria-live="polite">Elige cómo vas a tocar</p>
-    <div class="controls lm-sticky-controls"><button type="button" class="btn big" id="lmDuoTap">Tocar la pantalla</button><button type="button" class="btn ghost" id="lmDuoMic" disabled>Palmas (micrófono)</button></div>`;
+    <div class="controls lm-sticky-controls"><label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
+    <p class="muted small lm-phones-note">Sin auriculares, el micrófono oiría también a la app: toca la pantalla.</p>
+    <button type="button" class="btn big" id="lmDuoTap">Tocar la pantalla</button><button type="button" class="btn ghost" id="lmDuoMic" disabled>Palmas (micrófono)</button></div>`;
   const phones = host.querySelector('#lmDuoPhones');
   phones.addEventListener('change', () => { host.querySelector('#lmDuoMic').disabled = !phones.checked; });
   host.querySelector('#lmDuoTap').focus();
@@ -79,8 +80,6 @@ export async function lecturaDosVoces(host, ex, env) {
     }
   }
   if (!env.alive()) return null;
-  host.querySelector('#lmDuoPhones').closest('label').remove();
-  host.querySelector('.muted.small')?.remove();
   const hits = [];
   const lat = audio.outputLatency();
   host.querySelector('.controls').innerHTML = useMic ? '<p class="muted center">Da palmas: la app te escucha</p>' : '<button type="button" class="btn big lm-tap" id="lmTap">Toca aquí</button>';
@@ -115,5 +114,6 @@ export async function lecturaDosVoces(host, ex, env) {
   const fresh = scoreHtml(tokens, ostinato, p, env, allMarks);
   host.querySelector('.lm-system, .lm-staff').outerHTML = ostinato ? fresh.replace(/^[\s\S]*?(<div class="lm-system")/, '$1') : fresh;
   host.querySelector('#lmDuoPhase').textContent = `${graded.filter(m => m === 'ok').length} de ${graded.length} a tiempo`;
-  return { pct: pctOf(graded, extra), marks: graded, mistakes: mistakeCodes([extra ? 'q>Rq' : null, graded.includes('bad') ? 'Rq>q' : null]) };
+  // los golpes de más pesan más que una nota (golpear todos los pulsos sin leer no aprueba)
+  return { pct: pctOf(graded, Math.ceil(extra * EXTRA_WEIGHT)), marks: graded, mistakes: mistakeCodes([extra ? 'q>Rq' : null, graded.includes('bad') ? 'Rq>q' : null]) };
 }

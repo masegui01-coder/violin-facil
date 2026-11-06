@@ -168,8 +168,10 @@ test('estrellas del contrato (60 / 80 / 90) y nota de 1 a 10 de la rúbrica', ()
   assert.equal(gradeTen(100, 'facil'), 8);
   assert.equal(gradeTen(96, 'medio', true), 10);
   assert.equal(gradeTen(90, 'medio'), 9);
-  assert.equal(gradeTen(60, 'medio'), 6);
-  assert.equal(gradeTen(10, 'medio'), 2);
+  assert.equal(gradeTen(60, 'medio'), 5);
+  assert.equal(gradeTen(50, 'medio'), 3, 'por debajo del 60 % no se aprueba');
+  assert.equal(gradeTen(0, 'medio'), 0, 'sin hacer nada, un 0');
+  assert.equal(gradeTen(10, 'medio'), 1);
 });
 
 test('entonación: la voz vale en cualquier octava y se corrige con tolerancia según la variante', () => {
@@ -692,4 +694,55 @@ test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato
   assert.equal(pctOf(perfect.marks.filter(Boolean), perfect.extra), 100);
   // tocando la pantalla se corrigen todas
   assert.equal(gradeReading({ expected, hits: expected, tol }).marks.length, expected.length);
+});
+
+// ---------- Evaluación 6 ----------
+// Excepciones musicales de verdad (cada una con su porqué); de momento, ninguna
+const PROSODY_ALLOWED = [];
+test('prosodia: en todas las canciones la sílaba tónica cae en una parte al menos tan fuerte como sus vecinas', async () => {
+  const { prosodyIssues, beatWeight } = await import('../js/lm/prosody.js');
+  const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
+  const found = [];
+  LM_LEVELS[0].units.forEach(u => {
+    const s = u.song;
+    [[1, s.letra, SONG_WORDS[s.titulo]], [2, s.letra2, SONG_WORDS2[s.titulo]]].forEach(([v, L, W]) => {
+      if (!L) return;
+      prosodyIssues(s, L, W).forEach(i => found.push(`U${u.unit} estrofa ${v}, compás ${i.bar}: «${i.word}» (tónica «${i.stressed}» más débil que «${i.weaker}»)`));
+    });
+  });
+  assert.deepEqual(found.filter(f => !PROSODY_ALLOWED.some(a => f.startsWith(a))), []);
+  // la regla misma: llanas, agudas, tilde
+  const two = { partitura: '| G4q G4q | G4q G4q |', compas: '2/4' };
+  assert.equal(prosodyIssues(two, [['ro', 'bot'], ['me', 'sa']], 'robot mesa').length, 1, '«ro-BOT» con «bot» en el 2 está mal');
+  assert.equal(prosodyIssues(two, [['me', 'sa'], ['can', 'ción']], 'mesa canción').length, 1, '«can-CIÓN» con «ción» en el 2 está mal');
+  assert.equal(prosodyIssues({ partitura: '| G4q | G4q G4q |', compas: '2/4', anacrusa: 1 }, [['ro'], ['bot', 'sí']], 'robot sí').length, 0, 'en anacrusa, «bot» cae en el 1');
+  assert.deepEqual([0, 1, 2, 0.5].map(p => beatWeight(p, 4)), [3, 1, 2, 0]);
+});
+
+test('creatividad AB: la respuesta acaba en do aunque la parte B empiece en el primer tiempo (sin anacrusa)', async () => {
+  const { extraRules } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const song = toks('G4q | C5q B4q A4q | G4q F4q D5q | C5q B4q A4q | E4q D4q C4q | E4q F4q G4q | A4h G4q | F4q E4q D4q | C4h');
+  const rules = Object.fromEntries(extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 3, bars: 8, dyn: [] }).map(r => [r.id, r.ok]));
+  assert.deepEqual([rules.pregunta, rules.respuesta, rules.formaB], [true, true, true]);
+});
+
+test('lectura a dos voces: golpear todos los pulsos sin leer no aprueba', async () => {
+  const { gradeReading } = await import('../js/lm/tasks-duo.js');
+  const p = lmExercise('lm1-u7-ritmo-a-medio').params;
+  const reading = scoreTokens(p.partitura);
+  const spb = 60 / p.tempo;
+  const expected = reading.filter(t => !t.rest).map(t => t.start * spb);
+  const total = reading.reduce((s, t) => Math.max(s, t.start + t.beats), 0);
+  const everyBeat = Array.from({ length: total }, (_, k) => k * spb);
+  const g = gradeReading({ expected, hits: everyBeat, tol: 0.08 });
+  const pct = pctOf(g.marks, Math.ceil(g.extra * 1.5));
+  assert.ok(gradeTen(pct, 'medio') < 5, `${pct} % → ${gradeTen(pct, 'medio')}`);
+});
+
+test('comas de respiración: entre dos notas, nunca sobre un silencio ni al final de la pieza', async () => {
+  const { withBreaths } = await import('../js/lm/kit.js');
+  const t = withBreaths(scoreTokens('| C5q C5q | C5h | C5q Rq | C5h |'), [1, 2, 3, 4]);
+  assert.deepEqual(t.map(x => !!x.breath), [false, true, true, false, false, false]);
 });

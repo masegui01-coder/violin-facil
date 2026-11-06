@@ -87,6 +87,7 @@ async function choose(host, item, env, { options, correct, extraHtml = '', optio
     playQuestion(item.play, env);
   }
   const b = await onceClick(host, '[data-opt]');
+  stopSound(); // al contestar se calla lo que sonaba
   const chosen = Number(b.dataset.opt);
   const mark = correct.includes(chosen) ? 'ok' : 'bad';
   host.querySelectorAll('[data-opt]').forEach(x => {
@@ -177,9 +178,10 @@ async function senalar(host, item, env) {
 // hueco es correctas[k]. Las opciones se barajan en cada intento (data-opt guarda su número del catálogo)
 function optionCells(text, env) {
   const tokens = scoreTokens(`| ${text} |`);
-  return `<span class="lm-opt-staff" aria-hidden="true">${staffHtml(tokens, { bars: false })}</span><span class="sr-only">${esc(tokens.map(t => (t.rest ? REST_NAME[t.dur] : FIGURE_NAME[t.dur])).join(', '))}</span>`;
+  // nombre accesible con la figura y la altura («Negra mi»), no solo la figura
+  return `<span class="lm-opt-staff" aria-hidden="true">${staffHtml(tokens, { bars: false })}</span><span class="sr-only">${esc(tokens.map(t => tokenLabel(t, env.nom)).join(', '))}</span>`;
 }
-function holeStaff(item, fills, now) {
+function holeStaff(item, fills, now, env) {
   const bars = item.partitura.split('|').map(x => x.trim()).filter(Boolean);
   let hole = 0;
   const cells = bars.map((bar, b) => {
@@ -194,7 +196,14 @@ function holeStaff(item, fills, now) {
       : `<span class="lm-sc${x.filled ? ' lm-filled' : ''}">${noteCell({ ...x.t, clef: 'treble', beam: lay[i].beam, up: lay[i].up })}</span>`)).join('');
     return `<span class="lm-bargroup">${b === 0 ? `<span class="lm-sc">${clefCell('treble', item.compas || null)}</span>` : ''}${html}<span class="lm-sc">${b === bars.length - 1 ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
   }).join('');
-  return `<div class="lm-staff lm-complete" role="img" aria-label="${esc(`Partitura con ${hole} ${hole === 1 ? 'hueco' : 'huecos'}`)}">${cells}</div>`;
+  // para el lector de pantalla: las notas que se ven, con «hueco» en su sitio y los compases separados por «|»
+  let k = 0;
+  const said = bars.map(bar => bar.split(/\s+/).map(tok => {
+    if (tok !== '?') return scoreTokens(`| ${tok} |`).map(t => tokenLabel(t, env.nom)).join(', ');
+    const f = fills[k++];
+    return f ? scoreTokens(`| ${f} |`).map(t => tokenLabel(t, env.nom)).join(', ') : 'hueco';
+  }).join(', ')).join(' | ');
+  return `<div class="lm-staff lm-complete" role="img" aria-label="${esc(said)}">${cells}</div>`;
 }
 async function completar(host, item, env) {
   const holes = (item.partitura.match(/\?/g) || []).length;
@@ -202,7 +211,7 @@ async function completar(host, item, env) {
   const fills = [];
   const picks = [];
   for (let k = 0; k < holes; k++) {
-    host.innerHTML = `${headHtml(item)}${holes > 1 ? `<p class="eyebrow">Hueco ${k + 1} de ${holes}</p>` : ''}${holeStaff(item, fills, k)}
+    host.innerHTML = `${headHtml(item)}${holes > 1 ? `<p class="eyebrow">Hueco ${k + 1} de ${holes}</p>` : ''}${holeStaff(item, fills, k, env)}
       <div class="quiz-options lm-options" role="group" aria-label="Respuestas">${order.map(i => `<button type="button" class="quiz-opt" data-opt="${i}">${optionCells(item.opciones[i], env)}</button>`).join('')}</div>
       <div class="lm-feedback"></div>`;
     host.querySelector('.lm-q').focus();
@@ -214,7 +223,7 @@ async function completar(host, item, env) {
   const right = picks.map((p, k) => (holes > 1 ? p === item.correctas[k] : item.correctas.includes(p)));
   const ok = right.filter(Boolean).length;
   const mark = ok === holes ? 'ok' : ok > 0 ? 'near' : 'bad';
-  host.querySelector('.lm-complete').outerHTML = holeStaff(item, fills, -1);
+  host.querySelector('.lm-complete').outerHTML = holeStaff(item, fills, -1, env);
   host.querySelectorAll('[data-opt]').forEach(x => {
     const i = Number(x.dataset.opt);
     x.disabled = true;

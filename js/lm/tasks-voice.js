@@ -10,12 +10,16 @@ import { staffHtml, CLEF } from './kit.js';
 import { playNotes, playChordNow, playPitch, stopSound, wait, now } from './sound.js';
 import { saveVoice } from './results.js';
 import { dynamicsChecks } from './dynamics.js';
+import { keepInView } from './systems.js';
 
 const TICK_MS = 30;
 const MIN_HOLD_MS = 300;
 const MAX_HOLD_MS = 900;
 const HOLD_SHARE = 0.6;          // la nota debe durar al menos el 60 % de su valor (contrato del curso)
 const NOTE_TIMEOUT_MS = 9000;
+const MIN_WAIT_MS = 2500;          // espera mínima por nota (después, cuenta como no oída)
+const WAIT_BEATS = 3;              // y, como mucho, la nota y 3 pulsos del tempo de la lectura
+const SILENT_LIMIT = 3;            // tras 3 notas seguidas sin oír nada se pregunta si se sigue
 const GAP_MS = 120;              // un hueco corto dentro de la misma nota no la corta
 const SAME_CENTS = 150;          // lecturas de la misma nota sostenida
 const BREAK_CENTS = 70;          // para la nota siguiente igual: hace falta un corte o un cambio de altura
@@ -27,13 +31,13 @@ const MINOR_TRIAD = [0, 3, 7];
 const median = xs => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null; };
 
 // Espera una nota cantada estable y devuelve sus cents (o null si no se oye nada a tiempo)
-async function hearNote(midi, holdMs, alive, quietUntil, onLevel = () => {}) {
+async function hearNote(midi, holdMs, alive, quietUntil, onLevel = () => {}, timeoutMs = NOTE_TIMEOUT_MS) {
   let run = [];
   const levels = [];
   let lastVoiced = 0;
   const midis = [];
   const start = performance.now();
-  while (alive() && performance.now() - start < NOTE_TIMEOUT_MS) {
+  while (alive() && performance.now() - start < timeoutMs) {
     await wait(TICK_MS);
     if (now() < quietUntil()) continue;
     const p = audio.readPitch();
@@ -53,6 +57,18 @@ async function hearNote(midi, holdMs, alive, quietUntil, onLevel = () => {}) {
     if (t - run[0].t >= holdMs) return { cents: median(run.map(r => r.cents)), sungMidi: median(midis.slice(-run.length).filter(Number.isFinite)), level: median(levels.slice(-run.length)) };
   }
   return { cents: null, sungMidi: null, level: null };
+}
+
+// «No te oigo. ¿Seguimos?»: true para seguir, false para terminar ya
+async function keepGoing(host, phase) {
+  phase('No te oigo. ¿Seguimos?');
+  const box = host.querySelector('.controls');
+  const before = box.innerHTML;
+  box.innerHTML = '<button type="button" class="btn" data-go="1">Seguir</button><button type="button" class="btn ghost" data-go="0">Terminar</button>';
+  box.querySelector('[data-go="1"]').focus();
+  const b = await new Promise(r => box.addEventListener('click', e => { const x = e.target.closest('[data-go]'); if (x) r(x); }));
+  box.innerHTML = before;
+  return b.dataset.go === '1';
 }
 
 // Tras aceptar una nota, si la siguiente es la misma hace falta volver a atacarla (silencio breve o cambio)
@@ -118,11 +134,14 @@ export async function singTask(host, opts, env) {
     host.querySelector('.lm-sing-staff').innerHTML = opts.noStaff
       ? `<ol class="lm-names-row">${sounding.map(n => `<li class="${marks[n.index] || ''}${n.index === current ? ' lm-now' : ''}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
       : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current, dynamics: opts.dynamics || null });
+    // la nota que toca, siempre a la vista
+    const on = current >= 0 && host.querySelector('.lm-sing-staff .lm-now');
+    if (on) keepInView(on);
   };
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}
     ${MIC_GATE}
     <div class="lm-sing-staff"></div>
-    <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
+    <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-meter" aria-hidden="true"><i id="lmSingDot"></i></div>
     <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
     <div class="controls"><button type="button" class="btn ghost" id="lmSingRef">Oír la primera nota</button>${help ? '<button type="button" class="btn ghost" id="lmSingHelp">Ayuda: oír la nota que toca</button>' : ''}</div>`;
@@ -155,8 +174,11 @@ export async function singTask(host, opts, env) {
     await wait(1200);
     const spb = 60 / bpm;
     const sungMidis = [];
+    let silent = 0;
+    let gaveUp = false;
     for (const group of groupsOf(sounding, echo)) {
       if (!env.alive()) return null;
+      if (gaveUp) break;
       if (echo) {
         phase('Escucha y repite');
         draw(group[0].index);
@@ -167,13 +189,20 @@ export async function singTask(host, opts, env) {
       }
       for (const n of group) {
         if (!env.alive()) return null;
+        // tres notas seguidas sin oír nada: ¿seguimos o terminamos? (las que faltan cuentan como no oídas)
+        if (silent >= SILENT_LIMIT) {
+          if (!(await keepGoing(host, phase))) { gaveUp = true; break; }
+          silent = 0;
+        }
         draw(n.index);
         host.dataset.target = String(n.midi);
         currentNote = n;
         if (hide) phase(`Nota ${nth(n)} de ${sounding.length}`); else phase('Canta:', under[n.index] || noteText(n.name, env.nom));
         const hold = Math.max(MIN_HOLD_MS, Math.min(MAX_HOLD_MS, n.beats * spb * 1000 * HOLD_SHARE));
-        const { cents, sungMidi, level } = await hearNote(n.midi, hold, env.alive, quietUntil, showLevel);
+        const waitMs = Math.max(MIN_WAIT_MS, Math.min(NOTE_TIMEOUT_MS, (n.beats + WAIT_BEATS) * spb * 1000));
+        const { cents, sungMidi, level } = await hearNote(n.midi, hold, env.alive, quietUntil, showLevel, waitMs);
         if (!env.alive()) return null;
+        silent = cents === null ? silent + 1 : 0;
         levels[n.index] = level;
         const raw = singMark(cents, tolerance);
         const mark = raw === 'ok' && helped.has(n.index) ? 'near' : raw;
@@ -188,6 +217,7 @@ export async function singTask(host, opts, env) {
       }
     }
     delete host.dataset.target;
+    sounding.forEach(n => { if (!marks[n.index]) { marks[n.index] = 'bad'; heard[n.index] = null; } });
     draw(-1);
     phase('¡Hecho!');
     if (sungMidis.length >= 2) saveVoice(Math.min(...sungMidis), Math.max(...sungMidis));
@@ -230,18 +260,18 @@ export function hyphenate(syllables, words) {
 // La letra seguida de cada canción del Nivel 1 (para los guiones entre sílabas)
 export const SONG_WORDS = {
   'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces, frescas, buenas, grandes, Venga, ¡ven! venga, ¡ven! ¡Lleva todas, ¡ven! ¡ya!',
-  'Robots en el patio': 'Pipipí, robot prende la luz, Pipipí, robot mueve el pie, ¡clac! Gira la cabeza, gira sin parar Me quedo sin pila, ¡ay, no! ¡clic!',
-  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Los barcos vuelven ya a dormir Duerme, duerme, mar',
+  'Robots en el patio': 'Pipipí, ¡bip, bip! prende la luz, Pipipí, ¡bip, bop! mueve el pie, ¡clac! Gira la cabeza, gira sin parar Mueve, mueve, y se paró, ¡clic!',
+  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Barcos que vuelven ya a dormir Duerme, duerme, mar',
   'Vals de los relojes': 'Tic tac tic tac Baila el reloj Vamos a girar y se acabó ¡ya!',
-  'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa muy juntos van, ¡sí! si do también juntos, ¡sí! ¡Ya lo sabes! ¡Do!',
-  'La brisa y el mar': 'La brisa me canta su canción de paz; el mar me responde ¡fuerte, fuerte! ¡bum! Las olas suenan más y más, y más, ¡más! La ola se va, se va, se va.',
-  'Saloma del barco fantasma': '¡Vamos, barco, al mar, ¡eho! ¡Tira del timón, ¡eho! Densa niebla, todo está gris; rumbo al puerto, ¡ya!',
+  'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa son vecinas, ¡sí! si do son vecinas, ¡sí! ¡Ya lo sabes! ¡Do!',
+  'La brisa y el mar': 'Canta la brisa del mar, canción de paz; El mar contesta: ¡sí! ¡Fuerte, fuerte! ¡Bum! Olas que suenan más y más, y más, ¡más! Ola que se va, se va, se va.',
+  'Saloma del barco fantasma': '¡Vamos, barco, al mar! ¡Eho! ¡Tira del timón! ¡Eho! Densa niebla, todo está gris; rumbo al puerto, ¡ya!',
   '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
 };
 
 // La 2.ª estrofa (letra2) de las canciones que la tienen
 export const SONG_WORDS2 = {
-  'Vals de los relojes': 'Tic tac tic tac Marca el compás Uno, dos, tres, ¡pum! y vuelta a empezar',
+  'Vals de los relojes': 'Tic tac tic tac Marca el compás Uno, dos, tres, ¡pum! vuelta a comenzar',
   'Saloma del barco fantasma': 'Sopla viento sur, ¡eho! Lleva el barco al sol, ¡eho! Cantan las gaviotas al ver tierra, tierra, ¡sí!',
 };
 

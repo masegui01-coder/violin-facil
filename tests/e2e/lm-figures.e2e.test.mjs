@@ -200,3 +200,19 @@ for (const big of [false, true]) {
     await close();
   });
 }
+
+test('lectura a dos voces al 200 % en el móvil: el sistema cabe (sin desplazamiento horizontal)', async () => {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
+  await page.$eval('.lm-unit-card[data-unit="7"]', b => b.click());
+  await page.waitForSelector('[data-ex="lm1-u7-ritmo-a-medio"]', { timeout: STEP_TIMEOUT });
+  await page.$eval('[data-ex="lm1-u7-ritmo-a-medio"]', b => b.click());
+  await page.waitForSelector('#lmBody .lm-system', { timeout: STEP_TIMEOUT });
+  await new Promise(r => setTimeout(r, 400));
+  const fit = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, view: innerWidth, sys: Math.round(document.querySelector('.lm-system').scrollWidth), box: document.querySelector('.lm-system').clientWidth }));
+  assert.ok(fit.page <= fit.view + 1 && fit.sys <= fit.box + 1, JSON.stringify(fit));
+  assert.deepEqual(errors, []);
+  await close();
+});

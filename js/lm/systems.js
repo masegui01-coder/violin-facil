@@ -8,7 +8,7 @@ const STAFFS = '.lm-staff, .lm-w-staff';
 // Si un compás (con la clave que se le pondría delante) no cabe a lo ancho —letra muy grande o pantalla estrecha—,
 // el pentagrama entero se reduce lo justo (--lm-fit) para que ningún compás se corte
 const CLEF_RATIO = 40 / 120; // ancho de la clave sola respecto al alto de la celda
-const MIN_FIT = 0.5;
+const MIN_FIT = 0.4;
 function fitWidth(staff, groups) {
   staff.style.removeProperty('--lm-fit');
   const room = staff.clientWidth;
@@ -22,9 +22,10 @@ function fitWidth(staff, groups) {
 // A dos voces, al menos dos compases por renglón (para leer el sistema mientras suena): se reduce lo justo, sin
 // bajar de MIN_SYSTEM_FIT; si ni así caben dos, al menos que quepa uno entero
 const MIN_SYSTEM_FIT = 0.6;
+const BRACE_PX = 12; // la llave y su margen (no se reducen con el pentagrama)
 function fitPairs(sys, cols) {
   sys.style.removeProperty('--lm-fit');
-  const room = sys.clientWidth;
+  const room = sys.clientWidth - BRACE_PX;
   const cell = sys.querySelector('.lm-cell');
   if (!room || !cell) return;
   const clefW = cell.getBoundingClientRect().height * CLEF_RATIO;
@@ -109,3 +110,14 @@ export function follow(host, beatAt, { barBeats, pickup }) {
   return () => { clearInterval(timer); host.querySelectorAll('.lm-now').forEach(c => c.classList.remove('lm-now')); };
 }
 
+
+// Un elemento (la nota que se canta) a la vista: si se acerca al borde de la pantalla o a la barra fija de abajo,
+// se lleva al centro
+const VIEW_MARGIN_TOP = 80;
+const VIEW_MARGIN_BOTTOM = 160;
+export function keepInView(el) {
+  const r = el.getBoundingClientRect();
+  if (r.top >= VIEW_MARGIN_TOP && r.bottom <= innerHeight - VIEW_MARGIN_BOTTOM) return;
+  const smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  el.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+}

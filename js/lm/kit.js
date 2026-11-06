@@ -107,7 +107,8 @@ export function tight(tokens, clef = 'treble', marks = [], dynamics = null) {
 export function withBreaths(tokens, comas = [], pickup = 0) {
   if (!comas.length) return tokens;
   const bars = tokens.map(t => t.bar + (pickup ? 0 : 1));
-  return tokens.map((t, i) => (comas.includes(bars[i]) && bars[i + 1] !== bars[i] ? { ...t, breath: true } : t));
+  // la coma va entre dos notas, dentro de la pieza: nunca sobre un silencio (ahí ya se respira) ni al final
+  return tokens.map((t, i) => (comas.includes(bars[i]) && i < tokens.length - 1 && bars[i + 1] !== bars[i] && !t.rest ? { ...t, breath: true } : t));
 }
 
 // Fichas de corrección (una por elemento), con signo además del color

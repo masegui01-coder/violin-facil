@@ -125,12 +125,21 @@ export const LM_MISTAKES = {
   altura: 'nota equivocada', 'r-longitud': 'número de compases', 'r-compases': 'compases incompletos', 'r-figuras': 'figura no permitida',
   'r-notas': 'nota no permitida', 'r-final': 'final no pedido', 'r-saltos': 'salto no permitido', 'r-incluye': 'faltan figuras obligatorias', 'r-semitonos': 'faltan los semitonos',
 };
+// STOP: el error lo comete la app; al alumno se le apunta que no lo notó
+const STOP_MISSED = {
+  'q>ee': 'una negra partida en dos corcheas', 'ee>q': 'dos corcheas juntadas en una negra', 'Rq>q': 'un silencio donde había una negra',
+  'q>Rq': 'una negra donde había un silencio', 'h-corta': 'una blanca que duró un pulso', 'w-corta': 'una redonda cortada a la mitad',
+  'Rw-salto': 'un silencio que se saltó', compas: 'un compás con un pulso de más', matiz: 'un compás con el matiz cambiado',
+  calderon: 'un calderón sin esperar', voz: 'una nota del ostinato cambiada', anacrusa: 'la anacrusa en la parte fuerte',
+};
 export function mistakeText(code) {
   if (LM_MISTAKES[code]) return LM_MISTAKES[code];
   const m = /^([A-G][#b]?\d)>([A-G][#b]?\d?)$/.exec(code);
   if (m) return `${m[1]} → ${m[2]}`;
   if (/-sil$/.test(code)) return 'no se oyó la nota';
   if (/-t$/.test(code)) return 'se acabó el tiempo';
+  const stop = /^stop-(.+)$/.exec(code);
+  if (stop && STOP_MISSED[stop[1]]) return `no notó: ${STOP_MISSED[stop[1]]}`;
   return null;
 }
 

@@ -182,12 +182,13 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
 }
 
 // Nota de 1 a 10 de la rúbrica del curso: Fácil tiene techo 8; Media llega a 10 con la condición de excelencia
+// El aprobado (5) empieza en el 60 %, como la primera estrella; nada hecho (0 %) es un 0
 export function gradeTen(pct, variant, excellence = false) {
   const p = clampPct(pct);
-  if (p < 30) return Math.max(1, Math.round(1 + p / 15));
-  if (p < 50) return 3 + Math.round((p - 30) / 20);
-  if (p < 70) return 5 + Math.round((p - 50) / 20);
-  if (p < 85) return 7 + Math.round((p - 70) / 15);
+  if (p === 0) return 0;
+  if (p < 60) return Math.max(1, Math.min(4, Math.round(p / 15)));
+  if (p < 70) return 5;
+  if (p < 85) return 6 + Math.round((p - 70) / 15);
   if (variant === 'facil') return 8;
   return p >= 95 && excellence ? 10 : 9;
 }

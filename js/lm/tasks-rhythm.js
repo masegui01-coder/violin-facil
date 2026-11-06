@@ -117,7 +117,8 @@ export async function stopGame(host, p, env) {
     await continueButton(host, k + 1 < total ? 'Siguiente ronda' : 'Ver el resultado');
   }
   const g = gradeStop(rounds, { window });
-  const missed = rounds.filter((r, i) => g.marks[i] !== 'ok').map(r => r.code);
+  // el error lo cometió la app: lo que se apunta es que el alumno no lo notó («stop-» + el tipo de error)
+  const missed = rounds.filter((r, i) => g.marks[i] !== 'ok').map(r => `stop-${r.code}`);
   return { pct: g.pct, marks: g.marks, mistakes: mistakeCodes([...missed, ...g.mistakes]) };
 }
 

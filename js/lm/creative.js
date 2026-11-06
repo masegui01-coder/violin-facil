@@ -40,7 +40,9 @@ export function phraseEnd(bar, pickup = 0) {
   for (let i = ts.length - 1; i >= 0; i--) if (!ts[i].rest) return ts[i];
   return null;
 }
-const endsOn = (bar, letter, pickup = 0) => { const t = phraseEnd(bar, pickup); return !!t && letterOf(t.step) === letter; };
+// Con anacrusa, la frase siguiente puede entrar en anacrusa o no (la parte B puede empezar en el 1): vale cualquiera
+// de las dos lecturas del final (sin los últimos pulsos o con ellos)
+const endsOn = (bar, letter, pickup = 0) => [pickup, 0].some(k => { const t = phraseEnd(bar, k); return !!t && letterOf(t.step) === letter; });
 const MIN_B_CHANGES = 2; // compases de B distintos de los de A para que B sea «otra parte»
 const DYN = [['pp', 'pp'], ['p', 'p'], ['mp', 'mp'], ['mf', 'mf'], ['f', 'f'], ['ff', 'ff'], ['cresc', 'cresc.'], ['dim', 'dim.']];
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
