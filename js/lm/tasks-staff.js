@@ -63,6 +63,8 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
     box.querySelector('[data-del]').disabled = locked || !tokens.length;
     box.querySelectorAll('[data-up],[data-down]').forEach(b => { b.disabled = locked || rhythmOnly; });
     if (focusSel !== null) box.querySelector(focusSel)?.focus();
+    const label = box.querySelector('.lm-w-cursor');
+    if (label) label.textContent = isRest ? '' : cursorText();
   }
 
   function add(step = cursor) {
@@ -100,6 +102,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 
   box.innerHTML = `${one ? '' : `<div class="seg wrap lm-figs" role="group" aria-label="Figura">${figures.map(f => `<button type="button" data-fig="${f}" aria-pressed="false"><span class="lm-fig-ic" aria-hidden="true">${noteCell({ clef, dur: f.startsWith('R') ? f.slice(1) : f, rest: f.startsWith('R'), step: f.startsWith('R') ? null : DEFAULT_STEP[clef] + 2, w: 30 })}</span>${esc(figLabel(f))}</button>`).join('')}</div>`}
     <div class="lm-w-staff lm-staff" role="group" aria-label="Pentagrama para escribir"></div>
+    ${rhythmOnly ? '' : '<p class="lm-w-cursor" aria-hidden="true"></p>'}
     <div class="controls lm-w-tools">
       <button type="button" class="btn ghost small" data-up aria-label="Nota más aguda">↑ Más aguda</button>
       <button type="button" class="btn ghost small" data-down aria-label="Nota más grave">↓ Más grave</button>
@@ -141,6 +144,22 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       say(sel === null ? 'Nota sin seleccionar' : `Seleccionada: ${describe(tokens[i])}. Flechas para cambiarla, Suprimir para borrarla`);
     }
   });
+  // la nota fantasma sigue al dedo (o al ratón) por las líneas y los espacios, con su nombre debajo; se fija al soltar
+  box.addEventListener('pointermove', e => {
+    if (locked || rhythmOnly) return;
+    const ins = e.target.closest('[data-insert]');
+    if (!ins) return;
+    const step = stepAtY(ins.querySelector('svg'), e.clientY, clef);
+    if (step === cursor) return;
+    cursor = step;
+    // solo la nota fantasma de la celda (el botón sigue siendo el mismo: el toque se completa al soltar)
+    const isRest = figure.startsWith('R');
+    if (isRest) return;
+    ins.innerHTML = noteCell({ clef, dur: figure, ghost: cursor, step: null });
+    ins.dataset.step = String(cursor);
+    const label = box.querySelector('.lm-w-cursor');
+    if (label) label.textContent = cursorText();
+  });
   box.addEventListener('keydown', e => {
     if (locked) return;
     const onStaff = e.target.closest('[data-insert],[data-idx]');
@@ -170,10 +189,13 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 }
 
 // ---------- Tocar notas en el pentagrama y construir una escala ----------
+const BIG_STAFF_NOTES = 2;
 export async function tocarPentagrama(host, item, env) {
   const clef = CLEF[item.clave] || 'treble';
   const want = item.respuesta;
-  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2><div class="lm-writer"></div>
+  // una o dos notas: pentagrama al doble de alto (20 px por línea o espacio), para acertar con el dedo
+  const big = want.length <= BIG_STAFF_NOTES;
+  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2><div class="lm-writer${big ? ' lm-big' : ''}"></div>
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   host.querySelector('.lm-q').focus();
   const w = createStaffWriter(host.querySelector('.lm-writer'), { clef, figures: ['w'], max: want.length, nom: env.nom, say: env.say });

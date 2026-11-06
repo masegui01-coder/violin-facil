@@ -168,8 +168,10 @@ test('estrellas del contrato (60 / 80 / 90) y nota de 1 a 10 de la rúbrica', ()
   assert.equal(gradeTen(100, 'facil'), 8);
   assert.equal(gradeTen(96, 'medio', true), 10);
   assert.equal(gradeTen(90, 'medio'), 9);
-  assert.equal(gradeTen(60, 'medio'), 6);
-  assert.equal(gradeTen(10, 'medio'), 2);
+  assert.equal(gradeTen(60, 'medio'), 5);
+  assert.equal(gradeTen(50, 'medio'), 3, 'por debajo del 60 % no se aprueba');
+  assert.equal(gradeTen(0, 'medio'), 0, 'sin hacer nada, un 0');
+  assert.equal(gradeTen(10, 'medio'), 1);
 });
 
 test('entonación: la voz vale en cualquier octava y se corrige con tolerancia según la variante', () => {
@@ -559,4 +561,188 @@ test('U7 a dos voces: la voz 1 es el ostinato del ejercicio (su ritmo, repetido)
   const facil = lmExercise('lm1-u7-ritmo-a-facil').params;
   const ostF = ostinatoTokens(scoreTokens(facil.partitura), facil);
   assert.ok(ostF.length > 0 && ostF.every(t => t.midi === 60));
+});
+
+// ---------- Creatividad: composiciones correctas que imitan los modelos del curso (evaluación 4) ----------
+test('creatividad: el final admite un silencio detrás y la forma mira el final de la frase, no la anacrusa siguiente', async () => {
+  const { extraRules, phraseEnd } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  // U3 Media: acaba en do y lleva el silencio de blanca obligatorio
+  const u3 = checkComposition(toks('C4h E4h | G4q A4q G4h | E4q G4q E4q G4q | C4h Rh'), { barBeats: 4, bars: 4, endSteps: [stepOf('C4')] });
+  assert.ok(u3.rules.find(r => r.id === 'final').ok, 'C4h Rh acaba en do');
+  // U8 Media, como «¿Te vienes?»: cada frase entra en anacrusa (Rq G4q) y la última acaba con silencio
+  const song = toks('G4q | C5q B4q A4q G4q | D5h Rq G4q | C5q B4q A4q G4q | C5h Rq G4q | E4q F4q G4q A4q | B4h Rq G4q | A4q G4q F4q D4q | C4h Rq');
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const rules = extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'te vie nes', barBeats: 4, bars: 8, dyn: [] });
+  const byId = Object.fromEntries(rules.map(r => [r.id, r.ok]));
+  assert.deepEqual([byId.pregunta, byId.respuesta, byId.formaB], [true, true, true]);
+  const fin = checkComposition(song, { barBeats: 4, bars: 8, pickup: 1, endSteps: [stepOf('C4'), stepOf('C5')] });
+  assert.ok(fin.rules.find(r => r.id === 'final').ok, 'C4h Rq acaba en do');
+  assert.equal(phraseEnd(toks('C5h Rq G4q')).name, 'C5');
+  assert.equal(phraseEnd(toks('B4q A4q')).name, 'A4');
+  assert.equal(phraseEnd(toks('C4h Rh')).name, 'C4');
+  // y una respuesta que no acaba en do sigue sin valer
+  const wrong = extraRules({ rs: p.restricciones, p, tokens: toks('G4q | C5q B4q A4q G4q | D5h Rq G4q | C5q B4q A4q G4q | E5h Rq G4q | E4q F4q G4q A4q | B4h Rq G4q | A4q G4q F4q D4q | C4h Rq'), given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 4, bars: 8, dyn: [] });
+  assert.equal(wrong.find(r => r.id === 'respuesta').ok, false);
+});
+
+// ---------- Evaluación 4 ----------
+test('ningún ejercicio que se puntúa pide notas no enseñadas: cada lista de notas ⊆ las de su unidad', () => {
+  const asName = n => (/^[A-G]/.test(n) ? n : solfaToName(n));
+  const walk = (o, path, fn) => {
+    if (Array.isArray(o)) o.forEach((v, i) => walk(v, `${path}.${i}`, fn));
+    else if (o && typeof o === 'object') Object.entries(o).forEach(([k, v]) => ((k === 'notas' || k === 'notasEs') && Array.isArray(v) ? fn(v, `${path}.${k}`) : walk(v, `${path}.${k}`, fn)));
+  };
+  const bad = [];
+  LM_LEVELS[0].units.forEach(u => {
+    const known = new Set(u.notes.map(solfaToName));
+    u.exercises.forEach(e => walk(e.params, e.id, (list, path) => {
+      if (/audicion/.test(path)) return; // las audiciones se escuchan, no se leen
+      list.map(asName).filter(n => n && /\d/.test(n) && !known.has(n)).forEach(n => bad.push(`${path}: ${n}`));
+    }));
+  });
+  assert.deepEqual(bad, []);
+});
+
+test('elegir: las opciones se barajan en cada intento y la correcta cae en cualquier sitio (reparto casi uniforme)', async () => {
+  const { shuffledChoice, isOrdered } = await import('../js/lm/tasks-quiz.js');
+  const items = allLmExercises().flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])])
+    .filter(it => (it.tipo === 'elegir' || /^escuchar/.test(it.tipo)) && it.options && it.options.length === 3 && !isOrdered(it));
+  // las listas con orden propio no se barajan
+  const ordinal = { id: 'x', options: ['La primera', 'La segunda'], answer: 1 };
+  assert.deepEqual(shuffledChoice(ordinal, 3).options, ordinal.options);
+  const seen = [0, 0, 0];
+  for (let attempt = 1; attempt <= 20; attempt++) {
+    items.forEach(it => {
+      const c = shuffledChoice(it, attempt * 7919);
+      assert.equal(c.options[c.correct[0]], it.options[it.answer], it.id);
+      seen[c.correct[0]]++;
+    });
+  }
+  const total = seen.reduce((a, b) => a + b, 0);
+  seen.forEach((n, k) => assert.ok(n / total > 0.25 && n / total < 0.42, `posición ${k + 1}: ${Math.round(n * 100 / total)} %`));
+  // el mismo intento, el mismo orden (se puede repetir la corrección); otro intento, otro orden
+  const it = items[0];
+  assert.deepEqual(shuffledChoice(it, 5), shuffledChoice(it, 5));
+});
+
+test('variedad: al menos el 40 % de las preguntas de teoría y audición son activas (no de elegir)', () => {
+  const qs = allLmExercises().filter(e => e.section === 'teoria' || e.section === 'audicion').flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])]);
+  const unique = [...new Map(qs.map(q => [q.id, q])).values()];
+  const active = unique.filter(q => q.tipo !== 'elegir' && !/^escuchar/.test(q.tipo));
+  assert.ok(active.length / unique.length >= 0.4, `${active.length} de ${unique.length}`);
+  ['senalar', 'contar', 'tocarPentagrama', 'completar', 'ordenar', 'barras'].forEach(t => assert.ok(unique.some(q => q.tipo === t), t));
+});
+
+// ---------- Evaluación 5 ----------
+test('toda pregunta con «play» suena: se programan notas (también «dos versiones» con su matiz)', async () => {
+  const { notesOfPlay, gainsOf } = await import('../js/lm/tasks-quiz.js');
+  const env = { songScore: ref => (lmSong(1, ref) || {}).partitura || null };
+  const silent = [];
+  allLmExercises().forEach(e => [...(e.params.items || []), ...(e.params.preguntas || [])].forEach(q => {
+    if (!q.play) return;
+    const notes = notesOfPlay(q.play, env).filter(n => !n.rest);
+    if (!notes.length) silent.push(`${e.id}: ${q.id}`);
+  }));
+  assert.deepEqual(silent, []);
+  const two = { versiones: ['f', 'p'] };
+  const notes = notesOfPlay(two, env);
+  const gains = gainsOf(two, notes);
+  const half = notes.length / 2;
+  assert.ok(gains[0] > gains[half], 'la primera (f) suena más fuerte que la segunda (p)');
+  assert.ok(notes[half].start > notes[half - 1].start + notes[half - 1].beats, 'con un silencio entre las dos');
+});
+
+test('creatividad AB con anacrusa pegada a la nota larga, como «Cumpleaños feliz» (C5h G4q): la respuesta acaba en do', async () => {
+  const { extraRules } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const song = toks('G4q | A4q G4q C5q | B4h G4q | A4q G4q D5q | C5h G4q | E4q E4q F4q | G4h F4q | E4q D4q B4q | C4h');
+  const rules = Object.fromEntries(extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 3, bars: 8, dyn: [] }).map(r => [r.id, r.ok]));
+  assert.deepEqual([rules.pregunta, rules.respuesta, rules.formaB], [true, true, true]);
+});
+
+test('canciones: la letra seguida (guiones y PDF) coincide letra a letra con las sílabas de cada estrofa', async () => {
+  const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
+  const letters = s => String(s).toLowerCase().normalize('NFD').replace(/[^a-zñ]/g, '');
+  LM_LEVELS[0].units.forEach(u => {
+    const s = u.song;
+    assert.equal(letters(SONG_WORDS[s.titulo]), letters(s.letra.flat().join('')), `${s.titulo}: estrofa 1`);
+    if (s.letra2) assert.equal(letters(SONG_WORDS2[s.titulo]), letters(s.letra2.flat().join('')), `${s.titulo}: estrofa 2`);
+    // una sílaba por nota en cada compás
+    const notes = {};
+    scoreTokens(s.partitura).forEach(t => { if (!t.rest) notes[t.bar] = (notes[t.bar] || 0) + 1; });
+    [s.letra, s.letra2].filter(Boolean).forEach(L => L.forEach((bar, b) => assert.equal(bar.length, notes[b] || 0, `${s.titulo}, compás ${b + 1}`)));
+  });
+});
+
+test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato), la nota es baja', async () => {
+  const { gradeReading } = await import('../js/lm/tasks-duo.js');
+  const { ostinatoTokens } = await import('../js/lm/gen.js');
+  const p = lmExercise('lm1-u7-ritmo-a-medio').params;
+  const reading = scoreTokens(p.partitura);
+  const ost = ostinatoTokens(reading, p).filter(t => !t.rest);
+  const spb = 60 / p.tempo;
+  const expected = reading.filter(t => !t.rest).map(t => t.start * spb);
+  const ostinatoTimes = ost.map(t => t.start * spb);
+  const tol = 0.08;
+  const echo = gradeReading({ expected, hits: ostinatoTimes, tol, mic: true, ostinatoTimes });
+  assert.ok(pctOf(echo.marks.filter(Boolean), echo.extra) < 20, `solo el eco: ${pctOf(echo.marks.filter(Boolean), echo.extra)} %`);
+  const own = echo.marks.filter(Boolean).length;
+  assert.ok(own >= expected.length / 2, `la voz 2 tiene notas propias: ${own} de ${expected.length}`);
+  const perfect = gradeReading({ expected, hits: expected, tol, mic: true, ostinatoTimes });
+  assert.equal(pctOf(perfect.marks.filter(Boolean), perfect.extra), 100);
+  // tocando la pantalla se corrigen todas
+  assert.equal(gradeReading({ expected, hits: expected, tol }).marks.length, expected.length);
+});
+
+// ---------- Evaluación 6 ----------
+// Excepciones musicales de verdad (cada una con su porqué); de momento, ninguna
+const PROSODY_ALLOWED = [];
+test('prosodia: en todas las canciones la sílaba tónica cae en una parte al menos tan fuerte como sus vecinas', async () => {
+  const { prosodyIssues, beatWeight } = await import('../js/lm/prosody.js');
+  const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
+  const found = [];
+  LM_LEVELS[0].units.forEach(u => {
+    const s = u.song;
+    [[1, s.letra, SONG_WORDS[s.titulo]], [2, s.letra2, SONG_WORDS2[s.titulo]]].forEach(([v, L, W]) => {
+      if (!L) return;
+      prosodyIssues(s, L, W).forEach(i => found.push(`U${u.unit} estrofa ${v}, compás ${i.bar}: «${i.word}» (tónica «${i.stressed}» más débil que «${i.weaker}»)`));
+    });
+  });
+  assert.deepEqual(found.filter(f => !PROSODY_ALLOWED.some(a => f.startsWith(a))), []);
+  // la regla misma: llanas, agudas, tilde
+  const two = { partitura: '| G4q G4q | G4q G4q |', compas: '2/4' };
+  assert.equal(prosodyIssues(two, [['ro', 'bot'], ['me', 'sa']], 'robot mesa').length, 1, '«ro-BOT» con «bot» en el 2 está mal');
+  assert.equal(prosodyIssues(two, [['me', 'sa'], ['can', 'ción']], 'mesa canción').length, 1, '«can-CIÓN» con «ción» en el 2 está mal');
+  assert.equal(prosodyIssues({ partitura: '| G4q | G4q G4q |', compas: '2/4', anacrusa: 1 }, [['ro'], ['bot', 'sí']], 'robot sí').length, 0, 'en anacrusa, «bot» cae en el 1');
+  assert.deepEqual([0, 1, 2, 0.5].map(p => beatWeight(p, 4)), [3, 1, 2, 0]);
+});
+
+test('creatividad AB: la respuesta acaba en do aunque la parte B empiece en el primer tiempo (sin anacrusa)', async () => {
+  const { extraRules } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const song = toks('G4q | C5q B4q A4q | G4q F4q D5q | C5q B4q A4q | E4q D4q C4q | E4q F4q G4q | A4h G4q | F4q E4q D4q | C4h');
+  const rules = Object.fromEntries(extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 3, bars: 8, dyn: [] }).map(r => [r.id, r.ok]));
+  assert.deepEqual([rules.pregunta, rules.respuesta, rules.formaB], [true, true, true]);
+});
+
+test('lectura a dos voces: golpear todos los pulsos sin leer no aprueba', async () => {
+  const { gradeReading } = await import('../js/lm/tasks-duo.js');
+  const p = lmExercise('lm1-u7-ritmo-a-medio').params;
+  const reading = scoreTokens(p.partitura);
+  const spb = 60 / p.tempo;
+  const expected = reading.filter(t => !t.rest).map(t => t.start * spb);
+  const total = reading.reduce((s, t) => Math.max(s, t.start + t.beats), 0);
+  const everyBeat = Array.from({ length: total }, (_, k) => k * spb);
+  const g = gradeReading({ expected, hits: everyBeat, tol: 0.08 });
+  const pct = pctOf(g.marks, Math.ceil(g.extra * 1.5));
+  assert.ok(gradeTen(pct, 'medio') < 5, `${pct} % → ${gradeTen(pct, 'medio')}`);
+});
+
+test('comas de respiración: entre dos notas, nunca sobre un silencio ni al final de la pieza', async () => {
+  const { withBreaths } = await import('../js/lm/kit.js');
+  const t = withBreaths(scoreTokens('| C5q C5q | C5h | C5q Rq | C5h |'), [1, 2, 3, 4]);
+  assert.deepEqual(t.map(x => !!x.breath), [false, true, true, false, false, false]);
 });

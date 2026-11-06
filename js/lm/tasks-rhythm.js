@@ -4,9 +4,10 @@ import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
 import { barBeatsOf } from './notes.js';
-import { staffHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
+import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
+import { follow } from './systems.js';
 
 const TAP_TOLERANCE_MS = { facil: 120, medio: 80 };
 const AFTER_END_S = 0.8;
@@ -24,8 +25,14 @@ function stopScore(tokens, ostinato, base, env) {
   const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0 };
   const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
   if (!ostinato) return rhythm;
-  return `<div class="lm-staff-two"><p class="dict-staff-label">Voz 1: la app (el ostinato, se repite)</p>${staffHtml(ostinato, { meter, pickup: base.anacrusa || 0, label: ostinato.map(t => tokenLabel(t, env.nom)).join(', ') })}
-    <p class="dict-staff-label">Voz 2: tú (palméala o cántala mientras escuchas)</p>${rhythm}</div>`;
+  return twoVoices(tokens, ostinato, base, env);
+}
+
+// Las dos voces como un sistema: voz 1 (el ostinato de la app) arriba y voz 2 (la del alumno) abajo, compás a compás
+export function twoVoices(tokens, ostinato, base, env, marks = []) {
+  const label = `Voz 1, la app: ${ostinato.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}. Voz 2, tú: ${tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}`;
+  return `<p class="lm-system-legend">Arriba, voz 1: la app (el ostinato, se repite) · Abajo, voz 2: tú</p>
+    ${systemHtml([{ tokens: ostinato }, { tokens, marks }], { meter: base.compas || '4/4', pickup: base.anacrusa || 0, label })}`;
 }
 
 const PULSE_LEVEL = 0.25;
@@ -71,7 +78,7 @@ export async function stopGame(host, p, env) {
       <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
       ${stopScore(tokens, ostinato, p.base, env)}
       <p class="lm-stop-phase" id="lmStopPhase" aria-live="polite">Preparado</p>
-      <div class="controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
+      <div class="controls lm-sticky-controls"><button type="button" class="btn big" id="lmStopGo">Empezar la ronda</button></div>`;
     host.querySelector('#lmStopGo').focus();
     await onceClick(host, '#lmStopGo');
     host.querySelector('.controls').innerHTML = '<button type="button" class="btn big lm-stop-btn" id="lmStop" aria-keyshortcuts="Space">STOP</button>';
@@ -81,6 +88,8 @@ export async function stopGame(host, p, env) {
     phase('Claqueta…');
     const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
     const { end, beats } = playStopRound(round, { t0, spb, barBeats, pickup: p.base.anacrusa || 0 });
+    // el compás que suena, resaltado y a la vista (con el STOP fijo abajo)
+    const unfollow = follow(host, () => (now() - t0) / spb - round.offset, { barBeats, pickup: p.base.anacrusa || 0 });
     clicks(Math.ceil(beats), bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
     const lat = outputLatency();
     const pressed = await new Promise(resolve => {
@@ -92,6 +101,7 @@ export async function stopGame(host, p, env) {
       }, 50);
       stopBtn.addEventListener('click', () => done((now() - lat - t0) / spb), { once: true });
     });
+    unfollow();
     stopSound();
     if (!env.alive()) return null;
     // pulsar durante la claqueta (pulso negativo) también es parar antes de tiempo
@@ -107,7 +117,8 @@ export async function stopGame(host, p, env) {
     await continueButton(host, k + 1 < total ? 'Siguiente ronda' : 'Ver el resultado');
   }
   const g = gradeStop(rounds, { window });
-  const missed = rounds.filter((r, i) => g.marks[i] !== 'ok').map(r => r.code);
+  // el error lo cometió la app: lo que se apunta es que el alumno no lo notó («stop-» + el tipo de error)
+  const missed = rounds.filter((r, i) => g.marks[i] !== 'ok').map(r => `stop-${r.code}`);
   return { pct: g.pct, marks: g.marks, mistakes: mistakeCodes([...missed, ...g.mistakes]) };
 }
 

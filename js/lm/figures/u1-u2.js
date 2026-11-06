@@ -46,7 +46,7 @@ export function pentagrama(o = {}) {
   const S = staff(150, 13), x0 = 66, x1 = 286;
   let b = [1, 2, 3, 4, 5].map(n => `<line x1="${x0}" x2="${x1}" y1="${S.lineY(n)}" y2="${S.lineY(n)}" class="lmf-line"/>`).join('');
   b += text(x0 - 22, 26, t(o, 'líneas', 'lines'), { cls: 'b' }) + text(x1 + 20, 26, t(o, 'espacios', 'spaces'), { cls: 'b hi' });
-  for (let n = 1; n <= 5; n++) b += `<circle cx="${x0 - 22}" cy="${S.lineY(n)}" r="9" class="lmf-solid ink"/>` + text(x0 - 22, S.lineY(n) + 4.5, n, { cls: 'b on s' });
+  for (let n = 1; n <= 5; n++) b += `<circle cx="${x0 - 22}" cy="${S.lineY(n)}" r="11" class="lmf-solid ink"/>` + text(x0 - 22, S.lineY(n) + 5, n, { cls: 'b on s' });
   for (let n = 1; n <= 4; n++) b += `<rect x="${x1 + 13}" y="${S.lineY(n) - 21}" width="22" height="16" rx="8" class="lmf-solid"/>` + text(x1 + 24, S.lineY(n) - 9, n, { cls: 'b on s' });
   b += tap(108, S.lineY(3) - 4, 60, 64, '| G4q |', `${nn(o, 4)}: ${t(o, 'nota en línea', 'note on a line')}`, S.note(138, 4, 'q'));
   b += tap(192, S.lineY(3) - 4, 60, 64, '| A4q |', `${nn(o, 5)}: ${t(o, 'nota en espacio', 'note in a space')}`, S.note(222, 5, 'q', { cls: 'hi' }));

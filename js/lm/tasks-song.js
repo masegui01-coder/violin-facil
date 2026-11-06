@@ -10,6 +10,7 @@ import { staffHtml, CLEF } from './kit.js';
 import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.js';
 import { MIC_GATE, openMic, groupsOf } from './tasks-voice.js';
 import { dynamicsChecks } from './dynamics.js';
+import { keepInView } from './systems.js';
 
 const TICK_MS = 25;
 // Ataque a tiempo: ±180 ms en Fácil y ±120 ms en Media (la voz arranca más despacio que una palmada)
@@ -91,17 +92,24 @@ export async function singSong(host, opts, env) {
   const marks = [];
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${MIC_GATE}
     <div class="lm-sing-staff"></div>
-    <div class="lm-sing-now" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
+    <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
     <div class="controls"><button type="button" class="btn ghost" id="lmSongHear">Escuchar la canción con acompañamiento</button><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>
     <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
-  const draw = current => { host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, current, dynamics: opts.dynamics || null }); };
+  // Con 2.ª estrofa (letra2): barra de repetición al final, las dos letras debajo y se canta dos veces
+  const passes = opts.under2 ? 2 : 1;
+  const draw = current => {
+    host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, repeat: passes > 1 });
+    const on = current >= 0 && host.querySelector('.lm-sing-staff .lm-now');
+    if (on) keepInView(on); // la nota que se canta, siempre a la vista
+  };
   const phase = (text, note = '') => { host.querySelector('#lmSingPhase').textContent = text; host.querySelector('#lmSingNote').textContent = note; };
   draw(-1);
   host.querySelector('#lmSongHear').addEventListener('click', () => {
     stopSound();
-    const all = sounding.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 }));
-    playEvents([...all, ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera })]);
+    const span = tokens.reduce((s, t) => s + t.beats, 0) * spb;
+    const once = [...sounding.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })), ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera })];
+    playEvents(Array.from({ length: passes }, (_, k) => once.map(e => ({ ...e, at: e.at + k * span }))).flat());
   });
   host.querySelector('#lmSongGo').focus();
   await new Promise(r => host.querySelector('#lmSongGo').addEventListener('click', r, { once: true }));
@@ -116,6 +124,9 @@ export async function singSong(host, opts, env) {
     phase('Escucha la tonalidad');
     playChordNow((minor ? MINOR_TRIAD : MAJOR_TRIAD).map(x => (minor ? 57 : 60) + x), 1.2);
     await wait(1400);
+    for (let pass = 0; pass < passes; pass++) {
+    const words = pass ? opts.under2 : opts.under;
+    if (pass) { phase('Ahora, la 2.ª estrofa (la letra de abajo)'); env.say('Segunda estrofa'); await wait(1200); }
     for (const group of groupsOf(sounding, echo)) {
       if (!env.alive()) return null;
       const g0 = echo ? group[0].bar * barBeats : 0;
@@ -148,7 +159,7 @@ export async function singSong(host, opts, env) {
             host.dataset.index = String(cur.index);
             host.dataset.target = String(cur.midi);
             draw(cur.index);
-            phase('Canta:', opts.under[cur.index] || noteText(tokens[cur.index].name, env.nom));
+            phase('Canta:', (words && words[cur.index]) || (opts.hideNames ? '' : noteText(tokens[cur.index].name, env.nom)));
           }
         } else if (beat >= 0 && host.dataset.target) { delete host.dataset.target; delete host.dataset.index; }
       }
@@ -162,6 +173,7 @@ export async function singSong(host, opts, env) {
         results.push({ ...g, name: tokens[n.index].name, bar: tokens[n.index].bar, level: lv.length ? median(lv) : null });
       });
       draw(-1);
+    }
     }
     phase('¡Hecho!');
     delete host.dataset.target;

@@ -3,18 +3,20 @@
 import { esc } from '../ui.js';
 import { QUIZ_KINDS, playQuestion } from './tasks-quiz.js';
 import { tocarPentagrama, barras, dictadoEscrito } from './tasks-staff.js';
-import { singTask, lyricsUnder, singResult, SONG_WORDS } from './tasks-voice.js';
+import { singTask, lyricsUnder, singResult, SONG_WORDS, SONG_WORDS2 } from './tasks-voice.js';
 import { singSong } from './tasks-song.js';
 import { stopGame, tapRhythm } from './tasks-rhythm.js';
 import { agilityTask } from './tasks-agility.js';
+import { lecturaDosVoces } from './tasks-duo.js';
 import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, genRhythm, genMelody, gainsFor } from './gen.js';
 import { pctOf, mistakeCodes } from './grade.js';
 import { creatividad } from './creative.js';
 import { scoreTokens, barBeatsOf, noteText, solfaToName } from './notes.js';
 import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
-import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel } from './kit.js';
+import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel, withBreaths } from './kit.js';
 import { playEvents, stopSound } from './sound.js';
 import { figureHtml, bindFigures, CARD_FIGURE } from './figures/index.js';
+import { fitSystems } from './systems.js';
 import { currentLang } from '../i18n.js';
 
 const STAFF_KINDS = { tocarPentagrama, escala: tocarPentagrama, barras };
@@ -26,6 +28,7 @@ async function runItems(host, items, env, title = 'Pregunta') {
   const mistakes = [];
   for (let i = 0; i < items.length; i++) {
     if (!env.alive()) return null;
+    stopSound(); // lo que sonaba en la pregunta anterior (una canción entera, por ejemplo) no sigue en esta
     host.innerHTML = `<p class="eyebrow lm-count">${esc(title)} ${i + 1} de ${items.length}</p><div class="lm-item"></div>`;
     const r = await runItem(host.querySelector('.lm-item'), items[i], env);
     if (!r || !env.alive()) return null;
@@ -33,6 +36,7 @@ async function runItems(host, items, env, title = 'Pregunta') {
     mistakes.push(r.mistake);
     await continueButton(host, i + 1 < items.length ? 'Siguiente' : 'Ver el resultado');
   }
+  stopSound();
   return { marks, mistakes: mistakeCodes(mistakes), labels: items.map((it, i) => `${title} ${i + 1}`) };
 }
 
@@ -48,14 +52,16 @@ function cardFigure(card, i, env, still) {
 }
 const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
 // El ejemplo de la tarjeta con su compás (el suyo o el primero de la unidad), sus barras y, si la hay, su anacrusa
-function cardExample(card, env) {
-  const ex = scoreTokens(card.ejemplo);
+function cardExample(card, env, text = card.ejemplo) {
+  const ex = withBreaths(scoreTokens(text), card.comas || [], card.anacrusa || 0);
   const meter = card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
   return staffHtml(ex, { meter, pickup: card.anacrusa || 0, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
 }
 function cardHtml(card, i, env) {
   const example = card.ejemplo ? `<div class="lm-card-ex">${cardExample(card, env)}${playButton('lmCardPlay', 'Escuchar el ejemplo')}</div>` : '';
-  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}</div>`;
+  // ejemploCompleto: la escala o la idea entera, solo para mirarla (puede pasar de las notas que ya se leen)
+  const whole = card.ejemploCompleto ? `<div class="lm-card-ex lm-card-ex2"><p class="dict-staff-label">Entera, solo para mirarla</p>${cardExample(card, env, card.ejemploCompleto)}${playButton('lmCardPlay2', 'Escuchar entera')}</div>` : '';
+  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}${whole}</div>`;
 }
 async function showCards(host, cards, env, summary) {
   const unitColor = `--unit:var(--u${((env.unit - 1) % 8) + 1})`;
@@ -70,10 +76,12 @@ async function showCards(host, cards, env, summary) {
   for (let i = 0; i < cards.length; i++) {
     if (!env.alive()) return;
     host.innerHTML = `<p class="eyebrow">Ficha ${i + 1} de ${cards.length}</p><div class="lm-card" style="${unitColor}">${cardHtml(cards[i], i, env)}</div>`;
+    fitSystems(host); // la clave de cada renglón del ejemplo, ya al pintar (sin esperar al siguiente fotograma)
     bindFigures(host, playFigure(env));
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
     if (play) play.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemplo }, env));
+    host.querySelector('#lmCardPlay2')?.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemploCompleto }, env));
     await continueButton(host, i + 1 < cards.length ? 'Siguiente' : 'A practicar');
   }
 }
@@ -97,7 +105,7 @@ const agilidad = (host, ex, env) => agilityTask(host, ex.params, env);
 // ---------- Entonación y canción cantada ----------
 async function entonacion(host, ex, env) {
   const p = ex.params;
-  const tokens = scoreTokens(p.partitura);
+  const tokens = withBreaths(scoreTokens(p.partitura), p.comas || [], p.anacrusa || 0);
   // lectura melódica: hay que leer las notas en el pentagrama (sin el nombre escrito debajo ni dicho por la app)
   // lectura en Fácil: con apoyo (la primera nota y un botón para oír la nota que toca), nunca en eco
   const reading = ex.skills.includes('lectura');
@@ -119,12 +127,15 @@ const SUPPORT = {
 };
 async function cancionCantada(host, ex, env) {
   const song = ex.params.cancion;
-  const tokens = scoreTokens(song.partitura);
+  const tokens = withBreaths(scoreTokens(song.partitura), song.comas || [], song.anacrusa || 0);
   const names = /nombre de notas/.test(ex.params.modo || '');
   // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
   const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
-    under: lyricsUnder(tokens, song.letra, env.nom, names, SONG_WORDS[song.titulo] || ''), intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    // «con nombre de notas»: los nombres se leen en el pentagrama, no se escriben debajo (ni los dice la app)
+    under: names ? [] : lyricsUnder(tokens, song.letra, env.nom, false, SONG_WORDS[song.titulo] || ''), hideNames: names, intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición), siempre con su letra
+    under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, SONG_WORDS2[song.titulo] || '') : null,
     dynamics: Array.isArray(song.matices) ? song.matices : null,
   }, env);
   return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
@@ -195,7 +206,7 @@ function workHtml(a, id) {
     <h2 class="lm-q" tabindex="-1">${esc(a.compositor)}</h2><p class="muted small"><span>${esc(a.vida || '')}</span>${a.genero ? ` · <span>${esc(a.genero)}</span>` : ''}</p>
     <p class="lm-work-title"><b>${esc(a.obra)}</b></p>
     <ul class="lm-facts">${(a.ficha || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    ${frag ? `<div class="lm-listen"><p class="muted small"><span>${frag.voces.map(v => esc(v.nombre)).join(' · ')}</span></p>
+    ${frag ? `<div class="lm-listen"><p class="muted small">${frag.voces.map(v => `<span>${esc(v.nombre)}</span>`).join(' · ')}</p>
       ${playButton(id, 'Escuchar el fragmento')}<button type="button" class="btn ghost small" data-stop-audio>Parar</button>
       ${frag.nota ? `<p class="muted small">${esc(frag.nota)}</p>` : ''}</div>` : ''}
   </article>`;
@@ -352,5 +363,6 @@ async function repaso(host, ex, env) {
 }
 
 export const RUNNERS = {
+  'lectura-ritmica': lecturaDosVoces, // solo la de dos voces (voz1); las demás, en el ensayo rítmico (launcher)
   teoria, stop, agilidad, entonacion, 'cancion-cantada': cancionCantada, escribir, discriminacion, audicion, creatividad, repaso,
 };

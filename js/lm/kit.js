@@ -3,7 +3,7 @@
 import { esc, icon } from '../ui.js';
 import { rng } from '../generate.js';
 import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
-import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf } from './notes.js';
+import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf } from './notes.js';
 
 export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
 export const MARK_TEXT = { ok: 'bien', near: 'casi', bad: 'mal' };
@@ -33,7 +33,7 @@ function dynamicsByBar(matices = []) {
 // Pentagrama de una lista de notas: celdas en fila agrupadas por compases (un compás nunca se parte entre dos
 // líneas), corcheas unidas por su barra, matices y reguladores debajo, calderones y comas de respiración encima.
 // under: texto bajo cada nota (letra, nombre). dynamics: matices del catálogo. pickup: pulsos de la anacrusa.
-export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false } = {}) {
+export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
   const lay = layoutTokens(tokens, { barBeats, pickup, clef });
   const dyn = dynamicsByBar(dynamics || []);
@@ -47,7 +47,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
     const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
     const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : '';
-    groups[groups.length - 1].push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}</span>`);
+    groups[groups.length - 1].push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {
       groups[groups.length - 1].push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);
@@ -57,7 +57,58 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
   });
   groups[groups.length - 1].push(`<span class="lm-sc">${endCell(repeat)}</span>`);
   const html = groups.filter(g => g.length).map(g => `<span class="lm-bargroup">${g.join('')}</span>`).join('');
-  return `<div class="lm-staff"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
+  return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
+}
+
+// Sistema de dos (o más) pentagramas unidos, compás a compás: la voz 1 arriba y la 2 abajo, con la clave, el compás
+// y una llave al principio de cada renglón, y la barra de compás a la misma altura en las dos voces (cada compás es
+// una columna). voices: [{ tokens, label, marks }]. Es lo que se lee a dos voces (ostinato de la app + voz del alumno).
+export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label = '' } = {}) {
+  const barBeats = meter ? barBeatsOf(meter) : null;
+  const key = x => Math.round(x * 1000);
+  // cada voz: sus notas por compás con el instante en que suenan (las notas a la vez van en la misma columna)
+  const voiceBars = voices.map(v => {
+    const lay = layoutTokens(v.tokens, { barBeats, pickup, clef });
+    let at = 0;
+    const bars = [];
+    v.tokens.forEach((t, i) => {
+      const start = t.start ?? at;
+      at = start + (t.beats ?? 0);
+      (bars[lay[i].bar] ||= []).push({ start, html: `<span class="lm-sc ${(v.marks || [])[i] || ''}">${noteCell({ ...t, clef, mark: (v.marks || [])[i] || null, beam: lay[i].beam, up: lay[i].up, breath: !!t.breath })}</span>` });
+    });
+    return bars;
+  });
+  const count = Math.max(...voiceBars.map(b => b.length));
+  const cols = Array.from({ length: count }, (_, b) => {
+    const last = b === count - 1;
+    // rejilla común del compás: todos los instantes en que empieza alguna nota de alguna voz
+    const slots = [...new Set(voiceBars.flatMap(bars => (bars[b] || []).map(n => key(n.start))))].sort((x, y) => x - y);
+    const rows = voiceBars.map(bars => {
+      const by = new Map((bars[b] || []).map(n => [key(n.start), n.html]));
+      const cells = slots.map(k => by.get(k) || `<span class="lm-sc lm-syshole" aria-hidden="true">${noteCell({ step: null })}</span>`).join('');
+      return `<span class="lm-sysrow">${b === 0 ? `<span class="lm-sc">${clefCell(clef, meter)}</span>` : ''}${cells}<span class="lm-sc">${last ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
+    }).join('');
+    return `<span class="lm-sysbar${b === 0 ? ' lm-sysstart' : ''}" data-sysbar="${b}">${rows}</span>`;
+  }).join('');
+  const names = voices.map(v => v.label).filter(Boolean).join(' · ');
+  return `<div class="lm-system" role="img" aria-label="${esc(label || names)}">${cols}</div>`;
+}
+
+// Sin líneas adicionales, marcas ni matices, el pentagrama no necesita el aire de arriba y de abajo de sus celdas:
+// los renglones se juntan (clase lm-tight). Notas de do4 a re5 en clave de sol
+const TIGHT_LOW = stepOf('C4');
+const TIGHT_HIGH = stepOf('D5');
+export function tight(tokens, clef = 'treble', marks = [], dynamics = null) {
+  return clef === 'treble' && !(marks || []).some(Boolean) && !(dynamics && dynamics.length)
+    && tokens.every(t => t.rest || t.step === undefined || (t.step >= TIGHT_LOW && t.step <= TIGHT_HIGH));
+}
+
+// Comas de respiración (n.º de compás, desde 1): la última nota de esos compases lleva la coma
+export function withBreaths(tokens, comas = [], pickup = 0) {
+  if (!comas.length) return tokens;
+  const bars = tokens.map(t => t.bar + (pickup ? 0 : 1));
+  // la coma va entre dos notas, dentro de la pieza: nunca sobre un silencio (ahí ya se respira) ni al final
+  return tokens.map((t, i) => (comas.includes(bars[i]) && i < tokens.length - 1 && bars[i + 1] !== bars[i] && !t.rest ? { ...t, breath: true } : t));
 }
 
 // Fichas de corrección (una por elemento), con signo además del color

@@ -5,6 +5,7 @@
 
 export const W = 360;          // ancho común del lienzo (viewBox): cabe en la tarjeta del móvil sin escalar casi nada
 export const BEAT = 0.75;      // segundos por pulso en las animaciones (80 por minuto, el tempo de los ejemplos)
+const MAX_MOTION_S = 5;        // ninguna animación dura más (WCAG 2.2.2)
 export const FIG_EN = {};      // diccionario es → en de los rótulos (para i18n.js, como TIPS_EN)
 
 const EU = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
@@ -184,7 +185,7 @@ export function keyboard(x0, y0, kw, kh, from, to, { o = {}, mark = {}, names = 
     const play = playable ? ` data-play="| ${pitch(step)}q |"` : '';
     if (playable && m !== 'off') addChip(`| ${pitch(step)}q |`, nn(o, step)); // las tachadas no tienen botón
     white += `<g class="lmf-key ${m}"${play}><rect x="${r1(x)}" y="${r1(y0)}" width="${r1(kw)}" height="${r1(kh)}" rx="3" class="lmf-white"/>`
-      + (names ? text(x + kw / 2, y0 + kh - 8, nn(o, step), { cls: 'lmf-keyname', size: Math.min(12, kw * 0.42) }) : '') + '</g>';
+      + (names ? text(x + kw / 2, y0 + kh - 8, nn(o, step), { cls: 'lmf-keyname' }) : '') + '</g>';
     const letter = ((step % 7) + 7) % 7;
     if (i < n - 1 && [0, 1, 3, 4, 5].includes(letter)) {
       const bw = kw * 0.58;
@@ -230,5 +231,7 @@ export function svg(o, { h, alt, body, interactive = false, cls = '' }) {
 export function moveAlong(o, d, dur, { r = 7, cls = 'lmf-ball', begin = '0s', keyTimes = null, keyPoints = null } = {}) {
   if (o?.still) return '';
   const kp = keyTimes ? ` keyTimes="${keyTimes}" keyPoints="${keyPoints}" calcMode="linear"` : '';
-  return `<circle r="${r}" class="${cls}"><animateMotion dur="${dur}s" begin="${begin}" repeatCount="indefinite" path="${d}"${kp}/></circle>`;
+  // unos 5 s como mucho (WCAG 2.2.2) y la pelota se queda al final del camino
+  const times = Math.max(1, Math.floor(MAX_MOTION_S / dur));
+  return `<circle r="${r}" class="${cls}"><animateMotion dur="${dur}s" begin="${begin}" repeatCount="${times}" fill="freeze" path="${d}"${kp}/></circle>`;
 }

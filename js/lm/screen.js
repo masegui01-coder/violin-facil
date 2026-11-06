@@ -113,7 +113,8 @@ async function run(ex) {
   const alive = () => token === session;
   const unit = lmUnit(ex.level, ex.unit);
   const unitNotes = (unit && unit.notes || []).map(solfaToName).filter(Boolean);
-  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), alive, say, level: ex.level, unit: ex.unit, unitNotes, songScore: ref => (lmSong(ex.level, ref) || {}).partitura || null };
+  // attempt: semilla de este intento (baraja las opciones de elegir); seed: la del ejercicio (igual para toda la clase)
+  const env = { id: ex.id, nom: getState().nom, variant: ex.variant, seed: seedOf(ex.id), attempt: Math.floor(Math.random() * 2 ** 31), alive, say, level: ex.level, unit: ex.unit, unitNotes, songScore: ref => (lmSong(ex.level, ref) || {}).partitura || null };
   $('lmTitle').textContent = ex.title;
   $('lmEyebrow').innerHTML = `<span>Unidad ${ex.unit}</span> · <span>${esc(SECTION_NAME[ex.section])}</span> · <span class="lm-variant ${ex.variant}">${esc(VARIANT_NAME[ex.variant])}</span>`;
   body().innerHTML = '';

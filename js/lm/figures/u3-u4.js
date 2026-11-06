@@ -159,7 +159,7 @@ export function pentatonica(o = {}) {
   const mark = { 0: 'hi', 1: 'hi', 2: 'hi', 3: 'off', 4: 'hi', 5: 'hi', 6: 'off' };
   const kb = keyboard(62, 30, 36, 92, 0, 6, { o, mark, playable: true });
   let b = kb.svg;
-  penta.forEach((st, i) => { b += `<circle cx="${r1(kb.cx(st))}" cy="18" r="9" class="lmf-solid"/>` + text(kb.cx(st), 22, i + 1, { cls: 'b on s' }); });
+  penta.forEach((st, i) => { b += `<circle cx="${r1(kb.cx(st))}" cy="17" r="11" class="lmf-solid"/>` + text(kb.cx(st), 22, i + 1, { cls: 'b on s' }); });
   b += text(338, 70, t(o, 'penta', 'penta'), { cls: 'b hi' }) + text(338, 86, '= 5', { cls: 'b hi' });
   const S = staff(208, 7.5);
   let m = S.lines(20, 340) + S.clef(22);

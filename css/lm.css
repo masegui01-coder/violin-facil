@@ -91,6 +91,7 @@
 .lm-under { font-size: .85rem; font-weight: 700; min-height: 1.3em; color: var(--muted); max-width: 4.5rem; text-align: center; overflow-wrap: anywhere; }
 .lm-sc.lm-now { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 8px; }
 .lm-sc.lm-now .lm-under { color: var(--ink); }
+.lm-under2 { font-style: italic; font-weight: 600; }
 .lm-sc.ok, .lm-sc.ok .lm-under { color: var(--dict-ok); }
 .lm-sc.near, .lm-sc.near .lm-under { color: var(--dict-near); }
 .lm-sc.bad, .lm-sc.bad .lm-under { color: var(--dict-bad); }
@@ -207,7 +208,8 @@
 .lm-dynpick label { display: flex; align-items: center; gap: 6px; }
 .lm-dynpick select { min-height: 48px; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 4px 8px; }
 .lm-dynpick label.ok select { border-color: var(--dict-ok); } .lm-dynpick label.bad select { border-color: var(--dict-bad); }
-.lm-check { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-weight: 600; }
+.lm-check { display: flex; justify-content: flex-start; align-items: center; gap: 8px; min-height: 48px; width: 100%; text-align: start; font-weight: 600; }
+.lm-phones-note { width: 100%; text-align: start; margin: 0; }
 .lm-check input { width: 22px; height: 22px; }
 .lm-locked-notes [data-del], .lm-locked-notes [data-up], .lm-locked-notes [data-down] { display: none; }
 
@@ -223,3 +225,54 @@
   .lm-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 10px; max-width: 46rem; }
   .lm-options .quiz-opt { width: 100%; }
 }
+
+/* Sistema a dos voces: columnas por compás (una fila por voz), barras alineadas y llave al principio del renglón */
+.lm-system { display: flex; flex-wrap: wrap; align-items: stretch; row-gap: 10px; color: var(--ink); max-width: 100%; }
+.lm-sysbar { display: inline-flex; flex-direction: column; position: relative; width: max-content; }
+.lm-sysrow { display: flex; align-items: flex-start; }
+.lm-sysbar.lm-sysstart { padding-left: 10px; }
+.lm-sysbar.lm-sysstart::before { content: ""; position: absolute; left: 2px; top: calc(7.5rem * var(--lm-fit, 1) * .333); bottom: calc(7.5rem * var(--lm-fit, 1) * .333); width: 5px; border: 2.5px solid currentColor; border-right: 0; border-radius: 6px 0 0 6px; }
+.lm-system-legend { margin: 0 0 4px; font-size: .9rem; font-weight: 700; color: var(--muted); }
+
+/* Contar: el número se escribe (o se ajusta con − y +) */
+.lm-count-in { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.lm-count-in input { width: 5rem; min-height: 48px; font: inherit; font-size: 1.4rem; font-weight: 800; text-align: center; border-radius: 12px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); }
+.lm-count-in .round { min-width: 48px; min-height: 48px; font-size: 1.4rem; }
+/* Señalar un compás: cada compás de la partitura es un botón */
+.lm-bar-btn { display: inline-flex; align-items: flex-start; padding: 0; margin: 0; border: 0; border-radius: 6px; background: none; color: inherit; cursor: pointer; min-height: 48px; }
+.lm-bar-btn:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.lm-bar-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.lm-bar-btn.right { box-shadow: inset 0 0 0 2px var(--dict-ok); background: color-mix(in srgb, var(--dict-ok) 12%, transparent); }
+.lm-bar-btn.wrong { box-shadow: inset 0 0 0 2px var(--dict-bad); background: color-mix(in srgb, var(--dict-bad) 12%, transparent); }
+
+/* Pentagrama sin líneas adicionales: sin el aire de arriba y de abajo de las celdas (renglones más juntos) */
+.lm-tight .lm-cell { margin-top: calc(-1.15rem * var(--lm-fit, 1)); margin-bottom: calc(-1rem * var(--lm-fit, 1)); }
+.lm-system .lm-sysrow + .lm-sysrow .lm-cell { margin-top: calc(-1.4rem * var(--lm-fit, 1)); }
+/* Si la letra de debajo es más ancha que la nota, la celda se ensancha: las líneas del pentagrama siguen por detrás
+   (mismas alturas que las del SVG: 40-80 de 120) para que no queden cortadas */
+.lm-staff { --cell-h: calc(7.5rem * var(--lm-fit, 1)); --cell-shift: 0px; }
+.lm-staff.lm-tight { --cell-shift: calc(-1.15rem * var(--lm-fit, 1)); }
+.lm-staff .lm-sc:has(> .lm-under) {
+  background-image: linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff));
+  background-repeat: no-repeat; background-size: 100% 1.1px;
+  background-position: 0 calc(var(--cell-h) * 0.3333 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.4167 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5833 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.6667 + var(--cell-shift));
+}
+.lm-card-ex2 .dict-staff-label { position: static; width: auto; max-width: 100%; padding-inline: 0; white-space: normal; overflow-wrap: anywhere; }
+.lm-sysbar.lm-now { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 8px; }
+/* Mientras suena, los botones de tocar y de STOP quedan siempre a mano, abajo */
+.lm-sticky-controls { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+.lm-writer.lm-big .lm-cell, .lm-writer.lm-big .lm-insert .lm-cell { height: calc(15rem * var(--lm-fit, 1)); }
+.lm-run .lm-system, .lm-run > .lm-system { flex-direction: row; flex-wrap: wrap; align-items: stretch; gap: 10px 0; }
+.lm-w-cursor { margin: 2px 0 0; min-height: 1.4em; font-weight: 800; color: var(--accent); text-align: center; }
+/* Señalar: las líneas del pentagrama siguen por detrás de los botones de compás (sin cortes entre uno y otro) */
+.lm-pick-bars .lm-bargroup {
+  background-image: linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff)), linear-gradient(var(--staff), var(--staff));
+  background-repeat: no-repeat; background-size: 100% 1.1px;
+  background-position: 0 calc(var(--cell-h) * 0.3333 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.4167 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.5833 + var(--cell-shift)), 0 calc(var(--cell-h) * 0.6667 + var(--cell-shift));
+}
+/* Completar: el «?» dentro del pentagrama, en su hueco; las opciones, en dos columnas y con el pentagrama más grande */
+.lm-hole-sc { position: relative; }
+.lm-hole-q { position: absolute; left: 50%; top: calc(var(--cell-h) * 0.5 + var(--cell-shift)); transform: translate(-50%, -50%); font-weight: 800; font-size: 1.3rem; color: var(--muted); }
+.lm-hole-sc.lm-now .lm-hole-q { color: var(--accent); }
+.lm-item .lm-options:has(.lm-opt-staff) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lm-item .lm-options .lm-opt-staff .lm-cell { height: 6.75rem; }

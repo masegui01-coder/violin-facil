@@ -79,14 +79,19 @@ async function writeNotes(page, tokens) {
   }
 }
 
+// Contar: se escribe el número y se comprueba
+async function setCount(page, n) {
+  await page.waitForSelector('.lm-item [data-count]', { timeout: STEP_TIMEOUT });
+  await page.$eval('.lm-item [data-count]', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); }, n);
+  await click(page, '.lm-item [data-check]');
+}
+
 // Responde bien una pregunta de teoría según su tipo (las respuestas salen del catálogo)
 async function answer(page, item) {
   await page.waitForSelector('.lm-item .lm-q', { timeout: STEP_TIMEOUT });
   if (['tocarPentagrama', 'escala'].includes(item.tipo)) {
     await writeNotes(page, item.respuesta.map(n => ({ step: scoreTokens(`| ${n}w |`)[0].step, dur: 'w' })));
     await click(page, '[data-check]');
-  } else if (item.tipo === 'contar') {
-    await page.$$eval('[data-opt]', (bs, r) => bs.find(b => b.textContent.trim() === String(r)).click(), item.respuesta);
   } else if (item.tipo === 'nombrarNotas') {
     for (const n of item.respuesta) await click(page, `[data-name="${({ do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' })[n.replace(/\d/, '')]}"]`);
   } else if (item.tipo === 'ordenar') {
@@ -98,9 +103,17 @@ async function answer(page, item) {
     for (const g of item.respuesta) await click(page, `[data-gap="${g}"]`);
     await click(page, '[data-check]');
   } else if (item.tipo === 'completar') {
-    await click(page, `[data-opt="${item.correctas[0]}"]`);
+    // un hueco tras otro (cada opción guarda su número del catálogo aunque se barajen)
+    const holes = (item.partitura.match(/\?/g) || []).length;
+    for (let k = 0; k < holes; k++) await click(page, `.lm-item [data-opt="${holes > 1 ? item.correctas[k] : item.correctas[0]}"]:not([disabled])`);
+  } else if (item.tipo === 'contar') {
+    await setCount(page, item.respuesta);
+  } else if (item.tipo === 'senalar') {
+    await click(page, `[data-bar="${item.respuesta}"]`);
   } else {
-    await click(page, `[data-opt="${item.answer}"]`);
+    // las opciones se barajan en cada intento: se busca la correcta por su texto
+    await page.waitForSelector('.lm-item [data-opt]', { timeout: STEP_TIMEOUT });
+    await page.$$eval('.lm-item [data-opt]', (bs, w) => bs.find(b => b.textContent.trim() === w).click(), item.options[item.answer]);
   }
   await page.waitForSelector('.lm-feedback .lm-why', { timeout: STEP_TIMEOUT });
 }
@@ -260,7 +273,8 @@ test('audición y creatividad: ficha con fragmento sintetizado, preguntas, compo
   await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
   assert.equal((await lmState(page)).best[aud.id].pct, 100);
   await click(page, '#lmToUnit');
-  await page.waitForSelector('#lmUnitTitle');
+  await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
+  await page.waitForFunction(() => !document.documentElement.dataset.nav, { timeout: STEP_TIMEOUT });
   await page.$eval('[data-lm-back]', b => b.click());
   await openUnit(page, 1);
   const cre = 'lm1-u1-creatividad-a-facil';
@@ -315,17 +329,28 @@ test('herramienta de siempre lanzada desde la unidad: la lectura rítmica abre e
   // es lectura rítmica, no percusión: sin manos D/I y con la consigna de la variante
   assert.equal(await page.$eval('#rhChip', e => e.textContent), 'Lectura rítmica');
   assert.equal(await page.$eval('#rhHint', e => e.textContent), lmExercise('lm1-u1-ritmo-a-facil').params.modo);
+  assert.ok(await page.$eval('#rhClick', c => c.closest('.switch-row').hidden), 'sin interruptor de clic: el metrónomo lo decide la variante');
   await click(page, '#rhExit');
   await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
-  // U7 Media, a dos voces: la app toca el ostinato (voz 1) mientras el alumno palmea la voz 2
+  // en el curso no se enseña el interruptor del metrónomo (lo decide la variante)
+  // U7 Media, a dos voces: sistema de dos pentagramas compás a compás; la app toca siempre el ostinato
   await page.$eval('[data-lm-back]', b => b.click());
   await openUnit(page, 7);
   await openExercise(page, 'lm1-u7-ritmo-a-medio');
-  await waitVisible(page, 'rhythm');
-  assert.ok(await page.$eval('#rhVbToggle', c => c.checked), 'el ostinato suena');
-  assert.ok(!(await page.$eval('#rhVbRow', r => r.hidden)), 'y se puede quitar');
-  assert.match(await page.$eval('#rhVbRow span', s => s.textContent), /ostinato/);
-  await click(page, '#rhExit');
+  await waitVisible(page, 'lm');
+  await page.waitForSelector('#lmBody .lm-system', { timeout: STEP_TIMEOUT });
+  const rows = await page.$$eval('#lmBody .lm-sysbar', cols => cols.map(c => c.querySelectorAll(':scope > .lm-sysrow').length));
+  assert.ok(rows.length >= 8 && rows.every(n => n === 2), `columnas con las dos voces: ${rows}`);
+  const aligned = await page.$$eval('#lmBody .lm-sysbar', cols => cols.every(c => {
+    const bars = [...c.querySelectorAll(':scope > .lm-sysrow > .lm-sc:last-child')].map(b => Math.round(b.getBoundingClientRect().right));
+    return Math.abs(bars[0] - bars[1]) <= 1;
+  }));
+  assert.ok(aligned, 'la barra de cada compás cae a la misma altura en las dos voces');
+  assert.ok(await page.$eval('#rhythm', r => r.hidden), 'no es el ensayo rítmico (donde el ostinato se podía apagar)');
+  await click(page, '#lmDuoTap');
+  await page.waitForSelector('#lmScores', { timeout: 60000 });
+  assert.ok((await lmState(page)).last['lm1-u7-ritmo-a-medio'], 'queda registrada');
+  await click(page, '#lmToUnit');
   await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
   // Notas tenidas desde «En tu instrumento» (violín: cuerda frotada) con su vuelta a la unidad
   const tools = await page.$$eval('[data-inst-tool]', bs => bs.map(b => b.textContent.trim()));
@@ -512,7 +537,7 @@ async function drive(page, limitMs) {
       return {
         failed: !!body.dataset.error, done: !!document.getElementById('lmScores'), next: vis('[data-lm-next]'), tap: vis('#lmTapGo'), agGo: vis('#lmAgGo'),
         agStep: ag && ag.dataset.step ? Number(ag.dataset.step) : null, target: body.dataset.target || (body.querySelector('[data-target]') || { dataset: {} }).dataset.target || null,
-        opt: vis('.lm-item [data-opt]:not([disabled])'), name: vis('.lm-item [data-name]:not([disabled])'), check: vis('[data-check]'),
+        opt: vis('.lm-item [data-opt]:not([disabled])'), name: vis('.lm-item [data-name]:not([disabled])'), check: vis('[data-check]'), bar: vis('.lm-item [data-bar]:not([disabled])'),
       };
     });
     if (state.done) return true;
@@ -530,6 +555,7 @@ async function drive(page, limitMs) {
       await page.$eval(`.lm-names [data-name="${LETTERS[state.agStep % 7]}"]`, b => b.click()).catch(() => {});
       await sleep(200);
     } else if (state.opt) await page.$eval('.lm-item [data-opt]:not([disabled])', b => b.click());
+    else if (state.bar) await page.$eval('.lm-item [data-bar]:not([disabled])', b => b.click());
     else if (state.name) await page.$eval('.lm-item [data-name]', b => b.click());
     else if (!state.target && state.check) await page.$eval('#lmBody [data-check]', b => b.click());
     await sleep(40);

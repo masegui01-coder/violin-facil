@@ -215,10 +215,10 @@ function enter({ lesson, from, eyebrow }) {
   // Desde el curso de Lenguaje no es percusión: lectura rítmica con palmas, sin manos D/I, y la consigna de la variante
   $('rhChip').textContent = run.lm ? 'Lectura rítmica' : 'Percusión';
   $('rhHint').textContent = run.lm ? run.lm.hint : 'Golpea en la caja, en un pad o en la mesa. Las letras D e I indican la mano derecha o izquierda.';
-  if (lesson.ostinato) $('rhVbToggle').checked = true;
+  // en el curso el metrónomo lo decide la variante: el interruptor no haría nada, así que no se enseña
+  $('rhClick').closest('.switch-row').hidden = !!run.lm;
   $('rhVbRow').hidden = !run.accompaniment.length;
-  $('rhVbRow').querySelector('span').textContent = lesson.ostinato ? 'Voz 1: la app toca el ostinato y tú palmeas la voz 2 (mejor con auriculares)'
-    : lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
+  $('rhVbRow').querySelector('span').textContent = lesson.backing ? 'Guitarra de fondo (mejor con auriculares)' : 'Banda virtual: suenan las otras voces (con auriculares)';
   $('rhEyebrow').textContent = eyebrow || '';
   $('rhTitle').textContent = run.title;
   $('rhTouch').checked = !!getState().rhythmTouch;
@@ -228,7 +228,8 @@ function enter({ lesson, from, eyebrow }) {
   $('rhCounter').textContent = '';
   document.querySelector('#rhTempoBar .seg').hidden = !!lesson.fixedSpeed;
   $('rhDemo').hidden = !!lesson.oneTake;
-  staff.render(score, { key: 'C', time: run.time, mode: 'tempo', clef: 'perc', sticking: run.sticking });
+  // las lecturas del curso unen las corcheas por pulsos, como se enseña en la U2
+  staff.render(score, { key: 'C', time: run.time, mode: 'tempo', clef: 'perc', sticking: run.sticking, beams: run.lm ? 1 : 0 });
   staff.scrollTo(0, false);
   showOffset(null);
   setStatus(getState().percLatency ? 'Elige la velocidad y pulsa Empezar' : 'Consejo: calibra el micrófono en Estudio para medir mejor', 'var(--muted)');

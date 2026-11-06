@@ -24,8 +24,25 @@ export const RULE_NAME = {
 };
 const SOLFA_INDEX = { do: 0, re: 1, mi: 2, fa: 3, sol: 4, la: 5, si: 6 };
 const letterOf = step => (((step - stepOf('C4')) % 7) + 7) % 7;
-const lastSound = bar => [...(bar || [])].reverse().find(t => !t.rest) || null;
-const endsOn = (bar, letter) => { const t = lastSound(bar); return !!t && letterOf(t.step) === letter; };
+// Final de una frase en su último compás: la última nota que suena, sin los silencios del final y sin la anacrusa
+// de la frase siguiente. Si la pieza empieza en anacrusa, la frase siguiente también: los últimos «pickup» pulsos
+// del compás ya son de ella (| C5h G4q | en 3/4 con anacrusa de 1 acaba en C5, como «Cumpleaños feliz»). Sin
+// anacrusa, la que va detrás de un silencio (| C5h Rq G4q | acaba en C5)
+export function phraseEnd(bar, pickup = 0) {
+  let ts = [...(bar || [])];
+  if (pickup > 0) {
+    let cut = 0;
+    while (ts.length > 1 && cut + (FIGURE_BEATS[ts[ts.length - 1].dur] || 0) <= pickup + 1e-6) cut += FIGURE_BEATS[ts.pop().dur] || 0;
+  } else {
+    const lastRest = ts.map(t => !!t.rest).lastIndexOf(true);
+    if (lastRest > 0 && lastRest < ts.length - 1 && ts.slice(0, lastRest).some(t => !t.rest)) ts = ts.slice(0, lastRest);
+  }
+  for (let i = ts.length - 1; i >= 0; i--) if (!ts[i].rest) return ts[i];
+  return null;
+}
+// Con anacrusa, la frase siguiente puede entrar en anacrusa o no (la parte B puede empezar en el 1): vale cualquiera
+// de las dos lecturas del final (sin los últimos pulsos o con ellos)
+const endsOn = (bar, letter, pickup = 0) => [pickup, 0].some(k => { const t = phraseEnd(bar, k); return !!t && letterOf(t.step) === letter; });
 const MIN_B_CHANGES = 2; // compases de B distintos de los de A para que B sea «otra parte»
 const DYN = [['pp', 'pp'], ['p', 'p'], ['mp', 'mp'], ['mf', 'mf'], ['f', 'f'], ['ff', 'ff'], ['cresc', 'cresc.'], ['dim', 'dim.']];
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
@@ -177,13 +194,15 @@ function formRules({ rs, p, tokens, state, barBeats, bars }) {
   const b = byBars(tokens, barBeats, state.pickup);
   const off = state.pickup ? 1 : 0;
   const call = /llamada \(acaba en (do|re|mi|fa|sol|la|si)\)/i.exec(p.consigna || '');
-  if (call) out.push({ id: 'llamada', ok: endsOn(b[off + Math.floor(bars / 2) - 1], SOLFA_INDEX[call[1].toLowerCase()]) });
+  if (call) out.push({ id: 'llamada', ok: endsOn(b[off + Math.floor(bars / 2) - 1], SOLFA_INDEX[call[1].toLowerCase()], state.pickup || 0) });
   if (/^AB$/i.test(rs.forma || '') && bars >= 8) {
     const half = bars / 2;
     const a = b.slice(off, off + half);
     const bPart = b.slice(off + half, off + bars);
-    out.push({ id: 'pregunta', ok: !!lastSound(a[half / 2 - 1]) && !endsOn(a[half / 2 - 1], 0) });
-    out.push({ id: 'respuesta', ok: endsOn(a[half - 1], 0) });
+    // las frases acaban en los compases 2 y 4 de A (la estructura de la forma), y su anacrusa siguiente no cuenta
+    const pick = state.pickup || 0;
+    out.push({ id: 'pregunta', ok: !!phraseEnd(a[half / 2 - 1], pick) && !endsOn(a[half / 2 - 1], 0, pick) });
+    out.push({ id: 'respuesta', ok: endsOn(a[half - 1], 0, pick) });
     out.push({ id: 'formaB', ok: bPart.length === half && bPart.filter((bar, k) => !same(bar || [], a[k] || [])).length >= MIN_B_CHANGES });
   }
   return out;
