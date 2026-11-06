@@ -16,6 +16,9 @@ import { VARIANT_NAMES } from '../aula-temario.js';
 import * as api from '../aula-api.js';
 import { dueLabel, statusPill, meter, fmtShort, fmtLong, subtitleHtml } from './aula-ui.js';
 import { startTask } from './aula-launch.js';
+import { demoAulaHtml, bindDemoAula, isDemoStudent } from './demo.js'; // modo prueba
+import { testerAulaHtml, bindTesterAula } from './tester.js'; // modo tester (con cuenta)
+import { testerAulaSid } from '../tester-view.js';
 
 const CONTACT = 'tizaestudiogames+violin@gmail.com';
 const PRIVACY = 'Tu profesor ve solo esto: tus minutos de práctica, tu racha, el % de tus tareas y de las unidades de Lenguaje, tus competencias y tus errores más frecuentes. Nada de tu correo ni de tus grabaciones.';
@@ -30,7 +33,8 @@ export async function renderAulaHome(box) {
   if (!cloudConfigured()) { box.innerHTML = '<p class="empty">El Aula necesita conexión con el servidor.</p>'; return; }
   box.innerHTML = '<p class="empty" role="status">Cargando el Aula…</p>';
   const s = getState();
-  const sid = aulaSchoolId(s);
+  const tester = testerAulaSid(s); // modo tester: escuela de ejemplo (profesor) o ninguna (alumno)
+  const sid = tester === undefined ? aulaSchoolId(s) : tester;
   const [school, mine] = await Promise.all([
     sid ? api.getSchoolDoc(sid).catch(() => null) : null,
     Promise.all(myClasses().map(c => api.loadMyClass(c).then(d => ({ c, d }), err => ({ c, err })))),
@@ -42,14 +46,16 @@ export async function renderAulaHome(box) {
   if (mine.some(x => x.d)) publishSoon();
   const isStudent = myClasses().length > 0;
   const isTeacher = access.active || !!access.expired;
-  box.innerHTML = `${hero(isStudent, isTeacher)}
+  box.innerHTML = `${testerAulaHtml()}${hero(isStudent, isTeacher)}${demoAulaHtml({ hasClasses: Array.isArray(classes) && classes.length > 0 })}
     ${isStudent ? mine.map(studentBlock).join('') : ''}
     ${isTeacher ? teacherBlock(school, access, classes) : ''}
     <div class="aula-roles${isStudent || isTeacher ? ' compact' : ''}">
       ${isStudent || isTeacher ? `<details class="aula-more"><summary>${esc(isStudent ? 'Unirme a otra clase' : '¿También eres alumno? Unirme a una clase')}</summary>${joinForm()}</details>` : joinForm()}
-      ${isTeacher ? '' : isStudent ? `<details class="aula-more"><summary>${esc('¿Eres profesor? Conoce el Aula Pro')}</summary>${pitch(school, access)}</details>` : pitch(school, access)}
+      ${isTeacher || isDemoStudent() ? '' : isStudent ? `<details class="aula-more"><summary>${esc('¿Eres profesor? Conoce el Aula Pro')}</summary>${pitch(school, access)}</details>` : pitch(school, access)}
     </div>`;
   bind(box, { school, mine, classes });
+  bindDemoAula(box, () => renderAulaHome(box));
+  bindTesterAula(box);
 }
 
 function hero(isStudent, isTeacher) {
@@ -207,7 +213,11 @@ async function newClass(box, school) {
   const name = $('aulaClassName').value.trim();
   if (!name) { showError('aulaNewClassError', 'Ponle nombre a la clase.'); return; }
   try {
-    const cls = await api.createClass(school.id, name, school.ownerName || accountName() || 'Profesor');
+    // Modo prueba: las reglas solo admiten 3 clases, con identificadores fijos (demo.js)
+    const demo = proAccess({ school }).demo;
+    const demoId = demo ? await (await import('../demo-api.js')).nextDemoClassId(school.id) : null;
+    if (demo && !demoId) { showError('aulaNewClassError', 'En el modo prueba caben 3 clases como mucho.'); return; }
+    const cls = await api.createClass(school.id, name, school.ownerName || accountName() || 'Profesor', demoId);
     toast('Clase creada');
     go('aula', { sid: school.id, cid: cls.id });
   } catch (err) { showError('aulaNewClassError', cloudErrorText(err)); }

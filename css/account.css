@@ -85,3 +85,26 @@ ol.board .pos { font-weight: 800; color: var(--muted); text-align: center; }
 .inst-more > summary { list-style: none; width: max-content; max-width: 100%; }
 .inst-more > summary::-webkit-details-marker { display: none; }
 .inst-more[open] > summary { margin-bottom: 12px; }
+
+/* Modo prueba (testers sin cuenta): entrada en la pantalla de acceso, elección de papel, aviso fijo y pasos del Aula */
+.demo-entry { display: flex; flex-direction: column; gap: 8px; }
+.demo-entry .btn { width: 100%; }
+.demo-roles { display: grid; gap: 10px; margin-block: 8px; }
+.demo-role { display: grid; gap: 4px; text-align: left; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px; font: inherit; cursor: pointer; }
+.demo-role b { font-size: 1.1rem; }
+.demo-role small { color: var(--muted); line-height: 1.35; }
+.demo-role:hover, .demo-role:focus-visible { border-color: var(--accent); }
+.demo-role[disabled] { opacity: .6; cursor: progress; }
+.demo-banner { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px;
+  margin: 6px 0 0; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 16%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--warn) 55%, var(--line)); color: var(--ink); }
+.demo-banner[hidden] { display: none; }
+.demo-banner-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.demo-banner-text small { color: var(--muted); }
+.demo-banner-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.demo-steps { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.demo-steps ol { margin: 6px 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.demo-samples { display: grid; gap: 4px; justify-items: start; margin-top: 6px; }
+/* Modo tester (usuarios con cuenta): «Ver como alumno · Ver como profesor · Salir» y atajo al libro */
+.tester-panel { display: grid; gap: 8px; justify-items: start; }
+.tester-control { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+#accTester:empty { display: none; }

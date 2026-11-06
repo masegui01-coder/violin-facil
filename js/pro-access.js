@@ -4,6 +4,7 @@
 // escuela (las reglas de Firestore solo se fían de ella); mientras llega, el cliente puede pasar aquí la compra local
 // (purchase) para no hacer esperar al profesor. Ninguna pantalla mira la licencia por su cuenta: todas llaman a proAccess().
 import { premiumActive } from './school.js';
+import { demoLicenceOk } from './demo.js';
 
 export const PRO_SOURCE = { license: 'license', store: 'store' };
 // Pagos de las tiendas: desactivados hasta que exista la verificación en el servidor
@@ -14,9 +15,11 @@ export function proAccess({ school = null, purchase = null, now = Date.now() } =
   if (STORE_PURCHASES && purchase && purchase.active && (!purchase.until || purchase.until >= now)) {
     return { active: true, source: PRO_SOURCE.store, until: purchase.until || null, requested: false };
   }
-  if (premiumActive(school, now)) {
+  // Modo prueba: la licencia de prueba (school.premium.demo) solo vale si es corta (demo.js demoLicenceOk, como las reglas)
+  const demo = !!(school && school.premium && school.premium.demo === true);
+  if (premiumActive(school, now) && (!demo || demoLicenceOk(school.premium, now))) {
     const until = school.premium.until ? Date.parse(school.premium.until) : null;
-    return { active: true, source: PRO_SOURCE.license, until: Number.isFinite(until) ? until : null, requested: false };
+    return { active: true, source: PRO_SOURCE.license, until: Number.isFinite(until) ? until : null, requested: false, ...(demo ? { demo } : {}) };
   }
   // Licencia que existió y ya no vale (venció o el administrador la quitó): el profesor conserva sus clases en solo lectura,
   // puede exportarlas y borrar datos, y pedir la renovación
@@ -27,7 +30,7 @@ export function proAccess({ school = null, purchase = null, now = Date.now() } =
   const at = school.proRequestedAt;
   const askedMs = at && typeof at.toMillis === 'function' ? at.toMillis() : Number(at) || 0;
   return {
-    active: false, source: null, until: null, expired: true, revoked: !p.active,
+    active: false, source: null, until: null, expired: true, revoked: !p.active, ...(demo ? { demo } : {}),
     expiredAt: Number.isFinite(ended) && p.active ? ended : null,
     requested: askedMs > (Number.isFinite(ended) ? ended : 0),
   };

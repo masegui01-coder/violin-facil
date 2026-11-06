@@ -1,0 +1,1 @@
+import{f as a,g as b,h as c}from"./chunk-N36D252V.js";import"./chunk-3GV7AFFR.js";import"./chunk-UEVO3H7G.js";import"./chunk-WOT6VMZA.js";export{c as deleteSpace,a as loadOwnedSpaces,b as transferSpace};

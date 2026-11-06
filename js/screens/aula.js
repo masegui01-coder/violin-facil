@@ -17,6 +17,7 @@ import { renderStudent } from './aula-student.js';
 import { trackingHtml, bindGrid } from './aula-table.js';
 import { openAulaTaskForm } from './aula-task-form.js';
 import { classPdf } from '../aula-pdf.js';
+import { demoSamplesOn } from './demo.js';
 
 let ctx = null; // { sid, cid, data, lm, filter, sort, cols, uid }
 let loadToken = 0;
@@ -38,7 +39,9 @@ async function load() {
   $('aulaTitle').textContent = ctx.data ? ctx.data.cls.name : '…';
   if (!ctx.data) body('<p class="empty" role="status">Cargando la clase…</p>');
   try {
-    const [data, lm] = await Promise.all([api.loadClass(ctx.sid, ctx.cid), loadLm()]);
+    const [loaded, lm] = await Promise.all([api.loadClass(ctx.sid, ctx.cid), loadLm()]);
+    // Modo prueba: alumnos de ejemplo inventados (solo en este móvil), si el profesor de prueba los ha pedido
+    const data = demoSamplesOn() ? (await import('../demo-samples.js')).withSampleStudents(loaded) : loaded;
     if (my !== loadToken) return;
     if (!data) { body(`<div class="panel"><h2>${esc('Esta clase ya no existe')}</h2><button type="button" class="btn small" id="aulaGone">${esc('Volver')}</button></div>`); $('aulaGone').addEventListener('click', () => go('learn')); return; }
     ctx = { ...ctx, data, lm };

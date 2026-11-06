@@ -9,11 +9,12 @@
 import { getCloud, ensureSignedIn, randomCode } from './cloud.js';
 import { createSchool } from './school-api.js';
 import { encodeSummary, decodeSummary } from './aula-wire.js';
+import { testerFs } from './tester-fs.js'; // modo tester: la clase de ejemplo se queda en este móvil
 
 const MAX_CODE_TRIES = 5;
 // Todo lo que cuelga de una clase (también las composiciones y los comentarios: son datos de menores)
 export const CLASS_SUBS = ['students', 'tasks', 'summaries', 'feedback', 'works'];
-const refs = async () => { const c = await getCloud(); return { db: c.db, fs: c.fs }; };
+const refs = async () => { const c = await getCloud(); return { db: c.db, fs: testerFs(c.fs) }; };
 const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
 const classRef = (fs, db, sid, cid) => fs.doc(db, 'schools', sid, 'classes', cid);
 const sub = (fs, db, sid, cid, name) => fs.collection(db, 'schools', sid, 'classes', cid, name);
@@ -35,10 +36,11 @@ export async function getSchoolDoc(sid) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-export async function createClass(sid, name, teacherName) {
+// classId: solo en el modo prueba, donde las reglas fijan los identificadores de las clases (demo.js DEMO_CLASS_IDS)
+export async function createClass(sid, name, teacherName, classId = null) {
   await ensureSignedIn();
   const { db, fs } = await refs();
-  const ref = fs.doc(fs.collection(db, 'schools', sid, 'classes'));
+  const ref = classId ? classRef(fs, db, sid, classId) : fs.doc(fs.collection(db, 'schools', sid, 'classes'));
   for (let i = 0; i < MAX_CODE_TRIES; i++) {
     const code = randomCode();
     const batch = fs.writeBatch(db);

@@ -7,7 +7,7 @@ import { instrumentById } from './instruments.js';
 import { weekId } from './engage.js';
 import { deleteTrack } from './groups-api.js';
 
-const LOCAL_ONLY = ['recordings', 'importedSongs', 'proTester', 'adminUser']; // grabaciones y partituras pueden ser grandes; el rol depende de la cuenta
+const LOCAL_ONLY = ['recordings', 'importedSongs', 'proTester', 'adminUser', 'tester']; // grabaciones y partituras pueden ser grandes; el rol depende de la cuenta
 const MAX_DOC_CHARS = 900000;                      // Firestore admite 1 MB por documento
 const PUSH_DELAY_MS = 4000;
 

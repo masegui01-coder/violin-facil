@@ -410,7 +410,7 @@ service cloud.firestore {
     function schoolMember(sid, uid) { return /databases/$(db)/documents/schools/$(sid)/members/$(uid); }
     function schoolOwner(sid) { return signedIn() && get(schoolPath(sid)).data.ownerUid == request.auth.uid; }
     function inSchool(sid) { return signedIn() && exists(schoolMember(sid, request.auth.uid)); }
-    function schoolLimit(d) { return ('premium' in d) && d.premium.active == true ? 200 : 5; }
+    function schoolLimit(d) { return ('premium' in d) && d.premium.active == true ? (d.premium.get('demo', false) == true ? demoMaxStudents() : 200) : 5; }
     // Plazas: la ficha de un alumno solo se crea si en la MISMA escritura la escuela suma exactamente uno y antes cabía
     // en la licencia; solo se borra si resta exactamente uno sin bajar de 0 (o si la escuela desaparece con ella)
     function seatTaken(sid) {
@@ -432,8 +432,10 @@ service cloud.firestore {
     match /schools/{sid} {
       allow get: if schoolOwner(sid) || inSchool(sid) || isAdmin();
       allow list: if isAdmin();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid && shortText(request.resource.data.name, 80)
-        && validCode(request.resource.data.code) && !('premium' in request.resource.data) && request.resource.data.students == 0;
+      // Sin licencia; o, en el modo prueba, con su propia licencia de prueba (validDemoSchool, más abajo)
+      allow create: if (signedIn() && request.resource.data.ownerUid == request.auth.uid && shortText(request.resource.data.name, 80)
+        && validCode(request.resource.data.code) && !('premium' in request.resource.data) && request.resource.data.students == 0)
+        || validDemoSchool(request.resource.data);
       // El profesor cambia el nombre y el curso escolar; nunca la licencia. Al dar de baja a un alumno resta uno
       // indicando quién sale («leftUid»), y su ficha debe borrarse en la misma escritura.
       allow update: if (schoolOwner(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'year'])
@@ -491,7 +493,7 @@ service cloud.firestore {
         allow list: if schoolOwner(sid);
         allow create: if schoolOwner(sid) && aulaActive(sid) && validClass(request.resource.data)
           && request.resource.data.students == 0 && request.resource.data.createdAt == request.time
-          && !('leftUid' in request.resource.data);
+          && !('leftUid' in request.resource.data) && demoClassOk(sid, cid);
         // El profesor cambia el nombre, la archiva, cambia el código o cierra las inscripciones (el código nuevo se crea en
         // classCodes en la misma escritura); al dar de baja resta uno indicando quién sale (con su ficha borrada
         // en la misma escritura). Un alumno que entra suma uno (si cabe) y uno que sale resta uno, junto a su ficha.
@@ -522,7 +524,7 @@ service cloud.firestore {
             && get(/databases/$(db)/documents/classCodes/$(request.resource.data.code)).data.schoolId == sid
             && get(classPath(sid, cid)).data.get('closed', false) == false
             && get(classPath(sid, cid)).data.code == request.resource.data.code
-            && classSeatTaken(sid, cid);
+            && classSeatTaken(sid, cid) && demoSeatOk(sid, cid);
           allow update: if isOwn(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'instrument'])
             && shortText(request.resource.data.nickname, 30) && shortText(request.resource.data.instrument, 24);
           allow delete: if (isOwn(uid) || schoolOwner(sid)) && classSeatFreed(sid, cid);
@@ -642,6 +644,27 @@ service cloud.firestore {
       return d.keys().hasOnly(['uid', 'taskId', 'comment', 'at'])
         && shortText(d.uid, 128) && shortText(d.taskId, 40) && shortText(d.comment, 500) && d.comment.size() > 0 && d.at is number;
     }
+    // ---------- Modo prueba (testers sin cuenta, js/demo.js y js/demo-api.js) ----------
+    // Una sesión ANÓNIMA puede crear su propia escuela de prueba con una licencia de prueba: «demo: true», activa y que
+    // caduca en 7 días como mucho («until» + 1 día, como licenseLive). Nadie la alarga: «premium» solo lo cambia el
+    // administrador. En una escuela de prueba caben 3 clases (identificadores fijos) y 30 alumnos por clase y en la escuela.
+    function demoMaxStudents() { return 30; }
+    function validDemoSchool(d) {
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && d.keys().hasOnly(['name', 'ownerUid', 'ownerName', 'code', 'year', 'students', 'createdAt', 'demo', 'premium'])
+        && d.ownerUid == request.auth.uid && shortText(d.name, 80) && shortText(d.ownerName, 30) && shortText(d.year, 9)
+        && validCode(d.code) && d.students == 0 && d.createdAt == request.time && d.demo == true
+        && d.premium is map && d.premium.keys().hasOnly(['active', 'demo', 'until'])
+        && d.premium.active == true && d.premium.demo == true
+        && d.premium.until is string && d.premium.until.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && demoUntilOk(d.premium.until);
+    }
+    function demoUntilOk(until) {
+      let d = until.split('-');
+      return timestamp.date(int(d[0]), int(d[1]), int(d[2])) + duration.value(1, 'd') <= request.time + duration.value(7, 'd');
+    }
+    function demoSchool(sid) { return get(schoolPath(sid)).data.get('premium', {}).get('demo', false) == true; }
+    function demoClassOk(sid, cid) { return !demoSchool(sid) || cid in ['demo-1', 'demo-2', 'demo-3']; }
+    function demoSeatOk(sid, cid) { return !demoSchool(sid) || get(classPath(sid, cid)).data.students < demoMaxStudents(); }
     // Para entrar en una clase: el código lleva a la escuela y la clase (lo crea el profesor junto a la clase)
     match /classCodes/{code} {
       allow get: if signedIn();
