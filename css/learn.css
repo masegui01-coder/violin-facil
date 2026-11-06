@@ -53,13 +53,13 @@
 
 /* ---------- Dos caminos (js/learn-path.js): cabecera, Técnica en 30 s, puente al libro y Mi libro ---------- */
 .learn-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.learn-head h1 { margin: 0; font-size: 1.6rem; }
+.learn-head h1 { margin: 0; font-size: 1.4rem; }
 .learn-tech .ic, .libro-tech .ic { width: 20px; height: 20px; }
 .learn-tech, .libro-tech { gap: 8px; }
 .learn-mode { margin-bottom: 6px; }
 .learn-hint { margin: 0 0 14px; max-width: 60ch; }
 
-#tipMoment { container-type: inline-size; margin-bottom: 14px; }
+#tipMoment { container-type: inline-size; margin-top: 14px; }
 #bridgeCard { margin-bottom: 22px; }
 #tipMoment:empty, #bridgeCard:empty { display: none; }
 .tip-moment {
@@ -92,12 +92,19 @@
 .bridge .icon-btn { border: 0; background: transparent; }
 
 .libro { margin-top: 28px; display: flex; flex-direction: column; scroll-margin-top: 12px; }
-.libro-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.libro-head h2 { margin: 0; font-size: 1.4rem; }
+.libro-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.libro-head h2 { margin: 0; font-size: 1.55rem; }
 .libro-head h2:focus { outline: none; }
 .libro-head h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
-.libro-tabs { margin-bottom: 6px; }
+.libro-join { font-size: .92rem; text-align: left; }
+.libro-tabs { margin-bottom: 14px; }
 @container (max-width: 380px) { .libro-tabs button::before { display: none; } }
-#lmView { scroll-margin-top: 12px; }
+#lmView, #proView { scroll-margin-top: 12px; }
+/* Dentro de Mi libro, cada sección titula con h3, por debajo de «Mi libro» */
+#libro .lm-head h3, #libro .book-head h3, #libro .pro-hero h3 { margin: 0; font-size: 1.2rem; line-height: 1.25; }
+#libro .lm-skills h3 { font-size: 1.05rem; margin: 0 0 6px; }
+#libro .lm-unit-head h3 { margin: 0; font-size: 1.3rem; color: inherit; }
+#libro .lm-unit-head h3:focus { outline: none; }
+#libro .lm-unit-head h3:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 4px; }
 .profe > .libro:first-child { margin-top: 4px; }
 #proView.aula-below { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 8px; }

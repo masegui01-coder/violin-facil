@@ -101,7 +101,7 @@ const withoutSandbox = aula => {
 // Entrar (o cambiar de papel): se recuerda la vista del Aula de antes, una sola vez, para devolverla al salir
 export function testerEntryPatch(state, role, { uid, now = Date.now() }) {
   const was = testerSession(state);
-  const prev = was ? was.prev : { learnView: state.learnView || 'casual', aulaView: state.aulaView || null };
+  const prev = was ? was.prev : { learnView: state.learnView ?? null, aulaView: state.aulaView || null };
   const aula = withoutSandbox(state.aula);
   return {
     tester: { role, uid, since: was ? was.since : now, nickname: state.nickname || 'Tú', instrument: state.instrument || 'violin', prev },
@@ -114,5 +114,5 @@ export function testerEntryPatch(state, role, { uid, now = Date.now() }) {
 export function testerExitPatch(state) {
   const t = testerSession(state);
   const prev = (t && t.prev) || {};
-  return { tester: null, learnView: prev.learnView || state.learnView, aulaView: prev.aulaView ?? null, aula: withoutSandbox(state.aula) };
+  return { tester: null, learnView: 'learnView' in prev ? prev.learnView : state.learnView, aulaView: prev.aulaView ?? null, aula: withoutSandbox(state.aula) };
 }

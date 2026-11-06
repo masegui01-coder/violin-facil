@@ -10,7 +10,7 @@
 .task-head > div { min-width: 0; }
 .task small { color: var(--muted); }
 .pill { display: inline-block; font-size: .72rem; font-weight: 800; border-radius: 999px; padding: 2px 9px; background: var(--surface-2); border: 1px solid var(--line); white-space: nowrap; }
-.pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.pill.ok { background: var(--ok-soft); color: color-mix(in srgb, var(--ok) 78%, var(--ink)); border-color: transparent; } /* 4,5:1 sobre --ok-soft */
 .pill.warn { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .pill.late { background: var(--bad-soft); color: color-mix(in srgb, var(--bad) 72%, var(--ink)); border-color: transparent; }
 .prog-table { width: 100%; border-collapse: collapse; font-size: .9rem; }

@@ -52,7 +52,7 @@
 
 
 /* Lección de lectura hecha: «Leída» en vez de estrellas */
-.read-tag { font-size: .74rem; font-weight: 800; color: var(--ok); letter-spacing: .02em; }
+.read-tag { font-size: .74rem; font-weight: 800; color: color-mix(in srgb, var(--ok) 78%, var(--ink)); letter-spacing: .02em; } /* texto verde con 4,5:1 en claro y oscuro */
 
 /* Ficha de teoría con ilustración propia (el violín y sus cuatro cuerdas) */
 .theory-art { width: 100%; max-width: 300px; align-self: center; }

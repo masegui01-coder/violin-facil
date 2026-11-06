@@ -64,7 +64,7 @@ export function renderMethod(box) {
 
 function renderMethodList(box) {
   if (!hasMethod(inst())) {
-    box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.soonEyebrow)}</p><h2>${esc(TXT.soon)}</h2><p>${esc(TXT.notYet)}</p>
+    box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.soonEyebrow)}</p><h3>${esc(TXT.soon)}</h3><p>${esc(TXT.notYet)}</p>
       <button type="button" class="btn" id="proToCasual">${esc(TXT.toCasual)}</button></div>`;
     // Salida: el mismo segmentado de Aprender, en «Por mi cuenta»
     $('proToCasual').addEventListener('click', () => {
@@ -77,7 +77,7 @@ function renderMethodList(box) {
   const list = levels();
   const states = statesOf(list);
   const done = list.filter(l => states[l.leccion_id].state === 'done').length;
-  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(eyebrow())}</p><h2>${esc(TXT.course)}</h2><p>${esc(isPerc() ? TXT.introPerc : TXT.intro)}</p>
+  box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(eyebrow())}</p><h3>${esc(TXT.course)}</h3><p>${esc(isPerc() ? TXT.introPerc : TXT.intro)}</p>
       <div class="progress"><i style="width:${Math.round(done / list.length * 100)}%"></i></div><span class="unit-pct">${done}/${list.length}</span></div>
     <div class="pro-levels">${list.map(l => levelCard(l, states[l.leccion_id])).join('')}</div>`;
   box.querySelectorAll('[data-pro]').forEach(b => b.addEventListener('click', () => {

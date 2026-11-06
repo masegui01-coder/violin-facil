@@ -19,8 +19,7 @@ export const testerAvailable = () => BETA_ALL_TESTERS && cloudConfigured() && !!
 // ---------- Atajo al libro ----------
 export function openLmBook() {
   update({ learnView: 'lm' });
-  go('learn');
-  window.scrollTo(0, 0);
+  go('learn'); // Aprender lo lee como Libro y profesor › Mi libro › Lenguaje y baja hasta allí
 }
 const bookButton = (id, cls = 'btn ghost small') => `<button type="button" class="${cls}" id="${id}" data-lm-book>${esc('Abrir el libro de Lenguaje Musical (Nivel 1)')}</button>`;
 
@@ -66,8 +65,9 @@ export function testerAulaHtml() {
   const control = testerControlHtml();
   const book = bookButton('aulaLmBook');
   if (!t) {
-    return `<section class="panel tester-panel">${control}
-      ${control ? `<p class="muted small">${esc('Mira el Aula como alumno o como profesor con una clase de ejemplo, sin registrarte en ninguna clase ni pedir licencia. Nada de lo que hagas toca tus datos.')}</p>` : ''}${book}</section>`;
+    // Fuera del modo tester el libro ya está en Mi libro: sin atajo
+    return control ? `<section class="panel tester-panel">${control}
+      <p class="muted small">${esc('Mira el Aula como alumno o como profesor con una clase de ejemplo, sin registrarte en ninguna clase ni pedir licencia. Nada de lo que hagas toca tus datos.')}</p></section>` : '';
   }
   const extra = t.role === 'profesor'
     ? `<p class="muted small">${esc('Clase de ejemplo con alumnos inventados («ejemplo»): prueba la tabla, los filtros, las fichas, el informe trimestral, los comentarios y el formulario de tareas. Todo se queda en este móvil.')}</p>

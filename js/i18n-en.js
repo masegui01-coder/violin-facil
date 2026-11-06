@@ -37,16 +37,15 @@ export const EXACT = {
   'Días con práctica esta semana': 'Days with practice this week',
   'Tu música': 'Your music', 'Unidad': 'Unit',
   // ---------- Aprender con dos caminos (js/learn-path.js) ----------
-  'Por mi cuenta': 'On my own', 'Con profesor': 'With a teacher', 'Consejos de técnica': 'Technique tips',
+  'Por mi cuenta': 'On my own', 'Libro y profesor': 'Book & teacher', 'Consejos de técnica': 'Technique tips',
   'Aprende tocando canciones, a tu ritmo y unos minutos al día.': 'Learn by playing songs, at your own pace and a few minutes a day.',
-  'Las tareas de tu profesor y tu libro de estudio: Lenguaje Musical, el libro de tu instrumento y el Método Pro.':
-    "Your teacher's assignments and your study book: Music Theory, your instrument book and the Pro method.",
+  'Arriba, tus clases; debajo, el libro que estudian tus alumnos.': 'Your classes at the top; below, the book your students work through.',
+  'Arriba, las tareas de tu profesor; debajo, tu libro de estudio.': "Your teacher's assignments at the top; below, your study book.",
+  'Estudia con el libro: Lenguaje Musical, tu instrumento y el Método Pro. Si tienes profesor, únete a su clase.':
+    'Study with the book: Music Theory, your instrument and the Pro method. If you have a teacher, join their class.',
+  '¿Tienes profesor? Únete a su clase': 'Have a teacher? Join their class',
   'Material de estudio': 'Study material', 'Mi libro': 'My book', 'Qué estudiar en Mi libro': 'What to study in My book',
   'Lenguaje': 'Theory',
-  'Lenguaje Musical: leer, escuchar, cantar y escribir música, unidad a unidad. Es igual para todos los instrumentos.':
-    'Music Theory: reading, listening, singing and writing music, unit by unit. It is the same for every instrument.',
-  'El libro de tu instrumento, página a página, con medallas.': 'Your instrument book, page by page, with medals.',
-  'El Método Pro: cada nivel con teoría, retos rápidos y práctica con el micrófono.': 'The Pro method: every level with theory, quick challenges and practice with the microphone.',
   'Técnica en 30 segundos': 'Technique in 30 seconds', 'Ver cómo se hace': 'See how it’s done', 'Ocultar este consejo': 'Hide this tip',
   '¿Quieres ir más en serio?': 'Want to get more serious?',
   'El libro te enseña a leer música. Lo que ya has aprendido cuenta.': 'The book teaches you to read music. What you have already learnt counts.',

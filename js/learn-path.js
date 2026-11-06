@@ -39,14 +39,22 @@ function usedSection(s) {
   return 'lm';
 }
 
-// Lo que pinta Aprender: el camino, la sección de Mi libro y si se llegó por un enlace (para llevar la vista a Mi libro)
+// Lo que pinta Aprender: el camino, la sección de Mi libro y adónde lleva un enlace (para llevar la vista allí):
+// linked = a una sección de Mi libro; aulaLink = al Aula (invitación ?clase=, modo tester, tareas del Aula)
 export function resolveLearn(s = {}) {
   const raw = s.learnView;
   const path = migrateLearnView(raw) || defaultPath(s);
   const legacy = LEGACY[raw];
   const linked = legacy ? (raw === 'pro' && s.aulaView === 'method' ? 'method' : legacy.section) : null;
   const section = linked || (LIBRO_SECTIONS.includes(s.libroView) ? s.libroView : usedSection(s));
-  return { path, section, linked: !!linked };
+  return { path, section, linked: !!linked, aulaLink: raw === 'pro' && !linked };
+}
+
+// Un valor antiguo, una vez atendido el enlace, se guarda ya traducido (así no se vuelve a desplazar en cada arranque)
+export function normalizedLearn(s = {}) {
+  if (!LEGACY[s.learnView]) return null;
+  const { path, section, linked } = resolveLearn(s);
+  return linked ? { learnView: path, libroView: section } : { learnView: path };
 }
 
 // El puente al libro: tras unos cuantos niveles del curso y mientras no se haya cerrado
