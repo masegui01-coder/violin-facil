@@ -50,8 +50,8 @@
   .tour-card { max-width: 520px; }
 }
 
-/* Entre 700 y 899 px el selector Casual/Libro/Pro se alinea con la columna centrada */
-@media (min-width: 700px) and (max-width: 899px) { .learn-mode { max-width: 600px; width: 100%; margin-inline: auto; } }
+/* Entre 700 y 899 px la cabecera y el selector de camino se alinean con la columna centrada */
+@media (min-width: 700px) and (max-width: 899px) { .learn-head, .learn-mode, #learnPathHint { max-width: 600px; width: 100%; margin-inline: auto; } }
 /* Segmentados en pantallas anchas: a la medida de sus opciones (MD3), no estirados de lado a lado de la columna */
 @media (min-width: 700px) { .seg:not(.wrap):not(.rb-levels) { max-width: 34rem; } }
 

@@ -50,3 +50,54 @@
 .stars { color: var(--line); letter-spacing: 1px; font-size: .9rem; white-space: nowrap; }
 .stars i { font-style: normal; }
 .stars i.on { color: var(--gold); }
+
+/* ---------- Dos caminos (js/learn-path.js): cabecera, Técnica en 30 s, puente al libro y Mi libro ---------- */
+.learn-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.learn-head h1 { margin: 0; font-size: 1.6rem; }
+.learn-tech .ic, .libro-tech .ic { width: 20px; height: 20px; }
+.learn-tech, .libro-tech { gap: 8px; }
+.learn-mode { margin-bottom: 6px; }
+.learn-hint { margin: 0 0 14px; max-width: 60ch; }
+
+#tipMoment { container-type: inline-size; margin-bottom: 14px; }
+#bridgeCard { margin-bottom: 22px; }
+#tipMoment:empty, #bridgeCard:empty { display: none; }
+.tip-moment {
+  position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: start;
+  background: var(--surface); border: 1.5px solid var(--accent); border-radius: var(--r); padding: 12px 12px 14px;
+}
+.tip-moment-fig { align-self: start; }
+.tip-moment-fig .tip-art, .tip-moment-fig svg { display: block; width: 100%; height: auto; }
+.tip-moment-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tip-moment-text .eyebrow { padding-right: 40px; min-height: 28px; }
+.tip-moment-text h2 { margin: 0; font-size: 1.1rem; line-height: 1.25; }
+.tip-moment-text p { margin: 0; }
+.tip-moment .eyebrow { display: inline-flex; align-items: center; gap: 6px; }
+.tip-moment .eyebrow .ic { width: 16px; height: 16px; }
+.tip-moment-text .btn { align-self: flex-start; margin-top: 4px; }
+.tip-moment-close { position: absolute; top: 2px; right: 2px; border: 0; background: transparent; }
+@container (max-width: 18rem) {
+  .tip-moment { grid-template-columns: 1fr; }
+  .tip-moment-fig { max-width: 160px; }
+}
+
+.bridge {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+  background: var(--surface-2); border: 1.5px dashed var(--line); border-radius: var(--r); padding: 12px 8px 14px 16px;
+}
+.bridge > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 4px; }
+.bridge h2 { margin: 0; font-size: 1rem; }
+.bridge p { margin: 0; }
+.bridge .btn { align-self: flex-start; }
+.bridge .icon-btn { border: 0; background: transparent; }
+
+.libro { margin-top: 28px; display: flex; flex-direction: column; scroll-margin-top: 12px; }
+.libro-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.libro-head h2 { margin: 0; font-size: 1.4rem; }
+.libro-head h2:focus { outline: none; }
+.libro-head h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.libro-tabs { margin-bottom: 6px; }
+@container (max-width: 380px) { .libro-tabs button::before { display: none; } }
+#lmView { scroll-margin-top: 12px; }
+.profe > .libro:first-child { margin-top: 4px; }
+#proView.aula-below { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 8px; }

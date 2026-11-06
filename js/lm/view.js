@@ -142,7 +142,7 @@ export function bindLm() {
   $('lmView').addEventListener('click', e => {
     const card = e.target.closest('.lm-unit-card');
     const ex = e.target.closest('[data-ex]');
-    if (card) { openUnit = { level: Number(card.dataset.level), unit: Number(card.dataset.unit) }; renderLm({ focus: true }); window.scrollTo(0, 0); return; }
+    if (card) { openUnit = { level: Number(card.dataset.level), unit: Number(card.dataset.unit) }; renderLm({ focus: true }); $('lmView').scrollIntoView({ block: 'start' }); return; }
     if (e.target.closest('[data-lm-back]')) { const at = openUnit; openUnit = null; renderLm(); $('lmView').querySelector(`[data-unit="${at.unit}"]`)?.focus(); return; }
     if (ex) { openLmExercise(ex.dataset.ex); return; }
     if (e.target.closest('[data-inst-lesson]') && instrumentLesson) { launch(instrumentLesson, { from: 'course' }); return; }
