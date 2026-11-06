@@ -75,6 +75,7 @@ async function showCards(host, cards, env, summary) {
   }
   for (let i = 0; i < cards.length; i++) {
     if (!env.alive()) return;
+    stopSound(); // el ejemplo de la ficha anterior no sigue sonando en esta
     host.innerHTML = `<p class="eyebrow">Ficha ${i + 1} de ${cards.length}</p><div class="lm-card" style="${unitColor}">${cardHtml(cards[i], i, env)}</div>`;
     fitSystems(host); // la clave de cada renglón del ejemplo, ya al pintar (sin esperar al siguiente fotograma)
     bindFigures(host, playFigure(env));
@@ -84,6 +85,7 @@ async function showCards(host, cards, env, summary) {
     host.querySelector('#lmCardPlay2')?.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemploCompleto }, env));
     await continueButton(host, i + 1 < cards.length ? 'Siguiente' : 'A practicar');
   }
+  stopSound();
 }
 async function teoria(host, ex, env) {
   const p = ex.params;

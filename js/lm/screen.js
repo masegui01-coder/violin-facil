@@ -19,6 +19,7 @@ const say = announcer('lmStatus', 600);
 let session = 0;
 let current = null;
 let watching = false;
+const PASS_PCT = 60; // el aprobado, como la primera estrella
 
 const body = () => $('lmBody');
 
@@ -70,7 +71,10 @@ async function sendWork(btn, ex, out, saved) {
 
 function renderResult(ex, out, saved) {
   const ten = gradeTen(saved.pct, ex.variant);
-  const sib = lmExercise(siblingId(ex.id, ex.variant === 'facil' ? 'medio' : 'facil'));
+  // por debajo del aprobado (60 %): lo primero es repetir, y no se ofrece la versión más difícil
+  const passed = out.noGrade || saved.pct >= PASS_PCT;
+  const sibAny = lmExercise(siblingId(ex.id, ex.variant === 'facil' ? 'medio' : 'facil'));
+  const sib = sibAny && (passed || sibAny.variant === 'facil') ? sibAny : null;
   const next = nextExercise(ex);
   const skills = Object.entries(saved.skills || {});
   // creatividad: sin nota de la app (solo las reglas cumplidas); la nota la pone el profesor
@@ -89,8 +93,9 @@ function renderResult(ex, out, saved) {
     ${out.note ? `<p class="muted center">${esc(out.note)}</p>` : ''}
     ${mistakesHtml(saved.mistakes || [], ex)}
     <div class="controls lm-result-actions">
-      ${next ? '<button type="button" class="btn" id="lmNext">Siguiente ejercicio</button>' : ''}
-      <button type="button" class="btn ghost" id="lmAgain">Repetir</button>
+      ${passed ? '' : '<button type="button" class="btn" id="lmAgain">Repetir</button>'}
+      ${next ? `<button type="button" class="btn${passed ? '' : ' ghost'}" id="lmNext">Siguiente ejercicio</button>` : ''}
+      ${passed ? '<button type="button" class="btn ghost" id="lmAgain">Repetir</button>' : ''}
       ${sib ? `<button type="button" class="btn ghost" id="lmOther">Probar la versión ${esc(VARIANT_NAME[sib.variant])}</button>` : ''}
       ${out.work && myClasses().length ? '<button type="button" class="btn" id="lmSendWork">Enviar a mi profesor</button>' : ''}
       ${ex.params.practicaInfinita ? '<button type="button" class="btn ghost" id="lmMoreDict">Más dictados como este</button>' : ''}

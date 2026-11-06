@@ -98,10 +98,17 @@ export async function singSong(host, opts, env) {
     <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
   // Con 2.ª estrofa (letra2): barra de repetición al final, las dos letras debajo y se canta dos veces
   const passes = opts.under2 ? 2 : 1;
+  // Pintado completo solo al principio y al corregir (marcas); mientras se canta, solo se mueve la marca de la nota
+  // que toca sobre el pentagrama ya pintado (repintar a cada nota cortaba el desplazamiento que la mantiene a la vista)
   const draw = current => {
-    host.querySelector('.lm-sing-staff').innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, repeat: passes > 1 });
-    const on = current >= 0 && host.querySelector('.lm-sing-staff .lm-now');
-    if (on) keepInView(on); // la nota que se canta, siempre a la vista
+    const staff = host.querySelector('.lm-sing-staff');
+    if (current < 0 || !staff.querySelector('[data-i]')) {
+      staff.innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, repeat: passes > 1 });
+      if (current < 0) return;
+    }
+    staff.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
+    const on = staff.querySelector(`[data-i="${current}"]`);
+    if (on) { on.classList.add('lm-now'); keepInView(on); }
   };
   const phase = (text, note = '') => { host.querySelector('#lmSingPhase').textContent = text; host.querySelector('#lmSingNote').textContent = note; };
   draw(-1);

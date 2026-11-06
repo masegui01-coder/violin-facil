@@ -6,7 +6,7 @@ import * as audio from '../audio.js';
 import { centsAnyOctave, noteText, letterText } from './notes.js';
 import { freqToMidi } from '../music.js';
 import { gradeSung, singMark, SING_TOLERANCE } from './grade.js';
-import { staffHtml, CLEF } from './kit.js';
+import { staffHtml, CLEF, onceClick } from './kit.js';
 import { playNotes, playChordNow, playPitch, stopSound, wait, now } from './sound.js';
 import { saveVoice } from './results.js';
 import { dynamicsChecks } from './dynamics.js';
@@ -66,7 +66,7 @@ async function keepGoing(host, phase) {
   const before = box.innerHTML;
   box.innerHTML = '<button type="button" class="btn" data-go="1">Seguir</button><button type="button" class="btn ghost" data-go="0">Terminar</button>';
   box.querySelector('[data-go="1"]').focus();
-  const b = await new Promise(r => box.addEventListener('click', e => { const x = e.target.closest('[data-go]'); if (x) r(x); }));
+  const b = await onceClick(box, '[data-go]'); // un solo oyente, que se quita al contestar
   box.innerHTML = before;
   return b.dataset.go === '1';
 }
@@ -259,12 +259,12 @@ export function hyphenate(syllables, words) {
 
 // La letra seguida de cada canción del Nivel 1 (para los guiones entre sílabas)
 export const SONG_WORDS = {
-  'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces, frescas, buenas, grandes, Venga, ¡ven! venga, ¡ven! ¡Lleva todas, ¡ven! ¡ya!',
-  'Robots en el patio': 'Pipipí, ¡bip, bip! prende la luz, Pipipí, ¡bip, bop! mueve el pie, ¡clac! Gira la cabeza, gira sin parar Mueve, mueve, y se paró, ¡clic!',
-  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Barcos que vuelven ya a dormir Duerme, duerme, mar',
-  'Vals de los relojes': 'Tic tac tic tac Baila el reloj Vamos a girar y se acabó ¡ya!',
+  'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces, frescas, buenas, grandes, Venga, ¡ven! venga, ¡ven! ¡Lleva todas! ¡Ven! ¡Ya!',
+  'Robots en el patio': 'Pipipí, ¡bip, bip! dame la luz, Pipipí, ¡bip, bop! mueve el pie, ¡clac! Gira la cabeza, gira sin parar Mueve, mueve, y se paró, ¡clic!',
+  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Barcos que vuelven, sí, llegan ya Duerme, duerme, mar',
+  'Vals de los relojes': 'Tic tac tic tac Baila el reloj Vamos a girar vuelta y vuelta, ¡ya!',
   'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa son vecinas, ¡sí! si do son vecinas, ¡sí! ¡Ya lo sabes! ¡Do!',
-  'La brisa y el mar': 'Canta la brisa del mar, canción de paz; El mar contesta: ¡sí! ¡Fuerte, fuerte! ¡Bum! Olas que suenan más y más, y más, ¡más! Ola que se va, se va, se va.',
+  'La brisa y el mar': 'Canta la brisa del mar, canción de paz; Mar que contesta: ¡sí! ¡Fuerte, fuerte! ¡Bum! Olas que suenan más, más y más y ¡más! Ola que se va, se va, se va.',
   'Saloma del barco fantasma': '¡Vamos, barco, al mar! ¡Eho! ¡Tira del timón! ¡Eho! Densa niebla, todo está gris; rumbo al puerto, ¡ya!',
   '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
 };
@@ -272,7 +272,7 @@ export const SONG_WORDS = {
 // La 2.ª estrofa (letra2) de las canciones que la tienen
 export const SONG_WORDS2 = {
   'Vals de los relojes': 'Tic tac tic tac Marca el compás Uno, dos, tres, ¡pum! vuelta a comenzar',
-  'Saloma del barco fantasma': 'Sopla viento sur, ¡eho! Lleva el barco al sol, ¡eho! Cantan las gaviotas al ver tierra, tierra, ¡sí!',
+  'Saloma del barco fantasma': 'Sopla viento sur. ¡Eho! Lleva el barco al sol. ¡Eho! Cantan las gaviotas: ¡mira, tierra, tierra! ¡Sí!',
 };
 
 // Resultado de una toma cantada según el contrato (marcas → porcentaje y errores)

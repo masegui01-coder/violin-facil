@@ -201,8 +201,8 @@ for (const big of [false, true]) {
   });
 }
 
-test('lectura a dos voces al 200 % en el móvil: el sistema cabe (sin desplazamiento horizontal)', async () => {
-  const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
+for (const width of [375, 320]) test(`lectura a dos voces al 200 % a ${width} px: el sistema cabe y la barra fija no tapa la partitura`, async () => {
+  const { page, errors, close } = await openApp(env, { viewport: { ...PHONE_375, width } });
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
   await page.$eval('[data-learn-view="lm"]', b => b.click());
   await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
@@ -213,6 +213,10 @@ test('lectura a dos voces al 200 % en el móvil: el sistema cabe (sin desplazami
   await new Promise(r => setTimeout(r, 400));
   const fit = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, view: innerWidth, sys: Math.round(document.querySelector('.lm-system').scrollWidth), box: document.querySelector('.lm-system').clientWidth }));
   assert.ok(fit.page <= fit.view + 1 && fit.sys <= fit.box + 1, JSON.stringify(fit));
+  const bar = await page.$eval('.lm-sticky-controls', b => b.getBoundingClientRect().height / innerHeight);
+  assert.ok(bar < 0.3, `barra fija: ${Math.round(bar * 100)} % de la pantalla`);
+  const box = await page.$eval('#lmDuoPhones', c => { const r = c.getBoundingClientRect(); return [r.width, r.height]; });
+  assert.ok(box[0] >= 24 && box[1] >= 24, `casilla ${box}`);
   assert.deepEqual(errors, []);
   await close();
 });

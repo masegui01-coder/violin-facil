@@ -21,7 +21,6 @@ import { LM_TOOL_EVENT } from './bridge.js';
 const MAX_MISTAKES = 10;
 let active = null; // { ex, startedAt }
 
-const backToUnit = () => ({ label: 'Volver a la unidad', run: () => go('learn') });
 const elapsed = () => (active ? (performance.now() - active.startedAt) / 1000 : 0);
 const skillsFor = (ex, pct) => Object.fromEntries(ex.skills.map(k => [k, pct]));
 
@@ -36,33 +35,8 @@ export function recordActive(partial, { logMinutes = true } = {}) {
   return r;
 }
 
-function lessonBase(ex, extra) {
-  return { noRecord: true, lm: { id: ex.id }, nextAction: backToUnit, ...extra };
-}
-
-function rhythmLesson(ex, song) {
-  return lessonBase(ex, { id: `rhythm-${ex.id}`, kind: 'song', title: ex.title, song, fixedSpeed: true });
-}
-
-// Lo que pide cada variante de la lectura rítmica (campo «modo»): cómo suena el metrónomo, si hay cuenta previa
-// entera o un solo clic de entrada, y si se ven las sílabas de apoyo (ta, ti, sh…) en Fácil
-export function readingMode(ex) {
-  const modo = ex.params.modo || '';
-  const metro = /solo marca el 1|pie en el primer tiempo/.test(modo) ? 'first' : /ninguna pista|sin cuenta previa/.test(modo) ? 'none' : 'all';
-  const hint = modo || 'Palmas al micrófono o toques en la pantalla';
-  return { metro, oneClick: /sin cuenta previa/.test(modo), syllables: ex.variant === 'facil' && !!ex.params.vocablos, hint };
-}
-
-// Lectura rítmica con palmas: el ensayo rítmico de siempre (micrófono, metrónomo y corrección golpe a golpe)
-function openTool(ex) {
-  const p = ex.params;
-  if (ex.type === 'lectura-ritmica') {
-    const time = Number(String(p.compas || '4/4').split('/')[0]);
-    const song = { id: ex.id, title: ex.title, by: '', key: 'C', time, bpm: p.tempo || 72, score: p.partitura, pickup: p.anacrusa || 0 };
-    const lesson = { ...rhythmLesson(ex, song), lmMode: readingMode(ex), ...(p.matices ? { dynamics: p.matices } : {}) };
-    go('rhythm', { lesson, from: 'lm', eyebrow: 'Lenguaje musical' });
-    return;
-  }
+// Tipos que aún no tienen pantalla (todas las lecturas rítmicas se hacen ya en la pantalla del curso)
+function openTool() {
   toast('Este ejercicio todavía no está disponible');
 }
 
@@ -179,9 +153,9 @@ export function openLmExercise(idOrEx) {
   const ex = typeof idOrEx === 'string' ? lmExercise(idOrEx) : idOrEx;
   if (!ex) { toast('Este ejercicio todavía no está disponible'); return; }
   active = { ex, startedAt: performance.now() };
-  // la lectura a dos voces (o con comas de respiración) se hace en la pantalla del curso: sistema de dos pentagramas,
-  // ostinato siempre sonando y las comas escritas
-  if (TYPES[ex.type] === 'lm' || (ex.type === 'lectura-ritmica' && (ex.params.voz1 || ex.params.comas))) go('lm', { ex });
+  // la lectura rítmica se hace en la pantalla del curso: se corrige como el resto (golpes de más y en silencios
+  // cuentan, ventanas del contrato, nota sobre 10); a dos voces, sistema de dos pentagramas y ostinato siempre sonando
+  if (TYPES[ex.type] === 'lm' || ex.type === 'lectura-ritmica') go('lm', { ex });
   else openTool(ex);
 }
 

@@ -16,7 +16,14 @@ export function beatWeight(pos, barBeats) {
   return Math.abs(p - Math.round(p)) < 1e-6 ? 1 : 0;
 }
 
+// Palabras átonas (artículos, preposiciones, conjunciones, pronombres átonos y posesivos antepuestos): no llevan
+// acento propio y se apoyan en la tónica que les sigue
+const UNSTRESSED = new Set(['el', 'la', 'lo', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'e', 'o', 'u', 'ni', 'a', 'al', 'de', 'del',
+  'en', 'con', 'por', 'para', 'sin', 'que', 'se', 'me', 'te', 'le', 'les', 'nos', 'mi', 'mis', 'tu', 'tus', 'su', 'sus']);
+const bare = w => String(w).toLowerCase().replace(/[^\p{L}]/gu, '');
+
 // Sílaba tónica (índice) de una palabra de n sílabas: por la tilde (índice de su letra) o por la terminación
+// (vocal, n o s: llana; las demás, aguda; «-s» tras consonante, como «robots», también aguda)
 function stressedPiece(word, pieces) {
   const letters = [...word].filter(c => plain(c));
   const accent = letters.findIndex(c => ACCENTED.test(c));
@@ -24,26 +31,35 @@ function stressedPiece(word, pieces) {
     let at = 0;
     return pieces.findIndex(p => { at += p.len; return accent < at; });
   }
-  const last = plain(word).slice(-1);
-  return /[aeiouns]/.test(last) ? pieces.length - 2 : pieces.length - 1;
+  const end = plain(word);
+  const llana = /[aeiou]$|[aeiou]n$|[aeiou]s$/.test(end);
+  return llana ? pieces.length - 2 : pieces.length - 1;
 }
 
-// Problemas de prosodia de una estrofa: { bar (desde 1), word, stressed, weaker }
+// Problemas de prosodia de una estrofa: { bar (desde 1, o «anacrusa»), word, stressed, weaker }
+//  - en cada palabra, la tónica no puede caer más débil que una átona de la misma palabra que sea vecina (o que
+//    cualquiera, si la tónica no cae en un tiempo fuerte): «a-ca-BÓ» con «a» en el 1 y «bó» en el 2 del vals, mal
+//  - una palabra átona no puede caer más fuerte que la tónica que la sigue (aunque esta sea más larga): «EL mar»,
+//    «y MÁS», «al VER», «Y se a-ca-BÓ», mal
+//  - la letra tiene que casar letra a letra con la letra seguida (si no, se avisa)
 export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words) {
   const barBeats = barBeatsOf(compas);
   const tokens = scoreTokens(partitura);
   const byBar = {};
   tokens.forEach(t => { if (!t.rest) (byBar[t.bar] ||= []).push(t); });
-  // cada sílaba con su nota
   const syl = [];
   letra.forEach((bar, b) => bar.forEach((text, i) => { const n = (byBar[b] || [])[i]; if (n) syl.push({ text, start: n.start, beats: n.beats, bar: b }); }));
-  // las letras de cada palabra repartidas entre las sílabas que la cantan
   const wordList = String(words).split(/\s+/).filter(w => plain(w));
+  const barName = b => (anacrusa && b === 0 ? 'anacrusa' : b + (anacrusa ? 0 : 1));
+  const issues = [];
+  const sungLetters = syl.map(x => plain(x.text)).join('');
+  if (sungLetters !== wordList.map(plain).join('')) issues.push({ bar: '—', word: 'letra desalineada', stressed: '', weaker: '' });
+  // las letras de cada palabra repartidas entre las sílabas que la cantan
   const pieces = wordList.map(() => []);
   let w = 0;
   let left = wordList.length ? plain(wordList[0]).length : 0;
-  syl.forEach((s, k) => {
-    let len = plain(s.text).length;
+  syl.forEach((x, k) => {
+    let len = plain(x.text).length;
     while (len > 0 && w < wordList.length) {
       const take = Math.min(len, left);
       pieces[w].push({ syl: k, len: take });
@@ -52,16 +68,30 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
       if (left === 0) { w++; left = w < wordList.length ? plain(wordList[w]).length : 0; }
     }
   });
-  const issues = [];
+  const weight = x => beatWeight(x.start - anacrusa, barBeats);
+  // tónica de cada sílaba cantada y sílabas hechas solo de palabras átonas
+  const stressed = new Set();
+  const onlyUnstressed = new Map();
   wordList.forEach((word, i) => {
     const ps = pieces[i];
-    if (ps.length < 2) return; // las palabras de una sílaba no se miran
+    if (!ps.length) return;
+    const atonic = ps.length === 1 && UNSTRESSED.has(bare(word));
+    if (!atonic) stressed.add(ps[ps.length === 1 ? 0 : stressedPiece(word, ps)].syl);
+    ps.forEach(p => onlyUnstressed.set(p.syl, (onlyUnstressed.get(p.syl) ?? true) && atonic));
+    if (ps.length < 2) return;
     const k = stressedPiece(word, ps);
     const s = syl[ps[k].syl];
-    const weight = x => beatWeight(x.start - anacrusa, barBeats);
-    // se compara con las sílabas vecinas de la misma palabra (la secundaria de «es-ca-LE-ra» en el 1 no es un error)
-    const weaker = ps.filter((p, j) => Math.abs(j - k) === 1).map(p => syl[p.syl]).find(u => weight(u) > weight(s) && u.beats >= s.beats);
-    if (weaker) issues.push({ bar: s.bar + (anacrusa ? 0 : 1), word: word.replace(/[^\p{L}]/gu, ''), stressed: s.text, weaker: weaker.text });
+    const weaker = ps.map((p, j) => ({ u: syl[p.syl], j })).find(({ u, j }) => j !== k && weight(u) > weight(s) && u.beats >= s.beats && (Math.abs(j - k) === 1 || weight(s) < 2));
+    if (weaker) issues.push({ bar: barName(s.bar), word: bare(word), stressed: s.text, weaker: weaker.u.text });
+  });
+  syl.forEach((x, k) => {
+    if (!onlyUnstressed.get(k)) return;
+    const next = syl.findIndex((y, j) => j > k && stressed.has(j));
+    if (next < 0) return;
+    const s = syl[next];
+    // como en las palabras: con una átona en medio y la tónica en un tiempo fuerte, es acento secundario («mis a-MI-gos»)
+    const secondary = next - k >= 2 && weight(s) >= 2;
+    if (weight(x) > weight(s) && !secondary) issues.push({ bar: barName(x.bar), word: `${bare(x.text)} ${bare(s.text)}`, stressed: s.text, weaker: x.text });
   });
   return issues;
 }

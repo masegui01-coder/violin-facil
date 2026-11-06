@@ -34,6 +34,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
   let sel = null;          // nota seleccionada (para cambiarla o borrarla)
   let cursor = rhythmOnly ? RHYTHM_STEP[clef] : DEFAULT_STEP[clef];
   let locked = false;
+  let placedByPointer = false;
   const one = figures.length === 1;
 
   const describe = t => (t.rest ? REST_NAME[t.dur] : rhythmOnly ? FIGURE_NAME[t.dur] : `${FIGURE_NAME[t.dur]} ${noteText(nameOfStep(t.step), nom)}`);
@@ -129,6 +130,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       say(tokens[i].breath ? 'Coma de respiración puesta' : 'Coma de respiración quitada');
       return;
     }
+    if (ins && placedByPointer) { placedByPointer = false; return; }
     if (ins) {
       const svg = ins.querySelector('svg');
       // con el ratón o el dedo, la altura es donde se toca; con el teclado (clic sin posición), la del cursor
@@ -144,22 +146,43 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       say(sel === null ? 'Nota sin seleccionar' : `Seleccionada: ${describe(tokens[i])}. Flechas para cambiarla, Suprimir para borrarla`);
     }
   });
-  // la nota fantasma sigue al dedo (o al ratón) por las líneas y los espacios, con su nombre debajo; se fija al soltar
-  box.addEventListener('pointermove', e => {
+  // la nota fantasma: aparece al apoyar el dedo (o el ratón), sigue por las líneas y los espacios con su nombre
+  // debajo y se coloca al soltar. touch-action: none en la celda (CSS) para que arrastrar no sea desplazar la página
+  let dragging = null;
+  const ghostAt = (ins, clientY) => {
+    if (figure.startsWith('R')) return;
+    const step = stepAtY(ins.querySelector('svg'), clientY, clef);
+    if (step === cursor && ins.dataset.step === String(step)) return;
+    cursor = step;
+    ins.innerHTML = noteCell({ clef, dur: figure, ghost: cursor, step: null });
+    ins.dataset.step = String(cursor);
+    ins.setAttribute('aria-label', `Añadir ${figLabel(figure).toLowerCase()}: ${cursorText()}. Toca una línea o un espacio; flechas arriba y abajo para cambiar la nota`);
+    const label = box.querySelector('.lm-w-cursor');
+    if (label) label.textContent = cursorText();
+  };
+  box.addEventListener('pointerdown', e => {
     if (locked || rhythmOnly) return;
     const ins = e.target.closest('[data-insert]');
     if (!ins) return;
-    const step = stepAtY(ins.querySelector('svg'), e.clientY, clef);
-    if (step === cursor) return;
-    cursor = step;
-    // solo la nota fantasma de la celda (el botón sigue siendo el mismo: el toque se completa al soltar)
-    const isRest = figure.startsWith('R');
-    if (isRest) return;
-    ins.innerHTML = noteCell({ clef, dur: figure, ghost: cursor, step: null });
-    ins.dataset.step = String(cursor);
-    const label = box.querySelector('.lm-w-cursor');
-    if (label) label.textContent = cursorText();
+    dragging = ins;
+    try { ins.setPointerCapture(e.pointerId); } catch { /* sin captura: se sigue igual */ }
+    ghostAt(ins, e.clientY);
   });
+  box.addEventListener('pointermove', e => {
+    if (locked || rhythmOnly) return;
+    const ins = dragging || e.target.closest('[data-insert]');
+    if (ins) ghostAt(ins, e.clientY);
+  });
+  box.addEventListener('pointerup', e => {
+    if (!dragging) return;
+    const ins = dragging;
+    dragging = null;
+    ghostAt(ins, e.clientY);
+    placedByPointer = true; // el clic que llega después no añade otra (si no llega, se olvida enseguida)
+    setTimeout(() => { placedByPointer = false; }, CLICK_AFTER_POINTER_MS);
+    add(cursor);
+  });
+  box.addEventListener('pointercancel', () => { dragging = null; });
   box.addEventListener('keydown', e => {
     if (locked) return;
     const onStaff = e.target.closest('[data-insert],[data-idx]');
@@ -190,6 +213,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 
 // ---------- Tocar notas en el pentagrama y construir una escala ----------
 const BIG_STAFF_NOTES = 2;
+const CLICK_AFTER_POINTER_MS = 400;
 export async function tocarPentagrama(host, item, env) {
   const clef = CLEF[item.clave] || 'treble';
   const want = item.respuesta;
