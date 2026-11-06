@@ -184,7 +184,7 @@ export function keyboard(x0, y0, kw, kh, from, to, { o = {}, mark = {}, names = 
     const play = playable ? ` data-play="| ${pitch(step)}q |"` : '';
     if (playable && m !== 'off') addChip(`| ${pitch(step)}q |`, nn(o, step)); // las tachadas no tienen botón
     white += `<g class="lmf-key ${m}"${play}><rect x="${r1(x)}" y="${r1(y0)}" width="${r1(kw)}" height="${r1(kh)}" rx="3" class="lmf-white"/>`
-      + (names ? text(x + kw / 2, y0 + kh - 8, nn(o, step), { cls: 'lmf-keyname', size: Math.min(12, kw * 0.42) }) : '') + '</g>';
+      + (names ? text(x + kw / 2, y0 + kh - 8, nn(o, step), { cls: 'lmf-keyname' }) : '') + '</g>';
     const letter = ((step % 7) + 7) % 7;
     if (i < n - 1 && [0, 1, 3, 4, 5].includes(letter)) {
       const bw = kw * 0.58;

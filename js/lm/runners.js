@@ -3,10 +3,11 @@
 import { esc } from '../ui.js';
 import { QUIZ_KINDS, playQuestion } from './tasks-quiz.js';
 import { tocarPentagrama, barras, dictadoEscrito } from './tasks-staff.js';
-import { singTask, lyricsUnder, singResult, SONG_WORDS } from './tasks-voice.js';
+import { singTask, lyricsUnder, singResult, SONG_WORDS, SONG_WORDS2 } from './tasks-voice.js';
 import { singSong } from './tasks-song.js';
 import { stopGame, tapRhythm } from './tasks-rhythm.js';
 import { agilityTask } from './tasks-agility.js';
+import { lecturaDosVoces } from './tasks-duo.js';
 import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, genRhythm, genMelody, gainsFor } from './gen.js';
 import { pctOf, mistakeCodes } from './grade.js';
 import { creatividad } from './creative.js';
@@ -48,14 +49,16 @@ function cardFigure(card, i, env, still) {
 }
 const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
 // El ejemplo de la tarjeta con su compás (el suyo o el primero de la unidad), sus barras y, si la hay, su anacrusa
-function cardExample(card, env) {
-  const ex = scoreTokens(card.ejemplo);
+function cardExample(card, env, text = card.ejemplo) {
+  const ex = scoreTokens(text);
   const meter = card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
   return staffHtml(ex, { meter, pickup: card.anacrusa || 0, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
 }
 function cardHtml(card, i, env) {
   const example = card.ejemplo ? `<div class="lm-card-ex">${cardExample(card, env)}${playButton('lmCardPlay', 'Escuchar el ejemplo')}</div>` : '';
-  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}</div>`;
+  // ejemploCompleto: la escala o la idea entera, solo para mirarla (puede pasar de las notas que ya se leen)
+  const whole = card.ejemploCompleto ? `<div class="lm-card-ex lm-card-ex2"><p class="dict-staff-label">Entera, solo para mirarla</p>${cardExample(card, env, card.ejemploCompleto)}${playButton('lmCardPlay2', 'Escuchar entera')}</div>` : '';
+  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}${whole}</div>`;
 }
 async function showCards(host, cards, env, summary) {
   const unitColor = `--unit:var(--u${((env.unit - 1) % 8) + 1})`;
@@ -74,6 +77,7 @@ async function showCards(host, cards, env, summary) {
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
     if (play) play.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemplo }, env));
+    host.querySelector('#lmCardPlay2')?.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemploCompleto }, env));
     await continueButton(host, i + 1 < cards.length ? 'Siguiente' : 'A practicar');
   }
 }
@@ -125,6 +129,8 @@ async function cancionCantada(host, ex, env) {
   const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
     under: lyricsUnder(tokens, song.letra, env.nom, names, SONG_WORDS[song.titulo] || ''), intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición), siempre con su letra
+    under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, SONG_WORDS2[song.titulo] || '') : null,
     dynamics: Array.isArray(song.matices) ? song.matices : null,
   }, env);
   return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
@@ -352,5 +358,6 @@ async function repaso(host, ex, env) {
 }
 
 export const RUNNERS = {
+  'lectura-ritmica': lecturaDosVoces, // solo la de dos voces (voz1); las demás, en el ensayo rítmico (launcher)
   teoria, stop, agilidad, entonacion, 'cancion-cantada': cancionCantada, escribir, discriminacion, audicion, creatividad, repaso,
 };

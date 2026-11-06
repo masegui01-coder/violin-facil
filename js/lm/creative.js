@@ -24,8 +24,17 @@ export const RULE_NAME = {
 };
 const SOLFA_INDEX = { do: 0, re: 1, mi: 2, fa: 3, sol: 4, la: 5, si: 6 };
 const letterOf = step => (((step - stepOf('C4')) % 7) + 7) % 7;
-const lastSound = bar => [...(bar || [])].reverse().find(t => !t.rest) || null;
-const endsOn = (bar, letter) => { const t = lastSound(bar); return !!t && letterOf(t.step) === letter; };
+// Final de una frase en su último compás: la última nota que suena, sin los silencios del final y sin la anacrusa
+// de la frase siguiente (| C5h Rq G4q | acaba en C5: el G4 ya es la frase que viene)
+export function phraseEnd(bar) {
+  const ts = bar || [];
+  let i = ts.length - 1;
+  const lastRest = ts.map(t => !!t.rest).lastIndexOf(true);
+  if (lastRest > 0 && lastRest < ts.length - 1 && ts.slice(0, lastRest).some(t => !t.rest)) i = lastRest - 1;
+  for (; i >= 0; i--) if (!ts[i].rest) return ts[i];
+  return null;
+}
+const endsOn = (bar, letter) => { const t = phraseEnd(bar); return !!t && letterOf(t.step) === letter; };
 const MIN_B_CHANGES = 2; // compases de B distintos de los de A para que B sea «otra parte»
 const DYN = [['pp', 'pp'], ['p', 'p'], ['mp', 'mp'], ['mf', 'mf'], ['f', 'f'], ['ff', 'ff'], ['cresc', 'cresc.'], ['dim', 'dim.']];
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
@@ -182,7 +191,7 @@ function formRules({ rs, p, tokens, state, barBeats, bars }) {
     const half = bars / 2;
     const a = b.slice(off, off + half);
     const bPart = b.slice(off + half, off + bars);
-    out.push({ id: 'pregunta', ok: !!lastSound(a[half / 2 - 1]) && !endsOn(a[half / 2 - 1], 0) });
+    out.push({ id: 'pregunta', ok: !!phraseEnd(a[half / 2 - 1]) && !endsOn(a[half / 2 - 1], 0) });
     out.push({ id: 'respuesta', ok: endsOn(a[half - 1], 0) });
     out.push({ id: 'formaB', ok: bPart.length === half && bPart.filter((bar, k) => !same(bar || [], a[k] || [])).length >= MIN_B_CHANGES });
   }

@@ -5,13 +5,13 @@ import { esc } from '../ui.js';
 import { orderMark } from './grade.js';
 import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME } from './notes.js';
 import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel } from './kit.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
 import { playNotes, clicks, stopSound } from './sound.js';
 import { DYN_GAIN } from './gen.js';
 
 const LISTEN_BPM = 84;
 const PAIR_BPM = 60;
 const DYN_RANGE = [0.25, 1];
-const COUNT_SPREAD = 2;
 const FERMATA_STRETCH = 2.5; // una nota con calderón suena unas dos veces y media su valor
 
 // ---------- Sonido de una pregunta «escuchar…» ----------
@@ -89,22 +89,71 @@ async function choose(host, item, env, { options, correct, extraHtml = '', optio
   return { mark, mistake: mark === 'ok' ? null : item.code || item.id || LISTEN_MISTAKE[item.tipo] || 'teoria' };
 }
 
-const elegir = (host, item, env) => choose(host, item, env, { options: item.options, correct: [item.answer] });
+// Opciones barajadas en cada intento (semilla del intento + la pregunta): la correcta no cae siempre en el mismo sitio
+export function shuffledChoice(item, seed) {
+  const order = shuffle(item.options.map((_, i) => i), (seed >>> 0) + seedOf(item.id || item.q));
+  return { options: order.map(i => item.options[i]), correct: [order.indexOf(item.answer)] };
+}
+const elegir = (host, item, env) => choose(host, item, env, shuffledChoice(item, env.attempt ?? env.seed ?? 0));
 
-// ---------- Contar pulsos ----------
-function contar(host, item, env) {
-  // sin partitura, la pregunta es de cálculo («¿cuántas corcheas llenan un 2/4?»)
+// ---------- Contar (escribir el número) ----------
+// Se escribe la respuesta (o se ajusta con − y +): no se elige entre números dados. Sin partitura, es de cálculo
+// («¿cuántas corcheas llenan un 2/4?»); con ella, se cuentan pulsos, compases o semitonos de lo que se ve
+const COUNT_MAX = 99;
+async function contar(host, item, env) {
   const tokens = item.partitura ? scoreTokens(item.partitura) : null;
   const right = Number(item.respuesta);
-  const pool = [];
-  for (let d = -COUNT_SPREAD; d <= COUNT_SPREAD; d++) if (right + d >= 1) pool.push(right + d);
-  const options = shuffle(pool, seedOf(item.id || item.q)).slice(0, 4);
-  if (!options.includes(right)) options[0] = right;
-  const sorted = [...options].sort((a, b) => a - b);
-  return choose(host, item, env, {
-    options: sorted.map(String), correct: [sorted.indexOf(right)],
-    extraHtml: tokens ? staffHtml(tokens, { meter: item.compas || null, label: tokens.map(t => tokenLabel(t, env.nom)).join(', ') }) : '',
+  host.innerHTML = `${headHtml(item)}${item.play ? playButton('lmQPlay') : ''}${tokens ? staffHtml(tokens, { meter: item.compas || null, pickup: item.anacrusa || 0, label: tokens.map(t => tokenLabel(t, env.nom)).join(', ') }) : ''}
+    <div class="lm-count-in"><button type="button" class="round" data-dec aria-label="Uno menos">−</button>
+    <input type="number" inputmode="numeric" min="0" max="${COUNT_MAX}" data-count aria-label="Tu respuesta" placeholder="?">
+    <button type="button" class="round" data-inc aria-label="Uno más">+</button></div>
+    <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
+  const input = host.querySelector('[data-count]');
+  const step = d => { input.value = String(Math.max(0, Math.min(COUNT_MAX, (Number(input.value) || 0) + d))); env.say(input.value); };
+  host.querySelector('[data-dec]').addEventListener('click', () => step(-1));
+  host.querySelector('[data-inc]').addEventListener('click', () => step(1));
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); host.querySelector('[data-check]').click(); } });
+  if (item.play) host.querySelector('#lmQPlay').addEventListener('click', () => playQuestion(item.play, env));
+  host.querySelector('.lm-q').focus();
+  await onceClick(host, '[data-check]');
+  const given = input.value === '' ? null : Number(input.value);
+  const mark = given === right ? 'ok' : 'bad';
+  host.querySelectorAll('[data-count],[data-dec],[data-inc]').forEach(x => { x.disabled = true; });
+  host.querySelector('[data-check]').remove();
+  host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why || `Son ${right}.`);
+  return { mark, mistake: mark === 'ok' ? null : item.id || 'contar' };
+}
+
+// ---------- Señalar un compás en la partitura ----------
+// Cada compás escrito (entre barras) es un botón: «toca la anacrusa», «el compás con calderón», «dónde acaba la
+// pregunta»… calderon: n.º de compás (desde 0) cuya última nota lleva calderón
+function barButtons(item, env) {
+  const bars = item.partitura.split('|').map(x => x.trim()).filter(Boolean);
+  return bars.map((text, k) => {
+    const tokens = scoreTokens(`| ${text} |`);
+    const lay = layoutTokens(tokens, { clef: 'treble' });
+    const cells = tokens.map((t, i) => `<span class="lm-sc">${noteCell({ ...t, clef: 'treble', beam: lay[i].beam, up: lay[i].up, fermata: item.calderon === k && i === tokens.length - 1 })}</span>`).join('');
+    const close = k === bars.length - 1 ? endCell(false) : gapCell(true, null, 14);
+    return `<button type="button" class="lm-bar-btn" data-bar="${k}" aria-label="${esc(`Compás ${k + 1}: ${tokens.map(t => tokenLabel(t, env.nom)).join(', ')}`)}">${cells}<span class="lm-sc">${close}</span></button>`;
+  }).join('');
+}
+async function senalar(host, item, env) {
+  host.innerHTML = `${headHtml(item)}${item.play ? playButton('lmQPlay') : ''}
+    <div class="lm-staff lm-pick-bars" role="group" aria-label="Compases"><span class="lm-bargroup"><span class="lm-sc" aria-hidden="true">${clefCell('treble', item.compas || null)}</span></span>${barButtons(item, env)}</div>
+    <div class="lm-feedback"></div>`;
+  if (item.play) host.querySelector('#lmQPlay').addEventListener('click', () => playQuestion(item.play, env));
+  host.querySelector('.lm-q').focus();
+  const b = await onceClick(host, '[data-bar]');
+  const chosen = Number(b.dataset.bar);
+  const mark = chosen === Number(item.respuesta) ? 'ok' : 'bad';
+  host.querySelectorAll('[data-bar]').forEach(x => {
+    x.disabled = true;
+    const k = Number(x.dataset.bar);
+    if (k === Number(item.respuesta)) x.classList.add('right');
+    else if (k === chosen) x.classList.add('wrong');
   });
+  host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why || '');
+  return { mark, mistake: mark === 'ok' ? null : item.id || 'senalar' };
 }
 
 // ---------- Completar el compás con una figura ----------
@@ -205,7 +254,7 @@ async function nombrarNotas(host, item, env) {
 }
 
 export const QUIZ_KINDS = {
-  elegir, contar, completar, emparejar, ordenar, nombrarNotas,
+  elegir, contar, completar, emparejar, ordenar, nombrarNotas, senalar,
   escucharCompas: elegir, escucharIntervalo: elegir, escucharMatiz: elegir, escucharModo: elegir, escucharFrase: elegir, escucharForma: elegir,
 };
 

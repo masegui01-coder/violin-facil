@@ -8,7 +8,7 @@ import { t, currentLang } from '../i18n.js';
 import { getState } from '../store.js';
 import { SECTION_NAME, VARIANT_NAME } from './catalog.js';
 import { figureHtml, CARD_FIGURE } from './figures/index.js';
-import { SONG_WORDS } from './tasks-voice.js';
+import { SONG_WORDS, SONG_WORDS2 } from './tasks-voice.js';
 
 const MARGIN = 16;
 const WIDTH = 178;
@@ -95,9 +95,17 @@ export async function unitPdf(unit) {
       para(`Lyrics (sung in Spanish): ${ascii(words)}`, { size: 9, gray: 60, gap: 1 });
       if (t(words) !== words) para(`Meaning: ${plain(words)}`, { size: 9, gray: 60, gap: 4 });
     } else if (words) para(ascii(words), { size: 9, gray: 60, gap: 4 });
+    // 2.ª estrofa (se canta en la segunda vuelta, tras la barra de repetición)
+    const words2 = SONG_WORDS2[unit.song.titulo];
+    if (words2) para(`${t('2.ª estrofa')}: ${ascii(words2)}`, { size: 9, gray: 60, gap: 4 });
   }
   para(t('Ejercicios'), { size: 12, bold: true });
-  unit.exercises.forEach(e => para(`${plain(SECTION_NAME[e.section])} · ${plain(e.title)} (${plain(VARIANT_NAME[e.variant])})`, { size: 9, gap: 0.6 }));
+  // la sección solo si el título no empieza ya por ella («Teoría · El latido», no «Teoría · Teoría · El latido»)
+  unit.exercises.forEach(e => {
+    const sec = plain(SECTION_NAME[e.section]);
+    const title = plain(e.title);
+    para(`${title.toLowerCase().startsWith(sec.toLowerCase()) ? title : `${sec} · ${title}`} (${plain(VARIANT_NAME[e.variant])})`, { size: 9, gap: 0.6 });
+  });
   const blob = doc.footer((n, total) => `Band Flow · ${plain(unit.title)} - ${n}/${total}`).blob();
   return sharePdf(blob, `lenguaje-musical-u${unit.unit}.pdf`, plain(unit.title));
 }

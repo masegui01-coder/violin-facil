@@ -239,6 +239,12 @@ export const SONG_WORDS = {
   '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
 };
 
+// La 2.ª estrofa (letra2) de las canciones que la tienen
+export const SONG_WORDS2 = {
+  'Vals de los relojes': 'Tic tac tic tac Marca el compás Uno, dos, tres, ¡pum! y vuelta a empezar',
+  'Saloma del barco fantasma': 'Sopla viento sur, ¡eho! Lleva el barquito, ¡eho! Cantan las gaviotas al ver tierra a la vista.',
+};
+
 // Resultado de una toma cantada según el contrato (marcas → porcentaje y errores)
 export function singResult(take) {
   const g = gradeSung(take.names, take.cents, { tolerance: take.tolerance });

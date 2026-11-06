@@ -34,8 +34,26 @@ function fitStaff(staff) {
   });
 }
 
+// Sistema a dos voces: cada compás es una columna con una fila por voz. La columna que abre renglón lleva la llave y
+// una clave en cada fila
+function fitSystem(sys) {
+  sys.querySelectorAll('.lm-sysclef').forEach(c => c.remove());
+  const cols = [...sys.querySelectorAll(':scope > .lm-sysbar')];
+  if (!cols.length) return;
+  fitWidth(sys, cols);
+  let lineTop = cols[0].offsetTop;
+  cols.slice(1).forEach(c => {
+    c.classList.remove('lm-sysstart');
+    if (c.offsetTop <= lineTop + 2) return;
+    lineTop = c.offsetTop;
+    c.classList.add('lm-sysstart');
+    c.querySelectorAll(':scope > .lm-sysrow').forEach(r => r.insertAdjacentHTML('afterbegin', `<span class="lm-sc lm-sysclef" aria-hidden="true">${clefCell('treble')}</span>`));
+  });
+}
+
 export function fitSystems(root) {
   root.querySelectorAll(STAFFS).forEach(fitStaff);
+  root.querySelectorAll('.lm-system').forEach(fitSystem);
 }
 
 // Observa un contenedor: tras cada cambio (salvo los propios) o cambio de ancho, se recolocan las claves

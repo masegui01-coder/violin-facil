@@ -12,8 +12,8 @@ import { sightReading, rhythmReading, technique, keyLabel } from '../generate.js
 import { octaveShiftFor } from '../songs.js';
 import { launch, currentCourse } from '../launch.js';
 import { LANGUAGE } from '../book-theory.js';
-import { barBeatsOf, scoreTokens } from './notes.js';
-import { genRhythm, ostinatoTokens } from './gen.js';
+import { barBeatsOf } from './notes.js';
+import { genRhythm } from './gen.js';
 import { lmExercise, lmUnit, lmSong, TYPES } from './catalog.js';
 import { recordLmResult } from './results.js';
 import { LM_TOOL_EVENT } from './bridge.js';
@@ -53,15 +53,13 @@ export function readingMode(ex) {
   return { metro, oneClick: /sin cuenta previa/.test(modo), syllables: ex.variant === 'facil' && !!ex.params.vocablos, hint };
 }
 
-// Lectura rítmica con palmas: el ensayo rítmico de siempre (micrófono, metrónomo y corrección golpe a golpe).
-// A dos voces (voz1), la app toca el ostinato mientras el alumno palmea su voz
+// Lectura rítmica con palmas: el ensayo rítmico de siempre (micrófono, metrónomo y corrección golpe a golpe)
 function openTool(ex) {
   const p = ex.params;
   if (ex.type === 'lectura-ritmica') {
     const time = Number(String(p.compas || '4/4').split('/')[0]);
     const song = { id: ex.id, title: ex.title, by: '', key: 'C', time, bpm: p.tempo || 72, score: p.partitura, pickup: p.anacrusa || 0 };
-    const ostinato = p.voz1 ? [{ notes: ostinatoTokens(scoreTokens(p.partitura), p).map(t => ({ start: t.start, beats: t.beats, midi: t.midi, rest: t.rest })) }] : null;
-    const lesson = { ...rhythmLesson(ex, song), lmMode: readingMode(ex), ...(p.matices ? { dynamics: p.matices } : {}), ...(ostinato ? { accompaniment: ostinato, ostinato: true } : {}) };
+    const lesson = { ...rhythmLesson(ex, song), lmMode: readingMode(ex), ...(p.matices ? { dynamics: p.matices } : {}) };
     go('rhythm', { lesson, from: 'lm', eyebrow: 'Lenguaje musical' });
     return;
   }
@@ -181,7 +179,8 @@ export function openLmExercise(idOrEx) {
   const ex = typeof idOrEx === 'string' ? lmExercise(idOrEx) : idOrEx;
   if (!ex) { toast('Este ejercicio todavía no está disponible'); return; }
   active = { ex, startedAt: performance.now() };
-  if (TYPES[ex.type] === 'lm') go('lm', { ex });
+  // la lectura a dos voces se hace en la pantalla del curso: sistema de dos pentagramas y ostinato siempre sonando
+  if (TYPES[ex.type] === 'lm' || (ex.type === 'lectura-ritmica' && ex.params.voz1)) go('lm', { ex });
   else openTool(ex);
 }
 

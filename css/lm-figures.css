@@ -25,7 +25,7 @@
 .lmf-t.ok { fill: var(--f-ok); }
 .lmf-t.on { fill: var(--f-paper); }
 /* Números dentro de una insignia (círculo o pastilla de color): caben en su forma, más pequeños */
-.lmf-t.s.on { font-size: 12px; }
+.lmf-t.s.on { font-size: 14px; }
 .lmf-t.dyn { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-weight: 700; font-size: 26px; }
 .lmf-t.music { font-family: var(--f-music); }
 

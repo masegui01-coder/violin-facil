@@ -4,7 +4,7 @@ import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
 import { barBeatsOf } from './notes.js';
-import { staffHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
+import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
 
@@ -24,8 +24,14 @@ function stopScore(tokens, ostinato, base, env) {
   const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0 };
   const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
   if (!ostinato) return rhythm;
-  return `<div class="lm-staff-two"><p class="dict-staff-label">Voz 1: la app (el ostinato, se repite)</p>${staffHtml(ostinato, { meter, pickup: base.anacrusa || 0, label: ostinato.map(t => tokenLabel(t, env.nom)).join(', ') })}
-    <p class="dict-staff-label">Voz 2: tú (palméala o cántala mientras escuchas)</p>${rhythm}</div>`;
+  return twoVoices(tokens, ostinato, base, env);
+}
+
+// Las dos voces como un sistema: voz 1 (el ostinato de la app) arriba y voz 2 (la del alumno) abajo, compás a compás
+export function twoVoices(tokens, ostinato, base, env, marks = []) {
+  const label = `Voz 1, la app: ${ostinato.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}. Voz 2, tú: ${tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}`;
+  return `<p class="lm-system-legend">Arriba, voz 1: la app (el ostinato, se repite) · Abajo, voz 2: tú</p>
+    ${systemHtml([{ tokens: ostinato }, { tokens, marks }], { meter: base.compas || '4/4', pickup: base.anacrusa || 0, label })}`;
 }
 
 const PULSE_LEVEL = 0.25;

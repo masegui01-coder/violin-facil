@@ -560,3 +560,71 @@ test('U7 a dos voces: la voz 1 es el ostinato del ejercicio (su ritmo, repetido)
   const ostF = ostinatoTokens(scoreTokens(facil.partitura), facil);
   assert.ok(ostF.length > 0 && ostF.every(t => t.midi === 60));
 });
+
+// ---------- Creatividad: composiciones correctas que imitan los modelos del curso (evaluación 4) ----------
+test('creatividad: el final admite un silencio detrás y la forma mira el final de la frase, no la anacrusa siguiente', async () => {
+  const { extraRules, phraseEnd } = await import('../js/lm/creative.js');
+  const toks = s => parseTokens(s.replace(/\|/g, ' '));
+  // U3 Media: acaba en do y lleva el silencio de blanca obligatorio
+  const u3 = checkComposition(toks('C4h E4h | G4q A4q G4h | E4q G4q E4q G4q | C4h Rh'), { barBeats: 4, bars: 4, endSteps: [stepOf('C4')] });
+  assert.ok(u3.rules.find(r => r.id === 'final').ok, 'C4h Rh acaba en do');
+  // U8 Media, como «¿Te vienes?»: cada frase entra en anacrusa (Rq G4q) y la última acaba con silencio
+  const song = toks('G4q | C5q B4q A4q G4q | D5h Rq G4q | C5q B4q A4q G4q | C5h Rq G4q | E4q F4q G4q A4q | B4h Rq G4q | A4q G4q F4q D4q | C4h Rq');
+  const p = lmExercise('lm1-u8-creatividad-a-medio').params;
+  const rules = extraRules({ rs: p.restricciones, p, tokens: song, given: null, signs: null, state: { pickup: 1 }, lyrics: 'te vie nes', barBeats: 4, bars: 8, dyn: [] });
+  const byId = Object.fromEntries(rules.map(r => [r.id, r.ok]));
+  assert.deepEqual([byId.pregunta, byId.respuesta, byId.formaB], [true, true, true]);
+  const fin = checkComposition(song, { barBeats: 4, bars: 8, pickup: 1, endSteps: [stepOf('C4'), stepOf('C5')] });
+  assert.ok(fin.rules.find(r => r.id === 'final').ok, 'C4h Rq acaba en do');
+  assert.equal(phraseEnd(toks('C5h Rq G4q')).name, 'C5');
+  assert.equal(phraseEnd(toks('B4q A4q')).name, 'A4');
+  assert.equal(phraseEnd(toks('C4h Rh')).name, 'C4');
+  // y una respuesta que no acaba en do sigue sin valer
+  const wrong = extraRules({ rs: p.restricciones, p, tokens: toks('G4q | C5q B4q A4q G4q | D5h Rq G4q | C5q B4q A4q G4q | E5h Rq G4q | E4q F4q G4q A4q | B4h Rq G4q | A4q G4q F4q D4q | C4h Rq'), given: null, signs: null, state: { pickup: 1 }, lyrics: 'x', barBeats: 4, bars: 8, dyn: [] });
+  assert.equal(wrong.find(r => r.id === 'respuesta').ok, false);
+});
+
+// ---------- Evaluación 4 ----------
+test('ningún ejercicio que se puntúa pide notas no enseñadas: cada lista de notas ⊆ las de su unidad', () => {
+  const asName = n => (/^[A-G]/.test(n) ? n : solfaToName(n));
+  const walk = (o, path, fn) => {
+    if (Array.isArray(o)) o.forEach((v, i) => walk(v, `${path}.${i}`, fn));
+    else if (o && typeof o === 'object') Object.entries(o).forEach(([k, v]) => ((k === 'notas' || k === 'notasEs') && Array.isArray(v) ? fn(v, `${path}.${k}`) : walk(v, `${path}.${k}`, fn)));
+  };
+  const bad = [];
+  LM_LEVELS[0].units.forEach(u => {
+    const known = new Set(u.notes.map(solfaToName));
+    u.exercises.forEach(e => walk(e.params, e.id, (list, path) => {
+      if (/audicion/.test(path)) return; // las audiciones se escuchan, no se leen
+      list.map(asName).filter(n => n && /\d/.test(n) && !known.has(n)).forEach(n => bad.push(`${path}: ${n}`));
+    }));
+  });
+  assert.deepEqual(bad, []);
+});
+
+test('elegir: las opciones se barajan en cada intento y la correcta cae en cualquier sitio (reparto casi uniforme)', async () => {
+  const { shuffledChoice } = await import('../js/lm/tasks-quiz.js');
+  const items = allLmExercises().flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])])
+    .filter(it => (it.tipo === 'elegir' || /^escuchar/.test(it.tipo)) && it.options && it.options.length === 3);
+  const seen = [0, 0, 0];
+  for (let attempt = 1; attempt <= 20; attempt++) {
+    items.forEach(it => {
+      const c = shuffledChoice(it, attempt * 7919);
+      assert.equal(c.options[c.correct[0]], it.options[it.answer], it.id);
+      seen[c.correct[0]]++;
+    });
+  }
+  const total = seen.reduce((a, b) => a + b, 0);
+  seen.forEach((n, k) => assert.ok(n / total > 0.25 && n / total < 0.42, `posición ${k + 1}: ${Math.round(n * 100 / total)} %`));
+  // el mismo intento, el mismo orden (se puede repetir la corrección); otro intento, otro orden
+  const it = items[0];
+  assert.deepEqual(shuffledChoice(it, 5), shuffledChoice(it, 5));
+});
+
+test('variedad: al menos el 40 % de las preguntas de teoría y audición son activas (no de elegir)', () => {
+  const qs = allLmExercises().filter(e => e.section === 'teoria' || e.section === 'audicion').flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])]);
+  const unique = [...new Map(qs.map(q => [q.id, q])).values()];
+  const active = unique.filter(q => q.tipo !== 'elegir' && !/^escuchar/.test(q.tipo));
+  assert.ok(active.length / unique.length >= 0.4, `${active.length} de ${unique.length}`);
+  ['senalar', 'contar', 'tocarPentagrama', 'completar', 'ordenar', 'barras'].forEach(t => assert.ok(unique.some(q => q.tipo === t), t));
+});

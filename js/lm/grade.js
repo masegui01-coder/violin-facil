@@ -154,14 +154,15 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
     if (Math.floor(before / barBeats + 1e-9) !== Math.floor((sum - 1e-9) / barBeats)) crosses = true;
   });
   const sounding = tokens.filter(t => !t.rest);
-  const last = tokens[tokens.length - 1];
+  // el final es la última nota que suena: un silencio detrás (| C4h Rh |) no lo cambia
+  const last = [...tokens].reverse().find(t => !t.rest);
   const rules = [
     { id: 'longitud', ok: Math.abs(total - barBeats * bars) < 1e-6 },
     { id: 'compases', ok: !crosses && tokens.length > 0 },
     { id: 'figuras', ok: !figures || tokens.every(t => figures.includes(figKey(t))) },
   ];
   if (notes) rules.push({ id: 'notas', ok: sounding.length > 0 && sounding.every(t => notes.includes(t.step)) });
-  if (endSteps) rules.push({ id: 'final', ok: !!last && !last.rest && endSteps.includes(last.step) && (!endFigure || last.dur === endFigure) });
+  if (endSteps) rules.push({ id: 'final', ok: !!last && endSteps.includes(last.step) && (!endFigure || last.dur === endFigure) });
   if (maxLeap !== null) rules.push({ id: 'saltos', ok: sounding.every((t, i) => i === 0 || Math.abs(t.step - sounding[i - 1].step) <= maxLeap) });
   if (mustFigures) {
     const has = (t, k) => (/^[A-G][#b]?\d$/.test(k) ? !t.rest && nameOfStep(t.step) === k : figKey(t) === k);
