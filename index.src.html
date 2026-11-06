@@ -62,6 +62,10 @@
 <!-- Teclado: primer elemento con foco; lleva al título de la pantalla actual (router.js) -->
 <a class="skip-link" href="#main">Saltar al contenido</a>
 <div class="shell">
+  <!-- Modo prueba (testers sin cuenta): papel, caducidad, cambiar de papel y salir (js/screens/demo.js) -->
+  <div id="demoBanner" class="demo-banner" role="region" aria-label="Modo prueba" hidden></div>
+  <!-- Modo tester (usuarios con cuenta): ver el Aula como alumno o profesor con una clase de ejemplo (js/screens/tester.js) -->
+  <div id="testerBanner" class="demo-banner" role="region" aria-label="Modo tester" hidden></div>
 
   <!-- Barra superior de las pestañas -->
   <header id="topbar" class="topbar" hidden>

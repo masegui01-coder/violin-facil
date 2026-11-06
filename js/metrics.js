@@ -6,8 +6,9 @@ const WEEKS = 8;
 // Beta: toda cuenta iniciada es tester y ve todo el contenido (lecciones, los tres libros, Pro, libro de ritmo).
 // Ponerlo a false el día que haya pagos: entonces solo lo verán los que tengan el rol (roles/{uid}) o el administrador.
 export const BETA_ALL_TESTERS = true;
-export const hasFullContent = ({ signedIn, admin = false, proRole = false }) =>
-  !!signedIn && (BETA_ALL_TESTERS || admin || proRole);
+// Modo prueba (demo, sin cuenta): también ve todo el contenido, mientras dure la prueba
+export const hasFullContent = ({ signedIn, admin = false, proRole = false, demo = false }) =>
+  !!demo || (!!signedIn && (BETA_ALL_TESTERS || admin || proRole));
 
 const activeIn = (list, days, now) => list.filter(t => now - (t.lastSeen || 0) < days * DAY_MS).length;
 const countBy = (list, key) => Object.entries(list.reduce((m, t) => {

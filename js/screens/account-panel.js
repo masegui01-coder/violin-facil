@@ -10,6 +10,7 @@ import { openAccountReminder } from './account.js';
 import { BETA_ALL_TESTERS } from '../metrics.js';
 import { listProTesters, setProTester } from '../roles-api.js';
 import { sheet } from './band-ui.js';
+import { testerControlHtml, bindTesterControls } from './tester.js';
 import { loadOwnedSpaces, transferSpace, deleteSpace } from '../spaces-api.js';
 import { DELETE, defaultChoice, spaceKey, choicesValid, stateAfterSpaces } from '../spaces.js';
 
@@ -31,8 +32,10 @@ export async function renderAccountPanel() {
       <p class="muted small">Las grabaciones y las partituras importadas se quedan en este dispositivo.</p>
       ${consent}
       ${getState().proTester ? `<p><span class="pill ok">${BETA_ALL_TESTERS ? 'Tester de la beta' : 'Tester pro'}</span> <span class="muted small">Tienes abiertas todas las lecciones y los tres libros de cada instrumento.</span></p>` : ''}
+      <div id="accTester">${testerControlHtml()}</div>
       <div id="accAdmin"></div>
       <div class="row"><button type="button" class="btn ghost small" id="accSignOut">Cerrar sesión</button><button type="button" class="btn ghost small danger" id="accDelete">Borrar mi cuenta</button></div>`;
+    bindTesterControls($('accTester'));
     $('accSignOut').addEventListener('click', signOut);
     $('accDelete').addEventListener('click', () => { removeAccount().catch(e => toast(accountErrorText(e))); });
     if (await isAdmin(acc.uid)) {

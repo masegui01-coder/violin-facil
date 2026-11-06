@@ -8,13 +8,15 @@ import { onLmResult } from './lm/results.js';
 import { cleanLmResult, addToLog, applyToTasks, buildSummary, classKey } from './aula-summary.js';
 import { lessonPct } from './aula.js';
 import { termOf } from './aula-report.js';
+import { withTesterClasses } from './tester-view.js';
 
 const PUBLISH_DELAY_MS = 1500;
 const REFRESH_AFTER_MS = 6 * 3600e3; // al abrir la app, se publica si hace más de 6 h (minutos y racha al día)
 const STARTUP_DELAY_MS = 8000;
 
 const aula = () => getState().aula || {};
-export const myClasses = () => aula().classes || [];
+// (en el modo tester, como alumno, también la clase de ejemplo: tester-view.js)
+export const myClasses = () => withTesterClasses(aula().classes || [], getState());
 
 let exercisesLoad = null;
 // Catálogo de Lenguaje en plano (para saber qué ejercicios cuentan en cada tarea)
@@ -34,7 +36,7 @@ async function record(attempt, result) {
   const exercises = await lmExercises();
   const now = aula();
   const log = addToLog(now.log, result, termOf(new Date(attempt.at)).id);
-  const prog = applyToTasks(now, attempt, exercises);
+  const prog = applyToTasks({ ...now, classes: myClasses() }, attempt, exercises); // myClasses: también la de ejemplo (modo tester)
   update({ aula: { ...aula(), log, prog } });
   publishSoon();
 }

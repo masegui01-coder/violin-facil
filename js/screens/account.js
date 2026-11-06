@@ -8,6 +8,8 @@ import { watchAccount, currentAccount, onAccount, signInWithGoogle, signUpWithEm
 import { startSync, stopSync, schedulePush, flushPush, armSync } from '../sync.js';
 import { getState, update, replaceState, subscribe, today } from '../store.js';
 import { validateAccountForm, fieldsForError, reminderText, reminderDue } from '../account-form.js';
+import { demoSession } from '../demo.js';
+import { demoEntryHtml, bindDemoEntry } from './demo.js';
 
 const GRACE_DAYS = 7;
 const DAY_MS = 86400000;
@@ -138,9 +140,10 @@ async function beginSync(account) {
 // ---------- Pantalla obligatoria ----------
 function renderScreen() {
   const late = getState().onboarded;
-  $('accountBody').innerHTML = formHtml('ac', welcomeHtml(late));
+  $('accountBody').innerHTML = formHtml('ac', welcomeHtml(late)) + demoEntryHtml();
   warmPopupsSoon();
   bindForm('ac', renderScreen, afterSignIn);
+  bindDemoEntry();
 }
 
 register('account', { enter: renderScreen });
@@ -175,6 +178,8 @@ export async function accountGate() {
   try { await watchAccount(); } catch (e) { leaveGate(); window.dispatchEvent(new CustomEvent('account-ready')); return; }
   onAccount(acc => { if (!acc) { syncing = false; stopSync(); } });
   const account = currentAccount();
+  // Modo prueba (sesión anónima de tester): ni pantalla de acceso ni aviso para crear la cuenta mientras dure
+  if (!account && demoSession(getState())) { leaveGate(); return; }
   if (account) {
     const decision = await beginSync(account).catch(() => null);
     if (decision === 'download' && TABS.includes(currentScreen())) go(currentScreen());

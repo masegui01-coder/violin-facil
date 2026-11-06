@@ -32,6 +32,9 @@ import { refreshRhythmBookTool } from './screens/rhythm-book-tool.js';
 import { initAnalytics } from './analytics.js';
 import { cloudConfigured } from './cloud.js';
 import { registerServiceWorker } from './sw-update.js';
+import { demoSession, demoExpired } from './demo.js';
+import './screens/demo.js'; // modo prueba: aviso fijo arriba, cambiar de papel y salir
+import './screens/tester.js'; // modo tester (con cuenta): ver el Aula como alumno o profesor con una clase de ejemplo
 
 // Pantallas pesadas o poco usadas: se descargan al abrirlas por primera vez
 lazy('band', () => import('./screens/band.js'));
@@ -108,7 +111,8 @@ setLang(getState().lang);
 const applyRole = async acc => {
   const admin = !!acc && await isAdmin(acc.uid);
   const proRole = !!acc && !BETA_ALL_TESTERS && !admin && await isProTesterUid(acc.uid);
-  const pro = hasFullContent({ signedIn: !!acc, admin, proRole });
+  const demo = !acc && !!demoSession(getState()) && !demoExpired(getState());
+  const pro = hasFullContent({ signedIn: !!acc, admin, proRole, demo });
   if (acc !== currentAccount()) return; // cambió la cuenta mientras se comprobaba
   if (pro !== !!getState().proTester || admin !== !!getState().adminUser) update({ proTester: pro, adminUser: admin });
   refreshRhythmBookTool();
