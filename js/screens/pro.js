@@ -2,10 +2,10 @@
 // lista los niveles del curso (viento, violín o percusión) y cada
 // nivel se abre con tres pestañas. Libro: descripción, solfeo, técnica de tu instrumento y consejo. Relax: retos
 // rápidos (pro-relax.js). Práctica: partitura, rutina de pasos, lo que escucha el micrófono y el botón para tocar.
-import { $, esc, icon, starsHtml, toast } from '../ui.js';
+import { $, esc, icon, starsHtml } from '../ui.js';
 import { register, go } from '../router.js';
 import { L } from '../tips-l10n.js';
-import { getState, update, instrumentProgress, recordPro, logPractice } from '../store.js';
+import { getState, instrumentProgress, recordPro, logPractice } from '../store.js';
 import { instrumentById } from '../instruments.js';
 import { parseScore } from '../music.js';
 import { createStaff } from '../staff.js';
@@ -23,8 +23,8 @@ const TXT = {
   eyebrow: L('Método Pro · Viento', 'Pro method · Winds'), eyebrowViolin: L('Método Pro · Violín', 'Pro method · Violin'),
   eyebrowPerc: L('Método Pro · Percusión', 'Pro method · Percussion'), course: L('Curso 1 · Iniciación', 'Course 1 · Beginner'),
   intro: L('Un camino aparte del curso, para estudiar como en el conservatorio pero desde el móvil. Cada nivel tiene tres pestañas: Libro para entender el solfeo y la técnica, Relax para practicarlo como un juego (leer, escribir notas y marcar ritmos) y Práctica para tocarlo con el micrófono.', 'A path separate from the course, to study as in a music school but from your phone. Each level has three tabs: Book to understand reading and technique, Relax to practise it as a game (reading, writing notes and tapping rhythms) and Practice to play it with the microphone.'),
-  soonEyebrow: L('Método Pro', 'Pro method'), soon: L('Próximamente', 'Coming soon'), toCasual: L('Ir a Casual', 'Go to Casual'),
-  notYet: L('El método Pro para tu instrumento está en preparación. Mientras tanto, sigue el curso en Casual o en Libro: tu progreso cuenta igual.', 'The Pro method for your instrument is in the works. In the meantime, follow the course in Casual or Book: your progress counts just the same.'),
+  soonEyebrow: L('Método Pro', 'Pro method'), soon: L('Próximamente', 'Coming soon'), toCasual: L('Ir a Por mi cuenta', 'Go to On my own'),
+  notYet: L('El método Pro para tu instrumento está en preparación. Mientras tanto, sigue el curso en Por mi cuenta o el libro de tu instrumento: tu progreso cuenta igual.', 'The Pro method for your instrument is in the works. In the meantime, follow the course in On my own or your instrument book: your progress counts just the same.'),
   introPerc: L('Un camino aparte del curso para aprender caja como en el conservatorio, pero jugando. Libro para entender el ritmo y la técnica de baquetas, Relax para practicarlo como un videojuego (ordenar las manos, tocar con dos pads, sumar rachas) y Práctica para tocarlo en el pad con el micrófono.', 'A path separate from the course to learn snare as in a music school, but playing. Book to understand rhythm and stick technique, Relax to practise it like a video game (ordering hands, playing two pads, building streaks) and Practice to play it on the pad with the microphone.'),
   hands: L('Las manos de este nivel', 'The sticking in this level'), surface: L('Superficie:', 'Surface:'), bestPoints: L('Tu récord:', 'Your record:'), points: L('puntos', 'points'),
   playMic: L('Tocar con el micrófono', 'Play with the microphone'),
@@ -56,42 +56,21 @@ const levels = () => buildMethod(inst(), getState().nom);
 const saved = () => (getState().pro || {})[getState().instrument] || {};
 const statesOf = list => levelStates(list, saved(), instrumentProgress(), getState().unlockAll || getState().proTester);
 
-// ---------- Pestaña Pro de Aprender: Aula (aula-home.js) o Método Pro ----------
-// El Método Pro sigue entero aquí (y es temario asignable en el Aula). Quien ya lo usaba y no está en ninguna clase
-// ni tiene Aula entra directamente en él.
-const AULA_TXT = { switch: L('Aula o Método Pro', 'Classroom or Pro method'), aula: L('Aula', 'Classroom'), method: L('Método Pro', 'Pro method') };
-function proView() {
-  const s = getState();
-  if (s.aulaView === 'aula' || s.aulaView === 'method') return s.aulaView;
-  const usedMethod = Object.keys(saved()).length > 0;
-  const inAula = !!(s.aula && ((s.aula.classes || []).length || s.aula.schoolId)) || !!(s.school && s.school.role === 'teacher');
-  return usedMethod && !inAula ? 'method' : 'aula';
-}
-
-export function renderPro() {
-  const box = $('proView');
-  const view = proView();
-  box.innerHTML = `<div class="seg aula-switch" role="group" aria-label="${esc(AULA_TXT.switch)}">
-      <button type="button" data-pro-view="aula" aria-pressed="${view === 'aula'}">${esc(AULA_TXT.aula)}</button>
-      <button type="button" data-pro-view="method" aria-pressed="${view === 'method'}">${esc(AULA_TXT.method)}</button></div>
-    <div id="proPane"></div>`;
-  box.querySelectorAll('[data-pro-view]').forEach(b => b.addEventListener('click', () => {
-    update({ aulaView: b.dataset.proView });
-    renderPro();
-  }));
-  if (view === 'method') renderMethodList($('proPane'));
-  else import('./aula-home.js').then(m => m.renderAulaHome($('proPane')), () => toast('No se ha podido abrir. Revisa la conexión.'));
+// ---------- Con profesor › Mi libro › Método Pro (js/screens/learn.js) ----------
+// El Aula va arriba de Con profesor (aula-home.js); aquí solo la lista de niveles. Sigue siendo temario asignable en el Aula.
+export function renderMethod(box) {
+  renderMethodList(box);
 }
 
 function renderMethodList(box) {
   if (!hasMethod(inst())) {
     box.innerHTML = `<div class="pro-hero"><p class="eyebrow">${esc(TXT.soonEyebrow)}</p><h2>${esc(TXT.soon)}</h2><p>${esc(TXT.notYet)}</p>
       <button type="button" class="btn" id="proToCasual">${esc(TXT.toCasual)}</button></div>`;
-    // Salida: el mismo segmentado de Aprender, en «Casual»
+    // Salida: el mismo segmentado de Aprender, en «Por mi cuenta»
     $('proToCasual').addEventListener('click', () => {
-      const casual = document.querySelector('[data-learn-view="casual"]');
-      casual.click();
-      casual.focus();
+      const solo = document.querySelector('[data-learn-path="solo"]');
+      solo.click();
+      solo.focus();
     });
     return;
   }

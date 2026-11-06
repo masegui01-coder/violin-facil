@@ -82,7 +82,7 @@ async function checkAllUnits(lang, { dark = true, big = false, viewport = PHONE_
   const { page, errors, close } = await openApp(env, { viewport, seed: { lang } });
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
   if (big) await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.$eval('[data-libro="lm"]', b => b.click());
   await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
   const problems = [];
   let cards = 0;
@@ -158,7 +158,7 @@ test('la ficha de la unidad en PDF lleva la ilustración de cada tarjeta de teor
     const create = URL.createObjectURL.bind(URL);
     URL.createObjectURL = blob => { if (blob.type === 'application/pdf') window.__pdf = blob; return create(blob); };
   });
-  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.$eval('[data-libro="lm"]', b => b.click());
   await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
   await page.$eval('.lm-unit-card[data-unit="1"]', b => b.click());
   await page.waitForSelector('[data-lm-pdf]', { timeout: STEP_TIMEOUT });
@@ -177,7 +177,7 @@ for (const big of [false, true]) {
   test(`señalar el compás a 375 px${big ? ' con la letra al 200 %' : ''}: clave en cada renglón y sin cortes`, async () => {
     const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
     if (big) await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-    await page.$eval('[data-learn-view="lm"]', b => b.click());
+    await page.$eval('[data-libro="lm"]', b => b.click());
     await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
     await page.$eval('.lm-unit-card[data-unit="8"]', b => b.click());
     // la teoría Fácil de U8 empieza, tras sus fichas, por «toca la anacrusa»

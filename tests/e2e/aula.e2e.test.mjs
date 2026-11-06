@@ -158,8 +158,7 @@ test('profesor crea clase y tarea; el alumno la ve y la hace; el profesor ve su 
   // (sin recargar: la semilla de la prueba volvería a escribir el almacenamiento local)
   await sp.$eval('[data-tab="learn"]', b => b.click());
   await waitVisible(sp, 'learn');
-  await sp.waitForSelector('[data-pro-view="aula"]', { timeout: 10000 });
-  await sp.$eval('[data-pro-view="aula"]', b => b.click());
+  await sp.waitForSelector('[data-learn-path="profe"][aria-pressed="true"]', { timeout: 10000 }); // Con profesor: el Aula arriba
   await sp.waitForSelector('.aula-task .stamp, .aula-done', { timeout: 10000 });
   await sp.evaluate(() => document.querySelectorAll('details.aula-done').forEach(d => { d.open = true; }));
   assert.match(await text(sp, '#proView'), /¡Muy bien!/);
@@ -183,8 +182,8 @@ test('sin licencia: presentación del Aula y «Solicitar acceso»; el Método Pr
   assert.equal(school.name, 'Academia Do Re Mi');
   assert.ok(school.proRequestedAt, 'la petición queda a la vista del administrador');
   assert.ok(!school.premium, 'el profesor nunca se pone la licencia');
-  await page.click('[data-pro-view="method"]');
-  await page.waitForSelector('#proPane .pro-level', { timeout: 10000 });
+  await page.click('[data-libro="method"]'); // Con profesor › Mi libro › Método Pro
+  await page.waitForSelector('#methodView .pro-level', { timeout: 10000 });
   assert.deepEqual(await axeViolations(page), [], 'axe: presentación y Método Pro');
   assert.deepEqual(errors, []);
   await close();

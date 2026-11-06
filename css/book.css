@@ -1,9 +1,8 @@
 /* Modo libro, estantería, página del libro y lecturas rítmicas. Parte de la hoja de estilos de Band Flow: ver el orden en index.html. */
 
 /* ---------- Modo libro ---------- */
-.learn-mode { margin-bottom: 14px; }
 .book { display: flex; flex-direction: column; gap: 12px; }
-.book-head h1 { margin: 2px 0 6px; }
+.book-head h1, .book-head h2 { margin: 2px 0 6px; }
 .book-tally { display: flex; gap: 12px; align-items: center; font-weight: 800; flex-wrap: wrap; }
 .book-review { display: flex; gap: 12px; align-items: center; text-align: left; border: 2px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: var(--r); padding: 12px 14px; font: inherit; }
 .book-review .ic { font-size: 1.6rem; color: var(--accent); }

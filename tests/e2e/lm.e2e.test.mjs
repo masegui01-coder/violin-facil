@@ -37,7 +37,7 @@ function fakeMic() {
 
 async function openLm(opts = {}) {
   const app = await openApp(env, { init: fakeMic, ...opts });
-  await tap(app.page, '[data-learn-view="lm"]');
+  await tap(app.page, '[data-libro="lm"]');
   await app.page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP_TIMEOUT });
   return app;
 }
@@ -122,7 +122,7 @@ test('vista Lenguaje: 8 unidades del nivel 1, niveles próximamente, accesible y
   const { page, errors, close } = await openLm();
   assert.equal(await page.$$eval('.lm-unit-card', b => b.length), 8);
   assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 3);
-  assert.equal(await page.$eval('[data-learn-view="lm"]', b => b.getAttribute('aria-pressed')), 'true');
+  assert.equal(await page.$eval('[data-libro="lm"]', b => b.getAttribute('aria-pressed')), 'true');
   assert.ok(await noHorizontalScroll(page));
   assert.deepEqual(await axeViolations(page, 'lmView'), []);
   await openUnit(page, 3);
@@ -305,7 +305,7 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
   const lines = async () => (await page.evaluate(() => {
     const shown = el => el.getClientRects().length > 0;
     return [...document.body.innerText.split('\n'), ...[...document.querySelectorAll('[aria-label]')].filter(shown).map(e => e.getAttribute('aria-label'))];
-  })).map(l => l.trim()).filter(l => l && spanish.test(l.replace(/Band Flow|Dvořák|Euphemia Allan/g, '')));
+  })).map(l => l.trim()).filter(l => l && spanish.test(l.replace(/Band Flow|Dvořák|Euphemia Allan|Cajón/g, '')));
   assert.deepEqual(await lines(), []);
   await openUnit(page, 1);
   await sleep(300);
