@@ -9,6 +9,8 @@ import { instrumentCardsHtml as instrumentGridHtml } from './instrument-picker.j
 import { getState, update, subscribe, resetProgress, currentStreak, instrumentProgress } from '../store.js';
 import { openPlacementIntro } from './placement-ui.js';
 import { applyAppearance } from '../appearance.js';
+import { currentAccount, onAccount } from '../account.js';
+import { isAdmin } from '../sync.js';
 
 export { instrumentGridHtml };
 
@@ -41,9 +43,17 @@ function render() {
   document.querySelectorAll('[data-set-a4]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.setA4) === s.a4));
   confirmReset = false;
   $('resetProgress').textContent = 'Borrar progreso';
+  showAdminEntry(currentAccount());
+}
+
+// Acceso directo al panel de administrador (métricas y testers) para la cuenta de administrador
+async function showAdminEntry(acc) {
+  const admin = !!acc && await isAdmin(acc.uid).catch(() => false);
+  $('openAdmin').hidden = !admin;
 }
 
 register('profile', { enter: render });
+onAccount(showAdminEntry);
 
 $('profileStyles').addEventListener('click', e => {
   const b = e.target.closest('[data-style]');

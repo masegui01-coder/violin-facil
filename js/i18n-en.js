@@ -167,6 +167,7 @@ export const EXACT = {
   'Tu opinión decide qué viene después.': 'Your feedback decides what comes next.', 'Enviar comentarios': 'Send feedback', 'Ver el tutorial': 'Watch the tutorial',
   'Borrar progreso': 'Reset progress', 'Pulsa otra vez para borrar': 'Press again to reset', 'Tu cuenta': 'Your account', 'Cerrar sesión': 'Sign out',
   'Borrar mi cuenta': 'Delete my account', 'Crear mi usuario': 'Create my user', 'Métricas de la app': 'App metrics', 'Panel de testers': 'Testers panel',
+  'Panel de administrador': 'Admin panel', 'Quién se conecta, minutos y testers': 'Who is online, minutes and testers',
   // Borrar la cuenta: bandas, grupos y escuela que dirige
   'Antes de borrar tu cuenta': 'Before deleting your account',
   'Diriges o has creado estos espacios. Si se quedan sin responsable, nadie podrá gestionarlos. Elige qué hacer con cada uno.': 'You lead or created these spaces. Left without someone in charge, nobody could manage them. Choose what to do with each one.',
