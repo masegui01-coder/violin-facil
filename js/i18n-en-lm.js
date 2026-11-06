@@ -199,7 +199,7 @@ export const LM_COTEJO_EN = {
   'Su Novena fue la primera sinfonía de un gran compositor con coro y solistas cantando en el último movimiento.': 'His Ninth was the first symphony by a great composer with a choir and soloists singing in the last movement.',
   'Tema (violonchelos y contrabajos, pizzicato)': 'Theme (cellos and double basses, pizzicato)',
   'Tema de la obra, en 2/4 como lo escribió Mozart (en la partitura, una octava más agudo). Dominio público.': 'The theme of the piece, in 2/4 as Mozart wrote it (an octave higher in the score). Public domain.',
-  'Transportado a la menor. Simplificación: la semifrase de 4 compases se repite cuatro veces, cada vez más rápida y más fuerte (accelerando y crescendo). Dominio público.': 'Transposed to A minor. Simplified: the 4-bar half-phrase is repeated four times, faster and louder each time (accelerando and crescendo). Public domain.',
+  'Transportado a la menor. Simplificación: la frase de 4 compases se repite cuatro veces, cada vez más rápida y más fuerte (accelerando y crescendo). Dominio público.': 'Transposed to A minor. Simplified: the 4-bar phrase is repeated four times, faster and louder each time (accelerando and crescendo). Public domain.',
   'Violín 2': 'Violin 2',
   // fe de erratas de la evaluación 1: las corcheas de Martinillo están en «toca la campana»
   'Traza las barras (3/4): cada frase dura 2 compases y acaba en una blanca': 'Draw the bar lines (3/4): each phrase lasts 2 bars and ends on a half note',
@@ -225,7 +225,8 @@ export function lmPatterns({ tr, noteEn }) {
   return [
     [/^(Pregunta|Ficha|Ronda|Parte|Nota|Hueco) (\d+) de (\d+)$/, (m, k, a, b) => `${({ Pregunta: 'Question', Ficha: 'Card', Ronda: 'Round', Parte: 'Part', Nota: 'Note', Hueco: 'Gap' })[k]} ${a} of ${b}`],
     // partitura con huecos para el lector de pantalla: «Negra Do4, hueco, Negra Fa4 | …»
-    [/^(?=.*(?:(?:^|, )hueco(?:,|$| \|)| \| )).+$/, m => m.split(' | ').map(bar => bar.split(', ').map(x => (x === 'hueco' ? 'gap' : tr(x))).join(', ')).join(' | ')],
+    // partitura de «completar» para el lector de pantalla: con «hueco», o una lista de figuras con compases (« | »)
+    [new RegExp(`^(?=.*(?:^|, )hueco(?:,|$| \\|)|(?:${FIG_RE})[^|]* \\| )(?:${FIG_RE}|hueco).*$`), m => m.split(' | ').map(bar => bar.split(', ').map(x => (x === 'hueco' ? 'gap' : tr(x))).join(', ')).join(' | ')],
     [/^Escuchas: (\d+)$/, (m, n) => `Listens left: ${n}`],
     [/^Escucha extra: −(\d+) puntos cada una$/, (m, n) => `Extra listen: −${n} points each`],
     [/^Incluye −(\d+) puntos por las escuchas extra$/, (m, n) => `Includes −${n} points for extra listens`],
@@ -250,7 +251,7 @@ export function lmPatterns({ tr, noteEn }) {
     [/^Orden correcto: (.+)$/, (m, x) => `Correct order: ${x.split(', ').map(tr).join(', ')}`],
     [/^Respuesta: (.+)$/, (m, x) => `Answer: ${noteOr(x)}`],
     [/^(.+): (bien|casi|mal)$/, (m, x, k) => `${tr(x)}: ${({ bien: 'right', casi: 'close', mal: 'wrong' })[k]}`],
-    [/^(.+): (afinada|alta|baja|no te he oído)$/, (m, n, k) => `${noteOr(n)}: ${({ afinada: 'in tune', alta: 'sharp', baja: 'flat', 'no te he oído': "I didn't hear you" })[k]}`],
+    [/^(.+): (afinada|alta|baja|no te he oído)$/, (m, n, k) => `${(/^Nota \d+$/.test(n) ? n.replace('Nota', 'Note') : noteOr(n))}: ${({ afinada: 'in tune', alta: 'sharp', baja: 'flat', 'no te he oído': "I didn't hear you" })[k]}`],
     [/^compás (\d+)$/, (m, n) => `bar ${n}`],
     [/^(\d+) de (\d+) a tiempo$/, (m, a, b) => `${a} of ${b} in time`],
     [/^no notó: (.+)$/, (m, x) => `didn't notice: ${tr(x)}`],

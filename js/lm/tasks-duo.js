@@ -47,10 +47,21 @@ export function gradeReading({ expected, hits, tol, mic = false, ostinatoTimes =
   return { marks: expected.map((_, i) => (own[i] ? graded.marks[k++] : null)), extra: graded.extra };
 }
 
+// Lo que pide cada variante (campo «modo»): cómo suena el metrónomo mientras se lee (todos los pulsos, solo el 1.º o
+// nada), si la entrada es un solo clic y si se ven las sílabas de apoyo (ta, ti, sh) en Fácil
+export function readingMode(p, variant) {
+  const modo = p.modo || '';
+  const metro = /solo marca el 1|pie en el primer tiempo/.test(modo) ? 'first' : /ninguna pista|sin cuenta previa/.test(modo) ? 'none' : 'all';
+  return { metro, oneClick: /sin cuenta previa/.test(modo), syllables: variant === 'facil' && !!p.vocablos };
+}
+const SYLLABLE = { q: 'ta', e: 'ti', h: 'taa-a', w: 'taa-a-a-a' };
+const PULSE_LEVEL = 0.35;
+
 function scoreHtml(tokens, ostinato, p, env, marks = []) {
   const base = { compas: p.compas, anacrusa: p.anacrusa || 0 };
   if (ostinato) return twoVoices(tokens, ostinato, base, env, marks);
-  return staffHtml(tokens, { meter: p.compas, pickup: p.anacrusa || 0, marks, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
+  const under = readingMode(p, env.variant).syllables ? tokens.map(t => (t.rest ? 'sh' : SYLLABLE[String(t.dur).replace('.', '')] || 'ta')) : [];
+  return staffHtml(tokens, { meter: p.compas, pickup: p.anacrusa || 0, marks, under, dynamics: p.matices || null, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
 }
 
 export async function lecturaDosVoces(host, ex, env) {
@@ -63,10 +74,11 @@ export async function lecturaDosVoces(host, ex, env) {
   const tol = (TOLERANCE_MS[env.variant] || TOLERANCE_MS.facil) / 1000;
   host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>
     ${scoreHtml(tokens, ostinato, p, env)}
-    <p class="lm-stop-phase" id="lmDuoPhase" aria-live="polite">Elige cómo vas a tocar</p>
-    <div class="controls lm-sticky-controls"><label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
+    <div class="lm-phones"><label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
     <p class="muted small lm-phones-note">Sin auriculares, el micrófono oiría también a la app: toca la pantalla.</p>
-    <button type="button" class="btn big" id="lmDuoTap">Tocar la pantalla</button><button type="button" class="btn ghost" id="lmDuoMic" disabled>Palmas (micrófono)</button></div>`;
+    <button type="button" class="btn ghost" id="lmDuoMic" disabled>Palmas (micrófono)</button></div>
+    <p class="lm-stop-phase" id="lmDuoPhase" aria-live="polite">Elige cómo vas a tocar</p>
+    <div class="controls lm-sticky-controls"><button type="button" class="btn big" id="lmDuoTap">Tocar la pantalla</button></div>`;
   const phones = host.querySelector('#lmDuoPhones');
   phones.addEventListener('change', () => { host.querySelector('#lmDuoMic').disabled = !phones.checked; });
   host.querySelector('#lmDuoTap').focus();
@@ -80,6 +92,7 @@ export async function lecturaDosVoces(host, ex, env) {
     }
   }
   if (!env.alive()) return null;
+  host.querySelector('.lm-phones')?.remove();
   const hits = [];
   const lat = audio.outputLatency();
   host.querySelector('.controls').innerHTML = useMic ? '<p class="muted center">Da palmas: la app te escucha</p>' : '<button type="button" class="btn big lm-tap" id="lmTap">Toca aquí</button>';
@@ -92,13 +105,20 @@ export async function lecturaDosVoces(host, ex, env) {
     pad.focus();
   }
   if (useMic) audio.startOnsetCapture(found => found.forEach(h => hits.push(h.time - (getState().percLatency || 0))));
-  // claqueta de un compás; después solo suena el ostinato (el pulso lo marca él): nada más que el micrófono pueda oír
-  const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
+  // claqueta (un compás, o un solo clic si la variante lo pide); a dos voces el pulso lo marca el ostinato; a una voz,
+  // el metrónomo que pide la variante (todos los pulsos, solo el primero de cada compás o ninguno)
+  const mode = readingMode(p, env.variant);
+  const t0 = clicks(mode.oneClick ? 1 : barBeats, bpm, { accentEvery: barBeats });
   const offset = p.anacrusa ? barBeats - p.anacrusa : 0;
   const at = t => t0 + (offset + t.start) * spb;
+  // el instante (reloj de la página) en que empieza la lectura, para las pruebas que tocan a tempo
+  host.dataset.readingStart = String(Math.round(performance.now() + (t0 - now() + offset * spb) * 1000));
   if (ostinato) playEvents(ostinato.filter(t => !t.rest).map(t => ({ midi: t.midi, at: (offset + t.start) * spb, dur: t.beats * spb * LEGATO, gain: OSTINATO_GAIN })), { at: t0 });
   const last = tokens[tokens.length - 1];
   const end = t0 + (offset + last.start + last.beats) * spb;
+  const beats = Math.round((end - t0) / spb);
+  if (!ostinato && mode.metro === 'all') clicks(beats, bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
+  if (!ostinato && mode.metro === 'first') for (let b = offset; b < beats; b += barBeats) clicks(1, bpm, { at: t0 + b * spb, level: PULSE_LEVEL });
   const unfollow = follow(host, () => (now() - t0) / spb - offset, { barBeats, pickup: p.anacrusa || 0 });
   host.querySelector('#lmDuoPhase').textContent = ostinato ? '¡Ahora! Tu voz es la de abajo' : '¡Ahora!';
   await wait((end - now() + AFTER_END_S) * 1000);

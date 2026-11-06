@@ -70,3 +70,11 @@ test('cajón: tells the bass tone (centre) from the slap (edge)', () => {
   const r = scoreRhythm([0.3, 0.7], hits);
   assert.deepEqual(r.results.map(x => x.tone), ['bass', 'slap']);
 });
+
+test('machacar sin leer no puntúa: los golpes de más (pasado un margen pequeño) cuentan como fallos', () => {
+  const expected = Array.from({ length: 16 }, (_, i) => i * 0.75);
+  const mash = Array.from({ length: Math.round(12 / 0.06) }, (_, i) => ({ time: i * 0.06, strength: 1 }));
+  assert.ok(scoreRhythm(expected, mash).accuracy < 0.2);
+  const clean = expected.map(t => ({ time: t, strength: 1 }));
+  assert.equal(scoreRhythm(expected, [...clean, { time: 20, strength: 1 }]).accuracy, 1, 'un golpe de más se perdona');
+});

@@ -75,6 +75,7 @@ export function createOnsetDetector(sampleRate) {
 export const PERFECT_MS = 35;
 export const GOOD_MS = 75;
 export const WINDOW_MS = 160;
+const EXTRA_ALLOWANCE = 0.25; // golpes de más que no restan (un 25 % de las notas)
 
 // Empareja cada golpe esperado (segundos) con el golpe tocado más cercano dentro de la ventana
 export function scoreRhythm(expected, onsets, latency = 0) {
@@ -95,9 +96,13 @@ export function scoreRhythm(expected, onsets, latency = 0) {
   const meanOffset = hit.length ? hit.reduce((s, r) => s + r.offset, 0) / hit.length : 0;
   const spread = hit.length > 1 ? Math.sqrt(hit.reduce((s, r) => s + (r.offset - meanOffset) ** 2, 0) / (hit.length - 1)) : 0;
   const points = results.reduce((s, r) => s + (r.status === 'perfect' ? 1 : r.status === 'good' ? 0.8 : r.status === 'miss' ? 0 : 0.4), 0);
+  // golpes de más: unos pocos se perdonan (un rebote, un golpe de entrada); a partir de ahí cuentan como notas
+  // falladas, así que machacar la pantalla o la caja no da puntos
+  const extra = played.filter(p => !p.used).length;
+  const penalty = Math.max(0, extra - Math.ceil(expected.length * EXTRA_ALLOWANCE));
   return {
-    results, meanOffset, spread, extra: played.filter(p => !p.used).length,
-    accuracy: expected.length ? points / expected.length : 0,
+    results, meanOffset, spread, extra,
+    accuracy: expected.length ? points / (expected.length + penalty) : 0,
   };
 }
 

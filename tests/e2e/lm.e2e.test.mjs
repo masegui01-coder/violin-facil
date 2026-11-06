@@ -319,19 +319,19 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
   await close();
 });
 
-test('herramienta de siempre lanzada desde la unidad: la lectura rítmica abre el ensayo rítmico y vuelve a la unidad', async () => {
+test('lectura rítmica en la pantalla del curso (consigna, sílabas de apoyo en Fácil) y a dos voces en U7', async () => {
   const { page, errors, close } = await openLm();
   await openUnit(page, 1);
   await openExercise(page, 'lm1-u1-ritmo-a-facil');
-  await waitVisible(page, 'rhythm');
-  const notes = await page.$$eval('#rhythmStaff .note, #rhythmStaff ellipse', n => n.length);
-  assert.ok(notes > 0, 'la partitura de la unidad está en el pentagrama');
-  // es lectura rítmica, no percusión: sin manos D/I y con la consigna de la variante
-  assert.equal(await page.$eval('#rhChip', e => e.textContent), 'Lectura rítmica');
-  assert.equal(await page.$eval('#rhHint', e => e.textContent), lmExercise('lm1-u1-ritmo-a-facil').params.modo);
-  assert.ok(await page.$eval('#rhClick', c => c.closest('.switch-row').hidden), 'sin interruptor de clic: el metrónomo lo decide la variante');
-  await click(page, '#rhExit');
+  await waitVisible(page, 'lm');
+  await page.waitForSelector('#lmBody .lm-staff', { timeout: STEP_TIMEOUT });
+  assert.match(await page.$eval('#lmBody', b => b.textContent), new RegExp(lmExercise('lm1-u1-ritmo-a-facil').params.modo.slice(0, 20)));
+  const syl = await page.$$eval('#lmBody .lm-staff .lm-under', u => [...new Set(u.map(x => x.textContent))]);
+  assert.deepEqual(syl.sort(), ['sh', 'ta'], 'sílabas de apoyo: ta y sh');
+  assert.ok(await page.$('#lmDuoTap'), 'se puede tocar la pantalla');
+  await page.$eval('#lm [data-back]', b => b.click());
   await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
+  await page.waitForFunction(() => !document.documentElement.dataset.nav, { timeout: STEP_TIMEOUT });
   // en el curso no se enseña el interruptor del metrónomo (lo decide la variante)
   // U7 Media, a dos voces: sistema de dos pentagramas compás a compás; la app toca siempre el ostinato
   await page.$eval('[data-lm-back]', b => b.click());
@@ -393,29 +393,62 @@ test('lectura rítmica respondida con toques en la pantalla (sin micrófono) y e
   const { page, errors, close } = await openLm({ init: () => { navigator.mediaDevices.getUserMedia = async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); }; } });
   await openUnit(page, 1);
   await openExercise(page, id);
-  await waitVisible(page, 'rhythm');
-  await page.$eval('#rhTouch', el => { el.checked = true; el.dispatchEvent(new Event('change')); });
-  assert.equal(await page.$eval('#rhGate', el => el.hidden), true, 'sin la puerta del micrófono');
+  await click(page, '#lmDuoTap');
+  await page.waitForFunction(() => document.getElementById('lmBody').dataset.readingStart, { timeout: STEP_TIMEOUT });
+  const start = Number(await page.$eval('#lmBody', b => b.dataset.readingStart));
   const spb = 60 / ex.params.tempo;
-  const beats = Number(ex.params.compas.split('/')[0]);
-  const notes = scoreTokens(ex.params.partitura).filter(t => !t.rest);
-  const t0 = await page.evaluate(() => { document.getElementById('rhStart').click(); return performance.now(); });
-  for (const n of notes) {
-    const at = t0 + (0.15 + (beats + n.start) * spb) * 1000;
+  for (const n of scoreTokens(ex.params.partitura).filter(t => !t.rest)) {
     await page.evaluate(when => new Promise(res => setTimeout(() => {
-      document.getElementById('rhTap').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      document.getElementById('lmTap').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       res();
-    }, Math.max(0, when - performance.now()))), at);
+    }, Math.max(0, when - performance.now()))), start + n.start * spb * 1000);
   }
-  await page.waitForSelector('#result:not([hidden])', { timeout: 15000 });
+  await page.waitForSelector('#lmScores', { timeout: 20000 });
   const r = (await lmState(page)).best[id];
   assert.ok(r && r.pct >= 60, `lectura con toques: ${r && r.pct} %`);
-  await click(page, '#resBack');
-  await page.waitForSelector('#lmUnitTitle', { timeout: STEP_TIMEOUT });
+  assert.ok(await page.$('.lm-ten'), 'con su calificación sobre 10');
+  await click(page, '#lmToUnit');
+  await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
   const book = await page.$$eval('[data-inst-tool]', bs => bs.findIndex(b => b.textContent.startsWith('Libro')));
   assert.ok(book >= 0, 'enlace al Libro');
   await click(page, `[data-inst-tool="${book}"]`);
   await waitVisible(page, 'bookpage');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('canción en el móvil: la nota que se canta está a la vista (U7 Media, dos vueltas)', async () => {
+  const id = 'lm1-u7-cancion-a-medio';
+  const { page, errors, close } = await openLm({ viewport: { width: 375, height: 812, deviceScaleFactor: 1, isMobile: true, hasTouch: true } });
+  await openUnit(page, 7);
+  await openExercise(page, id);
+  await click(page, '#lmSongGo');
+  const started = Date.now();
+  let last = null;
+  let seen = 0;
+  let visible = 0;
+  while (Date.now() - started < SING_TIMEOUT_MS) {
+    if (await page.$('#lmScores')) break;
+    const cur = await page.$eval('#lmBody', el => (el.dataset.index ? `${el.dataset.index}:${el.dataset.target}` : null)).catch(() => null);
+    if (cur && cur !== last) {
+      last = cur;
+      const midi = Number(cur.split(':')[1]);
+      await page.evaluate(m => { window.__setTone(0); setTimeout(() => window.__setTone(440 * 2 ** ((m - 69) / 12)), 30); }, midi);
+      await sleep(120);
+      const v = await page.evaluate(() => {
+        const on = document.querySelector('.lm-sing-staff .lm-now');
+        if (!on) return null;
+        const r = on.getBoundingClientRect();
+        const bar = document.querySelector('.lm-sticky-controls');
+        const bottom = innerHeight - (bar ? bar.getBoundingClientRect().height : 0);
+        return r.top >= 0 && r.bottom <= bottom;
+      });
+      if (v !== null) { seen++; if (v) visible++; }
+    } else if (!cur && last) { await page.evaluate(() => window.__setTone(0)); last = null; }
+    await sleep(15);
+  }
+  await page.waitForSelector('#lmScores', { timeout: 5000 });
+  assert.ok(seen > 20 && visible / seen >= 0.95, `a la vista ${visible} de ${seen}`);
   assert.deepEqual(errors, []);
   await close();
 });

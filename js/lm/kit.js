@@ -47,7 +47,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
     const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
     const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : '';
-    groups[groups.length - 1].push(`<span class="${cls}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
+    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {
       groups[groups.length - 1].push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);

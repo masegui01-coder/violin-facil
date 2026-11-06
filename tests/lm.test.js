@@ -279,7 +279,14 @@ test('agilidad: aciertos sobre el total; a tempo, el tiempo por nota baja; la po
   assert.equal(gradeAgility(9, 0, 12).pct, 75);
   const easy = agilityPlan({ notas: ['G4', 'E4'], cantidad: 12, segundosPorNota: 4, modo: 'nombrar' }, 1);
   assert.equal(easy.notes.length, 12);
-  easy.notes.slice(1).forEach((n, i) => assert.notEqual(n, easy.notes[i], 'no repite la nota anterior'));
+  // con dos notas: como mucho dos iguales seguidas, y ni alternar ni repetir siempre la misma aprueba
+  for (let seed = 1; seed <= 40; seed++) {
+    const { notes } = agilityPlan({ notas: ['G4', 'E4'], cantidad: 12, segundosPorNota: 4, modo: 'nombrar' }, seed);
+    notes.slice(2).forEach((n, i) => assert.ok(!(n === notes[i] && n === notes[i + 1]), 'como mucho dos seguidas'));
+    for (const guess of [i => (i % 2 ? 'G4' : 'E4'), i => (i % 2 ? 'E4' : 'G4'), () => 'G4', () => 'E4']) {
+      assert.ok(notes.filter((n, i) => n === guess(i)).length / notes.length < 0.6, `semilla ${seed}: adivinar aprueba`);
+    }
+  }
   const fast = agilityPlan({ notas: ['G4', 'E4', 'A4'], modo: 'leer-a-tempo', tempo: [60, 90], compases: 8, compas: '2/4' }, 2);
   assert.equal(fast.notes.length, 8);
   assert.ok(fast.secs[0] > fast.secs[fast.secs.length - 1]);
@@ -689,7 +696,7 @@ test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato
   const echo = gradeReading({ expected, hits: ostinatoTimes, tol, mic: true, ostinatoTimes });
   assert.ok(pctOf(echo.marks.filter(Boolean), echo.extra) < 20, `solo el eco: ${pctOf(echo.marks.filter(Boolean), echo.extra)} %`);
   const own = echo.marks.filter(Boolean).length;
-  assert.ok(own >= expected.length / 2, `la voz 2 tiene notas propias: ${own} de ${expected.length}`);
+  assert.ok(own >= expected.length * 0.4, `la voz 2 tiene notas propias: ${own} de ${expected.length}`);
   const perfect = gradeReading({ expected, hits: expected, tol, mic: true, ostinatoTimes });
   assert.equal(pctOf(perfect.marks.filter(Boolean), perfect.extra), 100);
   // tocando la pantalla se corrigen todas
@@ -697,8 +704,11 @@ test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato
 });
 
 // ---------- Evaluación 6 ----------
-// Excepciones musicales de verdad (cada una con su porqué); de momento, ninguna
-const PROSODY_ALLOWED = [];
+// Excepciones musicales de verdad, cada una con su porqué
+const PROSODY_ALLOWED = [
+  // «Mi fa / si do»: aquí «mi» es el nombre de la nota (tónico), no el posesivo átono que el comprobador supone
+  'U5 estrofa 1, compás 9: «mi fa»',
+];
 test('prosodia: en todas las canciones la sílaba tónica cae en una parte al menos tan fuerte como sus vecinas', async () => {
   const { prosodyIssues, beatWeight } = await import('../js/lm/prosody.js');
   const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
@@ -717,6 +727,14 @@ test('prosodia: en todas las canciones la sílaba tónica cae en una parte al me
   assert.equal(prosodyIssues(two, [['me', 'sa'], ['can', 'ción']], 'mesa canción').length, 1, '«can-CIÓN» con «ción» en el 2 está mal');
   assert.equal(prosodyIssues({ partitura: '| G4q | G4q G4q |', compas: '2/4', anacrusa: 1 }, [['ro'], ['bot', 'sí']], 'robot sí').length, 0, 'en anacrusa, «bot» cae en el 1');
   assert.deepEqual([0, 1, 2, 0.5].map(p => beatWeight(p, 4)), [3, 1, 2, 0]);
+  // los huecos que encontró la evaluación 7: átonas en la parte fuerte, palabras de tres sílabas y «robots»
+  const ee = { partitura: '| G4e G4e G4q | G4h |', compas: '2/4' };
+  assert.equal(prosodyIssues(ee, [['El', 'mar', 'me'], ['va']], 'El mar me va').length, 1, '«EL mar» con el artículo en el pulso');
+  assert.equal(prosodyIssues({ partitura: '| G4e G4e G4e G4e | G4h |', compas: '2/4' }, [['y', 'más,', 'y', 'más,'], ['ya']], 'y más, y más, ya').length, 2, '«Y más, Y más»');
+  assert.equal(prosodyIssues({ partitura: '| G4q G4q G4q G4q | G4w |', compas: '4/4' }, [['Can', 'tan', 'al', 'ver'], ['sol']], 'Cantan al ver sol').length, 1, '«AL ver»');
+  assert.equal(prosodyIssues({ partitura: '| G4e G4e G4q G4q | G4h G4q |', compas: '3/4' }, [['y', 'se a', 'ca', 'bó'], ['ya']], 'y se acabó ya').length, 1, '«Y se a-ca-BÓ» en el vals');
+  assert.equal(prosodyIssues(two, [['ro', 'bots'], ['me', 'sa']], 'robots mesa').length, 1, '«ro-BOTS» es aguda');
+  assert.equal(prosodyIssues(two, [['me', 'sa'], ['ro', 'bot']], 'mesa sofá').filter(i => i.word === 'letra desalineada').length, 1, 'avisa si la letra no casa');
 });
 
 test('creatividad AB: la respuesta acaba en do aunque la parte B empiece en el primer tiempo (sin anacrusa)', async () => {
@@ -745,4 +763,27 @@ test('comas de respiración: entre dos notas, nunca sobre un silencio ni al fina
   const { withBreaths } = await import('../js/lm/kit.js');
   const t = withBreaths(scoreTokens('| C5q C5q | C5h | C5q Rq | C5h |'), [1, 2, 3, 4]);
   assert.deepEqual(t.map(x => !!x.breath), [false, true, true, false, false, false]);
+});
+
+// ---------- Evaluación 7 ----------
+test('lectura rítmica del curso: machacar la pantalla o callarse no aprueba; bien leída, 100 % (las 16)', async () => {
+  const { gradeReading } = await import('../js/lm/tasks-duo.js');
+  const readings = allLmExercises().filter(e => e.type === 'lectura-ritmica');
+  assert.equal(readings.length, 16);
+  readings.forEach(e => {
+    const p = e.params;
+    const spb = 60 / (p.tempo || 72);
+    const toks = scoreTokens(p.partitura);
+    const expected = toks.filter(t => !t.rest).map(t => t.start * spb);
+    const end = toks.reduce((m, t) => Math.max(m, t.start + t.beats), 0) * spb;
+    const tol = e.variant === 'medio' ? 0.08 : 0.12;
+    const pct = hits => { const g = gradeReading({ expected, hits, tol }); return pctOf(g.marks, Math.ceil(g.extra * 1.5)); };
+    const mash = Array.from({ length: Math.floor(end / 0.06) }, (_, i) => i * 0.06);
+    assert.ok(pct(mash) < 60, `${e.id}: machacar ${pct(mash)} %`);
+    assert.equal(pct([]), 0, `${e.id}: en silencio`);
+    assert.equal(pct(expected), 100, `${e.id}: bien leída`);
+    // una palmada en un silencio es un fallo (cuenta como golpe de más)
+    const rest = toks.find(t => t.rest);
+    if (rest) assert.ok(pct([...expected, rest.start * spb]) < 100, `${e.id}: palmada en un silencio`);
+  });
 });

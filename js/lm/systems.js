@@ -22,6 +22,7 @@ function fitWidth(staff, groups) {
 // A dos voces, al menos dos compases por renglón (para leer el sistema mientras suena): se reduce lo justo, sin
 // bajar de MIN_SYSTEM_FIT; si ni así caben dos, al menos que quepa uno entero
 const MIN_SYSTEM_FIT = 0.6;
+const MIN_SYSTEM_SHRINK = 0.3;
 const BRACE_PX = 12; // la llave y su margen (no se reducen con el pentagrama)
 function fitPairs(sys, cols) {
   sys.style.removeProperty('--lm-fit');
@@ -33,7 +34,8 @@ function fitPairs(sys, cols) {
   const one = Math.max(...w) + clefW;
   const two = Math.max(...w.slice(1).map((x, i) => x + w[i])) + clefW;
   const fit = Math.min(1, two > room ? Math.max(MIN_SYSTEM_FIT, room / two) : 1, room / one);
-  if (fit < 1) sys.style.setProperty('--lm-fit', String(Math.max(MIN_FIT, Math.floor(fit * 100) / 100)));
+  // un sistema de dos voces puede reducirse algo más que un pentagrama suelto (pantalla de 320 px con letra al 200 %)
+  if (fit < 1) sys.style.setProperty('--lm-fit', String(Math.max(MIN_SYSTEM_SHRINK, Math.floor(fit * 100) / 100)));
 }
 
 function fitStaff(staff) {
@@ -111,13 +113,14 @@ export function follow(host, beatAt, { barBeats, pickup }) {
 }
 
 
-// Un elemento (la nota que se canta) a la vista: si se acerca al borde de la pantalla o a la barra fija de abajo,
-// se lleva al centro
+// Un elemento (la nota que se canta) a la vista: si se acerca al borde de arriba o a la barra fija de abajo (se mide
+// su alto de verdad), se lleva al centro. Sin animación: con notas seguidas, un desplazamiento suave se quedaba a medias
 const VIEW_MARGIN_TOP = 80;
-const VIEW_MARGIN_BOTTOM = 160;
+const VIEW_MARGIN_EXTRA = 24;
 export function keepInView(el) {
   const r = el.getBoundingClientRect();
-  if (r.top >= VIEW_MARGIN_TOP && r.bottom <= innerHeight - VIEW_MARGIN_BOTTOM) return;
-  const smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  el.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+  const bar = document.querySelector('.lm-sticky-controls');
+  const bottom = innerHeight - (bar ? bar.getBoundingClientRect().height : 0) - VIEW_MARGIN_EXTRA;
+  if (r.top >= VIEW_MARGIN_TOP && r.bottom <= bottom) return;
+  el.scrollIntoView({ block: 'center', behavior: 'auto' });
 }

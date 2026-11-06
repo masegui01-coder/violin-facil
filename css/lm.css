@@ -210,7 +210,7 @@
 .lm-dynpick label.ok select { border-color: var(--dict-ok); } .lm-dynpick label.bad select { border-color: var(--dict-bad); }
 .lm-check { display: flex; justify-content: flex-start; align-items: center; gap: 8px; min-height: 48px; width: 100%; text-align: start; font-weight: 600; }
 .lm-phones-note { width: 100%; text-align: start; margin: 0; }
-.lm-check input { width: 22px; height: 22px; }
+.lm-check input { width: 24px; height: 24px; min-width: 24px; flex: none; }
 .lm-locked-notes [data-del], .lm-locked-notes [data-up], .lm-locked-notes [data-down] { display: none; }
 
 /* Tarjeta de teoría: el ejemplo, con sus compases enteros (bajan de línea por compás, nunca se cortan) */
@@ -276,3 +276,8 @@
 .lm-hole-sc.lm-now .lm-hole-q { color: var(--accent); }
 .lm-item .lm-options:has(.lm-opt-staff) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .lm-item .lm-options .lm-opt-staff .lm-cell { height: 6.75rem; }
+/* La barra fija de la lectura solo lleva los botones: compacta, también con la letra grande */
+.lm-sticky-controls .btn.big { min-height: 48px; padding-block: 8px; }
+.lm-sticky-controls { gap: 6px; }
+.lm-insert { touch-action: none; }
+.lm-phones { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }

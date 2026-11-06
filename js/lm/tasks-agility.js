@@ -17,6 +17,32 @@ const TICK_MS = 50;
 const BEATS_PER_NOTE = 2; // a tempo: una nota cada dos pulsos
 
 // Plan del ejercicio: cuántas notas, cuánto tiempo para cada una y qué nota sale (sin repetir la anterior)
+// Serie de notas al azar que no se puede adivinar sin leer: con muchas notas, nunca la misma dos veces seguidas; con
+// dos o tres, se permite repetir (como mucho dos seguidas) y la serie se rehace si alternar o repetir siempre la misma
+// nota acertaría el 60 % o más (con la bolsa sol/mi, «sol, mi, sol, mi…» ya no aprueba)
+const MAX_RUN = 2;
+const GUESS_LIMIT = 0.6;
+const MAX_TRIES = 50;
+function guessable(notes, pool) {
+  const share = f => notes.filter((n, i) => n === f(i)).length / notes.length;
+  const guesses = [...pool.map(n => () => n), ...pool.flatMap(a => pool.filter(b => b !== a).map(b => i => (i % 2 ? b : a)))];
+  return guesses.some(g => share(g) >= GUESS_LIMIT);
+}
+export function noteSeries(pool, count, r) {
+  const small = pool.length <= 3;
+  let notes = [];
+  for (let tries = 0; tries < MAX_TRIES; tries++) {
+    notes = [];
+    for (let i = 0; i < count; i++) {
+      const run = i >= MAX_RUN && notes.slice(-MAX_RUN).every(n => n === notes[i - 1]);
+      const options = pool.length > 1 && (!small || run) ? pool.filter(n => n !== notes[i - 1]) : pool;
+      notes.push(options[Math.floor(r() * options.length)]);
+    }
+    if (pool.length < 2 || !guessable(notes, pool)) break;
+  }
+  return notes;
+}
+
 export function agilityPlan(p, seed) {
   const r = rng(seed);
   const pool = p.notas;
@@ -27,18 +53,12 @@ export function agilityPlan(p, seed) {
     count = Math.max(4, Math.round((p.compases || 4) * barBeatsOf(p.compas || '4/4') / BEATS_PER_NOTE));
     secs = Array.from({ length: count }, (_, i) => (60 / (lo + (hi - lo) * (count > 1 ? i / (count - 1) : 0))) * BEATS_PER_NOTE);
   } else secs = Array(count || 12).fill(p.segundosPorNota || 3);
-  let prev = null;
-  const notes = secs.map(() => {
-    const options = pool.length > 1 ? pool.filter(n => n !== prev) : pool;
-    prev = options[Math.floor(r() * options.length)];
-    return prev;
-  });
-  return { notes, secs };
+  return { notes: noteSeries(pool, secs.length, r), secs };
 }
 
 export async function agilityTask(host, p, env) {
   const clef = CLEF[p.clave] || 'treble';
-  const plan = agilityPlan(p, env.seed);
+  const plan = agilityPlan(p, (env.attempt ?? env.seed) >>> 0); // otra serie en cada intento: no se aprende de memoria
   // Fácil: solo los nombres de las notas de la unidad (al empezar son dos o tres); Media: los siete
   const letters = env.variant === 'facil' ? LETTERS.filter(l => p.notas.some(n => n[0] === l)) : LETTERS;
   const key = `agil:${env.id}`;
