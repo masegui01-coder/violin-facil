@@ -56,7 +56,7 @@ test('con cuenta y sin clase: ver como profesor y como alumno, el libro en un to
   // ---- Inicio del Aula: «Modo tester: Ver como alumno · Ver como profesor» y el atajo al libro ----
   await page.waitForSelector('.tester-control [data-tester-role="profesor"]', { timeout: 10000 });
   assert.match(await text(page, '.tester-control'), /Modo tester:\s*Ver como alumno\s*Ver como profesor/);
-  assert.ok(await page.$('#aulaLmBook'), 'atajo al libro en el inicio del Aula');
+  assert.equal(await page.$('#aulaLmBook'), null, 'fuera del modo tester no hay atajo: el libro está en Mi libro');
 
   // ---- Ver como profesor: la clase de ejemplo, al momento ----
   await page.$eval('[data-tester-role="profesor"]', b => b.click());
@@ -98,7 +98,8 @@ test('con cuenta y sin clase: ver como profesor y como alumno, el libro en un to
   await page.$eval('#testerBook', b => b.click());
   await waitVisible(page, 'learn', 10000);
   await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: 10000 });
-  assert.equal((await state(page)).learnView, 'lm');
+  // «lm» se atiende y se guarda ya traducido: Libro y profesor › Mi libro › Lenguaje
+  assert.deepEqual([(await state(page)).learnView, (await state(page)).libroView], ['profe', 'lm']);
 
   // ---- Ver como alumno: «Mis tareas» de la profesora de ejemplo ----
   await page.$eval('#testerSwitch', b => b.click());
@@ -126,7 +127,7 @@ test('con cuenta y sin clase: ver como profesor y como alumno, el libro en un to
   await page.waitForSelector('#testerBanner[hidden]', { timeout: 5000 });
   const after = await state(page);
   assert.equal(after.tester, null);
-  assert.equal(after.learnView, 'pro');
+  assert.equal(after.learnView, 'profe', 'vuelve el camino de antes (el «pro» de la semilla, ya traducido)');
   assert.equal(after.aulaView, 'aula');
   assert.deepEqual(Object.keys(after.aula.prog || {}).filter(k => k.startsWith('clase-ejemplo/')), []);
   assert.deepEqual(Object.keys(after.aula.tasks || {}).filter(k => k.startsWith('ejemplo-tester/')), []);

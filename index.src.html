@@ -108,12 +108,12 @@
         <h1>Aprender</h1>
         <button type="button" class="btn ghost small learn-tech" id="learnTech" data-tech><span class="ic" data-icon="tips"></span>Técnica</button>
       </div>
-      <div class="seg learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-path="solo">Por mi cuenta</button><button type="button" data-learn-path="profe">Con profesor</button></div>
-      <p id="learnPathHint" class="learn-hint muted small"></p>
+      <div class="seg learn-mode" role="group" aria-label="Cómo quieres aprender"><button type="button" data-learn-path="solo">Por mi cuenta</button><button type="button" data-learn-path="profe">Libro y profesor</button></div>
+      <p id="learnPathHint" class="learn-hint muted small" hidden></p>
       <div id="casualView">
         <div id="learnSide" class="learn-side">
-          <div id="tipMoment"></div>
           <div id="continueCard"></div>
+          <div id="tipMoment"></div>
           <div id="placementCard"></div>
           <div id="todayCard"></div>
           <div id="friendsCard"></div>
@@ -126,10 +126,9 @@
         <section id="libro" class="libro" aria-labelledby="libroTitle">
           <div class="libro-head">
             <div><p class="eyebrow">Material de estudio</p><h2 id="libroTitle" tabindex="-1">Mi libro</h2></div>
-            <button type="button" class="btn ghost small libro-tech" data-tech><span class="ic" data-icon="tips"></span>Consejos de técnica</button>
+            <button type="button" class="text-link libro-join" id="libroJoin" hidden>¿Tienes profesor? Únete a su clase</button>
           </div>
           <div class="seg three libro-tabs" role="group" aria-label="Qué estudiar en Mi libro"><button type="button" data-libro="lm">Lenguaje</button><button type="button" data-libro="book">Instrumento</button><button type="button" data-libro="method">Método Pro</button></div>
-          <p id="libroHint" class="learn-hint muted small"></p>
           <div id="lmView" class="lm" hidden></div>
           <div id="bookView" class="book" hidden></div>
           <div id="methodView" class="pro" hidden></div>

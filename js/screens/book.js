@@ -129,7 +129,7 @@ export function renderBook() {
   // Solo se pintan las páginas del capítulo abierto; las demás, al desplegar su capítulo (abrir el Libro era una tarea larga)
   const pagesHtml = chapter => chapter.pages.map(page => pageButton({ chapter, page }, stateOf(page), all[page.lesson.id], review)).join('');
   box.innerHTML = `${shelfHtml(books, current)}
-    <div class="book-head"><p class="eyebrow">Modo libro · ${esc(inst().name)}</p><h2>${esc(book.title)}</h2>
+    <div class="book-head"><p class="eyebrow">Modo libro · ${esc(inst().name)}</p><h3>${esc(book.title)}</h3>
       <p class="muted small">${esc(book.sub)}. Página a página, con partitura, armonización, teoría y consejos. Repetir premia: bronce al pasarla, plata al repetirla bien y oro al dominarla.</p>
       <div class="book-tally">${[['🥇', totals.gold, 'medallas de oro'], ['🥈', totals.silver, 'medallas de plata'], ['🥉', totals.bronze, 'medallas de bronce']]
         .map(([ic, n, what]) => `<span><span aria-hidden="true">${ic}</span> ${n} <span class="sr-only">${what}</span></span>`).join('')}<span class="muted">de ${totals.pages} páginas</span>

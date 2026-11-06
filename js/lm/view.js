@@ -29,7 +29,7 @@ const bar = (done, total, label) => `<div class="lm-progress" role="progressbar"
 function skillsHtml() {
   const s = skillSummary();
   if (LM_SKILLS.every(k => s[k] === null)) return '';
-  return `<section class="lm-skills" aria-labelledby="lmSkillsTitle"><h2 id="lmSkillsTitle">Tus competencias</h2>
+  return `<section class="lm-skills" aria-labelledby="lmSkillsTitle"><h3 id="lmSkillsTitle">Tus competencias</h3>
     <ul>${LM_SKILLS.map(k => `<li><span>${esc(SKILL_NAME[k])}</span>${s[k] === null ? '<small class="muted">Sin datos</small>' : `<b>${s[k]} %</b>${bar(s[k], 100, SKILL_NAME[k])}`}</li>`).join('')}</ul></section>`;
 }
 
@@ -42,7 +42,7 @@ function unitCard(u) {
 }
 
 function levelsHtml() {
-  return `<header class="lm-head"><p class="eyebrow">Gratis para todos</p><h2>Lenguaje musical</h2>
+  return `<header class="lm-head"><p class="eyebrow">Gratis para todos</p><h3>Lenguaje musical</h3>
       <p class="muted">Ritmo, lectura, entonación, dictado y audición: lo común a todos los instrumentos, unidad a unidad, y aplicado en el tuyo.</p></header>
     ${skillsHtml()}
     ${LM_LEVELS.map(l => {
@@ -118,7 +118,7 @@ function unitHtml(u) {
   const p = unitProgress(u.level, u.unit);
   return `<button type="button" class="btn ghost small lm-back" data-lm-back>← Todas las unidades</button>
     <header class="lm-unit-head" style="--unit:${u.color}"><p class="eyebrow"><span>Nivel</span> ${u.level} · <span>Unidad</span> ${u.unit}</p>
-      <h2 tabindex="-1" id="lmUnitTitle">${esc(u.title)}</h2><p>${esc(u.goal)}</p>
+      <h3 tabindex="-1" id="lmUnitTitle">${esc(u.title)}</h3><p>${esc(u.goal)}</p>
       ${bar(p.done, p.total, 'Ejercicios hechos de la unidad')}<p class="small"><span>${p.done}/${p.total}</span> · ${starsHtml(Math.round(3 * p.stars / Math.max(1, p.maxStars)))}</p></header>
     <details class="lm-goals"><summary>Qué aprendes en esta unidad</summary>
       <h4>Novedades</h4><ul>${u.novelties.map(n => `<li>${esc(n)}</li>`).join('')}</ul>

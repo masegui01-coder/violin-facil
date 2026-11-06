@@ -1,5 +1,5 @@
 // Pestaña Aprender: «Tu siguiente paso» (tarea de la banda que vence pronto o la próxima lección) y mapa del curso.
-import { $, esc, icon, starsHtml, toast } from '../ui.js';
+import { $, esc, icon, starsHtml } from '../ui.js';
 import { register, go } from '../router.js';
 import { lessonKey, lessonTitle, lessonSong, chordText, isReadingLesson, isCourseLevel } from '../course.js';
 import { styleById } from '../songs.js';
@@ -9,8 +9,9 @@ import { placementCardHtml, bindPlacementCard } from './placement-ui.js';
 import { currentCourse, currentStates, nextLesson, unitOf, launch } from '../launch.js';
 import { openLessonSheet } from './sheet.js';
 import { renderToday } from './daily.js';
-import { renderBook, warmLibrary } from './book.js';
-import { resolveLearn, showBridge, inClassroom, PATHS } from '../learn-path.js';
+import { warmLibrary } from './book.js';
+import { resolveLearn, normalizedLearn, showBridge } from '../learn-path.js';
+import { renderProfe, placeAula, unpinAula, focusJoin, profeHint } from './learn-profe.js';
 
 const KIND_ICON = { theory: 'theory', notes: 'notes', song: 'song' };
 const KIND_NAME = { theory: 'Teoría', notes: 'Notas', song: 'Canción' };
@@ -155,58 +156,18 @@ function celebrateUnlock() {
   if (node) node.classList.add('just-unlocked');
 }
 
-// ---------- Dos caminos (js/learn-path.js): Por mi cuenta y Con profesor › Mi libro ----------
-const PATH_HINT = {
-  solo: 'Aprende tocando canciones, a tu ritmo y unos minutos al día.',
-  profe: 'Las tareas de tu profesor y tu libro de estudio: Lenguaje Musical, el libro de tu instrumento y el Método Pro.',
-};
-const LIBRO_HINT = {
-  lm: 'Lenguaje Musical: leer, escuchar, cantar y escribir música, unidad a unidad. Es igual para todos los instrumentos.',
-  book: 'El libro de tu instrumento, página a página, con medallas.',
-  method: 'El Método Pro: cada nivel con teoría, retos rápidos y práctica con el micrófono.',
-};
+// ---------- Dos caminos (js/learn-path.js): Por mi cuenta y Libro y profesor (js/screens/learn-profe.js) ----------
+const SOLO_HINT = 'Aprende tocando canciones, a tu ritmo y unos minutos al día.';
 
-// El Aula (Mis tareas del alumno, Mis clases del profesor o «Unirme a una clase») arriba de Con profesor
-// (en #proPane, donde el modo tester lo repinta al restaurar la sesión)
-function renderAulaBox() {
-  if (!$('proPane')) $('proView').innerHTML = '<div id="proPane"></div>';
-  import('./aula-home.js').then(m => m.renderAulaHome($('proPane')), () => toast('No se ha podido abrir. Revisa la conexión.'));
-}
-
-// Mi libro: solo se descarga y se pinta la sección elegida
-function renderLibro(section) {
-  document.querySelectorAll('[data-libro]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.libro === section)));
-  $('libroHint').textContent = LIBRO_HINT[section];
-  $('lmView').hidden = section !== 'lm';
-  $('bookView').hidden = section !== 'book';
-  $('methodView').hidden = section !== 'method';
-  if (section === 'book') { renderBook(); return Promise.resolve(); }
-  if (section === 'lm') {
-    return import('../lm/view.js').then(m => { m.bindLm(); if (resolveLearn(getState()).section === 'lm') m.renderLm(); }, () => toast('No se ha podido abrir Lenguaje musical. Revisa la conexión.'));
-  }
-  return import('./pro.js').then(m => { if (resolveLearn(getState()).section === 'method') m.renderMethod($('methodView')); }, () => toast('No se ha podido abrir Pro. Revisa la conexión.'));
-}
-
-// Con clase (alumno o profesor, también en modo prueba o tester) el Aula va arriba; sin clase, Mi libro primero y
-// «Unirme a una clase» debajo, a mano pero sin tapar el libro
-function placeAula() {
+// El texto de cada camino se enseña la primera vez que se abre (mientras dura esa visita a Aprender); luego, fuera
+const hintNow = new Set();
+function showHint(path) {
   const s = getState();
-  const aulaFirst = inClassroom(s) || !!s.tester || !!s.demo;
-  const box = $('proView');
-  if (aulaFirst && box.nextElementSibling !== $('libro')) $('libro').before(box);
-  if (!aulaFirst && $('libro').nextElementSibling !== box) $('libro').after(box);
-  box.classList.toggle('aula-below', !aulaFirst);
-}
-
-// Un enlace (tarea del Aula, atajo del modo tester, la escuela) que pide una sección: la vista baja a Mi libro
-let lastLink = null;
-function renderProfe({ section, linked }) {
-  placeAula();
-  renderAulaBox();
-  const done = renderLibro(section);
-  const raw = getState().learnView;
-  if (linked && raw !== lastLink) done.then(() => requestAnimationFrame(() => $('libro').scrollIntoView({ block: 'start' })));
-  lastLink = linked ? raw : null;
+  const seen = s.pathHints || {};
+  if (!seen[path]) { hintNow.add(path); update({ pathHints: { ...seen, [path]: true } }); }
+  const box = $('learnPathHint');
+  box.hidden = !hintNow.has(path);
+  box.textContent = path === 'solo' ? SOLO_HINT : profeHint(s);
 }
 
 function renderSolo() {
@@ -256,11 +217,11 @@ function renderBridge(done) {
     <div><h2 id="bridgeTitle">¿Quieres ir más en serio?</h2><p class="small muted">El libro te enseña a leer música. Lo que ya has aprendido cuenta.</p>
     <button type="button" class="btn ghost small" id="bridgeGo">Abrir Mi libro</button></div>
     <button type="button" class="icon-btn" id="bridgeClose" aria-label="No, gracias">✕</button></aside>`;
-  $('bridgeGo').addEventListener('click', () => openLibro('book'));
+  $('bridgeGo').addEventListener('click', () => openLibro('lm'));
   $('bridgeClose').addEventListener('click', () => { update({ bridgeHidden: true }); box.replaceChildren(); $('continueBtn')?.focus(); });
 }
 
-// Con profesor › Mi libro › sección, con la vista en Mi libro
+// Libro y profesor › Mi libro › sección, con la vista en Mi libro
 export function openLibro(section) {
   update({ learnView: 'profe', libroView: section });
   render();
@@ -269,22 +230,27 @@ export function openLibro(section) {
 
 function render() {
   const view = resolveLearn(getState());
+  // Un learnView antiguo (casual|book|lm|pro, de un enlace o de antes) se atiende una vez y se guarda ya traducido
+  const patch = normalizedLearn(getState());
+  if (patch) update(patch);
   document.querySelectorAll('[data-learn-path]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.learnPath === view.path)));
-  $('learnPathHint').textContent = PATH_HINT[view.path];
   $('casualView').hidden = view.path !== 'solo';
   $('profeView').hidden = view.path !== 'profe';
+  showHint(view.path);
   if (view.path === 'profe') renderProfe(view);
   else renderSolo();
 }
 
-register('learn', { enter: render });
+register('learn', { enter: render, leave: () => hintNow.clear() }); // el texto del camino, solo en la primera visita
 // Al entrar en una clase (o salir), el Aula sube o baja sin esperar a volver a Aprender
 subscribe(() => { if (!$('profeView').hidden) placeAula(); });
 document.querySelectorAll('[data-learn-path]').forEach(b => b.addEventListener('click', () => {
-  if (resolveLearn(getState()).path === b.dataset.learnPath && PATHS.includes(getState().learnView)) return;
+  unpinAula();
+  if (resolveLearn(getState()).path === b.dataset.learnPath) return;
   update({ learnView: b.dataset.learnPath });
   render();
 }));
+$('libroJoin').addEventListener('click', focusJoin);
 // Elegir una sección de Mi libro deja el camino en Con profesor (también desde un enlace antiguo «lm» o «book»)
 document.querySelectorAll('[data-libro]').forEach(b => b.addEventListener('click', () => {
   update({ learnView: 'profe', libroView: b.dataset.libro });

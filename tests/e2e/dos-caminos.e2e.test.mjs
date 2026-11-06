@@ -1,6 +1,6 @@
 // Aprender con dos caminos (docs/PLAN-DOS-CAMINOS.md, fase 1), de extremo a extremo en Chrome real:
-// «Por mi cuenta · Con profesor», el botón Técnica, Mi libro (Lenguaje, libro del instrumento y Método Pro),
-// el alumno y el profesor bajo Con profesor (Firebase simulado), la tarjeta de técnica antes de la lección,
+// «Por mi cuenta · Libro y profesor», el botón Técnica, Mi libro (Lenguaje, libro del instrumento y Método Pro),
+// el alumno y el profesor bajo Libro y profesor (Firebase simulado), la tarjeta de técnica antes de la lección,
 // los enlaces antiguos (learnView «lm») y axe a 375 px en claro y oscuro.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -37,7 +37,7 @@ async function axeViolations(page, rootId = 'learn') {
 }
 
 // Con Firebase simulado (el Aula necesita servidor)
-async function openAs(store, user, seed = {}) {
+async function openAs(store, user, seed = {}, path = '') {
   const context = await env.browser.createBrowserContext();
   const page = await context.newPage();
   const errors = [];
@@ -46,13 +46,26 @@ async function openAs(store, user, seed = {}) {
   await page.setViewport(PHONE);
   await installFakeFirebase(page, store, user);
   await page.evaluateOnNewDocument(s => localStorage.setItem('violin-facil-v2', JSON.stringify(s)), { ...SEED, ...seed });
-  await page.goto(env.server.url, { waitUntil: 'networkidle0' });
+  await page.goto(env.server.url + path, { waitUntil: 'networkidle0' });
   await page.waitForSelector('#sheet[open]', { timeout: 2000 }).catch(() => {});
   await page.evaluate(() => { const d = document.getElementById('sheet'); if (d && d.open) d.close(); });
   return { page, errors, close: () => context.close() };
 }
 
-test('cambiar de camino: Por mi cuenta (por defecto) y Con profesor, y se recuerda la elección', async () => {
+// axe en claro y en oscuro
+async function axeBoth(page) {
+  const out = [];
+  for (const scheme of ['light', 'dark']) {
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]);
+    out.push(...(await axeViolations(page)).map(v => `${scheme}: ${v}`));
+  }
+  return out;
+}
+// Doce niveles del curso de violín superados (claves de progreso del curso con estilo «clasica»)
+const TWELVE = ['u1-ae-pn0', 'u1-intro', 'u1-ae-pn1', 'u1-ae', 'u1-dg-pn0', 'u1-dg-pn1', 'u1-dg', 'u1-all-pa', 'u1-all-pb', 'u1-all', 'u1-rhythm', 'u1-xr'];
+const PROGRESS = Object.fromEntries(TWELVE.map(id => [`lesson:${id}`, 3]));
+
+test('cambiar de camino: Por mi cuenta (por defecto) y Libro y profesor, y se recuerda la elección', async () => {
   const { page, errors, close } = await openApp(env, { viewport: PHONE });
   await waitVisible(page, 'learn');
   assert.equal(await pressed(page, '[data-learn-path="solo"]'), 'true', 'sin clase: Por mi cuenta');
@@ -71,7 +84,7 @@ test('cambiar de camino: Por mi cuenta (por defecto) y Con profesor, y se recuer
   await close();
 });
 
-test('Técnica: el botón de Aprender (y el de Mi libro) abre los consejos del instrumento', async () => {
+test('Técnica: un solo botón en Aprender abre los consejos del instrumento', async () => {
   const { page, errors, close } = await openApp(env, { viewport: PHONE });
   await waitVisible(page, 'learn');
   await tap(page, '#learnTech');
@@ -81,8 +94,7 @@ test('Técnica: el botón de Aprender (y el de Mi libro) abre los consejos del i
   await tap(page, '#tips [data-back]');
   await waitVisible(page, 'learn');
   await tap(page, '[data-learn-path="profe"]');
-  await tap(page, '.libro-tech');
-  await waitVisible(page, 'tips', STEP);
+  assert.equal(await page.$$eval('#learn [data-tech]', b => b.length), 1, 'un solo botón de Técnica, también en Libro y profesor');
   assert.deepEqual(errors, []);
   await close();
 });
@@ -109,12 +121,12 @@ test('Mi libro reúne Lenguaje, el libro del instrumento y el Método Pro', asyn
   await close();
 });
 
-test('enlaces de antes: learnView «lm» (atajo del modo tester, tareas del Aula) abre Con profesor › Mi libro › Lenguaje', async () => {
+test('enlaces de antes: learnView «lm» (atajo del modo tester, tareas del Aula) abre Libro y profesor › Mi libro › Lenguaje', async () => {
   const { page, errors, close } = await openApp(env, { viewport: PHONE, seed: { learnView: 'lm' } });
   await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP });
   assert.equal(await pressed(page, '[data-learn-path="profe"]'), 'true');
   assert.equal(await pressed(page, '[data-libro="lm"]'), 'true');
-  assert.equal((await state(page)).learnView, 'lm', 'no se reescribe: el modo tester restaura su valor');
+  assert.deepEqual([(await state(page)).learnView, (await state(page)).libroView], ['profe', 'lm'], 'se guarda ya traducido: no vuelve a desplazar en cada arranque');
   assert.deepEqual(errors, []);
   await close();
   const casual = await openApp(env, { viewport: PHONE, seed: { learnView: 'casual' } });
@@ -123,7 +135,7 @@ test('enlaces de antes: learnView «lm» (atajo del modo tester, tareas del Aula
   await casual.close();
 });
 
-test('alumno: sin clase empieza en Por mi cuenta; en Con profesor se une y ve «Mis tareas» encima de Mi libro', async () => {
+test('alumno: sin clase empieza en Por mi cuenta; en Libro y profesor se une y ve «Mis tareas» encima de Mi libro', async () => {
   const store = createStore({
     'schools/S1': SCHOOL,
     'schools/S1/classes/C1': { name: 'Grupo A', code: 'ABCDEF', teacherName: 'Marta', students: 0, createdAt: { __ts: Date.now() } },
@@ -143,12 +155,12 @@ test('alumno: sin clase empieza en Por mi cuenta; en Con profesor se une y ve «
   await page.waitForSelector('.aula-task [data-do]', { timeout: STEP });
   assert.match(await text(page, '#proView'), /Mis tareas/);
   assert.equal(await order(), 'aula-primero', 'ya en una clase: sus tareas arriba');
-  assert.deepEqual(await axeViolations(page), []);
+  assert.deepEqual(await axeBoth(page), []);
   assert.deepEqual(errors, []);
   await close();
 });
 
-test('profesor: por defecto entra en Con profesor y ve «Mis clases» arriba, con Mi libro debajo', async () => {
+test('profesor: por defecto entra en Libro y profesor y ve «Mis clases» arriba, con Mi libro debajo', async () => {
   const store = createStore({ 'schools/S1': SCHOOL });
   const { page, errors, close } = await openAs(store, TEACHER, { learnView: null, school: { schoolId: 'S1', name: SCHOOL.name, code: SCHOOL.code, role: 'teacher', year: '2026-2027' } });
   await waitVisible(page, 'learn');
@@ -156,8 +168,8 @@ test('profesor: por defecto entra en Con profesor y ve «Mis clases» arriba, co
   assert.equal(await pressed(page, '[data-learn-path="profe"]'), 'true');
   assert.match(await text(page, '#proView'), /Mis clases/);
   assert.ok(await page.evaluate(() => document.getElementById('proView').compareDocumentPosition(document.getElementById('libro')) & Node.DOCUMENT_POSITION_FOLLOWING));
-  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
-  assert.deepEqual(await axeViolations(page), []);
+  assert.deepEqual(await axeBoth(page), []);
+  assert.equal(await page.$('#aulaLmBook'), null, 'sin atajo duplicado al libro fuera del modo tester');
   // y puede pasarse a Por mi cuenta cuando quiera
   await tap(page, '[data-learn-path="solo"]');
   await page.waitForSelector('#casualView:not([hidden])');
@@ -172,8 +184,8 @@ test('tarjeta de técnica antes de la lección: se ve, lleva al consejo, se cier
   assert.match(await text(page, '#tipMoment'), /Técnica en 30 segundos/i);
   assert.match(await text(page, '#tipMoment'), /Cómo sujetar el violín/);
   assert.ok(await page.$('#tipMoment img, #tipMoment svg'), 'con su ilustración');
-  // encima de «Continuar»
-  assert.ok(await page.evaluate(() => document.getElementById('tipMoment').compareDocumentPosition(document.getElementById('continueBtn')) & Node.DOCUMENT_POSITION_FOLLOWING));
+  // justo debajo de «Continuar», que sigue siendo lo primero
+  assert.ok(await page.evaluate(() => document.getElementById('continueBtn').compareDocumentPosition(document.getElementById('tipMoment')) & Node.DOCUMENT_POSITION_FOLLOWING));
   const size = await page.$eval('#tipMomentClose', b => { const r = b.getBoundingClientRect(); return Math.min(r.width, r.height); });
   assert.ok(size >= 48, `zona táctil de cerrar: ${size}`);
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
@@ -202,10 +214,8 @@ test('tarjeta de técnica antes de la lección: se ve, lleva al consejo, se cier
   await flute.close();
 });
 
-// Doce niveles del curso de violín superados (claves de progreso del curso con estilo «clasica»)
-const TWELVE = ['u1-ae-pn0', 'u1-intro', 'u1-ae-pn1', 'u1-ae', 'u1-dg-pn0', 'u1-dg-pn1', 'u1-dg', 'u1-all-pa', 'u1-all-pb', 'u1-all', 'u1-rhythm', 'u1-xr'];
-test('puente al libro: tras 10 niveles, «¿Quieres ir más en serio?» lleva a Con profesor › Mi libro › Instrumento', async () => {
-  const progress = Object.fromEntries(TWELVE.map(id => [`lesson:${id}`, 3]));
+test('puente al libro: tras 10 niveles, «¿Quieres ir más en serio?» lleva a Libro y profesor › Mi libro › Lenguaje', async () => {
+  const progress = PROGRESS;
   const fresh = await openApp(env, { viewport: PHONE });
   await waitVisible(fresh.page, 'learn');
   assert.equal(await fresh.page.$('#bridgeCard .bridge'), null, 'al empezar no se ofrece');
@@ -214,9 +224,9 @@ test('puente al libro: tras 10 niveles, «¿Quieres ir más en serio?» lleva a 
   await page.waitForSelector('#bridgeCard .bridge', { timeout: STEP });
   assert.match(await text(page, '#bridgeCard'), /ir más en serio/);
   await tap(page, '#bridgeGo');
-  await page.waitForSelector('#bookView:not([hidden]) .book-head', { timeout: STEP });
+  await page.waitForSelector('#lmView:not([hidden]) .lm-unit-card', { timeout: STEP });
   assert.equal(await pressed(page, '[data-learn-path="profe"]'), 'true');
-  assert.equal(await pressed(page, '[data-libro="book"]'), 'true');
+  assert.equal(await pressed(page, '[data-libro="lm"]'), 'true', 'leer música = Lenguaje');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'libroTitle');
   // ✕ lo quita para siempre
   await tap(page, '[data-learn-path="solo"]');
@@ -224,6 +234,47 @@ test('puente al libro: tras 10 niveles, «¿Quieres ir más en serio?» lleva a 
   await tap(page, '#bridgeClose');
   assert.equal(await page.$('#bridgeCard .bridge'), null);
   assert.equal((await state(page)).bridgeHidden, true);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('primera pantalla a 375×812: «Continuar» entero por encima de la barra; el texto del camino solo la primera vez', async () => {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE });
+  await waitVisible(page, 'learn');
+  await page.waitForSelector('#tipMoment .tip-moment', { timeout: STEP });
+  const fold = await page.evaluate(() => ({ btn: document.getElementById('continueBtn').getBoundingClientRect().bottom, nav: document.getElementById('tabbar').getBoundingClientRect().top }));
+  assert.ok(fold.btn < fold.nav - 16, `Continuar acaba en ${fold.btn} y la barra empieza en ${fold.nav}`);
+  assert.ok(await page.$('#learnPathHint:not([hidden])'), 'la primera vez se explica el camino');
+  await tap(page, '[data-tab="songs"]');
+  await tap(page, '[data-tab="learn"]');
+  assert.ok(await page.$('#learnPathHint[hidden]'), 'después ya no ocupa sitio');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('Por mi cuenta con progreso: axe limpio en claro y oscuro (lecciones «Leída», estrellas, puente)', async () => {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE, seed: { progress: PROGRESS, tipMoments: { violin: ['posture', 'left-hand', 'bow'] } } });
+  await page.waitForSelector('#bridgeCard .bridge', { timeout: STEP });
+  assert.ok(await page.$('.read-tag'), 'hay lecciones de teoría leídas');
+  assert.deepEqual(await axeBoth(page), []);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('invitación ?clase=CÓDIGO: el Aula va arriba y el foco al código, ya escrito, en la primera pantalla', async () => {
+  const store = createStore({
+    'schools/S1': SCHOOL,
+    'schools/S1/classes/C1': { name: 'Grupo A', code: 'K7P2QX', teacherName: 'Marta', students: 0, createdAt: { __ts: Date.now() } },
+    'classCodes/K7P2QX': { schoolId: 'S1', classId: 'C1', className: 'Grupo A', teacherName: 'Marta' },
+  });
+  const { page, errors, close } = await openAs(store, STUDENT, {}, '?clase=K7P2QX');
+  await page.waitForSelector('#aulaJoinCode', { timeout: STEP });
+  await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'aulaJoinCode', { timeout: STEP });
+  const at = await page.evaluate(() => { const r = document.getElementById('aulaJoinCode').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: innerHeight }; });
+  assert.ok(at.top >= 0 && at.bottom <= at.h, `el código se ve sin desplazarse: ${JSON.stringify(at)}`);
+  assert.equal(await page.$eval('#aulaJoinCode', el => el.value), 'K7P2QX');
+  assert.equal(await page.evaluate(() => (document.getElementById('proView').compareDocumentPosition(document.getElementById('libro')) & Node.DOCUMENT_POSITION_FOLLOWING ? 'aula-primero' : 'libro-primero')), 'aula-primero');
+  assert.equal(await pressed(page, '[data-learn-path="profe"]'), 'true');
   assert.deepEqual(errors, []);
   await close();
 });
