@@ -3,9 +3,9 @@
 // intervalos) y trazar barras. La corrección compara la ALTURA REAL (fa♯ no es fa), con la armadura puesta.
 import { esc } from '../ui.js';
 import { rng } from '../generate.js';
-import { noteCell, gapCell, clefCell, endCell, stepAtY, STEP_LIMITS, layoutTokens } from './staff-lm.js';
+import { noteCell, gapCell, clefCell, endCell, stepAtY, STEP_LIMITS, layoutTokens, NOTE_W } from './staff-lm.js';
 import {
-  FIGURE_BEATS, FIGURE_NAME, REST_NAME, nameOfStep, noteText, positionText, stepOf, scoreTokens, barBeatsOf, pulseBeatsOf, resolvePitches,
+  FIGURE_BEATS, FIGURE_NAME, REST_NAME, nameOfStep, intervalNote, noteText, positionText, stepOf, scoreTokens, barBeatsOf, beamBeatsOf, resolvePitches,
   accidentalSigns, tokenMidi, tokenName, pitchName,
 } from './notes.js';
 import { gradeWriting, gradeBarlines, scaleMark, pctOf, mistakeCodes } from './grade.js';
@@ -40,7 +40,7 @@ export const tokensToPlay = tokens => {
 // pickup, repeat } (lo que se dibuja además: matices, anacrusa, barra de repetición), breath (botón de coma de respiración),
 // armadura (0, -1, 1: con un bemol, «si» ya es si♭), accidentals (paleta ♯ ♭ ♮), given (notas dadas: en gris, no se borran),
 // pulso ('q.' en 6/8), cursor (escalón inicial del cursor)
-export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false, armadura: armadura0 = 0, accidentals = false, given = [], pulso = null, cursor: cursor0 = null } = {}) {
+export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false, armadura: armadura0 = 0, accidentals = false, given = [], pulso = null, cursor: cursor0 = null, slurs = false, ties = false } = {}) {
   const [lo, hi] = writeLimits(clef);
   const clampStep = step => Math.max(lo, Math.min(hi, step));
   let meter = meter0;
@@ -59,7 +59,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
   const geometry = () => {
     const barBeats = meter ? barBeatsOf(meter) : null;
     const ext = extras() || {};
-    const lay = layoutTokens(tokens, { barBeats, pickup: ext.pickup || 0, clef, pulse: pulso === 'q.' ? 1.5 : meter ? pulseBeatsOf(meter) : 1 });
+    const lay = layoutTokens(tokens, { barBeats, pickup: ext.pickup || 0, clef, pulse: meter ? beamBeatsOf(meter, pulso) : pulso === 'q.' ? 1.5 : 1 });
     const res = rhythmOnly ? tokens : resolvePitches(tokens, { armadura, bars: lay.map(L => L.bar) });
     return { ext, lay, res };
   };
@@ -81,7 +81,12 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       const signs = open ? (dyn[bar] || []).filter(m => m.signo !== 'calderon').map(m => ({ cresc: 'cresc.', dim: 'dim.' })[m.signo] || m.signo) : [];
       const fermata = (L.barEnd || i === tokens.length - 1) && (dyn[bar] || []).some(m => m.signo === 'calderon');
       open = L.barEnd;
-      const svg = noteCell({ ...t, clef, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: accs[i], given: !!t.given });
+      // ligadura de prolongación (misma altura) o de expresión (otra altura) hasta la nota que sigue
+      const next = res[i + 1];
+      const reach = next ? NOTE_W + (L.barEnd ? 14 : 0) : 0;
+      const tieLen = t.tie && next && !t.rest && !next.rest && tokenMidi(next) === tokenMidi(t) ? reach : 0;
+      const slurLen = t.slur && next && !t.rest && !next.rest && tokenMidi(next) !== tokenMidi(t) ? reach : 0;
+      const svg = noteCell({ ...t, clef, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: accs[i], given: !!t.given, tie: tieLen, slur: slurLen });
       const btn = t.given
         ? `<span class="lm-sc lm-note-btn given" role="img" aria-label="${esc(`Nota dada: ${describe(t)}`)}">${svg}</span>`
         : `<button type="button" class="lm-sc lm-note-btn${i === sel ? ' sel' : ''}" data-idx="${i}" aria-pressed="${i === sel}" aria-label="${esc(`${++n}: ${describe(t)}${t.breath ? ', respiración' : ''}`)}">${svg}${signs.length ? `<span class="lm-dyn" lang="it">${esc(signs.join(' '))}</span>` : ''}</button>`;
@@ -159,6 +164,8 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
       <button type="button" class="btn ghost small" data-down aria-label="Nota más grave">↓ Más grave</button>
       <button type="button" class="btn ghost small" data-del>Borrar</button>
       ${breath ? '<button type="button" class="btn ghost small" data-breath>Coma de respiración</button>' : ''}
+      ${slurs ? '<button type="button" class="btn ghost small" data-slur aria-label="Ligadura de expresión con la nota siguiente (la nota elegida o la última)">Ligadura de expresión ⌒</button>' : ''}
+      ${ties ? '<button type="button" class="btn ghost small" data-tie aria-label="Ligadura de prolongación con la nota siguiente, si es la misma (la nota elegida o la última)">Ligadura de prolongación ⌣</button>' : ''}
     </div>`;
   if (rhythmOnly) box.querySelectorAll('[data-up],[data-down]').forEach(b => { b.hidden = true; });
 
@@ -173,6 +180,17 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
     if (e.target.closest('[data-up]')) { moveCursor(1); return; }
     if (e.target.closest('[data-down]')) { moveCursor(-1); return; }
     if (e.target.closest('[data-del]')) { remove(); return; }
+    const link = e.target.closest('[data-slur],[data-tie]');
+    if (link) {
+      // la ligadura sale de la nota elegida (o de la última escrita) y llega a la siguiente; otra vez, se quita
+      const key = link.hasAttribute('data-slur') ? 'slur' : 'tie';
+      const i = sel ?? tokens.length - 1;
+      if (i < 0 || tokens[i].rest || tokens[i].given) return;
+      tokens = tokens.map((t, k) => (k === i ? { ...t, [key]: !t[key] } : t));
+      render(sel !== null ? `[data-idx="${i}"]` : null);
+      say(tokens[i][key] ? 'Ligadura puesta' : 'Ligadura quitada');
+      return;
+    }
     if (e.target.closest('[data-breath]')) {
       // la coma va detrás de la nota elegida (o de la última escrita); otra vez, se quita
       const i = sel ?? tokens.length - 1;
@@ -269,7 +287,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
         b.classList.add(marks[i]);
         b.insertAdjacentHTML('beforeend', `<span class="lm-cell-mark ${marks[i]}" aria-hidden="true">${({ ok: '✓', near: '≈', bad: '✕' })[marks[i]]}</span>`);
       });
-      box.querySelectorAll('[data-fig],[data-acc],[data-up],[data-down],[data-del],[data-breath]').forEach(b => { b.disabled = true; });
+      box.querySelectorAll('[data-fig],[data-acc],[data-up],[data-down],[data-del],[data-breath],[data-slur],[data-tie]').forEach(b => { b.disabled = true; });
     },
   };
 }
@@ -277,7 +295,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
 // ¿Pide esta respuesta alteraciones (o hay armadura)? Entonces el escritor lleva la paleta ♯ ♭ ♮. En el Nivel 2, desde
 // la unidad 6 (donde se enseñan) siempre: así la paleta no delata cuál es la respuesta.
 const hasAccidental = names => names.some(n => /^[A-G][#b]/.test(n));
-export const wantsPalette = (env, names = [], armadura = 0) => !!armadura || hasAccidental(names) || (env.level >= 2 && env.unit >= 6);
+export const wantsPalette = (env, names = [], armadura = 0) => !!armadura || hasAccidental(names) || env.level >= 3 || (env.level >= 2 && env.unit >= 6);
 
 // ---------- Tocar notas en el pentagrama y construir una escala ----------
 const BIG_STAFF_NOTES = 2;
@@ -285,12 +303,13 @@ const CLICK_AFTER_POINTER_MS = 400;
 const noteTok = n => scoreTokens(`| ${n}w |`)[0];
 export async function tocarPentagrama(host, item, env) {
   const clef = CLEF[item.clave] || 'treble';
-  const want = item.respuesta;
+  // escala que sube y baja de forma distinta (menor melódica): se escribe primero la subida y después la bajada
+  const want = [...item.respuesta, ...(item.respuestaBajada || [])];
   const armadura = item.armadura || 0;
   const dada = (item.dada ? [].concat(item.dada) : []).map(noteTok);
   // una o dos notas: pentagrama al doble de alto (20 px por línea o espacio), para acertar con el dedo
   const big = want.length <= BIG_STAFF_NOTES;
-  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2><div class="lm-writer${big ? ' lm-big' : ''}"></div>
+  host.innerHTML = `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2>${item.respuestaBajada ? '<p class="muted small">Escribe primero la subida y después la bajada, todo seguido.</p>' : ''}<div class="lm-writer${big ? ' lm-big' : ''}"></div>
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   host.querySelector('.lm-q').focus();
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
@@ -299,12 +318,13 @@ export async function tocarPentagrama(host, item, env) {
   await onceClick(host, '[data-check]');
   const written = w.tokens();
   const wantMidi = want.map(n => noteTok(n).midi);
-  const marks = want.map((n, i) => (written[i] && tokenMidi(written[i]) === wantMidi[i] ? 'ok' : 'bad'));
+  // la altura real y también el nombre: do♯ no es re♭
+  const marks = want.map((n, i) => (written[i] && tokenMidi(written[i]) === wantMidi[i] && written[i].step === stepOf(n) ? 'ok' : 'bad'));
   w.lock(marks);
   host.querySelector('[data-check]').remove();
   const mark = item.tipo === 'escala' ? scaleMark(wantMidi, written.map(tokenMidi)) : marks.every(m => m === 'ok') ? 'ok' : 'bad';
   const shown = want.map(n => noteText(n, env.nom)).join(' ');
-  host.querySelector('.lm-feedback').innerHTML = `${mark === 'ok' ? '' : staffHtml(want.map(n => ({ ...noteTok(n), beats: 4 })), { clef, bars: false, label: `Respuesta: ${shown}` })}${whyHtml(mark, item.why || (mark === 'ok' ? '' : `Respuesta: ${shown}`))}`;
+  host.querySelector('.lm-feedback').innerHTML = `${mark === 'ok' ? '' : staffHtml(want.map(n => ({ ...noteTok(n), beats: 4 })), { clef, bars: false, armadura, label: `Respuesta: ${shown}` })}${whyHtml(mark, item.why || (mark === 'ok' ? '' : `Respuesta: ${shown}`))}`;
   const wrongAt = marks.findIndex(m => m === 'bad');
   return { mark, mistake: wrongAt < 0 ? null : written[wrongAt] ? `${want[wrongAt]}>${written[wrongAt].name}` : item.id || 'pentagrama' };
 }
@@ -374,7 +394,7 @@ export async function dictadoEscrito(host, p, env) {
     <div class="lm-writer"></div>${dynHtml}
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
-    clef, figures, rhythmOnly, max: want.length + 4, nom: env.nom, say: env.say, meter: p.compas, armadura, pulso: p.pulso || null,
+    clef, figures, rhythmOnly, max: want.length + 4, nom: env.nom, say: env.say, meter: p.compas, armadura, pulso: p.pulso || null, ties: want.some(x => x.tie),
     accidentals: !rhythmOnly && wantsPalette(env, want.filter(t => !t.rest).map(t => t.name), armadura),
   });
   const left = host.querySelector('#lmDictLeft');
@@ -390,7 +410,12 @@ export async function dictadoEscrito(host, p, env) {
   const got = w.tokens();
   // el ritmo se escribe sin altura: solo cuentan las figuras
   const bare = t => ({ rest: !!t.rest, dur: t.dur, step: t.rest ? undefined : RHYTHM_STEP.treble, midi: t.rest ? undefined : 72 });
-  const g = rhythmOnly ? gradeWriting(want.map(bare), got.map(bare)) : gradeWriting(want, got);
+  const g0 = rhythmOnly ? gradeWriting(want.map(bare), got.map(bare)) : gradeWriting(want, got);
+  // ligaduras de prolongación: cada una que falta o sobra rebaja la nota a «casi» (código «liga»)
+  const tieOff = want.map((x, i) => !!x.tie !== !!(got[i] && got[i].tie));
+  const g = want.some(x => x.tie) || got.some(x => x.tie)
+    ? (marks => ({ ...g0, marks, pct: pctOf(marks, g0.extra), mistakes: mistakeCodes([...g0.mistakes, marks.some((m, i) => tieOff[i] && g0.marks[i] === 'ok') ? 'liga' : null]) }))(g0.marks.map((m, i) => (m === 'ok' && tieOff[i] ? 'near' : m)))
+    : g0;
   w.lock(g.marks);
   host.querySelector('[data-check]').remove();
   // matices: cada uno que pide el dictado, en su compás
@@ -418,12 +443,15 @@ const DYN_LABEL = Object.fromEntries(DYN_OPTIONS);
 // La app dibuja y toca la primera nota; toca el intervalo (una nota detrás de otra) y el alumno escribe la segunda.
 // params: desde (notas de partida), intervalos (números: 2…8), direccion (['asc'], ['desc'] o las dos), rondas, escuchas
 const INTERVAL_NAME = { 2: '2.ª', 3: '3.ª', 4: '4.ª', 5: '5.ª', 6: '6.ª', 7: '7.ª', 8: '8.ª' };
+const SPECIES_TEXT = { M: 'mayor', m: 'menor', J: 'justa', A: 'aumentada', d: 'disminuida' };
 // Las rondas (con semilla: toda la clase recibe las mismas): { from, number, dir, to }; todo con notas naturales
 export function intervalRounds(p, seed) {
   const r = rng(seed);
   const starts = p.desde || ['C4'];
   const numbers = p.intervalos || [3, 5, 8];
   const dirs = p.direccion || ['asc'];
+  // con especies («3M», «4A»…): cada ronda lleva la suya y la nota de llegada puede llevar alteración
+  const kinds = (p.especies || []).map(x => ({ number: Number(x[0]), especie: x.slice(1) })).filter(x => numbers.includes(x.number));
   const out = [];
   const used = new Set();
   for (let k = 0; k < (p.rondas || 6); k++) {
@@ -431,14 +459,17 @@ export function intervalRounds(p, seed) {
     // sin repetir la misma ronda (si hay combinaciones de sobra) y dentro del pentagrama de sol (la3–la5)
     for (let tries = 0; tries < 60 && !round; tries++) {
       const from = starts[Math.floor(r() * starts.length)];
-      const number = numbers[(k + Math.floor(r() * 2)) % numbers.length]; // los números se turnan para que salgan todos
+      const kind = kinds.length ? kinds[(k + Math.floor(r() * 2)) % kinds.length] : null;
+      const number = kind ? kind.number : numbers[(k + Math.floor(r() * 2)) % numbers.length]; // los números se turnan para que salgan todos
       const dir = dirs[Math.floor(r() * dirs.length)];
       const step = stepOf(from) + (dir === 'desc' ? -(number - 1) : number - 1);
       if (step < stepOf('A3') || step > stepOf('A5')) continue;
-      const key = `${from}${number}${dir}`;
+      const to = kind ? intervalNote(from, number, kind.especie, dir) : nameOfStep(step);
+      if (!to) continue;
+      const key = `${from}${number}${kind ? kind.especie : ''}${dir}`;
       if (used.has(key) && tries < 40) continue;
       used.add(key);
-      round = { from, number, dir, to: nameOfStep(step) };
+      round = { from, number, dir, to, ...(kind ? { especie: kind.especie } : {}) };
     }
     out.push(round || { from: starts[0], number: numbers[0], dir: 'asc', to: nameOfStep(stepOf(starts[0]) + numbers[0] - 1) });
   }
@@ -461,7 +492,7 @@ export async function dictadoIntervalos(host, p, env) {
       <div class="controls">${playButton('lmIntPlay', 'Escuchar el intervalo')}<span class="muted small" id="lmIntLeft" aria-live="polite">Escuchas: ${listens}</span></div>
       <div class="lm-writer lm-big"></div>
       <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
-    const w = createStaffWriter(host.querySelector('.lm-writer'), { figures: ['w'], max: 2, nom: env.nom, say: env.say, given: [start], accidentals: false });
+    const w = createStaffWriter(host.querySelector('.lm-writer'), { figures: ['w'], max: 2, nom: env.nom, say: env.say, given: [start], accidentals: !!p.especies || env.level >= 3 });
     const left = host.querySelector('#lmIntLeft');
     const play = () => { stopSound(); playNotes([{ midi: start.midi, start: 0, beats: 1.4, rest: false }, { midi: target.midi, start: 1.6, beats: 1.4, rest: false }], 72); };
     host.querySelector('#lmIntPlay').addEventListener('click', () => {
@@ -475,12 +506,13 @@ export async function dictadoIntervalos(host, p, env) {
     stopSound();
     if (!env.alive()) return null;
     const got = w.tokens()[0];
-    const ok = !!got && tokenMidi(got) === target.midi;
+    // la altura real y el nombre (do♯ no es re♭)
+    const ok = !!got && tokenMidi(got) === target.midi && got.step === target.step;
     marks.push(ok ? 'ok' : 'bad');
-    if (!ok) mistakes.push('intervalo');
+    if (!ok) mistakes.push(got && round.especie && got.step === target.step ? 'especie' : 'intervalo');
     w.lock([ok ? 'ok' : 'bad']);
     host.querySelector('[data-check]').remove();
-    host.querySelector('.lm-feedback').innerHTML = whyHtml(ok ? 'ok' : 'bad', ok ? '' : `Era una ${INTERVAL_NAME[round.number] || round.number} ${round.dir === 'desc' ? 'hacia abajo' : 'hacia arriba'}: ${noteText(round.to, env.nom)}`);
+    host.querySelector('.lm-feedback').innerHTML = whyHtml(ok ? 'ok' : 'bad', ok ? '' : `Era una ${INTERVAL_NAME[round.number] || round.number}${round.especie ? ` ${SPECIES_TEXT[round.especie]}` : ''} ${round.dir === 'desc' ? 'hacia abajo' : 'hacia arriba'}: ${noteText(round.to, env.nom)}`);
     await continueButton(host, k + 1 < rounds.length ? 'Siguiente' : 'Ver el resultado');
   }
   const pct = Math.max(0, pctOf(marks) - extra * EXTRA_LISTEN_PENALTY);

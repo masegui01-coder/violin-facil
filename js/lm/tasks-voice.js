@@ -3,12 +3,12 @@
 // canta primero cada compás y el alumno lo repite (eco); sin apoyo (Media), solo da la tónica y la primera nota.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
-import { centsAnyOctave, noteText, letterText, attackTokens } from './notes.js';
-import { passesOf, totalBars, formOf, barNumber } from './form.js';
+import { centsAnyOctave, noteText, letterText, attackTokens, keyTonic } from './notes.js';
+import { passesOf, totalBars, formOf, barNumber, passText } from './form.js';
 import { freqToMidi } from '../music.js';
 import { gradeSung, singMark, SING_TOLERANCE } from './grade.js';
 import { staffHtml, CLEF, onceClick } from './kit.js';
-import { playNotes, playChordNow, playPitch, stopSound, wait, now } from './sound.js';
+import { playNotes, playEvents, playChordNow, playPitch, stopSound, wait, now } from './sound.js';
 import { saveVoice } from './results.js';
 import { dynamicsChecks } from './dynamics.js';
 import { keepInView } from './systems.js';
@@ -124,16 +124,7 @@ export function singOrder(tokens, form = null, pickup = 0) {
   return { passes: ps.length, once: attacks, sounding };
 }
 
-// Tónica y modo de una tonalidad escrita («Fa M», «La m», «Re m y Fa M»): midi cerca del do central
-const TONIC_PC = { do: 0, re: 2, mi: 4, fa: 5, sol: 7, la: 9, si: 11 };
-export function keyTonic(key) {
-  const m = /^(do|re|mi|fa|sol|la|si)\s*(M|m|menor|mayor)?/i.exec(String(key || '').trim());
-  const minor = !!m && /^(m|menor)$/.test(m[2] || '');
-  if (!m) return { midi: 60, minor: false };
-  let midi = 60 + TONIC_PC[m[1].toLowerCase()];
-  if (midi > 66) midi -= 12;
-  return { midi, minor };
-}
+export { keyTonic };
 
 // opts: tokens (scoreTokens), key ('Do M'|'La m'), echo, variant, under (texto bajo cada nota: letra o nombres),
 // meter, bpm, clef, intro (texto)
@@ -187,6 +178,7 @@ export async function singTask(host, opts, env) {
   };
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${up ? '<p class="lm-notice">Está escrito en clave de fa: se canta una octava más arriba.</p>' : ''}
     ${MIC_GATE}
+    ${opts.partner ? `<div class="lm-partner">${opts.partner.html}</div><div class="controls"><button type="button" class="btn ghost" id="lmSingBoth">Oír las dos voces</button></div>` : ''}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-meter" aria-hidden="true"><i id="lmSingDot"></i></div>
@@ -197,6 +189,12 @@ export async function singTask(host, opts, env) {
     host.querySelector('#lmSingPhase').textContent = text;
     host.querySelector('#lmSingNote').textContent = note;
   };
+  // lectura a dos voces: se puede oír la otra voz (la de la app) junto a la tuya; al cantar, nota a nota, va tu voz sola
+  host.querySelector('#lmSingBoth')?.addEventListener('click', () => {
+    stopSound();
+    const mine = once.map(n => ({ midi: n.midi + up, at: n.start * 60 / bpm, dur: n.beats * 60 / bpm * 0.92, gain: 0.9 }));
+    playEvents([...mine, ...opts.partner.notes.map(n => ({ midi: n.midi + up, at: n.start * 60 / bpm, dur: n.beats * 60 / bpm * 0.92, gain: 0.6 }))]);
+  });
   const first = sounding[0];
   host.querySelector('#lmSingRef').addEventListener('click', () => { playingUntil = playPitch(first.midi + up, 1) + AFTER_PLAY_S; });
   host.querySelector('#lmSingHelp')?.addEventListener('click', () => {
@@ -224,7 +222,7 @@ export async function singTask(host, opts, env) {
     let gaveUp = false;
     let pass = 0;
     for (const group of groupsOf(sounding, echo)) {
-      if (group[0].pass !== pass) { pass = group[0].pass; phase(opts.form && opts.form.kind === 'casillas' ? '2.ª vuelta: casilla 2' : opts.form && opts.form.kind === 'dc' ? 'D.C.: otra vez desde el principio' : '2.ª vuelta: desde el principio'); await wait(SECOND_PASS_MS); }
+      if (group[0].pass !== pass) { pass = group[0].pass; phase(opts.form && ['casillas', 'dc', 'ds'].includes(opts.form.kind) ? passText(opts.form, pass) : '2.ª vuelta: desde el principio'); await wait(SECOND_PASS_MS); }
       if (!env.alive()) return null;
       if (gaveUp) break;
       if (echo) {
@@ -301,10 +299,11 @@ export function hyphenate(syllables, words) {
   let pos = 0;
   words.split(/\s+/).forEach(w => { pos += letters(w).length; ends.add(pos); });
   let at = 0;
-  return syllables.map(s => {
-    if (!s) return s;
+  return syllables.map((s, i) => {
+    if (!s || s === '_') return s;
     at += letters(s).length;
-    return ends.has(at) || /-$/.test(s) ? s : `${s}-`;
+    // la sílaba que se alarga en un melisma («_») no lleva guion: la línea sigue tras ella
+    return ends.has(at) || /-$/.test(s) || syllables[i + 1] === '_' ? s : `${s}-`;
   });
 }
 

@@ -1,6 +1,6 @@
 // Lenguaje musical: corrección de los ejercicios nuevos (sin DOM). Cada marca es «ok» (verde ✓), «near» (amarillo ≈)
 // o «bad» (rojo ✕), el mismo patrón de los dictados; el porcentaje da las estrellas con los mismos escalones.
-import { FIGURE_BEATS, midiOf, nameOfStep, tokenMidi, tokenName } from './notes.js';
+import { FIGURE_BEATS, midiOf, nameOfStep, tokenMidi, tokenName, interval } from './notes.js';
 import { spell } from '../music.js';
 
 // Estrellas del contrato: 1 desde el 60 %, 2 desde el 80 % y 3 desde el 90 %
@@ -183,7 +183,9 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
   if (firstBeatNote) rules.push({ id: 'tiempo1', ok: tokens.length > 0 && tokens.every((t, i) => !barOf[i].first || !t.rest) });
   if (intervals) {
     const found = new Set(sounding.slice(1).map((t, i) => Math.abs(t.step - sounding[i].step) + 1));
-    rules.push({ id: 'intervalos', ok: intervals.every(n => found.has(n)) });
+    // un número («3») o un número con su especie («3M», «4A»): la especie se mide con las notas reales
+    const species = new Set(sounding.slice(1).map((t, i) => interval(tokenName(sounding[i]), tokenName(t)).code));
+    rules.push({ id: 'intervalos', ok: intervals.every(n => (typeof n === 'string' && /[A-Za-z]$/.test(n) ? species.has(n) : found.has(Number(n)))) });
   }
   if (any) {
     const kinds = new Set(tokens.filter(t => any.de.includes(figKey(t))).map(figKey));

@@ -3,7 +3,7 @@
 import { esc, icon } from '../ui.js';
 import { rng } from '../generate.js';
 import { noteCell, clefCell, gapCell, endCell, layoutTokens, repStartCell, repEndCell, NOTE_W } from './staff-lm.js';
-import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf, pulseBeatsOf, accidentalSigns, ACC_SYMBOL, accOfName, keyAcc } from './notes.js';
+import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf, beamBeatsOf, accidentalSigns, ACC_SYMBOL, accOfName, keyAcc } from './notes.js';
 import { drawMarks, totalBars } from './form.js';
 
 export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
@@ -34,9 +34,14 @@ function dynamicsByBar(matices = []) {
 // Pentagrama de una lista de notas: celdas en fila agrupadas por compases (un compás nunca se parte entre dos
 // líneas), corcheas unidas por su barra, matices y reguladores debajo, calderones y comas de respiración encima.
 // under: texto bajo cada nota (letra, nombre). dynamics: matices del catálogo. pickup: pulsos de la anacrusa.
+// Signos del D.S. al Coda sobre un compás: a la izquierda el signo (𝄋) o la Coda (𝄌); a la derecha «al Coda 𝄌» y «D.S. al Coda»
+const dsMeta = m => ({
+  ...(m.segno ? { dsL: '𝄋' } : m.coda ? { dsL: '𝄌 Coda' } : {}),
+  ...(m.alCoda || m.ds ? { dsR: [m.alCoda ? 'al Coda 𝄌' : '', m.ds ? 'D.S. al Coda' : ''].filter(Boolean).join(' · ') } : {}),
+});
 export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false, armadura = 0, form = null, pulso = null, given = 0 } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
-  const pulse = pulso === 'q.' ? 1.5 : meter ? pulseBeatsOf(meter) : 1;
+  const pulse = meter ? beamBeatsOf(meter, pulso) : pulso === 'q.' ? 1.5 : 1;
   const lay = layoutTokens(tokens, { barBeats, pickup, clef, pulse });
   const dyn = dynamicsByBar(dynamics || []);
   // alteraciones que se dibujan (las de la armadura no) y largo de cada ligadura de prolongación
@@ -52,19 +57,26 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     const fnum = pickup ? L.bar : L.bar + 1; // número de compás en la forma (0 = anacrusa)
     const fmark = fm[fnum] || null;
     if (firstInBar && fmark) {
-      Object.assign(meta[meta.length - 1], fmark.volta ? { volta: fmark.volta, opens: fmark.voltaOpens } : {}, fmark.fine ? { fine: true } : {});
+      Object.assign(meta[meta.length - 1], fmark.volta ? { volta: fmark.volta, opens: fmark.voltaOpens } : {}, fmark.fine ? { fine: true } : {}, dsMeta(fmark));
       if (fmark.start) groups[groups.length - 1].push(`<span class="lm-sc">${repStartCell()}</span>`);
     }
     const lastOfBar = L.barEnd || i === tokens.length - 1;
-    const signs = firstInBar ? (dyn[barNo] || []).filter(m => m.signo !== 'calderon') : [];
+    const barDyn = firstInBar ? (dyn[barNo] || []).filter(m => m.signo !== 'calderon') : [];
     const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
     const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
     // cresc. / dim. con «hasta»: la línea de guiones sigue bajo cada nota hasta el último compás que abarca
-    const swell = !signs.length && (dynamics || []).some(m => DYN_TEXT[m.signo] && m.hasta && barNo >= m.compas && barNo <= m.hasta);
-    const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : swell ? '<span class="lm-dyn lm-dyn-ext" aria-hidden="true">- - -</span>' : '';
+    const swell = !barDyn.length && (dynamics || []).some(m => DYN_TEXT[m.signo] && m.hasta && barNo >= m.compas && barNo <= m.hasta);
+    const dynHtml = barDyn.length ? `<span class="lm-dyn" lang="it">${barDyn.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : swell ? '<span class="lm-dyn lm-dyn-ext" aria-hidden="true">- - -</span>' : '';
     // la ligadura llega hasta la nota que sigue (si cruza la barra de compás, también el hueco de la barra)
+    // ligadura de expresión: de esta nota a la que cierra el paréntesis (la barra de compás añade su hueco)
+    let slurLen = 0;
+    if (t.slurStart) {
+      let j = i;
+      while (j < tokens.length - 1 && !tokens[j].slurEnd) j++;
+      if (j > i) slurLen = (j - i) * NOTE_W + lay.slice(i, j).filter(x => x.barEnd).length * 14;
+    }
     const tieLen = t.tie ? (tokens[i + 1] && lay[i + 1].bar !== L.bar ? NOTE_W + 14 : NOTE_W) : 0;
-    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: signs[i], tie: tieLen, given: i < given })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
+    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: signs[i], tie: tieLen, slur: slurLen, given: i < given })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under${under[i] === '_' ? ' lm-melisma' : ''}">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {
       groups[groups.length - 1].push(`<span class="lm-sc">${fmark && fmark.end ? repEndCell() : gapCell(true, null, 14)}</span>`);
@@ -75,11 +87,12 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
   });
   const lastMark = form ? fm[pickup ? lay[lay.length - 1]?.bar : (lay[lay.length - 1]?.bar ?? 0) + 1] : null;
   if (lastMark && (lastMark.volta || lastMark.fine)) Object.assign(meta[meta.length - 1], lastMark.volta ? { volta: lastMark.volta, opens: lastMark.voltaOpens } : {}, lastMark.fine ? { fine: true } : {});
+  if (lastMark) Object.assign(meta[meta.length - 1], dsMeta(lastMark));
   groups[groups.length - 1].push(`<span class="lm-sc">${endCell(repeat || !!(lastMark && lastMark.end))}</span>`);
   if (lastMark && lastMark.dc) groups[groups.length - 1].push('<span class="lm-dc" lang="it">D.C. al Fine</span>');
   const html = groups.map((g, k) => ({ g, m: meta[k] || {} })).filter(x => x.g.length).map(({ g, m }) => {
-    const cls = ['lm-bargroup', m.volta ? `lm-volta${m.opens ? ' lm-volta-open' : ''}` : '', m.fine ? 'lm-fine' : ''].filter(Boolean).join(' ');
-    return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}>${g.join('')}</span>`;
+    const cls = ['lm-bargroup', m.volta ? `lm-volta${m.opens ? ' lm-volta-open' : ''}` : '', m.fine ? 'lm-fine' : '', m.dsL || m.dsR ? 'lm-dsmark' : ''].filter(Boolean).join(' ');
+    return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}${m.dsL ? ` data-ds-left="${m.dsL}"` : ''}${m.dsR ? ` data-ds-right="${m.dsR}"` : ''}>${g.join('')}</span>`;
   }).join('');
   return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${armadura ? ` data-armadura="${armadura}"` : ''}${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
 }
@@ -89,7 +102,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
 // una columna). voices: [{ tokens, label, marks }]. Es lo que se lee a dos voces (ostinato de la app + voz del alumno).
 export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label = '', armadura = 0, pulso = null } = {}) {
   const barBeats = meter ? barBeatsOf(meter) : null;
-  const pulse = pulso === 'q.' ? 1.5 : meter ? pulseBeatsOf(meter) : 1;
+  const pulse = meter ? beamBeatsOf(meter, pulso) : pulso === 'q.' ? 1.5 : 1;
   const key = x => Math.round(x * 1000);
   // cada voz: sus notas por compás con el instante en que suenan (las notas a la vez van en la misma columna)
   const voiceBars = voices.map(v => {

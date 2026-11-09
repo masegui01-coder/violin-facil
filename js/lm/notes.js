@@ -10,7 +10,7 @@ export const CLEF_BOTTOM = { treble: 30, bass: 18 };
 // Duración en pulsos de negra de cada figura de los ejercicios
 export const FIGURE_BEATS = { w: 4, 'h.': 3, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25 };
 export const FIGURE_NAME = { w: 'Redonda', 'h.': 'Blanca con puntillo', h: 'Blanca', 'q.': 'Negra con puntillo', q: 'Negra', 'e.': 'Corchea con puntillo', e: 'Corchea', s: 'Semicorchea' };
-export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', 'h.': 'Silencio de blanca con puntillo', q: 'Silencio de negra', 'q.': 'Silencio de negra con puntillo', e: 'Silencio de corchea' };
+export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', 'h.': 'Silencio de blanca con puntillo', q: 'Silencio de negra', 'q.': 'Silencio de negra con puntillo', e: 'Silencio de corchea', s: 'Silencio de semicorchea' };
 
 export const stepOf = name => diatonicStep(parseNote(name));
 export const nameOfStep = step => LETTERS[((step % 7) + 7) % 7] + Math.floor(step / 7);
@@ -118,9 +118,34 @@ export function interval(a, b) {
   return { number, quality, code: `${number}${quality}` };
 }
 
+// La nota a un intervalo de otra: número (2…8) y especie (M, m, J, A, d), hacia arriba o hacia abajo. Devuelve el nombre con
+// su alteración («C#5») o null si haría falta una doble alteración
+const SEMIS_OF = { 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 8: 12 };
+const ADJUST = { M: 0, J: 0, m: -1, A: 1 };
+export function intervalNote(from, number, especie, dir = 'asc') {
+  const perfect = [4, 5, 8].includes(number);
+  const adj = especie === 'd' ? (perfect ? -1 : -2) : ADJUST[especie];
+  if (adj === undefined || (perfect && (especie === 'M' || especie === 'm')) || (!perfect && especie === 'J')) return null;
+  const semis = SEMIS_OF[number] + adj;
+  const sign = dir === 'desc' ? -1 : 1;
+  const step = stepOf(from) + sign * (number - 1);
+  const midi = midiOf(from) + sign * semis;
+  const letter = LETTERS[((step % 7) + 7) % 7];
+  const oct = Math.floor(step / 7);
+  const acc = midi - ((oct + 1) * 12 + LETTER_PC[letter]);
+  return Math.abs(acc) > 1 ? null : letter + (ACC_TEXT[acc] ?? '') + oct;
+}
+
 // Escala de una tonalidad (mayor o menor natural) desde la tónica en una octava: ['C4','D4',…,'C5']
-const STEPS = { mayor: [0, 2, 4, 5, 7, 9, 11, 12], menor: [0, 2, 3, 5, 7, 8, 10, 12] };
+// Nivel 3: la menor en sus tres formas (la melódica sube con 6.º y 7.º elevados; al bajar es la natural)
+const STEPS = {
+  mayor: [0, 2, 4, 5, 7, 9, 11, 12], menor: [0, 2, 3, 5, 7, 8, 10, 12],
+  armonica: [0, 2, 3, 5, 7, 8, 11, 12], melodica: [0, 2, 3, 5, 7, 9, 11, 12],
+};
+// Nombre de la forma del catálogo («menor armónica») → clave de STEPS
+export const MODE_KEY = { mayor: 'mayor', 'menor natural': 'menor', menor: 'menor', 'menor armónica': 'armonica', 'menor melódica': 'melodica', natural: 'menor', 'armónica': 'armonica', 'melódica': 'melodica' };
 export function scale(tonic, mode = 'mayor') {
+  mode = MODE_KEY[mode] || mode;
   const t = parseNote(tonic);
   const l0 = LETTERS.indexOf(t.letter);
   return STEPS[mode].map((semi, i) => {
@@ -133,6 +158,9 @@ export function scale(tonic, mode = 'mayor') {
 }
 
 // Grado de la escala (1 = tónica; 0 o negativo, por debajo; 8 = octava) → nota
+// Escala descendente de la menor melódica: la natural de arriba abajo ('A5' … 'A4')
+export const scaleDown = (tonic, mode = 'mayor') => (MODE_KEY[mode] === 'melodica' ? scale(tonic, 'menor') : scale(tonic, mode)).reverse();
+
 export function degreeNote(tonic, degree, mode = 'mayor') {
   const notes = scale(tonic, mode);
   const k = degree - 1;
@@ -195,6 +223,8 @@ export function scoreTokens(text) {
       rest: n.rest, dur: n.dur + (n.dots ? '.'.repeat(n.dots) : ''), beats: n.beats, start: n.start, bar: n.bar,
       ...(n.rest ? {} : { step: diatonicStep(n), name: n.letter + (ACC_NAME[n.acc] ?? '') + n.oct, midi: n.midi, acc: n.acc }),
       ...(tie ? { tie: true } : {}), ...(tiedFrom ? { tiedFrom: true } : {}),
+      // ligadura de expresión «( … )»: la curva se dibuja de la primera a la última nota
+      ...(n.slurStart ? { slurStart: true } : {}), ...(n.slurEnd ? { slurEnd: true } : {}),
     };
   });
 }
@@ -203,7 +233,7 @@ export function scoreTokens(text) {
 export function attackTokens(tokens) {
   const out = [];
   tokens.forEach((t, i) => {
-    if (t.tiedFrom && out.length) { out[out.length - 1].beats += t.beats; return; }
+    if (t.tiedFrom && out.length) { const last = out[out.length - 1]; last.head ??= last.beats; last.merged = true; last.beats += t.beats; return; }
     out.push({ ...t, index: i });
   });
   return out;
@@ -212,9 +242,13 @@ export function attackTokens(tokens) {
 export const barBeatsOf = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return num * 4 / den; };
 // Compás compuesto (6/8, 9/8, 12/8): el pulso es la negra con puntillo (1,5 pulsos de negra); si no, la negra
 export const isCompound = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return den === 8 && num % 3 === 0 && num >= 6; };
-export const pulseBeatsOf = meter => (isCompound(meter) ? 1.5 : 1);
-// Pulso de un ejercicio: su campo «pulso» («q.») o el del compás
-export const pulseOfParams = p => (p && p.pulso === 'q.' ? 1.5 : p && p.compas ? pulseBeatsOf(p.compas) : 1);
+// El 3/8 se cuenta por defecto a la corchea (3 clics por compás); el 6/8 y el 9/8, a la negra con puntillo
+export const pulseBeatsOf = meter => (isCompound(meter) ? 1.5 : String(meter) === '3/8' ? 0.5 : 1);
+// Pulso de un ejercicio: su campo «pulso» («q.» = 1,5, «e» = 0,5) o el del compás
+export const pulseOfParams = p => (p && p.pulso === 'q.' ? 1.5 : p && p.pulso === 'e' ? 0.5 : p && p.compas ? pulseBeatsOf(p.compas) : 1);
+// Grupo de las barras de corchea y semicorchea (y de las sílabas de apoyo): 1,5 en 6/8, 9/8 y 3/8 (las tres corcheas del
+// compás van unidas) o con «pulso: q.»; si no, la negra
+export const beamBeatsOf = (meter, pulso = null) => (pulso === 'q.' || isCompound(meter) || String(meter) === '3/8' ? 1.5 : 1);
 // Nombres de nota en solfeo del contenido («sol4», «do») → letra («G4», «C»)
 const SOLFA = { do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' };
 export function solfaToName(text) {
@@ -229,3 +263,15 @@ export function shiftOctave(name, octaves) {
   const p = parseNote(name);
   return p.letter + (ACC_TEXT[p.acc] ?? '') + (p.oct + octaves);
 }
+
+// Tónica y modo de una tonalidad escrita («Fa M», «La m», «Re m y Fa M»): midi cerca del do central
+const TONIC_PC = { do: 0, re: 2, mi: 4, fa: 5, sol: 7, la: 9, si: 11 };
+export function keyTonic(key) {
+  const m = /^(do|re|mi|fa|sol|la|si)\s*([♯♭#]|b(?=\s))?\s*(M|m|menor|mayor)?/i.exec(String(key || '').trim());
+  const minor = !!m && /^(m|menor)$/.test(m[3] || '');
+  if (!m) return { midi: 60, minor: false };
+  let midi = 60 + TONIC_PC[m[1].toLowerCase()] + (m[2] === '♯' || m[2] === '#' ? 1 : m[2] ? -1 : 0);
+  if (midi > 66) midi -= 12;
+  return { midi, minor };
+}
+

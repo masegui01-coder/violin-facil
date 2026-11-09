@@ -14,7 +14,7 @@ import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.
 import { MIC_GATE, openMic, groupsOf, keyTonic } from './tasks-voice.js';
 import { dynamicsChecks } from './dynamics.js';
 import { keepInView } from './systems.js';
-import { passesOf, totalBars, barNumber } from './form.js';
+import { passesOf, totalBars, barNumber, passText } from './form.js';
 
 const TICK_MS = 25;
 // Ataque a tiempo: ±180 ms en Fácil y ±120 ms en Media (la voz arranca más despacio que una palmada)
@@ -119,7 +119,7 @@ export async function singSong(host, opts, env) {
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
   const attackTol = ATTACK_TOLERANCE_S[variant] || ATTACK_TOLERANCE_S.facil;
   const barBeats = barBeatsOf(meter);
-  const pulse = opts.pulso === 'q.' ? 1.5 : pulseOfParams({ compas: meter });
+  const pulse = pulseOfParams({ compas: meter, pulso: opts.pulso });
   const spb = 60 / bpm;
   const pickup = opts.pickup || 0;
   const clef = CLEF[opts.clave] || 'treble';
@@ -128,11 +128,18 @@ export async function singSong(host, opts, env) {
   // con 2.ª estrofa (letra2) y sin forma escrita, la barra de repetición al final: dos vueltas
   const form = opts.form || (opts.under2 ? { kind: 'repeat', desde: 1, hasta: null } : null);
   const passes = songPasses(tokens, { form, pickup, meter });
+  // segunda voz (Nivel 3): la otra voz de la canción, que toca la app. Suena al escuchar y en el eco; mientras se canta,
+  // solo con auriculares (si no, el micrófono la oiría)
+  const partner = opts.partner || null;
+  const partnerPasses = partner ? songPasses(partner.tokens, { form, pickup, meter }) : null;
+  const partnerEvents = (pass, from = 0, to = Infinity, shift = 0) => (partnerPasses ? partnerPasses[pass.pass].notes.filter(n => n.start >= from - 1e-6 && n.start < to - 1e-6).map(n => ({ midi: n.midi + up, at: (n.start - shift) * spb, dur: n.beats * spb * 0.92, gain: 0.6 })) : []);
   const marks = [];
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${up ? '<p class="lm-notice">Está escrita en clave de fa: se canta una octava más arriba.</p>' : ''}${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
+    ${partner ? `<div class="lm-partner">${partner.html}</div>` : ''}
+    ${partner ? '<label class="lm-check" id="lmSongPhonesBox"><input type="checkbox" id="lmSongPhones"> <span>Llevo auriculares: la app toca la otra voz mientras canto</span></label>' : ''}
     <div class="controls"><button type="button" class="btn ghost" id="lmSongHear">Escuchar la canción con acompañamiento</button><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>
     <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
   // Pintado completo solo al principio y al corregir (marcas); mientras se canta, solo se mueve la marca de la nota
@@ -153,6 +160,7 @@ export async function singSong(host, opts, env) {
   const passEvents = pass => [
     ...pass.notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
     ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: pass.bars.map(b => (pickup ? b : b - 1)), pickup }),
+    ...partnerEvents(pass),
   ];
   host.querySelector('#lmSongHear').addEventListener('click', () => {
     stopSound();
@@ -164,7 +172,9 @@ export async function singSong(host, opts, env) {
   host.querySelector('#lmSongGo').focus();
   await new Promise(r => host.querySelector('#lmSongGo').addEventListener('click', r, { once: true }));
   stopSound();
+  const withPartner = !!(partner && host.querySelector('#lmSongPhones')?.checked);
   host.querySelector('.controls').remove();
+  host.querySelector('#lmSongPhonesBox')?.remove();
   host.querySelector('.muted.small')?.remove();
   if (!(await openMic(host, env))) return null;
   audio.setVoiceInput(true);
@@ -177,7 +187,7 @@ export async function singSong(host, opts, env) {
     await wait(1400);
     for (const pass of passes) {
       const words = pass.pass ? opts.under2 || opts.under : opts.under;
-      if (pass.pass) { phase(form && form.kind === 'casillas' ? '2.ª vuelta: casilla 2' : form && form.kind === 'dc' ? 'D.C.: otra vez desde el principio' : 'Ahora, la 2.ª estrofa (la letra de abajo)'); env.say('Segunda vuelta'); await wait(1200); }
+      if (pass.pass) { phase(form && ['casillas', 'dc', 'ds'].includes(form.kind) ? passText(form, pass.pass) : 'Ahora, la 2.ª estrofa (la letra de abajo)'); env.say('Segunda vuelta'); await wait(1200); }
       for (const group of groupsOf(pass.notes, echo)) {
         if (!env.alive()) return null;
         // en el eco, cada compás se repite desde su principio; si no, la vuelta entera seguida
@@ -188,12 +198,15 @@ export async function singSong(host, opts, env) {
           phase('Escucha y repite');
           const b = group[0].bar;
           const r = playEvents([...notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
-            ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: [b], pickup })]);
+            ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: [b], pickup }),
+            ...partnerEvents(pass, barStart, barStart + length, barStart)]);
           await wait((r.end - now() + 0.2) * 1000);
         }
         // claqueta de un compás y a cantar: los fotogramas del micrófono se guardan con su instante
         phase('Claqueta…');
         const t0 = clicks(counts, bpm / pulse, { accentEvery: counts });
+        // la otra voz, a la vez que se canta (solo con auriculares)
+        if (withPartner) playEvents(partnerEvents(pass, barStart, barStart + length, barStart), { at: t0 });
         const frames = [];
         const end = t0 + length * spb + TAIL_S;
         while (env.alive() && now() < end) {

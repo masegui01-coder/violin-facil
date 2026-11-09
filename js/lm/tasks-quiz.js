@@ -3,12 +3,13 @@
 // Cada pregunta se pinta en «host» y resuelve con { mark: 'ok'|'near'|'bad', mistake } tras mostrar la corrección.
 import { esc } from '../ui.js';
 import { orderMark } from './grade.js';
-import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME, pulseBeatsOf, accidentalSigns, attackTokens } from './notes.js';
+import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME, beamBeatsOf, accidentalSigns, attackTokens } from './notes.js';
 import { nameText, namesFor } from './kit.js';
 import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel, tight } from './kit.js';
 import { expandForm, formOf } from './form.js';
-import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens, accSlotCell, keySignatureSteps, stepAtY } from './staff-lm.js';
 import { playNotes, clicks, stopSound } from './sound.js';
+import { positionText } from './notes.js';
 import { DYN_GAIN } from './gen.js';
 
 const LISTEN_BPM = 84;
@@ -43,6 +44,8 @@ export function notesOfPlay(play, env) {
   if (play.versiones) return versionNotes(play);
   // intervalo: las dos notas una detrás de otra (melódico) o a la vez (armónico)
   if (play.notas) return play.notas.map((n, i) => ({ midi: midiOf(n), start: play.armonico ? 0 : i * 1.2, beats: play.armonico ? 2 : 1, rest: false }));
+  // dos voces a la vez: la segunda partitura suena junto a la primera, nota contra nota
+  if (play.voz2 && play.partitura) return [...attackTokens(scoreTokens(play.partitura)), ...attackTokens(scoreTokens(play.voz2))].map(t => ({ midi: t.midi, start: t.start, beats: t.beats, rest: t.rest }));
   const text = play.cancion ? env.songScore(play.cancion) : play.partitura;
   if (!text) return [];
   if (/[\^+]/.test(text)) return figureNotes(text);
@@ -74,11 +77,14 @@ export function playQuestion(play, env) {
   const notes = notesOfPlay(play, env);
   const bpm = play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM;
   if (play.sound && /^(pulso|acento:\d)$/.test(play.sound)) return playPulse(play.sound, notes, bpm);
-  return playNotes(notes, bpm, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
+  const out = playNotes(notes, bpm, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
+  // pulso: un clic suave por negra mientras suena (para oír si una nota ligada cae sobre él)
+  if (play.pulso) clicks(Math.ceil(notes.reduce((end, n) => Math.max(end, n.start + n.beats), 0)), bpm, { at: out.t0, accentEvery: 2, level: 0.3 });
+  return out;
 }
 
 // ---------- Elegir (con sonido opcional) ----------
-const LISTEN_MISTAKE = { escucharCompas: 'compas', escucharModo: 'modo', escucharIntervalo: 'semitono-oido', escucharMatiz: 'matiz' };
+const LISTEN_MISTAKE = { escucharCompas: 'compas', escucharModo: 'modo', escucharIntervalo: 'semitono-oido', escucharMatiz: 'matiz', escucharMovimiento: 'movimiento' };
 
 function headHtml(item) {
   return `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2>`;
@@ -153,7 +159,7 @@ async function contar(host, item, env) {
 function barButtons(item, env) {
   const bars = item.partitura.split('|').map(x => x.trim()).filter(Boolean);
   const clef = CLEF[item.clave] || 'treble';
-  const pulse = item.compas ? pulseBeatsOf(item.compas) : 1;
+  const pulse = item.compas ? beamBeatsOf(item.compas) : 1;
   const fine = item.dc && item.dc.fine ? Number(item.dc.fine) : null; // «Fine» sobre ese compás y «D.C. al Fine» al final
   return bars.map((text, k) => {
     const tokens = scoreTokens(`| ${text} |`);
@@ -204,7 +210,7 @@ function holeStaff(item, fills, now, env) {
       const k = hole++;
       return fills[k] ? scoreTokens(`| ${fills[k]} |`).map(t => ({ t, filled: true })) : [{ hole: k }];
     });
-    const lay = layoutTokens(parts.map(x => x.t || { dur: 'q', beats: 1 }), { clef: 'treble', pulse: item.compas ? pulseBeatsOf(item.compas) : 1 });
+    const lay = layoutTokens(parts.map(x => x.t || { dur: 'q', beats: 1 }), { clef: 'treble', pulse: item.compas ? beamBeatsOf(item.compas) : 1 });
     const signs = accidentalSigns(parts.map(x => x.t || { rest: true }), parts.map(() => 0), item.armadura || 0);
     const html = parts.map((x, i) => (x.hole !== undefined
       ? `<span class="lm-sc lm-hole-sc${x.hole === now ? ' lm-now' : ''}" aria-hidden="true">${noteCell({ step: null })}<span class="lm-hole-q">?</span></span>`
@@ -317,17 +323,31 @@ async function nombrarNotas(host, item, env) {
   const render = () => {
     host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, meter, armadura, current: given.length, under: given.map(l => nameText(l, env.nom)) });
   };
-  host.innerHTML = `${headHtml(item)}<div class="lm-staff-box"></div>${nameButtons(namesFor(armadura), env.nom)}
+  // Nivel 3: una paleta ♯ ♭ ♮ delante de la letra (la armadura no basta: sol♯ de la menor armónica, si♮ de do menor)
+  const palette = env.level >= 3 ? `<div class="seg three lm-modrow" role="group" aria-label="Alteración de la próxima nota">${[['#', '♯ Sostenido'], ['b', '♭ Bemol'], ['n', '♮ Becuadro']].map(([v, t]) => `<button type="button" data-mod="${v}" aria-pressed="false">${t}</button>`).join('')}</div>` : '';
+  let mod = null;
+  host.innerHTML = `${headHtml(item)}<div class="lm-staff-box"></div>${palette}${nameButtons(namesFor(armadura), env.nom)}
     <p class="muted small center" aria-live="polite" id="lmNameProg">Nota 1 de ${tokens.length}</p><div class="lm-feedback"></div>`;
   render();
   host.querySelector('.lm-q').focus();
+  const setMod = e => {
+    const m = e.target.closest('[data-mod]');
+    if (!m) return;
+    mod = mod === m.dataset.mod ? null : m.dataset.mod;
+    host.querySelectorAll('[data-mod]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.mod === mod)));
+  };
+  host.addEventListener('click', setMod);
   while (given.length < want.length) {
     const b = await onceClick(host, '[data-name]');
-    given.push(b.dataset.name);
+    // con la paleta, la letra lleva la alteración elegida; sin ella, la de la armadura
+    given.push(mod ? b.dataset.name[0] + (mod === '#' ? '#' : mod === 'b' ? 'b' : '') : b.dataset.name);
+    mod = null;
+    host.querySelectorAll('[data-mod]').forEach(x => x.setAttribute('aria-pressed', 'false'));
     render();
     host.querySelector('#lmNameProg').textContent = given.length < want.length ? `Nota ${given.length + 1} de ${tokens.length}` : 'Hecho';
   }
-  host.querySelectorAll('[data-name]').forEach(b => { b.disabled = true; });
+  host.removeEventListener('click', setMod);
+  host.querySelectorAll('[data-name],[data-mod]').forEach(b => { b.disabled = true; });
   const marks = want.map((w, i) => (given[i] === w ? 'ok' : 'bad'));
   host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, meter, armadura, marks, under: want.map((w, i) => (given[i] === w ? nameText(w, env.nom) : `${nameText(given[i], env.nom)} → ${nameText(w, env.nom)}`)) });
   const right = marks.filter(m => m === 'ok').length;
@@ -337,8 +357,140 @@ async function nombrarNotas(host, item, env) {
   return { mark, mistake: wrongAt < 0 ? null : `${tokens[wrongAt].name}>${given[wrongAt]}` };
 }
 
+// ---------- Clasificar un compás: simple o compuesto, y binario, ternario o cuaternario ----------
+const METER_ROWS = [['tipo', 'Tipo', [['simple', 'Simple'], ['compuesto', 'Compuesto']]], ['pulsos', 'Pulsos', [['binario', 'Binario'], ['ternario', 'Ternario'], ['cuaternario', 'Cuaternario']]]];
+async function clasificarCompas(host, item, env) {
+  const right = item.respuesta;
+  const chosen = {};
+  host.innerHTML = `${headHtml(item)}<div class="lm-staff lm-tight" role="img" aria-label="Compás de ${esc(item.compas)}"><span class="lm-bargroup"><span class="lm-sc">${clefCell('treble', item.compas, 0)}</span><span class="lm-sc">${endCell(false)}</span></span></div>
+    ${METER_ROWS.map(([k, label, opts]) => `<div class="lm-classrow" role="group" aria-label="${label}"><span class="muted small">${label}</span><div class="quiz-options lm-options">${opts.map(([v, t]) => `<button type="button" class="quiz-opt" data-${k}="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('')}
+    <div class="controls"><button type="button" class="btn" data-check disabled>Comprobar</button></div><div class="lm-feedback"></div>`;
+  host.querySelector('.lm-q').focus();
+  const check = host.querySelector('[data-check]');
+  host.addEventListener('click', e => {
+    const b = e.target.closest('[data-tipo],[data-pulsos]');
+    if (!b || b.disabled) return;
+    const k = b.hasAttribute('data-tipo') ? 'tipo' : 'pulsos';
+    chosen[k] = b.dataset[k];
+    host.querySelectorAll(`[data-${k}]`).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    check.disabled = !(chosen.tipo && chosen.pulsos);
+  });
+  await onceClick(host, '[data-check]');
+  const okType = chosen.tipo === right.tipo;
+  const okPulse = chosen.pulsos === right.pulsos;
+  const mark = okType && okPulse ? 'ok' : okType || okPulse ? 'near' : 'bad';
+  host.querySelectorAll('[data-tipo],[data-pulsos]').forEach(x => {
+    x.disabled = true;
+    const v = x.dataset.tipo || x.dataset.pulsos;
+    if (v === right.tipo || v === right.pulsos) x.classList.add('right');
+    else if (v === chosen.tipo || v === chosen.pulsos) x.classList.add('wrong');
+  });
+  check.remove();
+  host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why || `${right.tipo} ${right.pulsos}`);
+  return { mark, mistake: mark === 'ok' ? null : 'compas' };
+}
+
+// ---------- Clasificar un intervalo: número (2.ª…8.ª) y especie (M, m, J, A, d) ----------
+const SPECIES_ROW = [['M', 'Mayor'], ['m', 'Menor'], ['J', 'Justo'], ['A', 'Aumentado'], ['d', 'Disminuido']];
+async function clasificarIntervalo(host, item, env) {
+  const right = item.respuesta;
+  const [a, b] = item.notas;
+  const tokens = [a, b].map(n => ({ ...scoreTokens(`| ${n}w |`)[0], beats: 4 }));
+  const clef = CLEF[item.clave] || 'treble';
+  const chosen = {};
+  const seq = staffHtml(tokens, { clef, bars: false, armadura: 0, label: `Dos notas: ${tokens.map(t => tokenLabel(t, env.nom)).join(', ')}` });
+  host.innerHTML = `${headHtml(item)}${playButton('lmQPlay')}${seq}
+    <div class="lm-classrow" role="group" aria-label="Número"><span class="muted small">Número</span><div class="lm-names lm-numbers">${[2, 3, 4, 5, 6, 7, 8].map(n => `<button type="button" class="lm-name" data-num="${n}" aria-pressed="false">${n}.ª</button>`).join('')}</div></div>
+    <div class="lm-classrow" role="group" aria-label="Especie"><span class="muted small">Especie</span><div class="lm-names lm-numbers">${SPECIES_ROW.map(([v, t]) => `<button type="button" class="lm-name" data-esp="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>
+    <div class="controls"><button type="button" class="btn" data-check disabled>Comprobar</button></div><div class="lm-feedback"></div>`;
+  host.querySelector('.lm-q').focus();
+  host.querySelector('#lmQPlay').addEventListener('click', () => playQuestion({ notas: item.notas }, env));
+  const check = host.querySelector('[data-check]');
+  host.addEventListener('click', e => {
+    const bt = e.target.closest('[data-num],[data-esp]');
+    if (!bt || bt.disabled) return;
+    const k = bt.hasAttribute('data-num') ? 'num' : 'esp';
+    chosen[k] = bt.dataset[k];
+    host.querySelectorAll(`[data-${k}]`).forEach(x => x.setAttribute('aria-pressed', String(x === bt)));
+    check.disabled = !(chosen.num && chosen.esp);
+  });
+  await onceClick(host, '[data-check]');
+  stopSound();
+  const okNum = Number(chosen.num) === right.numero;
+  const okEsp = chosen.esp === right.especie;
+  // el número vale la mitad; la especie, la otra
+  const mark = okNum && okEsp ? 'ok' : okNum || okEsp ? 'near' : 'bad';
+  host.querySelectorAll('[data-num],[data-esp]').forEach(x => {
+    x.disabled = true;
+    if (x.dataset.num === String(right.numero) || x.dataset.esp === right.especie) x.classList.add('right');
+    else if (x.dataset.num === chosen.num || x.dataset.esp === chosen.esp) x.classList.add('wrong');
+  });
+  check.remove();
+  host.querySelector('.lm-feedback').innerHTML = whyHtml(mark, item.why || `${right.numero}${right.especie}`);
+  // número fallado: «3>4»; número bien y especie mal: «especie»
+  return { mark, mistake: mark === 'ok' ? null : !okNum ? `${right.numero}>${chosen.num}` : 'especie' };
+}
+
+// ---------- Armadura: colocar las alteraciones en el pentagrama, en su orden ----------
+// Se elige ♯ o ♭ y se toca una casilla del pentagrama a la altura elegida (con el teclado, flechas y Intro). Se acierta con
+// el número, el signo y el orden (y la altura) correctos
+const SLOTS = 7;
+export function armaduraMark(placed, want, clef = 'treble') {
+  const steps = keySignatureSteps(want, clef);
+  const sym = want < 0 ? 'b' : '#';
+  const ok = placed.length === Math.abs(want) && placed.every((p, i) => p.sym === sym && p.step === steps[i]);
+  if (ok) return 'ok';
+  // alguna bien colocada (signo y altura en su casilla) = casi
+  return placed.some((p, i) => p.sym === sym && p.step === steps[i]) ? 'near' : 'bad';
+}
+async function armadura(host, item, env) {
+  const clef = CLEF[item.clave] || 'treble';
+  const want = item.respuesta;
+  const placed = [];
+  let sym = want < 0 ? 'b' : '#';
+  let cursor = CLEF_MID[clef];
+  const draw = () => {
+    host.querySelector('.lm-keysig').innerHTML = `<span class="lm-sc" aria-hidden="true">${clefCell(clef, null, 0)}</span>${Array.from({ length: SLOTS }, (_, i) => `<button type="button" class="lm-sc lm-keyslot" data-slot="${i}" aria-label="${esc(placed[i] ? `Casilla ${i + 1}: ${placed[i].sym === '#' ? 'sostenido' : 'bemol'}, ${positionText(placed[i].step, clef)}` : `Casilla ${i + 1}, vacía: toca la línea o el espacio donde va la alteración`)}">${accSlotCell(placed[i] ? placed[i].step : null, placed[i] && placed[i].sym === 'b' ? '♭' : '♯')}</button>`).join('')}`;
+  };
+  host.innerHTML = `${headHtml(item)}<p class="muted">Tonalidad: ${esc(item.tonalidadPedida || '')}. Elige el signo y toca el pentagrama, de izquierda a derecha, donde va cada alteración.</p>
+    <div class="seg two lm-symrow" role="group" aria-label="Signo"><button type="button" data-sym="#" aria-pressed="${sym === '#'}">♯ Sostenido</button><button type="button" data-sym="b" aria-pressed="${sym === 'b'}">♭ Bemol</button></div>
+    <div class="lm-staff lm-keysig" role="group" aria-label="Pentagrama para la armadura"></div>
+    <div class="controls"><button type="button" class="btn ghost small" data-undo>Borrar la última</button><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
+  draw();
+  host.querySelector('.lm-q').focus();
+  const lastFree = () => placed.length;
+  const place = (step, slot = lastFree()) => {
+    if (slot !== placed.length || placed.length >= SLOTS) return; // se rellenan en orden, de izquierda a derecha
+    placed.push({ sym, step });
+    draw();
+    env.say(`${sym === '#' ? 'Sostenido' : 'Bemol'} puesto: ${positionText(step, clef)}`);
+  };
+  host.addEventListener('click', e => {
+    const s = e.target.closest('[data-sym]');
+    if (s) { sym = s.dataset.sym; host.querySelectorAll('[data-sym]').forEach(x => x.setAttribute('aria-pressed', String(x === s))); return; }
+    if (e.target.closest('[data-undo]')) { placed.pop(); draw(); return; }
+    const slot = e.target.closest('[data-slot]');
+    if (!slot || slot.disabled) return;
+    const svg = slot.querySelector('svg');
+    // con el ratón o el dedo, la altura es donde se toca; con el teclado (clic sin posición), la del cursor
+    place(e.detail ? stepAtY(svg, e.clientY, clef) : cursor, Number(slot.dataset.slot));
+  });
+  host.addEventListener('keydown', e => {
+    if (!e.target.closest('[data-slot]')) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); cursor += e.key === 'ArrowUp' ? 1 : -1; env.say(positionText(cursor, clef)); }
+  });
+  await onceClick(host, '[data-check]');
+  const mark = armaduraMark(placed, want, clef);
+  host.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  const steps = keySignatureSteps(want, clef);
+  host.querySelector('.lm-feedback').innerHTML = `${mark === 'ok' ? '' : `<p class="dict-staff-label">Así va</p><div class="lm-staff">${`<span class="lm-bargroup"><span class="lm-sc">${clefCell(clef, null, want)}</span></span>`}</div>`}${whyHtml(mark, item.why || '')}`;
+  return { mark, mistake: mark === 'ok' ? null : 'armadura' };
+}
+const CLEF_MID = { treble: 34, bass: 22 };
+
 export const QUIZ_KINDS = {
-  elegir, contar, completar, emparejar, ordenar, nombrarNotas, senalar,
+  elegir, contar, completar, emparejar, ordenar, nombrarNotas, senalar, clasificarCompas, clasificarIntervalo, armadura,
+  escucharMovimiento: elegir,
   escucharCompas: elegir, escucharIntervalo: elegir, escucharMatiz: elegir, escucharModo: elegir, escucharFrase: elegir, escucharForma: elegir,
 };
 

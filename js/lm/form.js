@@ -6,6 +6,7 @@
 //   repeticion: true | { desde, hasta }                      (todo, o desde…hasta, dos veces)
 //   repeticion: { desde, hasta, casilla1: [a, b], casilla2: [c, d] }
 //   dc: { fine }                                              (todo y otra vez desde el compás 1 hasta «fine»)
+//   ds: { segno, alCoda, coda }                               (D.S. al Coda: 1…coda−1, vuelta al signo hasta «alCoda» y salto a la Coda)
 // Los compases se cuentan desde 1 sobre lo escrito; la anacrusa, si la hay, es el compás 0.
 const range = (a, b) => (b >= a ? Array.from({ length: b - a + 1 }, (_, i) => a + i) : []);
 
@@ -14,6 +15,7 @@ export function formOf(p = {}) {
   const r = p.repeticion;
   const dc = p.dc && p.dc.fine ? { fine: Number(p.dc.fine) } : null;
   if (dc) return { kind: 'dc', dc };
+  if (p.ds && p.ds.segno && p.ds.coda) return { kind: 'ds', ds: { segno: Number(p.ds.segno), alCoda: Number(p.ds.alCoda), coda: Number(p.ds.coda) } };
   if (r && typeof r === 'object' && r.casilla1 && r.casilla2) {
     const span = c => [c[0], c[1] ?? c[0]]; // «[3]» es la casilla del compás 3
     return { kind: 'casillas', desde: r.desde || 1, hasta: r.hasta, casilla1: span(r.casilla1), casilla2: span(r.casilla2) };
@@ -29,6 +31,11 @@ export function passesOf(form, total, pickup = false) {
   const head = pickup ? [0] : [];
   if (!form) return [[...head, ...range(1, total)]];
   if (form.kind === 'dc') return [[...head, ...range(1, total)], [...head, ...range(1, Math.min(total, form.dc.fine))]];
+  // D.S. al Coda: 1…coda−1; vuelta al signo hasta el «al Coda»; salto a la Coda y hasta el final
+  if (form.kind === 'ds') {
+    const { segno, alCoda, coda } = form.ds;
+    return [[...head, ...range(1, coda - 1)], range(segno, alCoda), range(coda, total)];
+  }
   if (form.kind === 'casillas') {
     const { desde, casilla1: c1, casilla2: c2 } = form;
     const hasta = form.hasta || c1[1];
@@ -65,6 +72,15 @@ export function drawMarks(form, total) {
     at(total).dc = true;
     return marks;
   }
+  // D.S. al Coda: el signo 𝄋 sobre el compás del signo, «al Coda 𝄌» al final de ese compás, «D.S. al Coda» al final del
+  // compás anterior a la Coda y la Coda (𝄌) al principio de la suya
+  if (form.kind === 'ds') {
+    at(form.ds.segno).segno = true;
+    at(form.ds.alCoda).alCoda = true;
+    at(form.ds.coda - 1).ds = true;
+    at(form.ds.coda).coda = true;
+    return marks;
+  }
   if (form.kind === 'casillas') {
     at(form.desde).start = true;
     at(form.casilla1[1]).end = true;
@@ -82,6 +98,7 @@ export function drawMarks(form, total) {
 export function formText(form) {
   if (!form) return '';
   if (form.kind === 'dc') return `D.C. al Fine: se repite desde el principio hasta el compás ${form.dc.fine}`;
+  if (form.kind === 'ds') return `D.S. al Coda: al llegar al compás ${form.ds.coda - 1} se vuelve al signo (compás ${form.ds.segno}), se toca hasta el compás ${form.ds.alCoda} y se salta a la Coda (compás ${form.ds.coda})`;
   if (form.kind === 'casillas') return `Repetición con casillas: la 1.ª vez, compases ${form.desde} a ${form.casilla1[1]}; la 2.ª, salta la casilla 1 y sigue en la casilla 2`;
   return 'Con repetición';
 }
@@ -92,7 +109,7 @@ export function formText(form) {
 export function expandForm(tokens, form, { pickup = 0, barBeats = 4 } = {}) {
   const merged = [];
   tokens.forEach((t, i) => {
-    if (t.tiedFrom && merged.length) { merged[merged.length - 1].beats += t.beats; return; }
+    if (t.tiedFrom && merged.length) { const last = merged[merged.length - 1]; last.head ??= last.beats; last.merged = true; last.beats += t.beats; return; }
     merged.push({ ...t, index: i });
   });
   const passes = passesOf(form, totalBars(tokens, pickup), !!pickup);
@@ -106,4 +123,12 @@ export function expandForm(tokens, form, { pickup = 0, barBeats = 4 } = {}) {
     });
   });
   return out;
+}
+
+// Aviso al empezar cada vuelta (para quien toca o canta): qué se hace ahora. pass: 1, 2…
+export function passText(form, pass) {
+  if (form && form.kind === 'casillas') return '2.ª vuelta: salta la casilla 1 y toca la casilla 2';
+  if (form && form.kind === 'dc') return 'D.C.: otra vez desde el principio hasta Fine';
+  if (form && form.kind === 'ds') return pass === 1 ? `D.S.: vuelve al signo (compás ${form.ds.segno}) y sigue hasta «al Coda» (compás ${form.ds.alCoda})` : `Salta a la Coda (compás ${form.ds.coda}) y sigue hasta el final`;
+  return '2.ª vuelta, sin metrónomo';
 }
