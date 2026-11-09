@@ -53,23 +53,52 @@ function wrap(text, size) {
   return out;
 }
 
+// Escritor de párrafos sobre el documento: lleva la altura y abre página cuando no cabe
+function writer(doc) {
+  const w = { y: MARGIN };
+  w.room = h => { if (w.y + h > BOTTOM) { doc.page(); w.y = MARGIN; } };
+  w.para = (text, { size = 10, bold = false, gray = 0, gap = 1.5 } = {}) => {
+    wrap(text, size).forEach(l => { w.room(size * 0.5); doc.text(l, MARGIN, w.y + size * 0.4, { size, bold, gray }); w.y += size * 0.45; });
+    w.y += gap;
+  };
+  return w;
+}
+
 export async function unitPdf(unit) {
   const doc = createPdf().page();
-  let y = MARGIN;
-  const room = h => { if (y + h > BOTTOM) { doc.page(); y = MARGIN; } };
-  const para = (text, { size = 10, bold = false, gray = 0, gap = 1.5 } = {}) => {
-    wrap(text, size).forEach(l => { room(size * 0.5); doc.text(l, MARGIN, y + size * 0.4, { size, bold, gray }); y += size * 0.45; });
-    y += gap;
-  };
+  await writeUnit(doc, writer(doc), unit);
+  const blob = doc.footer((n, total) => `Band Flow · ${plain(unit.title)} - ${n}/${total}`).blob();
+  return sharePdf(blob, `lenguaje-musical-n${unit.level}-u${unit.unit}.pdf`, plain(unit.title));
+}
+
+// El nivel completo: portada con sus unidades y, detrás, la ficha de cada unidad empezando en página nueva
+export async function levelPdf(level) {
+  const doc = createPdf().page();
+  const w = writer(doc);
+  w.para(t('Lenguaje musical'), { size: 11, gray: 100 });
+  w.para(level.title, { size: 24, bold: true, gap: 2 });
+  w.para(level.sub, { size: 11, gray: 70, gap: 6 });
+  w.para(t('Unidades'), { size: 12, bold: true });
+  level.units.forEach(u => w.para(`${t('Unidad')} ${u.unit} · ${plain(u.title)}`, { gap: 1 }));
+  for (const u of level.units) {
+    doc.page(); w.y = MARGIN;
+    await writeUnit(doc, w, u);
+  }
+  const blob = doc.footer((n, total) => `Band Flow · ${plain(level.title)} - ${n}/${total}`).blob();
+  return sharePdf(blob, `lenguaje-musical-nivel-${level.level}.pdf`, plain(level.title));
+}
+
+async function writeUnit(doc, w, unit) {
+  const para = w.para, room = w.room;
   para(`${t('Lenguaje musical')} · ${t('Nivel')} ${unit.level} · ${t('Unidad')} ${unit.unit}`, { size: 9, gray: 100 });
   para(unit.title, { size: 18, bold: true, gap: 1 });
   para(unit.goal, { size: 11, gray: 70, gap: 4 });
   para(t('Novedades'), { size: 12, bold: true });
   unit.novelties.forEach(n => para(`- ${plain(n)}`));
-  y += 2;
+  w.y += 2;
   para(t('Objetivos'), { size: 12, bold: true });
   unit.objectives.forEach(n => para(`- ${plain(n)}`));
-  y += 2;
+  w.y += 2;
   para(t('Teoría'), { size: 12, bold: true });
   const cards = unit.raw.teoria.ficha || [];
   for (let i = 0; i < cards.length; i++) {
@@ -80,8 +109,8 @@ export async function unitPdf(unit) {
     if (img) {
       const h = FIGURE_W * img.ratio;
       room(h);
-      doc.image(img.data, MARGIN, y, FIGURE_W, h, img.w, img.h);
-      y += h + 1;
+      doc.image(img.data, MARGIN, w.y, FIGURE_W, h, img.w, img.h);
+      w.y += h + 1;
     }
     para(c.texto, { gap: 2.5 });
   }
@@ -93,8 +122,8 @@ export async function unitPdf(unit) {
       const img = await svgToPng(svgElement(markup));
       const h = WIDTH * img.ratio;
       room(h);
-      doc.image(img.data, MARGIN, y, WIDTH, h, img.w, img.h);
-      y += h + 1;
+      doc.image(img.data, MARGIN, w.y, WIDTH, h, img.w, img.h);
+      w.y += h + 1;
     }
     // La letra con sus palabras (no sílaba a sílaba); en inglés se canta igual, en español, y se da su significado
     const words = SONG_WORDS[unit.song.titulo] || unit.song.letra?.map(bar => bar.join(' ')).filter(Boolean).join(' / ');
@@ -114,6 +143,4 @@ export async function unitPdf(unit) {
     const title = plain(e.title);
     para(`${title.toLowerCase().startsWith(sec.toLowerCase()) ? title : `${sec} · ${title}`} (${plain(VARIANT_NAME[e.variant])})`, { size: 9, gap: 0.6 });
   });
-  const blob = doc.footer((n, total) => `Band Flow · ${plain(unit.title)} - ${n}/${total}`).blob();
-  return sharePdf(blob, `lenguaje-musical-u${unit.unit}.pdf`, plain(unit.title));
 }

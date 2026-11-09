@@ -171,6 +171,25 @@ test('la ficha de la unidad en PDF lleva la ilustración de cada tarjeta de teor
   await close();
 });
 
+test('el nivel completo en PDF: portada y las 8 unidades, cada una con sus ilustraciones', async () => {
+  const { page, errors, close } = await openApp(env, { viewport: PHONE_375 });
+  await page.evaluate(() => {
+    navigator.canShare = () => false;
+    const create = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = blob => { if (blob.type === 'application/pdf') window.__pdf = blob; return create(blob); };
+  });
+  await page.$eval('[data-libro="lm"]', b => b.click());
+  await page.waitForSelector('#lmView:not([hidden]) [data-lm-level-pdf="1"]', { timeout: STEP_TIMEOUT });
+  assert.equal(await page.$$eval('[data-lm-level-pdf]', b => b.length), 4, 'un botón por nivel');
+  await page.$eval('[data-lm-level-pdf="1"]', b => b.click());
+  await page.waitForFunction(() => !!window.__pdf, { timeout: 120000 });
+  const pdf = await page.evaluate(async () => { const s = await window.__pdf.text(); return { pages: (s.match(/\/Type\s*\/Page[^s]/g) || []).length, images: (s.match(/\/Subtype\s*\/Image/g) || []).length }; });
+  assert.ok(pdf.pages >= 9, `${pdf.pages} páginas: portada y una o más por unidad`);
+  assert.ok(pdf.images >= 33, `${pdf.images} imágenes para las 33 tarjetas de teoría`);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 // «Señalar» como el resto de pentagramas del curso: clave en cada renglón y nada más ancho que la pantalla (375 px y
 // letra al 200 %); «completar» con sus huecos en su sitio
 for (const big of [false, true]) {
