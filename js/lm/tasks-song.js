@@ -7,7 +7,8 @@
 // puntillo. En clave de fa, la app suena una octava más arriba y se canta ahí.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
-import { centsAnyOctave, noteText, barBeatsOf, attackTokens, pulseOfParams } from './notes.js';
+import { centsAnyOctave, noteText, barBeatsOf, attackTokens, pulseOfParams, meterPlan, midiOf } from './notes.js';
+import { chordVoicing } from './harmony.js';
 import { gradeSung, singMark, SING_TOLERANCE, pctOf, mistakeCodes } from './grade.js';
 import { staffHtml, CLEF } from './kit.js';
 import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.js';
@@ -65,12 +66,16 @@ export function songPasses(tokens, { form = null, pickup = 0, meter = '4/4' } = 
   const barBeats = barBeatsOf(meter);
   const attacks = attackTokens(tokens).filter(t => !t.rest);
   const f = form === true ? { kind: 'repeat', desde: 1, hasta: null } : form;
+  // cambios de compás (@time): cada compás escrito mide lo suyo y empieza donde empieza su primera figura
+  const plan = meterPlan(tokens, meter);
+  const idxOf = b => (pickup ? b : b - 1);
+  const startOf = b => { const t = tokens.find(x => x.bar === idxOf(b)); return t ? t.start : 0; };
   return passesOf(f, totalBars(tokens, pickup), !!pickup).map((bars, pass) => {
     let at = 0;
     const notes = [];
     bars.forEach(b => {
-      const beats = b === 0 ? pickup : barBeats;
-      const scoreStart = b === 0 ? 0 : pickup + (b - 1) * barBeats;
+      const beats = b === 0 ? pickup : plan ? plan.sizes[idxOf(b)] : barBeats;
+      const scoreStart = b === 0 ? 0 : plan ? startOf(b) : pickup + (b - 1) * barBeats;
       attacks.filter(t => barNumber(t, pickup) === b).forEach(t => notes.push({ ...t, pass, start: at + (t.start - scoreStart), barAt: at, barLen: beats }));
       at += beats;
     });
@@ -83,8 +88,9 @@ export function songPasses(tokens, { form = null, pickup = 0, meter = '4/4' } = 
 // dos corcheas). bars: números de compás de la partitura (desde 0) que suenan, en orden (por defecto, todos)
 const HABANERA = [[0, 0.75], [0.75, 0.25], [1, 0.5], [1.5, 0.5]];
 const ACCOMP_GAIN = 0.32;
-export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, fromBar = 0, toBar = Infinity, bars = null, pickup = 0 }) {
+export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, fromBar = 0, toBar = Infinity, bars = null, pickup = 0, chords = null }) {
   const barBeats = barBeatsOf(meter);
+  const plan = meterPlan(tokens, meter);
   const spb = 60 / bpm;
   const { minor, midi: top } = keyTonic(key);
   const root = top - 12;                                  // la tónica, en el registro grave
@@ -101,8 +107,15 @@ export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, 
     const dominant = notes.filter(dom).length > notes.filter(n => !dom(n)).length;
     const chord = dominant ? V : I;
     const isPickup = !!pickup && b === 0;
-    const len = isPickup ? pickup : barBeats;
-    if (!isPickup) {
+    const len = isPickup ? pickup : plan ? plan.sizes[b] : barBeats;
+    // Nivel 4: los acordes escritos en el catálogo (uno por compás, o dos: mitad y mitad), en el registro grave
+    const written = chords && !isPickup ? [].concat(chords[pickup ? b - 1 : b] || []) : [];
+    if (written.length) {
+      written.forEach((numeral, k) => {
+        const { bass, notes: voices } = chordVoicing(key, numeral);
+        [bass, ...voices].map(midiOf).map(m => m - (m > 55 ? 12 : 0)).forEach(m => events.push({ midi: m, at: (at + (k * len) / written.length) * spb, dur: (len / written.length) * spb * 0.9, gain: ACCOMP_GAIN }));
+      });
+    } else if (!isPickup) {
       const pattern = habanera ? HABANERA.flatMap(([a, l]) => (barBeats >= 2 ? [[a, l]] : [])) : [[0, barBeats]];
       pattern.forEach(([a, l], k) => {
         const midis = habanera ? [k === 0 ? chord[0] : chord[(k % 2) + 1]] : chord;
@@ -147,7 +160,7 @@ export async function singSong(host, opts, env) {
   const draw = current => {
     const staff = host.querySelector('.lm-sing-staff');
     if (current < 0 || !staff.querySelector('[data-i]')) {
-      staff.innerHTML = staffHtml(tokens, { clef, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, form, pulso: opts.pulso || null });
+      staff.innerHTML = staffHtml(tokens, { clef, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, form, pulso: opts.pulso || null, chords: opts.acordes || null, ornaments: opts.ornamentos || null, agrupacion: opts.agrupacion || null, agrupaciones: opts.agrupaciones || null });
       if (current < 0) return;
     }
     staff.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
@@ -159,7 +172,7 @@ export async function singSong(host, opts, env) {
   // lo que suena de una vuelta: la melodía y el acompañamiento, compás a compás en el orden de la vuelta
   const passEvents = pass => [
     ...pass.notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
-    ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: pass.bars.map(b => (pickup ? b : b - 1)), pickup }),
+    ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: pass.bars.map(b => (pickup ? b : b - 1)), pickup, chords: opts.acordes }),
     ...partnerEvents(pass),
   ];
   host.querySelector('#lmSongHear').addEventListener('click', () => {
@@ -198,7 +211,7 @@ export async function singSong(host, opts, env) {
           phase('Escucha y repite');
           const b = group[0].bar;
           const r = playEvents([...notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
-            ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: [b], pickup }),
+            ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: [b], pickup, chords: opts.acordes }),
             ...partnerEvents(pass, barStart, barStart + length, barStart)]);
           await wait((r.end - now() + 0.2) * 1000);
         }

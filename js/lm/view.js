@@ -7,7 +7,8 @@ import { instrumentById } from '../instruments.js';
 import { currentCourse, currentStates, launch } from '../launch.js';
 import { lessonTitle } from '../course.js';
 import { LM_LEVELS, lmLevel, lmUnit, SECTION_NAME, VARIANT_NAME, SKILL_NAME, LM_SKILLS } from './catalog.js';
-import { unitProgress, levelProgress, skillSummary, bestOf } from './results.js';
+import { unitProgress, levelProgress, skillSummary, bestOf, lmState } from './results.js';
+import { concertHtml, saveOrder, deliverConcert, orderedPieces, diplomaPdf } from './concert.js';
 import { openLmExercise, openInstrumentTool, toolsFor, toolLabel } from './launcher.js';
 
 let openUnit = null; // { level, unit }
@@ -124,7 +125,8 @@ function unitHtml(u) {
       <h4>Novedades</h4><ul>${u.novelties.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
       <h4>Objetivos</h4><ul>${u.objectives.map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>
     <div class="controls"><button type="button" class="btn ghost small" data-lm-pdf>Ficha de la unidad en PDF</button></div>
-    ${u.blocks.map(b => (b.kind === 'instrument' ? instrumentHtml(b, u) : sectionHtml(b))).join('')}`;
+    ${u.blocks.map(b => (b.kind === 'instrument' ? instrumentHtml(b, u) : sectionHtml(b))).join('')}
+    ${u.level === 4 && u.unit === 8 && u.raw.concierto ? concertHtml(u) : ''}`;
 }
 
 export function renderLm({ focus = false } = {}) {
@@ -145,6 +147,29 @@ export function bindLm() {
     if (card) { openUnit = { level: Number(card.dataset.level), unit: Number(card.dataset.unit) }; renderLm({ focus: true }); $('lmView').scrollIntoView({ block: 'start' }); return; }
     if (e.target.closest('[data-lm-back]')) { const at = openUnit; openUnit = null; renderLm(); $('lmView').querySelector(`[data-unit="${at.unit}"]`)?.focus(); return; }
     if (ex) { openLmExercise(ex.dataset.ex); return; }
+    // Concierto final (Nivel 4, unidad 8): orden de las piezas, entrega y diploma
+    const move = e.target.closest('[data-concert-up],[data-concert-down]');
+    if (move) {
+      const unit = lmUnit(openUnit.level, openUnit.unit);
+      const ids = orderedPieces(lmState(), unit).map(p => p.id);
+      const up = move.hasAttribute('data-concert-up');
+      const i = Number(up ? move.dataset.concertUp : move.dataset.concertDown);
+      const j = up ? i - 1 : i + 1;
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+      saveOrder(ids);
+      renderLm();
+      $('lmView').querySelector(`[data-piece="${ids[j]}"] [data-concert-${up ? 'up' : 'down'}]`)?.focus();
+      return;
+    }
+    if (e.target.closest('[data-concert-send]')) {
+      const unit = lmUnit(openUnit.level, openUnit.unit);
+      deliverConcert(orderedPieces(lmState(), unit).map(p => p.id));
+      renderLm();
+      toast('Concierto entregado');
+      $('lmView').querySelector('#lmDiploma, #lmDiplomaState')?.scrollIntoView({ block: 'center' });
+      return;
+    }
+    if (e.target.closest('[data-diploma-pdf]')) { diplomaPdf().catch(() => toast('No se ha podido crear el PDF')); return; }
     if (e.target.closest('[data-inst-lesson]') && instrumentLesson) { launch(instrumentLesson, { from: 'course' }); return; }
     const tool = e.target.closest('[data-inst-tool]');
     if (tool) {

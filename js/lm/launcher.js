@@ -16,6 +16,7 @@ import { barBeatsOf } from './notes.js';
 import { genRhythm } from './gen.js';
 import { lmExercise, lmUnit, lmSong, TYPES } from './catalog.js';
 import { recordLmResult } from './results.js';
+import { refreshDiploma } from './concert.js';
 import { LM_TOOL_EVENT } from './bridge.js';
 
 const MAX_MISTAKES = 10;
@@ -31,6 +32,8 @@ export function recordActive(partial, { logMinutes = true } = {}) {
   if (!active) return null;
   const { ex } = active;
   const r = recordLmResult(ex.id, { skills: skillsFor(ex, partial.pct), ...partial, seconds: partial.seconds ?? elapsed() }, { logMinutes });
+  // el repaso final del curso aprobado, con el concierto entregado, emite el diploma
+  if (/^lm4-u8-repaso/.test(ex.id)) refreshDiploma();
   active = { ...active, startedAt: performance.now() };
   return r;
 }
@@ -51,7 +54,9 @@ export function openInstrumentTool(h, unit = null) {
     case 'longtone': go('longtone', { secs: p.segundos || 8, dynamics: p.dinamica || null, routine: toUnit }); return;
     case 'chord': go('chord', { lm: { root: CHORD_ROOT[p.acorde || p.root] || 60, interval: p.interval ? CHORD_BY_NUMBER[p.interval] || 'M3' : CHORD_DEGREE[p.nota] || 'M3', hits: 3 } }); return;
     case 'gym': {
-      const song = inst.rhythmOnly ? null : technique(p.kind || 'scale', p.key || 'C', inst, p.bpm || 60, p.figure || 'q');
+      // el gimnasio solo conoce figuras simples: el tresillo, la síncopa o el puntillo del Nivel 4 se tocan en negras
+      const figure = ['w', 'h', 'q', 'e', 's'].includes(p.figure) ? p.figure : 'q';
+      const song = inst.rhythmOnly ? null : technique(p.kind || 'scale', p.key || 'C', inst, p.bpm || 60, figure);
       if (!song) { go('gym'); return; }
       launch(lesson({ id: song.id, kind: 'song', song, fixedSpeed: true, gym: { id: song.id, bpm: p.bpm || 60 }, noRecord: false }), { mode: 'tempo', from: 'lm' });
       return;

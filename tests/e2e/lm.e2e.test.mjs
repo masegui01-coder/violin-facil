@@ -122,7 +122,7 @@ test('vista Lenguaje: 8 unidades del nivel 1, niveles próximamente, accesible y
   const { page, errors, close } = await openLm();
   assert.equal(await page.$$eval('.lm-unit-card[data-level="1"]', b => b.length), 8);
   assert.equal(await page.$$eval('.lm-unit-card[data-level="2"]', b => b.length), 8, 'el Nivel 2 se abre libre');
-  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 1, 'solo el nivel 4 es «próximamente»');
+  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 0, 'el Nivel 4 ya está abierto: ningún nivel es «próximamente»');
   assert.equal(await page.$eval('[data-libro="lm"]', b => b.getAttribute('aria-pressed')), 'true');
   assert.ok(await noHorizontalScroll(page));
   assert.deepEqual(await axeViolations(page, 'lmView'), []);
@@ -338,6 +338,17 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
   await openExercise(page, 'lm3-u1-teoria-a-facil');
   await sleep(300);
   assert.deepEqual(await lines(), [], 'teoría del Nivel 3');
+  // Nivel 4: la unidad 1 y su teoría también en inglés
+  await page.$eval('[data-lm-back]', b => b.click());
+  await page.waitForSelector('.lm-unit-card[data-level="4"]', { timeout: STEP_TIMEOUT });
+  await page.waitForFunction(() => !document.documentElement.dataset.nav, { timeout: STEP_TIMEOUT });
+  await page.$eval('.lm-unit-card[data-level="4"]', b => b.click());
+  await page.waitForSelector('#lmUnitTitle', { timeout: STEP_TIMEOUT });
+  await sleep(300);
+  assert.deepEqual(await lines(), [], 'unidad 1 del Nivel 4');
+  await openExercise(page, 'lm4-u1-teoria-a-facil');
+  await sleep(300);
+  assert.deepEqual(await lines(), [], 'teoría del Nivel 4');
   assert.deepEqual(errors, []);
   await close();
 });

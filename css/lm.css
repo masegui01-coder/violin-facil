@@ -121,7 +121,7 @@
 .lm-pairs { display: flex; flex-direction: column; gap: 8px; }
 .lm-pair { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .lm-sign { font-family: var(--f-music), var(--f-display); font-size: 1.4rem; font-weight: 700; min-width: 3rem; text-align: center; font-style: italic; }
-.lm-pair select { min-height: 48px; flex: 1 1 10rem; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 6px 10px; }
+.lm-pair select { min-height: 48px; flex: 1 1 10rem; min-width: 0; max-width: 100%; border-radius: 10px; border: 1.5px solid var(--ctl-outline); background: var(--surface); color: var(--ink); font: inherit; padding: 6px 10px; }
 .lm-pair.ok select { border-color: var(--dict-ok); } .lm-pair.bad select { border-color: var(--dict-bad); }
 .lm-order { margin: 0; padding-left: 1.6em; display: flex; flex-direction: column; gap: 6px; }
 .lm-order li { display: flex; align-items: center; gap: 8px; }
@@ -280,6 +280,8 @@
 .lm-hole-sc.lm-now .lm-hole-q { color: var(--accent); }
 .lm-item .lm-options:has(.lm-opt-staff) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .lm-item .lm-options .lm-opt-staff .lm-cell { height: 6.75rem; }
+@media (max-width: 600px) { .lm-item .lm-options:has(.lm-opt-staff) { grid-template-columns: minmax(0, 1fr); } }
+.lm-item .lm-options .lm-opt-staff { min-width: 0; overflow-x: auto; }
 /* La barra fija de la lectura solo lleva los botones: compacta, también con la letra grande */
 .lm-sticky-controls .btn.big { min-height: 48px; padding-block: 8px; }
 .lm-sticky-controls { gap: 6px; }
@@ -310,6 +312,9 @@
 .lm-flag-tag { position: absolute; top: 0; right: 0; font-size: .8rem; font-style: italic; font-weight: 700; }
 .lm-bar-btn { position: relative; }
 .lm-numbers .lm-name { min-width: 3.2rem; }
+/* Nombres largos (tónica, superdominante…): dos columnas que caben en el móvil */
+.lm-names.lm-words { grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr)); }
+.lm-words .lm-name { min-width: 0; font-size: 1rem; padding: 4px 8px; overflow-wrap: anywhere; }
 
 /* D.S. al Coda: el signo y la Coda a la izquierda del compás; «al Coda» y «D.S. al Coda» a la derecha */
 .lm-bargroup.lm-dsmark { position: relative; padding-top: 1.1rem; }
@@ -319,3 +324,21 @@
 .lm-ds-ico { width: 1.1em; height: 1.3em; flex: none; }
 /* melisma: la línea de prolongación tras la sílaba */
 .lm-under.lm-melisma { color: transparent; border-bottom: 2px solid var(--muted); align-self: stretch; max-width: none; min-width: 1.8rem; margin-bottom: .55em; }
+
+/* Nivel 4: tresillos, adornos, acordes sobre el pentagrama, claves de do y compases que cambian */
+.lm-tuplet { font-family: var(--f-display); font-size: 13px; font-style: italic; font-weight: 700; fill: currentColor; }
+.lm-tuplet-br, .lm-cclef, .lm-orn { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.lm-orn-tr { font-family: var(--f-display); font-size: 14px; font-style: italic; font-weight: 800; fill: currentColor; }
+.lm-grace { fill: currentColor; stroke: currentColor; }
+.lm-grace-stem { stroke: currentColor; stroke-width: 1.2; fill: none; }
+.lm-chordname { font-family: var(--f-display); font-size: 13px; font-weight: 800; fill: var(--accent); }
+.lm-timecell .lm-time { font-size: 19px; }
+.lm-keysig .lm-keyslot, .lm-meterpick button { cursor: pointer; }
+.lm-ornoption { display: flex; align-items: center; justify-content: center; min-height: 3rem; }
+.lm-degrow { display: flex; flex-direction: column; gap: 6px; }
+.lm-verify { border: 2px solid var(--bad); border-radius: var(--r); padding: 10px 14px; color: var(--bad); font-weight: 700; }
+.lm-verify-tag { color: var(--bad); font-weight: 800; }
+.lm-diploma { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; border: 3px double var(--accent); border-radius: var(--r); padding: 28px 18px; background: var(--surface); }
+.lm-diploma h2 { font-size: 1.6rem; margin: 0; }
+.lm-concert-piece { display: flex; flex-direction: column; gap: 6px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+@media print { .lm-diploma { border-color: #000; color: #000; background: #fff; } }

@@ -24,7 +24,7 @@ test('cada ejercicio cumple el contrato de ids y el catálogo plano del Aula coi
   assert.deepEqual(LM_LEVELS.map(l => l.level), [1, 2, 3, 4]);
   const ids = new Set();
   allLmExercises().forEach(e => {
-    assert.match(e.id, /^lm\d+-u\d+-[a-z]+-[abc]-(facil|medio)$/, e.id);
+    assert.match(e.id, /^lm\d+-u\d+-[a-z]+-[a-e]-(facil|medio)$/, e.id);
     assert.ok(!ids.has(e.id), `id repetido ${e.id}`);
     ids.add(e.id);
     assert.equal(e.id, lmId(e));
@@ -50,7 +50,7 @@ test('el nivel 1 tiene sus 8 unidades y 202 ejercicios, con el bloque de instrum
     u.exercises.forEach(e => assert.ok(e.variant === 'medio' || lmExercise(siblingId(e.id, 'medio')), `${e.id} sin su Media`));
   });
   const types = new Set(lv1().map(e => e.type));
-  Object.keys(TYPES).filter(t => t !== 'intervalos').forEach(t => assert.ok(types.has(t), `nadie usa el tipo ${t}`));
+  Object.keys(TYPES).filter(t => t !== 'intervalos' && t !== 'grados').forEach(t => assert.ok(types.has(t), `nadie usa el tipo ${t}`));
   assert.equal(lmSong(1, 'lm1-u5-cancion').titulo, 'La escalera');
 });
 

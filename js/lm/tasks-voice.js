@@ -158,7 +158,7 @@ export async function singTask(host, opts, env) {
       // ordenamiento con notas que aún no se leen: se canta de oído, con los nombres (sin pentagrama)
       box.innerHTML = opts.noStaff
         ? `<ol class="lm-names-row">${once.map(n => `<li class="${marks[n.index] || ''}" data-i="${n.index}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
-        : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, pulso: opts.pulso || null, form: typeof (opts.form ?? opts.repeat) === 'object' ? (opts.form ?? opts.repeat) : passes > 1 ? formOf({ repeticion: true }) : null });
+        : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, pulso: opts.pulso || null, form: typeof (opts.form ?? opts.repeat) === 'object' ? (opts.form ?? opts.repeat) : passes > 1 ? formOf({ repeticion: true }) : null, chords: opts.acordes || null, ornaments: opts.ornamentos || null, agrupacion: opts.agrupacion || null, agrupaciones: opts.agrupaciones || null });
       if (current < 0) return;
     }
     box.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
@@ -213,6 +213,8 @@ export async function singTask(host, opts, env) {
     phase('Escucha la tonalidad');
     playingUntil = playChordNow((minor ? MINOR_TRIAD : MAJOR_TRIAD).map(x => tonic + x), 1.2) + 0.1;
     await wait(1300);
+    // Nivel 4: los acordes de la melodía suenan antes de cantar (preludio), no mientras: el micrófono los oiría
+    if (opts.preludio) { phase('Escucha los acordes'); await wait(opts.preludio()); }
     phase('Tu primera nota:', noteText(first.name, env.nom));
     playingUntil = playPitch(first.midi + up, 1) + AFTER_PLAY_S;
     await wait(1200);

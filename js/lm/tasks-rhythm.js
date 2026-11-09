@@ -3,7 +3,7 @@
 import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
-import { barBeatsOf, pulseOfParams, attackTokens } from './notes.js';
+import { barBeatsOf, pulseOfParams, attackTokens, meterPlan } from './notes.js';
 import { keyTonic } from './tasks-voice.js';
 import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton, CLEF } from './kit.js';
 import { formOf, expandForm } from './form.js';
@@ -25,6 +25,10 @@ const STOP_NAMES = {
   'R>e': 'Sonó un silencio de corchea o de negra con puntillo', casilla: 'En la 2.ª vuelta no saltó la casilla 1',
   dc: 'No volvió al principio (D.C.) o no paró en el Fine', ds: 'No volvió al signo (D.S.) o no saltó a la Coda',
   '9/8>6/8': 'Un compás de 9/8 perdió su tercer pulso (sonó como 6/8)', liga: 'Una nota ligada se volvió a atacar',
+  '3>2': 'El tresillo sonó como dos corcheas', '2>3': 'Dos corcheas sonaron como un tresillo', 'e3>R': 'Una nota del tresillo quedó muda (sonó un silencio)',
+  'q3>qqq': 'El tresillo de negras sonó como tres negras', sincopa: 'La síncopa sonó en el pulso, sin desplazar el ataque', contratiempo: 'La síncopa sonó a contratiempo (con silencios en el pulso)',
+  'qhq>qqqq': 'La blanca sincopada sonó como dos negras', '5/8>2+3': 'El compás de 5/8 se agrupó al revés (2+3 en lugar de 3+2, o al revés)', '7/8>agr': 'El 7/8 se agrupó de otra manera que la escrita',
+  cambio: 'No cambió el compás a tiempo: siguió contando el anterior', '12/8>6/8': 'Un compás de 12/8 perdió su segunda mitad (sonó como 6/8)',
   sensible: 'La sensible sonó un semitono más baja (natural)', melodica: 'Al bajar sonó la nota de la subida de la melódica', alteracion: 'Una nota sonó sin la alteración de la armadura', nota: 'Una nota sonó un escalón más arriba o más abajo',
 };
 
@@ -32,7 +36,7 @@ const STOP_NAMES = {
 // ostinato que toca la app (voz 1), con su propio ritmo repetido, y debajo la voz del alumno (voz 2)
 function stopScore(tokens, ostinato, base, env) {
   const meter = base.compas || '4/4';
-  const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0, clef: CLEF[base.clave] || 'treble', armadura: base.armadura || 0, form: formOf(base), pulso: base.pulso || null };
+  const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0, clef: CLEF[base.clave] || 'treble', armadura: base.armadura || 0, form: formOf(base), pulso: base.pulso || null, agrupacion: base.agrupacion || null, agrupaciones: base.agrupaciones || null };
   // en el STOP melódico se ven las alturas (el error puede estar en una nota)
   const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: !!base.melodic })).join(', ') });
   if (!ostinato) return rhythm;
@@ -88,7 +92,7 @@ export async function stopGame(host, p, env) {
   // lo que suena: la lectura en el orden de su forma (repeticiones, casillas, D.C.); lo que se ve, la partitura escrita
   const playBase = form ? expandForm(tokens, form, { pickup: pickup0, barBeats }) : attackTokens(tokens); // una nota ligada suena entera
   const tone = keyTonic(p.base.tonalidad);
-  const ctx = { armadura: p.base.armadura || 0, melodic: !!p.base.melodic, form, up: p.base.clave === 'fa' ? 12 : 0, minor: tone.minor, tonicPc: ((tone.midi % 12) + 12) % 12 };
+  const ctx = { plan: meterPlan(tokens, meter), armadura: p.base.armadura || 0, melodic: !!p.base.melodic, form, up: p.base.clave === 'fa' ? 12 : 0, minor: tone.minor, tonicPc: ((tone.midi % 12) + 12) % 12 };
   const ostinato = kinds.includes('voz') ? ostinatoTokens(tokens, p.base) : null;
   const rounds = [];
   const played = new Set(); // rondas ya jugadas: no se repite la misma
@@ -118,7 +122,7 @@ export async function stopGame(host, p, env) {
       for (const t of round.played) { if (t.start <= beat + 1e-9) e = t; else break; }
       return e && e.scoreStart !== undefined ? e.scoreStart + Math.min(Math.max(0, beat - e.start), e.beats) : beat;
     };
-    const unfollow = follow(host, () => scoreBeat((now() - t0) / spb - round.offset), { barBeats, pickup: p.base.anacrusa || 0 });
+    const unfollow = follow(host, () => scoreBeat((now() - t0) / spb - round.offset), { barBeats, pickup: p.base.anacrusa || 0, sizes: ctx.plan && !form ? ctx.plan.sizes : null });
     clicks(Math.ceil(beats / pulse), bpm / pulse, { at: t0, accentEvery: counts, level: PULSE_LEVEL });
     const lat = outputLatency();
     const pressed = await new Promise(resolve => {

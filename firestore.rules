@@ -636,7 +636,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['uid', 'nickname', 'exId', 'title', 'score', 'lyrics', 'meter', 'pct', 'at'])
         && shortText(d.uid, 128) && shortText(d.nickname, 30) && shortText(d.title, 80)
         && shortText(d.exId, 40) && d.exId.matches('lm[0-9]+-u[0-9]+-creatividad-[a-c]-(facil|medio)')
-        && shortText(d.score, 800) && d.score.matches('[A-GR#b0-9whqes. ]+')
+        && shortText(d.score, 800) && d.score.matches('[A-GR#b0-9whqes.: ]+')
         && optText(d, 'lyrics', 200) && shortText(d.meter, 6) && d.meter.matches('[0-9]+/[0-9]+')
         && d.pct is int && d.pct >= 0 && d.pct <= 100 && d.at is number;
     }

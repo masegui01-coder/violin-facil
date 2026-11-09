@@ -3,17 +3,19 @@
 // Cada pregunta se pinta en «host» y resuelve con { mark: 'ok'|'near'|'bad', mistake } tras mostrar la corrección.
 import { esc } from '../ui.js';
 import { orderMark } from './grade.js';
-import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME, beamBeatsOf, accidentalSigns, attackTokens } from './notes.js';
+import { scoreTokens, barBeatsOf, solfaToName, letterText, midiOf, FIGURE_NAME, REST_NAME, beamBeatsOf, accidentalSigns, attackTokens, isAmalgam, groupingOf } from './notes.js';
 import { nameText, namesFor } from './kit.js';
 import { staffHtml, nameButtons, playButton, shuffle, seedOf, onceClick, whyHtml, CLEF, tokenLabel, tight } from './kit.js';
 import { expandForm, formOf } from './form.js';
-import { noteCell, clefCell, gapCell, endCell, layoutTokens, accSlotCell, keySignatureSteps, stepAtY } from './staff-lm.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens, accSlotCell, keySignatureSteps, stepAtY, timeCell } from './staff-lm.js';
 import { playNotes, clicks, stopSound } from './sound.js';
 import { positionText } from './notes.js';
 import { DYN_GAIN } from './gen.js';
+import { chordVoicing, ornamentedTokens } from './harmony.js';
 
 const LISTEN_BPM = 84;
 const PAIR_BPM = 60;
+const CHORD_BPM = 66; // negra por acorde
 const DYN_RANGE = [0.25, 1];
 const FERMATA_STRETCH = 2.5; // una nota con calderón suena unas dos veces y media su valor
 
@@ -32,6 +34,22 @@ export function figureNotes(text) {
   });
   return out;
 }
+// Un acorde: las notas a la vez y la fundamental una octava más grave; negra a 66
+export function chordNotes(notes, start = 0, beats = 2) {
+  const midis = notes.map(midiOf);
+  return [{ midi: midis[0] - 12, start, beats, rest: false }, ...midis.map(m => ({ midi: m, start, beats, rest: false }))];
+}
+// Progresión de acordes (números romanos en una tonalidad): una negra por acorde y el último, una redonda
+export function progressionNotes(key, progresion) {
+  let at = 0;
+  return progresion.flatMap((numeral, i) => {
+    const beats = i === progresion.length - 1 ? 4 : 1;
+    const { bass, notes } = chordVoicing(key, numeral);
+    const out = [bass, ...notes].map(n => ({ midi: midiOf(n), start: at, beats, rest: false }));
+    at += beats;
+    return out;
+  });
+}
 // «Dos versiones» de la misma frase, cada una con su matiz (pp…ff), con un silencio entre ellas
 const VERSION_PHRASE = '| G4q A4q B4q C5q | G4h Rh |';
 const VERSION_GAP_BEATS = 2;
@@ -42,6 +60,11 @@ function versionNotes(play) {
 }
 export function notesOfPlay(play, env) {
   if (play.versiones) return versionNotes(play);
+  // Nivel 4: un acorde (notas a la vez, con la fundamental una octava grave) o una progresión de números romanos
+  if (play.progresion) return progressionNotes(play.tonalidad, play.progresion);
+  if (play.notas && play.acorde) return chordNotes(play.notas);
+  // adornos: suena su realización (trino, mordente…), no la nota escrita
+  if (play.ornamentos && play.partitura) return attackTokens(ornamentedTokens(play.partitura, play.ornamentos, play.armadura || 0)).map(t => ({ midi: t.midi, start: t.start, beats: t.beats, rest: t.rest }));
   // intervalo: las dos notas una detrás de otra (melódico) o a la vez (armónico)
   if (play.notas) return play.notas.map((n, i) => ({ midi: midiOf(n), start: play.armonico ? 0 : i * 1.2, beats: play.armonico ? 2 : 1, rest: false }));
   // dos voces a la vez: la segunda partitura suena junto a la primera, nota contra nota
@@ -75,7 +98,7 @@ function playPulse(sound, notes, bpm) {
 export function playQuestion(play, env) {
   stopSound();
   const notes = notesOfPlay(play, env);
-  const bpm = play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM;
+  const bpm = play.progresion || play.acorde ? CHORD_BPM : play.notas ? PAIR_BPM : play.tempo || LISTEN_BPM;
   if (play.sound && /^(pulso|acento:\d)$/.test(play.sound)) return playPulse(play.sound, notes, bpm);
   const out = playNotes(notes, bpm, { gains: gainsOf(play, notes), accentEvery: play.acentoPrimero ? barBeatsOf(play.compas) : 0, clap: !!play.clap });
   // pulso: un clic suave por negra mientras suena (para oír si una nota ligada cae sobre él)
@@ -85,12 +108,13 @@ export function playQuestion(play, env) {
 
 // ---------- Elegir (con sonido opcional) ----------
 const LISTEN_MISTAKE = { escucharCompas: 'compas', escucharModo: 'modo', escucharIntervalo: 'semitono-oido', escucharMatiz: 'matiz', escucharMovimiento: 'movimiento' };
+// Las preguntas del Nivel 4 que son «escucha y elige» (tasks-quiz4.js) se corrigen igual que las demás
 
-function headHtml(item) {
+export function headHtml(item) {
   return `<h2 class="lm-q" tabindex="-1">${esc(item.q)}</h2>`;
 }
 
-async function choose(host, item, env, { options, correct, extraHtml = '', optionHtml = null }) {
+export async function choose(host, item, env, { options, correct, extraHtml = '', optionHtml = null }) {
   host.innerHTML = `${headHtml(item)}${item.play ? playButton('lmQPlay') : ''}${extraHtml}
     <div class="quiz-options lm-options" role="group" aria-label="Respuestas">${options.map((o, k) => `<button type="button" class="quiz-opt" data-opt="${k}">${optionHtml ? optionHtml(o, k) : esc(o)}</button>`).join('')}</div>
     <div class="lm-feedback"></div>`;
@@ -123,7 +147,7 @@ export function shuffledChoice(item, seed) {
   const order = shuffle(item.options.map((_, i) => i), (seed >>> 0) + seedOf(item.id || item.q));
   return { options: order.map(i => item.options[i]), correct: [order.indexOf(item.answer)] };
 }
-const elegir = (host, item, env) => choose(host, item, env, shuffledChoice(item, env.attempt ?? env.seed ?? 0));
+export const elegir = (host, item, env) => choose(host, item, env, shuffledChoice(item, env.attempt ?? env.seed ?? 0));
 
 // ---------- Contar (escribir el número) ----------
 // Se escribe la respuesta (o se ajusta con − y +): no se elige entre números dados. Sin partitura, es de cálculo
@@ -163,9 +187,12 @@ function barButtons(item, env) {
   const fine = item.dc && item.dc.fine ? Number(item.dc.fine) : null; // «Fine» sobre ese compás y «D.C. al Fine» al final
   return bars.map((text, k) => {
     const tokens = scoreTokens(`| ${text} |`);
-    const lay = layoutTokens(tokens, { clef, pulse });
+    // Nivel 4: el compás de este compás (si cambia, lo dice su «@time») y el reparto de las corcheas en la amalgama
+    const own = /@time:(\S+)/.exec(text);
+    const barMeter = own ? own[1] : item.compas;
+    const lay = layoutTokens(tokens, { clef, pulse, grouping: barMeter && (isAmalgam(barMeter) || own) ? () => groupingOf(barMeter, item) : null });
     const signs = accidentalSigns(tokens, tokens.map(() => 0), item.armadura || 0);
-    const cells = tokens.map((t, i) => `<span class="lm-sc">${noteCell({ ...t, clef, beam: lay[i].beam, up: lay[i].up, acc: signs[i], fermata: item.calderon === k && i === tokens.length - 1 })}</span>`).join('');
+    const cells = (own ? `<span class="lm-sc" aria-hidden="true">${timeCell(barMeter)}</span>` : '') + tokens.map((t, i) => `<span class="lm-sc">${noteCell({ ...t, clef, beam: lay[i].beam, up: lay[i].up, acc: signs[i], tuplet: lay[i].tuplet, fermata: item.calderon === k && i === tokens.length - 1 })}</span>`).join('');
     const close = k === bars.length - 1 ? endCell(false) : gapCell(true, null, 14);
     const tag = fine === k + 1 ? '<span class="lm-flag-tag" lang="it">Fine</span>' : '';
     const dcTag = fine && k === bars.length - 1 ? '<span class="lm-dc" lang="it">D.C. al Fine</span>' : '';
@@ -196,7 +223,7 @@ async function senalar(host, item, env) {
 // ---------- Completar: cada «?» es un hueco en su sitio del pentagrama ----------
 // Un hueco: vale cualquiera de las correctas. Varios (orden: true): se rellenan uno a uno y la correcta de cada
 // hueco es correctas[k]. Las opciones se barajan en cada intento (data-opt guarda su número del catálogo)
-function optionCells(text, env, armadura = 0) {
+export function optionCells(text, env, armadura = 0) {
   const tokens = scoreTokens(`| ${text} |`);
   // nombre accesible con la figura y la altura («Negra mi»), no solo la figura
   return `<span class="lm-opt-staff" aria-hidden="true">${staffHtml(tokens, { bars: false, armadura: armadura || 0 })}</span><span class="sr-only">${esc(tokens.map(t => tokenLabel(t, env.nom)).join(', '))}</span>`;
@@ -210,11 +237,11 @@ function holeStaff(item, fills, now, env) {
       const k = hole++;
       return fills[k] ? scoreTokens(`| ${fills[k]} |`).map(t => ({ t, filled: true })) : [{ hole: k }];
     });
-    const lay = layoutTokens(parts.map(x => x.t || { dur: 'q', beats: 1 }), { clef: 'treble', pulse: item.compas ? beamBeatsOf(item.compas) : 1 });
+    const lay = layoutTokens(parts.map(x => x.t || { dur: 'q', beats: 1 }), { clef: 'treble', pulse: item.compas ? beamBeatsOf(item.compas) : 1, grouping: item.compas && isAmalgam(item.compas) ? () => groupingOf(item.compas, item) : null });
     const signs = accidentalSigns(parts.map(x => x.t || { rest: true }), parts.map(() => 0), item.armadura || 0);
     const html = parts.map((x, i) => (x.hole !== undefined
       ? `<span class="lm-sc lm-hole-sc${x.hole === now ? ' lm-now' : ''}" aria-hidden="true">${noteCell({ step: null })}<span class="lm-hole-q">?</span></span>`
-      : `<span class="lm-sc${x.filled ? ' lm-filled' : ''}">${noteCell({ ...x.t, clef: 'treble', beam: lay[i].beam, up: lay[i].up, acc: signs[i] })}</span>`)).join('');
+      : `<span class="lm-sc${x.filled ? ' lm-filled' : ''}">${noteCell({ ...x.t, clef: 'treble', beam: lay[i].beam, up: lay[i].up, acc: signs[i], tuplet: lay[i].tuplet })}</span>`)).join('');
     return `<span class="lm-bargroup">${b === 0 ? `<span class="lm-sc">${clefCell('treble', item.compas || null, item.armadura || 0)}</span>` : ''}${html}<span class="lm-sc">${b === bars.length - 1 ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
   }).join('');
   // para el lector de pantalla: las notas que se ven, con «hueco» en su sitio y los compases separados por «|»
@@ -279,7 +306,8 @@ async function emparejar(host, item, env) {
 
 // ---------- Ordenar ----------
 async function ordenar(host, item, env) {
-  const want = item.respuesta || item.items;
+  // Nivel 4: «respuesta» puede ser la lista de posiciones de «items» en el orden bueno ([2, 3, 0, 1])
+  const want = item.respuesta ? item.respuesta.map(x => (typeof x === 'number' ? item.items[x] : x)) : item.items;
   let order = shuffle(item.items, seedOf(item.id || item.q));
   if (order.every((x, i) => x === want[i]) && order.length > 1) order = [...order.slice(1), order[0]];
   const draw = focus => {
@@ -358,7 +386,9 @@ async function nombrarNotas(host, item, env) {
 }
 
 // ---------- Clasificar un compás: simple o compuesto, y binario, ternario o cuaternario ----------
-const METER_ROWS = [['tipo', 'Tipo', [['simple', 'Simple'], ['compuesto', 'Compuesto']]], ['pulsos', 'Pulsos', [['binario', 'Binario'], ['ternario', 'Ternario'], ['cuaternario', 'Cuaternario']]]];
+// Nivel 4: los compases de amalgama (5/8, 7/8) no son simples ni compuestos: sus pulsos son desiguales (3+2, 2+2+3…)
+const METER_ROWS = [['tipo', 'Tipo', [['simple', 'Simple'], ['compuesto', 'Compuesto'], ['amalgama', 'De amalgama']]],
+  ['pulsos', 'Pulsos', [['binario', 'Binario'], ['ternario', 'Ternario'], ['cuaternario', 'Cuaternario'], ['3+2 o 2+3', '3+2 o 2+3'], ['2+2+3, 3+2+2 o 2+3+2', '2+2+3, 3+2+2 o 2+3+2']]]];
 async function clasificarCompas(host, item, env) {
   const right = item.respuesta;
   const chosen = {};

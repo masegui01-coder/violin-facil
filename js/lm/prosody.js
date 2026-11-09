@@ -2,7 +2,7 @@
 // como sus sílabas átonas vecinas (o en una nota más larga). Acento en español: la tilde manda; si no, las palabras acabadas
 // en vocal, n o s son llanas (penúltima) y las demás, agudas (última). Las sílabas son las que se cantan (con sus
 // sinalefas, «ce el»), y las palabras salen de la letra seguida (SONG_WORDS).
-import { scoreTokens, barBeatsOf, isCompound, attackTokens } from './notes.js';
+import { scoreTokens, barBeatsOf, isCompound, isAmalgam, groupingOf, meterPlan, attackTokens } from './notes.js';
 
 const ACCENTED = /[áéíóú]/i;
 // Letras sin tildes ni signos (la ñ cuenta como una letra)
@@ -12,10 +12,16 @@ const plain = s => String(s).toLowerCase().replace(/ñ/g, '\u0001').normalize('N
 // En 6/8 (compound): peso 3 en el 0, 2 en el 1,5 (el 2.º pulso) y 0 en las demás corcheas. En 9/8: 3 en el 0, 1 en el 1,5 y
 // el 3 (los otros dos pulsos) y 0 en las corcheas. En 3/8 (1,5 pulsos de negra) el pulso es la corchea: 3 en el 0, 1 en
 // el 0,5 y el 1 y 0 en las semicorcheas
-export function beatWeight(pos, barBeats, compound = false) {
-  const p = ((pos % barBeats) + barBeats) % barBeats;
+// Nivel 4: los tresillos suman 0,333… y, desde el compás 7, el inicio del compás siguiente salía como 27,999…: se redondea.
+// 12/8: como un 4/4 con tresillos, el 3.er pulso (a los 3 pulsos de negra) pesa más que el 2.º y el 4.º. Amalgama (5/8, 7/8):
+// «groups» (corcheas por grupo): 3 en el inicio del compás, 2 en el de cada grupo y 0 en las demás corcheas
+export function beatWeight(pos, barBeats, compound = false, groups = null) {
+  let p = Math.round((((pos % barBeats) + barBeats) % barBeats) * 1e6) / 1e6;
+  if (p >= barBeats - 1e-6) p = 0;
   if (Math.abs(p) < 1e-6) return 3;
+  if (groups) { let at = 0; return groups.some(g => { at += g; return Math.abs(at * 0.5 - p) < 1e-6; }) ? 2 : 0; }
   if (Math.abs(barBeats - 1.5) < 1e-6) return Math.abs(p * 2 - Math.round(p * 2)) < 1e-6 ? 1 : 0;
+  if (compound && Math.abs(barBeats - 6) < 1e-6) return Math.abs(p - 3) < 1e-6 ? 2 : Math.abs(p % 1.5) < 1e-6 ? 1 : 0;
   if (compound) return Math.abs(p % 1.5) < 1e-6 || Math.abs((p % 1.5) - 1.5) < 1e-6 ? (barBeats > 3 ? 1 : 2) : 0;
   if (barBeats === 4 && Math.abs(p - 2) < 1e-6) return 2;
   return Math.abs(p - Math.round(p)) < 1e-6 ? 1 : 0;
@@ -49,11 +55,16 @@ function stressedPiece(word, pieces) {
 //  - una palabra átona no puede caer más fuerte que la tónica que la sigue (aunque esta sea más larga): «EL mar»,
 //    «y MÁS», «al VER», «Y se a-ca-BÓ», mal
 //  - la letra tiene que casar letra a letra con la letra seguida (si no, se avisa)
-export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words) {
+export function prosodyIssues(song, letra, words) {
+  const { partitura, compas, anacrusa = 0 } = song;
   const barBeats = barBeatsOf(compas);
   const compound = isCompound(compas);
   // una nota ligada es una sola: su continuación no lleva sílaba y suma su duración a la nota
   const tokens = attackTokens(scoreTokens(partitura));
+  // cambios de compás: cada sílaba se pesa en el compás de su propio compás escrito (se juzga por tramos del mismo compás)
+  const plan = meterPlan(tokens, compas);
+  const barStart = {};
+  tokens.forEach(t => { if (barStart[t.bar] === undefined) barStart[t.bar] = t.start; });
   const byBar = {};
   tokens.forEach(t => { if (!t.rest) (byBar[t.bar] ||= []).push(t); });
   const syl = [];
@@ -83,7 +94,12 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
       if (left === 0) { w++; left = w < wordList.length ? plain(wordList[w]).length : 0; }
     }
   });
-  const weight = x => beatWeight(x.start - anacrusa, barBeats, compound);
+  const weight = x => {
+    const m = plan ? plan.meters[x.bar] : compas;
+    const groups = isAmalgam(m) ? groupingOf(m, song, x.bar) : null;
+    // 5/8 y 7/8 se pesan por grupos; con cambios de compás, desde el inicio de su compás
+    return beatWeight(plan ? x.start - barStart[x.bar] : x.start - anacrusa, plan ? plan.sizes[x.bar] : barBeats, isCompound(m), groups);
+  };
   // tónica de cada sílaba cantada y sílabas hechas solo de palabras átonas
   const stressed = new Set();
   const onlyUnstressed = new Map();
