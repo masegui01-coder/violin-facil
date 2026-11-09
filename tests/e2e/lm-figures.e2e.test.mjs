@@ -223,7 +223,7 @@ for (const big of [false, true]) {
 for (const width of [375, 320]) test(`lectura a dos voces al 200 % a ${width} px: el sistema cabe y la barra fija no tapa la partitura`, async () => {
   const { page, errors, close } = await openApp(env, { viewport: { ...PHONE_375, width } });
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-  await page.$eval('[data-learn-view="lm"]', b => b.click());
+  await page.$eval('[data-libro="lm"]', b => b.click());
   await page.waitForSelector('.lm-unit-card', { timeout: STEP_TIMEOUT });
   await page.$eval('.lm-unit-card[data-unit="7"]', b => b.click());
   await page.waitForSelector('[data-ex="lm1-u7-ritmo-a-medio"]', { timeout: STEP_TIMEOUT });
