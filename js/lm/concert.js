@@ -109,7 +109,7 @@ export function diplomaHtml(diploma) {
   const date = new Date(diploma.at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
   return `<div class="lm-diploma" id="lmDiploma" role="region" aria-label="Diploma de Lenguaje musical"><h2>Diploma de Lenguaje musical</h2>
     <p>Band Flow certifica que</p><p><b class="lm-diploma-name">${esc(name)}</b></p>
-    <p>ha completado los cuatro niveles del curso de Lenguaje musical, con su repaso final y su concierto.</p><p class="muted">${esc(date)}</p>
+    <p>ha completado el Nivel 4 del curso de Lenguaje musical, con su repaso final y su concierto.</p><p class="muted">${esc(date)}</p>
     <button type="button" class="btn ghost" data-diploma-pdf>Imprimir el diploma (PDF)</button></div>`;
 }
 
@@ -123,7 +123,7 @@ export async function diplomaPdf(diploma = lmState().diploma) {
   doc.text('DIPLOMA DE LENGUAJE MUSICAL', 105, 80, { size: 24, bold: true, align: 'center' });
   doc.text('certifica que', 105, 110, { size: 14, gray: 80, align: 'center' });
   doc.text(name, 105, 135, { size: 26, bold: true, align: 'center' });
-  doc.text('ha completado los cuatro niveles del curso de Lenguaje musical,', 105, 165, { size: 13, align: 'center' });
+  doc.text('ha completado el Nivel 4 del curso de Lenguaje musical,', 105, 165, { size: 13, align: 'center' });
   doc.text('con su repaso final y su concierto.', 105, 175, { size: 13, align: 'center' });
   doc.text(new Date(diploma.at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }), 105, 215, { size: 12, gray: 90, align: 'center' });
   const blob = doc.blob();

@@ -28,7 +28,7 @@ const TIME_W = 28;
 const CLEF_SHIFT = { treble: 0, bass: 2, alto: 1 };
 export function keyRelPositions(armadura, clef = 'treble') {
   const spots = (armadura < 0 ? KEY_FLATS : KEY_SHARPS).slice(0, Math.abs(armadura));
-  if (clef in CLEF_SHIFT) return spots.map(rel => rel - CLEF_SHIFT[clef]);
+  if (clef in CLEF_SHIFT) return spots.map(rel => { const r = rel - CLEF_SHIFT[clef]; return r < 0 ? r + 7 : r; });
   return spots.map(rel => { let r = rel + CLEF_BOTTOM.treble - CLEF_BOTTOM[clef]; while (r > 8) r -= 7; while (r < 0) r += 7; return r; });
 }
 // Escalón de cada alteración de una armadura en su clave: el orden fijo del pentagrama
@@ -174,8 +174,7 @@ function cClefSvg(pos) {
   const cy = BOTTOM - pos * HALF;
   return `<rect class="lm-bar-thick" x="3" y="${BOTTOM - 8 * HALF}" width="4" height="${8 * HALF}"/><line class="lm-bar" x1="10" x2="10" y1="${BOTTOM - 8 * HALF}" y2="${BOTTOM}"/>`
     + `<path class="lm-cclef" d="M13 ${cy - 2} C 21 ${cy - 4} 24 ${cy - 10} 24 ${cy - 14} C 24 ${cy - 21} 15 ${cy - 21} 14 ${cy - 17}"/>`
-    + `<path class="lm-cclef" d="M13 ${cy + 2} C 21 ${cy + 4} 24 ${cy + 10} 24 ${cy + 14} C 24 ${cy + 21} 15 ${cy + 21} 14 ${cy + 17}"/>`
-    + `<circle class="lm-dot" cx="27" cy="${cy - HALF}" r="2"/><circle class="lm-dot" cx="27" cy="${cy + HALF}" r="2"/>`;
+    + `<path class="lm-cclef" d="M13 ${cy + 2} C 21 ${cy + 4} 24 ${cy + 10} 24 ${cy + 14} C 24 ${cy + 21} 15 ${cy + 21} 14 ${cy + 17}"/>`;
 }
 // Posición (en medios espacios) de la línea que marca cada clave de do y de fa en 3.ª
 const CLEF_LINE = { alto: 4, tenor: 6, baritone: 4 };

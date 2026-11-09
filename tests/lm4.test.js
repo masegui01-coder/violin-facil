@@ -7,7 +7,7 @@ import { scoreTokens, barBeatsOf, isAmalgam, isCompound, meterPlan, groupingOf, 
 import { parseScore } from '../js/music.js';
 import { beatWeight, prosodyIssues } from '../js/lm/prosody.js';
 import { metronomeBeats, readingTimeline, syllablesOf, toleranceMs } from '../js/lm/rhythm-plan.js';
-import { layoutTokens, keySignatureSteps, yOf, noteCell, clefCell } from '../js/lm/staff-lm.js';
+import { layoutTokens, keySignatureSteps, keyRelPositions, yOf, noteCell, clefCell } from '../js/lm/staff-lm.js';
 import { staffHtml, CLEF } from '../js/lm/kit.js';
 import * as H from '../js/lm/harmony.js';
 import { tripletBeats, syncopations, groupsOk, meterChanges, chordRules, cadenceAt, modulationOk } from '../js/lm/rules4.js';
@@ -362,4 +362,11 @@ test('concierto y diploma: la media de las tres piezas, el repaso aprobado y la 
   assert.equal(diplomaStatus(delivered), 'emitido');
   // el repaso final trae preguntas de los niveles 1, 2 y 3
   assert.ok(lmQuestion(4, 'lm2u1-t1') && lmQuestion(4, 'lm3u1-t1'));
+});
+
+test('armaduras de 7 alteraciones dentro del pentagrama en todas las claves y clave de do sin puntos', () => {
+  assert.deepEqual(keyRelPositions(-7, 'bass'), [2, 5, 1, 4, 0, 3, 6], 'fa♭ en la 4.ª línea de la clave de fa');
+  for (const clef of ['treble', 'bass', 'alto', 'tenor', 'baritone'])
+    for (const n of [-7, 7]) assert.ok(keyRelPositions(n, clef).every(r => r >= 0 && r <= 9), `${clef} ${n}`);
+  for (const clef of ['alto', 'tenor']) assert.doesNotMatch(clefCell(clef), /lm-dot/, `clave de do (${clef}) sin los puntos de la de fa`);
 });

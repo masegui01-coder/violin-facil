@@ -100,7 +100,7 @@ export const LM_EXACT = {
   'Para el diploma te falta aprobar el repaso final de esta unidad (60 %).': 'For the diploma you still need to pass this unit’s final review (60 %).',
   'Para el diploma te falta entregar el concierto.': 'For the diploma you still need to hand in the concert.', 'Tienes todo para el diploma.': 'You have everything for the diploma.',
   'Diploma de Lenguaje musical': 'Music Language diploma', 'Band Flow certifica que': 'Band Flow certifies that', 'Imprimir el diploma (PDF)': 'Print the diploma (PDF)',
-  'ha completado los cuatro niveles del curso de Lenguaje musical, con su repaso final y su concierto.': 'has completed the four levels of the Music Language course, with its final review and concert.',
+  'ha completado el Nivel 4 del curso de Lenguaje musical, con su repaso final y su concierto.': 'has completed Level 4 of the Musicianship course, with its final review and concert.',
   'No se ha podido crear el PDF': 'The PDF could not be created',
   '3.er': '3rd',
   'un tresillo tocado como dos corcheas': 'a triplet played as two eighth notes', 'dos corcheas tocadas como un tresillo': 'two eighth notes played as a triplet', 'una nota de tresillo que quedó muda': 'a triplet note that stayed silent',

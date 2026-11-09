@@ -25,7 +25,7 @@ function shuffledOptions(item, options, correct, env) {
 
 // ---------- Filas de botones (número y nombre, tipo y número…) ----------
 function rowsHtml(rows) {
-  return rows.map(r => `<div class="lm-classrow" role="group" aria-label="${esc(r.label)}"><span class="muted small">${esc(r.label)}</span><div class="lm-names lm-numbers">${r.options.map(([v, t]) => `<button type="button" class="lm-name" data-${r.key}="${esc(v)}" aria-pressed="false">${esc(t)}</button>`).join('')}</div></div>`).join('')
+  return rows.map(r => `<div class="lm-classrow" role="group" aria-label="${esc(r.label)}"><span class="muted small">${esc(r.label)}</span><div class="lm-names ${r.options.some(([, t]) => t.length > 4) ? 'lm-words' : 'lm-numbers'}">${r.options.map(([v, t]) => `<button type="button" class="lm-name" data-${r.key}="${esc(v)}" aria-pressed="false">${esc(t)}</button>`).join('')}</div></div>`).join('')
     + '<div class="controls"><button type="button" class="btn" data-check disabled>Comprobar</button></div><div class="lm-feedback"></div>';
 }
 // Espera a que cada fila tenga una elección y se pulse «Comprobar»; marca lo bueno y lo malo. right: { clave: valor }
