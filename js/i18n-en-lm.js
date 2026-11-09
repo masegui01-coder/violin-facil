@@ -5,6 +5,9 @@ const ORD_EN = { primera: '1st', segunda: '2nd', tercera: '3rd', cuarta: '4th', 
 const FIG_EN = {
   Redonda: 'Whole note', 'Blanca con puntillo': 'Dotted half note', Blanca: 'Half note', 'Negra con puntillo': 'Dotted quarter note', Negra: 'Quarter note',
   'Corchea con puntillo': 'Dotted eighth note', Corchea: 'Eighth note', Semicorchea: 'Sixteenth note',
+  'Negra de tresillo': 'Triplet quarter note', 'Corchea de tresillo': 'Triplet eighth note', 'Semicorchea de tresillo': 'Triplet sixteenth note',
+  'Silencio de negra de tresillo': 'Triplet quarter rest', 'Silencio de corchea de tresillo': 'Triplet eighth rest', 'Silencio de semicorchea de tresillo': 'Triplet sixteenth rest',
+  'Silencio de blanca con puntillo': 'Dotted half rest', 'Silencio de negra con puntillo': 'Dotted quarter rest', 'Silencio de semicorchea': 'Sixteenth rest',
   'Silencio de redonda': 'Whole rest', 'Silencio de blanca': 'Half rest', 'Silencio de negra': 'Quarter rest', 'Silencio de corchea': 'Eighth rest', Silencio: 'Rest',
 };
 const FIG_RE = Object.keys(FIG_EN).sort((a, b) => b.length - a.length).join('|');
