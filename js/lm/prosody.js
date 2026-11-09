@@ -20,6 +20,8 @@ export function beatWeight(pos, barBeats) {
 // acento propio y se apoyan en la tónica que les sigue
 const UNSTRESSED = new Set(['el', 'la', 'lo', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'e', 'o', 'u', 'ni', 'a', 'al', 'de', 'del',
   'en', 'con', 'por', 'para', 'sin', 'que', 'se', 'me', 'te', 'le', 'les', 'nos', 'mi', 'mis', 'tu', 'tus', 'su', 'sus']);
+const SOLFA = new Set(['do', 're', 'mi', 'fa', 'sol', 'la', 'si']);
+const STRONGEST = 3;
 const bare = w => String(w).toLowerCase().replace(/[^\p{L}]/gu, '');
 
 // Sílaba tónica (índice) de una palabra de n sílabas: por la tilde (índice de su letra) o por la terminación
@@ -75,7 +77,9 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
   wordList.forEach((word, i) => {
     const ps = pieces[i];
     if (!ps.length) return;
-    const atonic = ps.length === 1 && UNSTRESSED.has(bare(word));
+    // los nombres de nota junto a otro nombre de nota («mi fa», «si do») son tónicos, no el posesivo ni el artículo
+    const noteName = n => SOLFA.has(bare(wordList[n] || ''));
+    const atonic = ps.length === 1 && UNSTRESSED.has(bare(word)) && !(SOLFA.has(bare(word)) && (noteName(i - 1) || noteName(i + 1)));
     if (!atonic) stressed.add(ps[ps.length === 1 ? 0 : stressedPiece(word, ps)].syl);
     ps.forEach(p => onlyUnstressed.set(p.syl, (onlyUnstressed.get(p.syl) ?? true) && atonic));
     if (ps.length < 2) return;
@@ -84,14 +88,25 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
     const weaker = ps.map((p, j) => ({ u: syl[p.syl], j })).find(({ u, j }) => j !== k && weight(u) > weight(s) && u.beats >= s.beats && (Math.abs(j - k) === 1 || weight(s) < 2));
     if (weaker) issues.push({ bar: barName(s.bar), word: bare(word), stressed: s.text, weaker: weaker.u.text });
   });
+  // una átona nunca en el 1.er tiempo ni más fuerte que la tónica que la sigue («MIS a-MI-gos», «Y se pa | RÓ»)
   syl.forEach((x, k) => {
     if (!onlyUnstressed.get(k)) return;
     const next = syl.findIndex((y, j) => j > k && stressed.has(j));
     if (next < 0) return;
     const s = syl[next];
-    // como en las palabras: con una átona en medio y la tónica en un tiempo fuerte, es acento secundario («mis a-MI-gos»)
-    const secondary = next - k >= 2 && weight(s) >= 2;
-    if (weight(x) > weight(s) && !secondary) issues.push({ bar: barName(x.bar), word: `${bare(x.text)} ${bare(s.text)}`, stressed: s.text, weaker: x.text });
+    if (weight(x) > weight(s) || weight(x) === STRONGEST) issues.push({ bar: barName(x.bar), word: `${bare(x.text)} ${bare(s.text)}`, stressed: s.text, weaker: x.text });
   });
+  // en 4/4, la última tónica de cada verso (antes de un signo de puntuación o cerrando el compás; no la interjección que abre el verso, «¡Sí,») no cae en el pulso débil («es-TÁ GRIS» en el 4)
+  if (barBeats === 4) {
+    wordList.forEach((word, i) => {
+      const ps = pieces[i];
+      if (!ps.length || (ps.length === 1 && UNSTRESSED.has(bare(word))) || /^[¡¿].*,$/.test(word)) return;
+      const s = syl[ps[ps.length === 1 ? 0 : stressedPiece(word, ps)].syl];
+      // también sin signo: la aguda o el monosílabo que cierra el compás («gris |»)
+      const closesBar = s === syl[ps[ps.length - 1].syl] && (!syl[ps[ps.length - 1].syl + 1] || syl[ps[ps.length - 1].syl + 1].bar !== s.bar);
+      if (!(/[.;:!?]$/.test(word) || /,$/.test(word) || closesBar)) return;
+      if (weight(s) < 2 && s.beats < 2) issues.push({ bar: barName(s.bar), word: bare(word), stressed: s.text, weaker: 'fin de verso en parte débil' });
+    });
+  }
   return issues;
 }

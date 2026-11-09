@@ -12,6 +12,8 @@ import { saveVoice } from './results.js';
 import { dynamicsChecks } from './dynamics.js';
 import { keepInView } from './systems.js';
 
+const MARK_SIGN = { ok: '✓', near: '≈', bad: '✕' };
+
 const TICK_MS = 30;
 const MIN_HOLD_MS = 300;
 const MAX_HOLD_MS = 900;
@@ -25,6 +27,7 @@ const SAME_CENTS = 150;          // lecturas de la misma nota sostenida
 const BREAK_CENTS = 70;          // para la nota siguiente igual: hace falta un corte o un cambio de altura
 const BREAK_WAIT_MS = 1200;
 const AFTER_PLAY_S = 0.3;
+const SECOND_PASS_MS = 900;       // un respiro antes de la 2.ª vuelta de la repetición
 const MAJOR_TRIAD = [0, 4, 7];
 const MINOR_TRIAD = [0, 3, 7];
 
@@ -109,12 +112,20 @@ export function groupsOf(notes, by) {
   return out;
 }
 
+// Las notas que se cantan, en orden: con barra de repetición, dos vueltas (se corrigen las dos, sobre la misma partitura)
+export function singOrder(tokens, repeat = false) {
+  const passes = repeat ? 2 : 1;
+  const once = tokens.map((t, i) => ({ ...t, index: i })).filter(t => !t.rest);
+  return { passes, once, sounding: Array.from({ length: passes }, (_, pass) => once.map(t => ({ ...t, pass }))).flat() };
+}
+
 // opts: tokens (scoreTokens), key ('Do M'|'La m'), echo, variant, under (texto bajo cada nota: letra o nombres),
 // meter, bpm, clef, intro (texto)
 export async function singTask(host, opts, env) {
   const { tokens, echo = false, variant = 'facil', meter = null, bpm = 72, clef = 'treble' } = opts;
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
-  const sounding = tokens.map((t, i) => ({ ...t, index: i })).filter(t => !t.rest);
+  const { passes, once, sounding } = singOrder(tokens, opts.repeat);
+  const got = [];
   // hideNames: lectura cantada (se lee el pentagrama: ni el nombre debajo ni la app lo dice)
   const hide = !!opts.hideNames;
   const under = hide ? tokens.map(() => '') : opts.under || tokens.map(t => (t.rest ? '' : noteText(t.name, env.nom)));
@@ -129,14 +140,31 @@ export async function singTask(host, opts, env) {
   let playingUntil = 0;
   const quietUntil = () => playingUntil;
 
+  // Pintado completo al principio y al final; mientras se canta, la nota que toca y cada marca se ponen sobre lo ya
+  // pintado (repintar a cada nota cortaba el desplazamiento que la mantiene a la vista, a 320 px o con letra grande)
   const draw = current => {
-    // ordenamiento con notas que aún no se leen: se canta de oído, con los nombres (sin pentagrama)
-    host.querySelector('.lm-sing-staff').innerHTML = opts.noStaff
-      ? `<ol class="lm-names-row">${sounding.map(n => `<li class="${marks[n.index] || ''}${n.index === current ? ' lm-now' : ''}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
-      : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, current, dynamics: opts.dynamics || null });
-    // la nota que toca, siempre a la vista
-    const on = current >= 0 && host.querySelector('.lm-sing-staff .lm-now');
-    if (on) keepInView(on);
+    const box = host.querySelector('.lm-sing-staff');
+    if (current < 0 || !box.querySelector('[data-i]')) {
+      // ordenamiento con notas que aún no se leen: se canta de oído, con los nombres (sin pentagrama)
+      box.innerHTML = opts.noStaff
+        ? `<ol class="lm-names-row">${once.map(n => `<li class="${marks[n.index] || ''}" data-i="${n.index}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
+        : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, dynamics: opts.dynamics || null, repeat: passes > 1 });
+      if (current < 0) return;
+    }
+    box.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
+    const on = box.querySelector(`[data-i="${current}"]`);
+    if (on) { on.classList.add('lm-now'); keepInView(on); }
+  };
+  const markCell = (index, mark) => {
+    const cell = host.querySelector(`.lm-sing-staff [data-i="${index}"]`);
+    if (!cell) return;
+    cell.classList.remove('ok', 'near', 'bad');
+    cell.classList.add(mark);
+    const svg = cell.querySelector('svg.lm-cell');
+    if (!svg) return;
+    svg.querySelector('.lm-mark')?.remove();
+    const w = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal.width : 0;
+    svg.insertAdjacentHTML('beforeend', `<text class="lm-mark" x="${w / 2}" y="12" text-anchor="middle">${MARK_SIGN[mark]}</text>`);
   };
   host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}
     ${MIC_GATE}
@@ -177,6 +205,7 @@ export async function singTask(host, opts, env) {
     let silent = 0;
     let gaveUp = false;
     for (const group of groupsOf(sounding, echo)) {
+      if (passes > 1 && group[0] === sounding[once.length]) { phase('2.ª vuelta: desde el principio'); await wait(SECOND_PASS_MS); }
       if (!env.alive()) return null;
       if (gaveUp) break;
       if (echo) {
@@ -203,11 +232,14 @@ export async function singTask(host, opts, env) {
         const { cents, sungMidi, level } = await hearNote(n.midi, hold, env.alive, quietUntil, showLevel, waitMs);
         if (!env.alive()) return null;
         silent = cents === null ? silent + 1 : 0;
-        levels[n.index] = level;
+        const k = sounding.indexOf(n);
+        levels[k] = level;
         const raw = singMark(cents, tolerance);
         const mark = raw === 'ok' && helped.has(n.index) ? 'near' : raw;
+        got[k] = mark;
         marks[n.index] = mark;
-        heard[n.index] = cents;
+        heard[k] = cents;
+        markCell(n.index, mark);
         if (Number.isFinite(sungMidi)) sungMidis.push(sungMidi);
         const dot = host.querySelector('#lmSingDot');
         if (dot) { dot.className = mark; dot.style.left = `${50 + Math.max(-50, Math.min(50, (cents ?? 0) / 2))}%`; }
@@ -217,13 +249,13 @@ export async function singTask(host, opts, env) {
       }
     }
     delete host.dataset.target;
-    sounding.forEach(n => { if (!marks[n.index]) { marks[n.index] = 'bad'; heard[n.index] = null; } });
+    sounding.forEach((n, k) => { if (!got[k]) { got[k] = 'bad'; heard[k] = null; marks[n.index] = marks[n.index] || 'bad'; } });
     draw(-1);
     phase('¡Hecho!');
     if (sungMidis.length >= 2) saveVoice(Math.min(...sungMidis), Math.max(...sungMidis));
     // matices: con el volumen de cada nota cantada, lo forte más fuerte que lo piano y los reguladores
-    const dyn = opts.dynamics ? dynamicsChecks(opts.dynamics, sounding, sounding.map(n => levels[n.index] ?? null)) : null;
-    return { marks: sounding.map(n => marks[n.index]), cents: sounding.map(n => (helped.has(n.index) && heard[n.index] !== null ? Math.max(Math.abs(heard[n.index] ?? 0), tolerance + 1) : heard[n.index] ?? null)), names: sounding.map(n => n.name), tolerance, dyn, range: sungMidis.length ? [Math.min(...sungMidis), Math.max(...sungMidis)] : null };
+    const dyn = opts.dynamics ? dynamicsChecks(opts.dynamics, once, once.map((n, k) => levels[k] ?? null)) : null;
+    return { marks: got, cents: sounding.map((n, k) => (helped.has(n.index) && heard[k] !== null ? Math.max(Math.abs(heard[k] ?? 0), tolerance + 1) : heard[k] ?? null)), names: sounding.map(n => n.name), tolerance, dyn, range: sungMidis.length ? [Math.min(...sungMidis), Math.max(...sungMidis)] : null };
   } finally {
     audio.setVoiceInput(false);
     stopSound();
@@ -260,13 +292,13 @@ export function hyphenate(syllables, words) {
 // La letra seguida de cada canción del Nivel 1 (para los guiones entre sílabas)
 export const SONG_WORDS = {
   'El pregón de la frutera': 'Fresas ¡ya! Rojas ¡ya! Dulces, frescas, buenas, grandes, Venga, ¡ven! venga, ¡ven! ¡Lleva todas! ¡Ven! ¡Ya!',
-  'Robots en el patio': 'Pipipí, ¡bip, bip! dame la luz, Pipipí, ¡bip, bop! mueve el pie, ¡clac! Gira la cabeza, gira sin parar Mueve, mueve, y se paró, ¡clic!',
-  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Barcos que vuelven, sí, llegan ya Duerme, duerme, mar',
+  'Robots en el patio': 'Pipipí, ¡bip, bip! dame la luz, Pipipí, ¡bip, bop! mueve el pie, ¡clac! Gira la cabeza, gira sin parar Mueve, mueve, ¡ay, se paró! ¡clic!',
+  'El faro': 'Luce el faro sobre el mar, ¡brilla, brilla! ¡luz! Barcos que vienen y llegan ya Duerme, duerme, mar',
   'Vals de los relojes': 'Tic tac tic tac Baila el reloj Vamos a girar vuelta y vuelta, ¡ya!',
   'La escalera': 'Subo yo la escalera, ¡do! Bajo yo la escalera, ¡do! Mi fa son vecinas, ¡sí! si do son vecinas, ¡sí! ¡Ya lo sabes! ¡Do!',
-  'La brisa y el mar': 'Canta la brisa del mar, canción de paz; Mar que contesta: ¡sí! ¡Fuerte, fuerte! ¡Bum! Olas que suenan más, más y más y ¡más! Ola que se va, se va, se va.',
-  'Saloma del barco fantasma': '¡Vamos, barco, al mar! ¡Eho! ¡Tira del timón! ¡Eho! Densa niebla, todo está gris; rumbo al puerto, ¡ya!',
-  '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Con mis amigos suena mejor, con mis amigos suena mejor, ¡sí, sí!',
+  'La brisa y el mar': 'Canta la brisa del mar, canción de paz; Ruge el mar: ¡bum, bum, bum! ¡Fuerte, fuerte! ¡Bum! Olas que suenan más, más y más y ¡más! Ola que se va, se va, se va.',
+  'Saloma del barco fantasma': '¡Vamos, barco, al mar! ¡Eho! ¡Tira del timón! ¡Eho! Densa niebla, todo es gris y rumbo al puerto, ¡ya!',
+  '¿Te vienes?': '¿Te vienes a cantar? ¿Te vienes a bailar? ¡Sí, vamos a cantar! ¡Sí, vamos a bailar! Y baila y canta, suena mejor, y baila y canta, suena mejor, ¡sí, sí!',
 };
 
 // La 2.ª estrofa (letra2) de las canciones que la tienen
