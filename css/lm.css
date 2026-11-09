@@ -190,6 +190,10 @@
 .lm-fermata { fill: none; stroke: currentColor; stroke-width: 1.6; }
 .lm-breath { font-family: var(--f-display); font-size: 18px; font-weight: 700; fill: currentColor; }
 .lm-dyn { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 1rem; line-height: 1.1; min-height: 1.1em; color: var(--ink); white-space: nowrap; }
+.lm-dyn-ext { font-style: normal; font-weight: 400; color: var(--muted); letter-spacing: 1px; }
+/* el matiz no ensancha la celda (una celda más ancha partía la barra de las corcheas) */
+.lm-stop-phase.lm-hand { font-size: 1.5rem; font-weight: 800; }
+.lm-sc > .lm-dyn { width: 0; align-self: flex-start; overflow: visible; }
 .lm-staff-two { display: flex; flex-direction: column; gap: 4px; }
 .lm-staff-two .dict-staff-label { margin: 0; }
 
@@ -281,3 +285,5 @@
 .lm-sticky-controls { gap: 6px; }
 .lm-insert { touch-action: none; }
 .lm-phones { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+/* el navegador no «ancla» el desplazamiento mientras se lee o se canta: deshacía el que mantiene la nota a la vista */
+#lmBody { overflow-anchor: none; }

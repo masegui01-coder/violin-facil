@@ -8,6 +8,7 @@
 //   skills: competencias que puntúa (contrato: skillsPorSeccion).
 // Unidad: { level, unit, id, title, goal, color, notes, objectives, novelties, blocks, exercises, raw }
 //   blocks: secciones en el orden de la unidad, intercaladas con el bloque «En tu instrumento» (temario de instrumento).
+import { FIGURE_NAME, REST_NAME } from './notes.js';
 import U1 from './level1/u1.js';
 import U2 from './level1/u2.js';
 import U3 from './level1/u3.js';
@@ -138,6 +139,12 @@ export function mistakeText(code) {
   if (m) return `${m[1]} → ${m[2]}`;
   if (/-sil$/.test(code)) return 'no se oyó la nota';
   if (/-t$/.test(code)) return 'se acabó el tiempo';
+  // lectura rítmica: lo que falló, con su figura de verdad
+  const miss = /^falta-(.+)$/.exec(code);
+  if (miss && FIGURE_NAME[miss[1]]) return `no tocó una ${FIGURE_NAME[miss[1]].toLowerCase()}`;
+  const rest = /^sil-(.+)$/.exec(code);
+  if (rest && REST_NAME[rest[1]]) return `palmada en un ${REST_NAME[rest[1]].toLowerCase()}`;
+  if (code === 'golpe-mas') return 'golpes de más';
   const stop = /^stop-(.+)$/.exec(code);
   if (stop && STOP_MISSED[stop[1]]) return `no notó: ${STOP_MISSED[stop[1]]}`;
   return null;

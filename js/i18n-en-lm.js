@@ -35,6 +35,16 @@ export const LM_EXACT = {
   'la anacrusa en la parte fuerte': 'the upbeat on the strong beat',
   'Llevo auriculares (para dar palmas al micrófono)': 'I am wearing headphones (to clap into the microphone)',
   'Sin auriculares, el micrófono oiría también a la app: toca la pantalla.': 'Without headphones, the microphone would also hear the app: tap the screen.',
+  // Evaluación 8: lecturas con repetición, calderón, matices y acento medidos; escritura
+  'Los matices y el acento solo se miden con palmas al micrófono.': 'Dynamics and accents are only measured when you clap into the microphone.',
+  'o con palmas al micrófono': 'or clap into the microphone',
+  '2.ª vuelta, sin metrónomo': '2nd time, no metronome',
+  '2.ª vuelta: desde el principio': '2nd time: from the beginning',
+  '✋ Calderón: mantén… hasta que la mano baje': '✋ Fermata: hold… until the hand comes down',
+  '👇 ¡Sigue!': '👇 Go on!',
+  'Los matices se miden solo con palmas al micrófono (con auriculares).': 'Dynamics are only measured when you clap into the microphone (with headphones).',
+  'El acento del 1.er tiempo se mide solo con palmas al micrófono (con auriculares).': 'The accent on beat 1 is only measured when you clap into the microphone (with headphones).',
+  'Nota cancelada': 'Note cancelled',
   'Da palmas: la app te escucha': 'Clap: the app is listening', 'No te oigo. ¿Seguimos?': "I can't hear you. Shall we go on?", Seguir: 'Go on', Terminar: 'Finish', hueco: 'gap', 'Entera, solo para mirarla': 'In full, just to look at', 'Escuchar entera': 'Listen to all of it', 'Tu respuesta': 'Your answer', 'Uno menos': 'One less', 'Uno más': 'One more', Compases: 'Bars', '2.ª estrofa': '2nd verse', 'Ahora, la 2.ª estrofa (la letra de abajo)': 'Now the 2nd verse (the lower words)', 'Segunda estrofa': 'Second verse', 'Palmas (micrófono)': 'Clap (microphone)', 'Tocar la pantalla': 'Tap the screen',
   '¡Ahora! Tu voz es la de abajo': 'Now! Your voice is the bottom one', 'Sin micrófono: tocarás la pantalla.': 'No microphone: you will tap the screen.',
   Percusión: 'Percussion', Escuchar: 'Listen',
@@ -160,7 +170,7 @@ export const LM_EXACT = {
   'no paró la música': "didn't stop the music", 'faltó una barra de compás': 'a bar line was missing', 'sobró una barra de compás': 'an extra bar line', 'faltó una nota': 'a note was missing',
   'sobró una nota': 'an extra note', 'nota equivocada': 'wrong note', 'número de compases': 'number of bars', 'compases incompletos': 'incomplete bars', 'figura no permitida': 'note value not allowed',
   'nota no permitida': 'note not allowed', 'final no pedido': 'wrong ending', 'salto no permitido': 'leap not allowed', 'faltan figuras obligatorias': 'required note values missing',
-  'faltan los semitonos': 'the semitones are missing', 'no se oyó la nota': 'the note was not heard', 'se acabó el tiempo': 'time ran out',
+  'faltan los semitonos': 'the semitones are missing', 'no se oyó la nota': 'the note was not heard', 'se acabó el tiempo': 'time ran out', 'golpes de más': 'extra claps',
 };
 
 // Textos de las audiciones corregidos tras el cotejo musicológico (no están en i18n-en-lm-content-*.js)
@@ -255,6 +265,8 @@ export function lmPatterns({ tr, noteEn }) {
     [/^compás (\d+)$/, (m, n) => `bar ${n}`],
     [/^(\d+) de (\d+) a tiempo$/, (m, a, b) => `${a} of ${b} in time`],
     [/^no notó: (.+)$/, (m, x) => `didn't notice: ${tr(x)}`],
+    [/^no tocó una (.+)$/, (m, x) => `missed a ${tr(x[0].toUpperCase() + x.slice(1)).toLowerCase()}`],
+    [/^palmada en un (.+)$/, (m, x) => `clap in a ${tr(x[0].toUpperCase() + x.slice(1)).toLowerCase()}`],
     [/^Compás (\d+): (.+)$/, (m, n, x) => `Bar ${n}: ${tr(x)}`],
     [/^Son (\d+)\.$/, (m, n) => `It's ${n}.`],
     [/^Voz 1, la app: (.+)\. Voz 2, tú: (.+)$/, (m, a, b) => `Voice 1, the app: ${tr(a)}. Voice 2, you: ${tr(b)}`],

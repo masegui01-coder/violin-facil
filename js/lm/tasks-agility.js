@@ -19,17 +19,31 @@ const BEATS_PER_NOTE = 2; // a tempo: una nota cada dos pulsos
 // Plan del ejercicio: cuántas notas, cuánto tiempo para cada una y qué nota sale (sin repetir la anterior)
 // Serie de notas al azar que no se puede adivinar sin leer: con muchas notas, nunca la misma dos veces seguidas; con
 // dos o tres, se permite repetir (como mucho dos seguidas) y la serie se rehace si alternar o repetir siempre la misma
-// nota acertaría el 60 % o más (con la bolsa sol/mi, «sol, mi, sol, mi…» ya no aprueba)
+// nota, o decir «la misma que antes» o «la contraria de antes», acertaría el 60 % o más (con la bolsa sol/mi,
+// «sol, mi, sol, mi…» ya no aprueba). Con pocas notas, al menos 16 por serie, y la nota se corrige por el azar.
 const MAX_RUN = 2;
 const GUESS_LIMIT = 0.6;
-const MAX_TRIES = 50;
-function guessable(notes, pool) {
+const MAX_TRIES = 200;
+const SMALL_POOL = 3;
+export const MIN_SMALL_NOTES = 16;
+export function guessable(notes, pool) {
   const share = f => notes.filter((n, i) => n === f(i)).length / notes.length;
   const guesses = [...pool.map(n => () => n), ...pool.flatMap(a => pool.filter(b => b !== a).map(b => i => (i % 2 ? b : a)))];
-  return guesses.some(g => share(g) >= GUESS_LIMIT);
+  if (guesses.some(g => share(g) >= GUESS_LIMIT)) return true;
+  // la misma que la anterior / otra distinta de la anterior (al azar entre las demás)
+  const moves = notes.slice(1).map((n, i) => n === notes[i]);
+  const same = moves.filter(Boolean).length / Math.max(1, moves.length);
+  const other = (1 - same) / Math.max(1, pool.length - 1);
+  return same >= GUESS_LIMIT || other >= GUESS_LIMIT;
+}
+// Nota sobre 100 descontado el azar: con k botones, contestar a ciegas acierta 1 de cada k y debe dar 0
+export function chanceCorrected(pct, k) {
+  if (k < 2) return pct;
+  const p = pct / 100;
+  return Math.max(0, Math.round(100 * (p - 1 / k) / (1 - 1 / k)));
 }
 export function noteSeries(pool, count, r) {
-  const small = pool.length <= 3;
+  const small = pool.length <= SMALL_POOL;
   let notes = [];
   for (let tries = 0; tries < MAX_TRIES; tries++) {
     notes = [];
@@ -46,13 +60,14 @@ export function noteSeries(pool, count, r) {
 export function agilityPlan(p, seed) {
   const r = rng(seed);
   const pool = p.notas;
+  const small = pool.length <= SMALL_POOL;
   let count = p.cantidad;
   let secs;
   if (p.modo === 'leer-a-tempo') {
     const [lo, hi] = Array.isArray(p.tempo) ? p.tempo : [p.tempo || 80, p.tempo || 80];
-    count = Math.max(4, Math.round((p.compases || 4) * barBeatsOf(p.compas || '4/4') / BEATS_PER_NOTE));
+    count = Math.max(small ? MIN_SMALL_NOTES : 4, Math.round((p.compases || 4) * barBeatsOf(p.compas || '4/4') / BEATS_PER_NOTE));
     secs = Array.from({ length: count }, (_, i) => (60 / (lo + (hi - lo) * (count > 1 ? i / (count - 1) : 0))) * BEATS_PER_NOTE);
-  } else secs = Array(count || 12).fill(p.segundosPorNota || 3);
+  } else secs = Array(Math.max(count || 12, small ? MIN_SMALL_NOTES : 0)).fill(p.segundosPorNota || 3);
   return { notes: noteSeries(pool, secs.length, r), secs };
 }
 
@@ -119,9 +134,10 @@ export async function agilityTask(host, p, env) {
     // a tempo, la nota siguiente llega en su pulso; si no, tras un momento para ver la corrección
     await wait(tempo ? (t0 + slots[i] + plan.secs[i] - now()) * 1000 : FEEDBACK_MS);
   }
-  // contrato: aciertos sobre el total (los tiempos agotados cuentan como fallo, sin restar más)
+  // contrato: aciertos sobre el total (los tiempos agotados cuentan como fallo, sin restar más), descontado el azar
   const g = gradeAgility(right, 0, plan.notes.length);
+  const pct = chanceCorrected(g.pct, letters.length);
   const record = saveRecord(key, right);
   host.querySelector('#lmAgFeedback').innerHTML = record ? '<b>¡Nuevo récord!</b>' : '';
-  return { pct: g.pct, right, total: plan.notes.length, record, mistakes: mistakeCodes(misses) };
+  return { pct, right, total: plan.notes.length, record, mistakes: mistakeCodes(misses) };
 }

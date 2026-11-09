@@ -14,7 +14,7 @@ import {
   interval, scale, degreeNote, centsAnyOctave, voiceTonic, parseTokens, tokensText, tokensToNotes, positionText, stepOf, scoreTokens, barBeatsOf, solfaToName,
 } from '../js/lm/notes.js';
 import { stopRoundOf, stopKinds, stopWindow, stopBase, ostinatoTokens, gainsFor, genRhythm, genMelody, meterQuestions, semitoneQuestions, modeQuestions } from '../js/lm/gen.js';
-import { agilityPlan } from '../js/lm/tasks-agility.js';
+import { agilityPlan, chanceCorrected } from '../js/lm/tasks-agility.js';
 import { getState } from '../js/store.js';
 import { readFileSync } from 'node:fs';
 
@@ -278,7 +278,7 @@ test('agilidad: aciertos sobre el total; a tempo, el tiempo por nota baja; la po
   assert.equal(gradeAgility(12, 0, 12).pct, 100);
   assert.equal(gradeAgility(9, 0, 12).pct, 75);
   const easy = agilityPlan({ notas: ['G4', 'E4'], cantidad: 12, segundosPorNota: 4, modo: 'nombrar' }, 1);
-  assert.equal(easy.notes.length, 12);
+  assert.equal(easy.notes.length, 16, 'con dos o tres notas, al menos 16');
   // con dos notas: como mucho dos iguales seguidas, y ni alternar ni repetir siempre la misma aprueba
   for (let seed = 1; seed <= 40; seed++) {
     const { notes } = agilityPlan({ notas: ['G4', 'E4'], cantidad: 12, segundosPorNota: 4, modo: 'nombrar' }, seed);
@@ -286,10 +286,19 @@ test('agilidad: aciertos sobre el total; a tempo, el tiempo por nota baja; la po
     for (const guess of [i => (i % 2 ? 'G4' : 'E4'), i => (i % 2 ? 'E4' : 'G4'), () => 'G4', () => 'E4']) {
       assert.ok(notes.filter((n, i) => n === guess(i)).length / notes.length < 0.6, `semilla ${seed}: adivinar aprueba`);
     }
+    // ni «la misma que antes» ni «la contraria de antes»
+    const moves = notes.slice(1).map((n, i) => n === notes[i]);
+    const same = moves.filter(Boolean).length / moves.length;
+    assert.ok(same < 0.6 && 1 - same < 0.6, `semilla ${seed}: misma/contraria ${same}`);
   }
   const fast = agilityPlan({ notas: ['G4', 'E4', 'A4'], modo: 'leer-a-tempo', tempo: [60, 90], compases: 8, compas: '2/4' }, 2);
-  assert.equal(fast.notes.length, 8);
+  assert.equal(fast.notes.length, 16);
   assert.ok(fast.secs[0] > fast.secs[fast.secs.length - 1]);
+  // la nota descuenta el azar: a ciegas con dos botones (50 %) da 0, todo bien da 100
+  assert.equal(chanceCorrected(50, 2), 0);
+  assert.equal(chanceCorrected(100, 2), 100);
+  assert.equal(chanceCorrected(80, 2), 60);
+  assert.equal(chanceCorrected(33, 3), 0);
   assert.equal(positionText(stepOf('G4')), 'segunda línea');
   assert.equal(positionText(stepOf('F4')), 'primer espacio');
   assert.equal(positionText(stepOf('C4')), 'línea adicional 1 por debajo');
@@ -704,11 +713,6 @@ test('lectura a dos voces con micrófono: si solo se oye el altavoz (el ostinato
 });
 
 // ---------- Evaluación 6 ----------
-// Excepciones musicales de verdad, cada una con su porqué
-const PROSODY_ALLOWED = [
-  // «Mi fa / si do»: aquí «mi» es el nombre de la nota (tónico), no el posesivo átono que el comprobador supone
-  'U5 estrofa 1, compás 9: «mi fa»',
-];
 test('prosodia: en todas las canciones la sílaba tónica cae en una parte al menos tan fuerte como sus vecinas', async () => {
   const { prosodyIssues, beatWeight } = await import('../js/lm/prosody.js');
   const { SONG_WORDS, SONG_WORDS2 } = await import('../js/lm/tasks-voice.js');
@@ -720,7 +724,7 @@ test('prosodia: en todas las canciones la sílaba tónica cae en una parte al me
       prosodyIssues(s, L, W).forEach(i => found.push(`U${u.unit} estrofa ${v}, compás ${i.bar}: «${i.word}» (tónica «${i.stressed}» más débil que «${i.weaker}»)`));
     });
   });
-  assert.deepEqual(found.filter(f => !PROSODY_ALLOWED.some(a => f.startsWith(a))), []);
+  assert.deepEqual(found, []);
   // la regla misma: llanas, agudas, tilde
   const two = { partitura: '| G4q G4q | G4q G4q |', compas: '2/4' };
   assert.equal(prosodyIssues(two, [['ro', 'bot'], ['me', 'sa']], 'robot mesa').length, 1, '«ro-BOT» con «bot» en el 2 está mal');
@@ -731,10 +735,23 @@ test('prosodia: en todas las canciones la sílaba tónica cae en una parte al me
   const ee = { partitura: '| G4e G4e G4q | G4h |', compas: '2/4' };
   assert.equal(prosodyIssues(ee, [['El', 'mar', 'me'], ['va']], 'El mar me va').length, 1, '«EL mar» con el artículo en el pulso');
   assert.equal(prosodyIssues({ partitura: '| G4e G4e G4e G4e | G4h |', compas: '2/4' }, [['y', 'más,', 'y', 'más,'], ['ya']], 'y más, y más, ya').length, 2, '«Y más, Y más»');
-  assert.equal(prosodyIssues({ partitura: '| G4q G4q G4q G4q | G4w |', compas: '4/4' }, [['Can', 'tan', 'al', 'ver'], ['sol']], 'Cantan al ver sol').length, 1, '«AL ver»');
+  assert.equal(prosodyIssues({ partitura: '| G4q G4q G4q G4q | G4w |', compas: '4/4' }, [['Can', 'tan', 'al', 'ver'], ['sol']], 'Cantan al ver sol').filter(i => i.weaker === 'al').length, 1, '«AL ver»');
   assert.equal(prosodyIssues({ partitura: '| G4e G4e G4q G4q | G4h G4q |', compas: '3/4' }, [['y', 'se a', 'ca', 'bó'], ['ya']], 'y se acabó ya').length, 1, '«Y se a-ca-BÓ» en el vals');
   assert.equal(prosodyIssues(two, [['ro', 'bots'], ['me', 'sa']], 'robots mesa').length, 1, '«ro-BOTS» es aguda');
   assert.equal(prosodyIssues(two, [['me', 'sa'], ['ro', 'bot']], 'mesa sofá').filter(i => i.word === 'letra desalineada').length, 1, 'avisa si la letra no casa');
+  // evaluación 8: sin excepción de «acento secundario», átona nunca en el 1, final de verso en parte fuerte, nombres de nota
+  const up = { partitura: '| G4q | G4q G4q G4q G4q | G4w |', compas: '4/4', anacrusa: 1 };
+  assert.equal(prosodyIssues(up, [['con'], ['mis', 'a', 'mi', 'gos'], ['ya']], 'con mis amigos ya').length, 1, '«con MIS a-MI-gos»');
+  const four = { partitura: '| G4q G4q G4q G4q | G4w |', compas: '4/4' };
+  assert.ok(prosodyIssues(four, [['Can', 'ta', 'la', 'luz.'], ['ya.']], 'Canta la luz. ya.').some(i => i.weaker.startsWith('fin de verso')), '«es-TÁ GRIS»: final de verso en el 4');
+  assert.equal(prosodyIssues(four, [['¡Sí,', 'can', 'ta', 'ya!'], ['sol.']], '¡Sí, canta ya! sol.').filter(i => i.weaker.startsWith('fin de verso')).length, 1, 'la interjección «¡Sí,» abre el verso, no lo cierra');
+  assert.ok(prosodyIssues(four, [['to', 'do es', 'tá', 'gris'], ['ya']], 'todo está gris ya').some(i => i.word === 'gris'), '«es-TÁ GRIS |» sin signo, cerrando el compás en el 4');
+  const yse = { partitura: '| G4q G4e G4e | G4h |', compas: '2/4' };
+  assert.ok(prosodyIssues(yse, [['Y', 'se', 'pa'], ['ró']], 'Y se paró').some(i => i.weaker === 'Y'), '«Y se pa | RÓ»: la átona en el 1');
+  const qv = { partitura: '| G4q G4q | G4h |', compas: '2/4' };
+  assert.equal(prosodyIssues(qv, [['que', 'me'], ['ves']], 'que me ves').length, 1, '«QUE me VES»');
+  assert.equal(prosodyIssues(qv, [['mi', 'fa'], ['do']], 'mi fa do').length, 0, 'nombres de nota seguidos: tónicos');
+  assert.ok(prosodyIssues(qv, [['mi', 'ca'], ['sa']], 'mi casa').some(i => i.weaker === 'mi'), 'el posesivo «mi» sigue siendo átono');
 });
 
 test('creatividad AB: la respuesta acaba en do aunque la parte B empiece en el primer tiempo (sin anacrusa)', async () => {
@@ -777,7 +794,7 @@ test('lectura rítmica del curso: machacar la pantalla o callarse no aprueba; bi
     const expected = toks.filter(t => !t.rest).map(t => t.start * spb);
     const end = toks.reduce((m, t) => Math.max(m, t.start + t.beats), 0) * spb;
     const tol = e.variant === 'medio' ? 0.08 : 0.12;
-    const pct = hits => { const g = gradeReading({ expected, hits, tol }); return pctOf(g.marks, Math.ceil(g.extra * 1.5)); };
+    const pct = hits => gradeReading({ expected, hits, tol }).pct;
     const mash = Array.from({ length: Math.floor(end / 0.06) }, (_, i) => i * 0.06);
     assert.ok(pct(mash) < 60, `${e.id}: machacar ${pct(mash)} %`);
     assert.equal(pct([]), 0, `${e.id}: en silencio`);
@@ -786,4 +803,162 @@ test('lectura rítmica del curso: machacar la pantalla o callarse no aprueba; bi
     const rest = toks.find(t => t.rest);
     if (rest) assert.ok(pct([...expected, rest.start * spb]) < 100, `${e.id}: palmada en un silencio`);
   });
+});
+
+// ---------- Evaluación 8 ----------
+// Cada ejemplo de tarjeta y cada partitura de pregunta que se pinta con compás suma exactamente su compás
+// (la anacrusa al principio y, si la hay, el compás que la completa al final)
+const METER_EXEMPT = new Set(['lm1u4-t7']); // la pregunta es justo encontrar el compás que no suma
+test('ejemplos de tarjeta y preguntas con compás: cada compás suma exactamente lo que marca', async () => {
+  const { lmLevel } = await import('../js/lm/catalog.js');
+  const { barBeatsOf, scoreTokens: tokensOf } = await import('../js/lm/notes.js');
+  const bad = [];
+  const check = (name, text, meter, pickup = 0) => {
+    const bb = barBeatsOf(meter);
+    const bars = text.split('|').map(x => x.trim()).filter(Boolean).map(b => tokensOf(`| ${b} |`).reduce((a, t) => a + t.beats, 0));
+    bars.forEach((sum, i) => {
+      const want = pickup && i === 0 ? pickup : pickup && i === bars.length - 1 && sum === bb - pickup ? sum : bb;
+      if (Math.abs(sum - want) > 1e-6) bad.push(`${name}: compás ${i + 1} suma ${sum} en ${meter}`);
+    });
+  };
+  for (const u of lmLevel(1).units) {
+    const def = u.raw.compases[0];
+    (u.raw.teoria.ficha || []).forEach((c, i) => ['ejemplo', 'ejemploCompleto'].forEach(k => c[k] && check(`U${u.unit} tarjeta ${i + 1} ${k}`, c[k], c.compas || def, c.anacrusa || 0)));
+    for (const ex of Object.values(u.raw.secciones).flat()) {
+      for (const it of [...(ex.items || []), ...(ex.preguntas || [])]) {
+        if (it.partitura && it.compas && !METER_EXEMPT.has(it.id) && !String(it.partitura).includes('?')) check(it.id, it.partitura, it.compas, it.anacrusa || 0);
+      }
+    }
+  }
+  assert.deepEqual(bad, []);
+  // y la tarjeta «Frases y respiración» de la U7 va en 4/4
+  const u7 = lmLevel(1).units[6].raw.teoria.ficha;
+  assert.ok(u7.some(c => /respiraci/i.test(c.titulo) && c.compas === '4/4'));
+});
+
+// La lectura tal y como la corrige la pantalla del curso: las dos vueltas, el calderón y los silencios
+async function readingSim(e) {
+  const { readingTimeline, readingMode } = await import('../js/lm/tasks-duo.js');
+  const { gradeReading: gradeAll } = await import('../js/lm/reading-grade.js');
+  const { withBreaths } = await import('../js/lm/kit.js');
+  const p = e.params;
+  const spb = 60 / (p.tempo || 72);
+  const tokens = withBreaths(scoreTokens(p.partitura), p.comas || [], p.anacrusa || 0);
+  const tl = readingTimeline(p, tokens);
+  const mode = readingMode(p, e.variant);
+  const notes = tl.events.filter(x => !x.rest);
+  const at = x => x.beat * spb;
+  const tol = e.variant === 'medio' ? 0.08 : 0.12;
+  const grade = hits => gradeAll({
+    notes: notes.map(x => ({ at: at(x), dur: x.dur })),
+    rests: tl.events.filter(x => x.rest).map(x => ({ from: at(x), to: at(x) + x.beats * spb, dur: x.dur })),
+    hits, tol, tempo: mode.metro === 'none',
+  });
+  return { p, spb, tl, mode, notes, expected: notes.map(at), grade, tol };
+}
+
+test('lecturas del curso: dar el pulso sin leer, palmear los silencios o tocar una sola vuelta no aprueba (las 16)', async () => {
+  const readings = allLmExercises().filter(e => e.type === 'lectura-ritmica');
+  assert.equal(readings.length, 16);
+  for (const e of readings) {
+    const { spb, tl, expected, grade } = await readingSim(e);
+    assert.equal(grade(expected).pct, 100, `${e.id}: bien leída`);
+    assert.equal(grade([]).pct, 0, `${e.id}: en silencio`);
+    // el pulso, sin leer: un golpe en cada pulso de toda la lectura
+    const pulse = Array.from({ length: Math.round(tl.total) }, (_, i) => i * spb);
+    const isPulse = expected.length === pulse.length && expected.every((x, i) => Math.abs(x - pulse[i]) < 1e-6);
+    if (!isPulse) assert.ok(grade(pulse).pct < 60, `${e.id}: el pulso sin leer da ${grade(pulse).pct} %`);
+    // retraso constante del móvil o del alumno (+100 ms): se compensa
+    assert.ok(grade(expected.map(x => x + 0.1)).pct >= 95, `${e.id}: con 100 ms de retraso ${grade(expected.map(x => x + 0.1)).pct} %`);
+    // una palmada en cada silencio
+    const rests = tl.events.filter(x => x.rest);
+    if (rests.length) {
+      const inRests = rests.map(r => (r.beat + r.beats / 2) * spb);
+      const g = grade([...expected, ...inRests]);
+      assert.ok(g.pct < 100 && g.mistakes.some(m => String(m).startsWith('sil-')), `${e.id}: palmear los silencios`);
+      if (e.id.includes('-u1-')) assert.ok(g.pct < 60, `${e.id}: en la U1 palmear todos los silencios no aprueba (${g.pct} %)`);
+    }
+    // con barra de repetición, una sola vuelta perfecta no aprueba
+    if (tl.passes > 1) assert.ok(grade(expected.slice(0, expected.length / 2)).pct < 60, `${e.id}: una sola vuelta`);
+  }
+});
+
+test('lecturas del curso: datos de cada variante (repetición, compás mudo, entrada con clic, matices, acento)', async () => {
+  const byId = id => allLmExercises().find(e => e.id === id);
+  const u4m = await readingSim(byId('lm1-u4-ritmo-a-medio'));
+  assert.equal(u4m.tl.passes, 2, 'U4 Media: la repetición se toca dos veces');
+  assert.equal(u4m.notes.length % 2, 0);
+  const u5m = await readingSim(byId('lm1-u5-ritmo-a-medio'));
+  assert.deepEqual(u5m.mode.mute, [2], 'U5 Media: el metrónomo calla solo en el compás 2 (dato, no texto)');
+  const u8m = await readingSim(byId('lm1-u8-ritmo-a-medio'));
+  assert.equal(u8m.mode.click, true, 'U8 Media: un clic un pulso antes de entrar');
+  assert.equal(u8m.mode.metro, 'none');
+  // sin metrónomo, la app sigue el tempo del alumno: ±5 % de deriva sigue aprobando con nota alta
+  for (const k of [1.05, 0.95]) assert.ok(u8m.grade(u8m.expected.map(x => 0.1 + x * k)).pct >= 85, `U8 Media a ${k} del tempo`);
+  assert.equal((await readingSim(byId('lm1-u4-ritmo-a-facil'))).mode.measure, 'acento');
+  assert.equal((await readingSim(byId('lm1-u6-ritmo-a-facil'))).mode.measure, 'matices');
+});
+
+test('calderón: la nota con calderón dura el doble y lo que sigue se retrasa lo mismo', async () => {
+  const { readingTimeline } = await import('../js/lm/tasks-duo.js');
+  const p = { partitura: '| G4q G4q | G4q G4q | G4q G4q |', compas: '2/4', matices: [{ signo: 'calderon', compas: 2 }] };
+  const tl = readingTimeline(p, scoreTokens(p.partitura));
+  assert.equal(tl.total, 7);
+  const held = tl.events.find(x => x.hold);
+  assert.equal(held.beat, 3);
+  assert.equal(held.beats, 2);
+  assert.equal(tl.events[4].beat, 5);
+});
+
+test('acento y matices medidos con el micrófono: cuentan solo si se tocan', async () => {
+  const { measuredPart } = await import('../js/lm/tasks-duo.js');
+  const p = { partitura: '| G4q G4q G4q | G4q G4q G4q |', compas: '3/4' };
+  const notes = scoreTokens(p.partitura);
+  assert.equal(measuredPart('acento', p, notes, notes.map(n => (n.start % 3 === 0 ? 1 : 0.5)), 3), 1, 'el 1 bien marcado');
+  assert.equal(measuredPart('acento', p, notes, notes.map(() => 0.5), 3), 0, 'todas iguales: sin acento');
+  const d = { partitura: '| G4q G4q | G4q G4q |', compas: '2/4', matices: [{ signo: 'p', compas: 1 }, { signo: 'f', compas: 2 }] };
+  const dn = scoreTokens(d.partitura);
+  assert.equal(measuredPart('matices', d, dn, dn.map(n => (n.bar === 0 ? 0.2 : 0.8)), 2), 1, 'p y luego f');
+  assert.equal(measuredPart('matices', d, dn, dn.map(() => 0.5), 2), 0, 'todo igual: sin matices');
+});
+
+test('entonación con barra de repetición (U4 Media): se canta y se corrige dos veces', async () => {
+  const { singOrder } = await import('../js/lm/tasks-voice.js');
+  const e = allLmExercises().find(x => x.id === 'lm1-u4-entonacion-b-medio');
+  assert.ok(e.params.repeticion);
+  const toks = scoreTokens(e.params.partitura);
+  const { passes, once, sounding } = singOrder(toks, !!e.params.repeticion);
+  assert.equal(passes, 2);
+  assert.equal(sounding.length, once.length * 2);
+  assert.deepEqual(sounding.slice(once.length).map(n => n.index), once.map(n => n.index), 'la 2.ª vuelta, desde el principio');
+  assert.equal(singOrder(toks).sounding.length, once.length, 'sin repetición, una vuelta');
+  assert.match(readFileSync(new URL('../js/lm/runners.js', import.meta.url), 'utf8'), /repeat: !!p\.repeticion/);
+});
+
+test('lectura rítmica: el fallo se explica con la figura de verdad (y en inglés)', async () => {
+  const { mistakeText } = await import('../js/lm/catalog.js');
+  assert.equal(mistakeText('falta-e'), 'no tocó una corchea');
+  assert.equal(mistakeText('falta-h'), 'no tocó una blanca');
+  assert.equal(mistakeText('sil-q'), 'palmada en un silencio de negra');
+  assert.equal(mistakeText('golpe-mas'), 'golpes de más');
+  const en = readFileSync(new URL('../js/i18n-en-lm.js', import.meta.url), 'utf8');
+  assert.match(en, /\^no tocó una/);
+  assert.match(en, /\^palmada en un/);
+  assert.match(en, /'golpes de más': 'extra claps'/);
+});
+
+test('escribir en el pentagrama: la nota fantasma no sale del do grave al la agudo; soltar fuera la cancela', async () => {
+  const { writeLimits } = await import('../js/lm/tasks-staff.js');
+  assert.deepEqual(writeLimits('treble'), [stepOf('C4'), stepOf('A5')]);
+  const src = readFileSync(new URL('../js/lm/tasks-staff.js', import.meta.url), 'utf8');
+  assert.match(src, /clampStep\(stepAtY\(ins\.querySelector\('svg'\)/, 'la fantasma, dentro del ámbito');
+  assert.match(src, /if \(out\) \{ say\('Nota cancelada'\); return; \}/, 'soltar fuera no escribe');
+});
+
+test('cresc. y dim. con «hasta»: la línea de guiones sigue hasta el último compás que abarcan', async () => {
+  const { staffHtml } = await import('../js/lm/kit.js');
+  const toks = scoreTokens('| G4q G4q | G4q G4q | G4h |');
+  const html = staffHtml(toks, { meter: '2/4', dynamics: [{ compas: 1, signo: 'cresc', hasta: 2 }] });
+  assert.equal((html.match(/lm-dyn-ext/g) || []).length, 3, 'tres notas tras «cresc.», hasta el compás 2');
+  assert.equal((staffHtml(toks, { meter: '2/4', dynamics: [{ compas: 1, signo: 'f' }] }).match(/lm-dyn-ext/g) || []).length, 0);
 });

@@ -46,7 +46,9 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     const signs = firstInBar ? (dyn[barNo] || []).filter(m => m.signo !== 'calderon') : [];
     const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
     const cls = ['lm-sc', marks[i] || '', i === current ? 'lm-now' : ''].join(' ');
-    const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : '';
+    // cresc. / dim. con «hasta»: la línea de guiones sigue bajo cada nota hasta el último compás que abarca
+    const swell = !signs.length && (dynamics || []).some(m => DYN_TEXT[m.signo] && m.hasta && barNo >= m.compas && barNo <= m.hasta);
+    const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : swell ? '<span class="lm-dyn lm-dyn-ext" aria-hidden="true">- - -</span>' : '';
     groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {

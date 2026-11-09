@@ -175,7 +175,7 @@ test('teoría (fichas + preguntas de todo tipo) se corrige y queda registrada co
 
 test('agilidad: nombra las notas con los botones; récord y resultado', async () => {
   const id = 'lm1-u1-agilidad-a-facil';
-  const total = lmExercise(id).params.cantidad;
+  const total = Math.max(lmExercise(id).params.cantidad, 16); // con dos o tres notas, al menos 16
   const { page, errors, close } = await openLm();
   await openUnit(page, 1);
   await openExercise(page, id);
@@ -387,25 +387,50 @@ test('canción de la unidad cantada a tempo: afinación y ataques medidos nota a
   await close();
 });
 
-test('lectura rítmica respondida con toques en la pantalla (sin micrófono) y el Libro desde «En tu instrumento»', async () => {
-  const id = 'lm1-u1-ritmo-a-facil';
+// Toca la pantalla en los instantes dados (en pulsos desde la primera nota) y devuelve la nota guardada
+const NO_MIC = () => { navigator.mediaDevices.getUserMedia = async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); }; };
+async function tapReading(page, id, beats) {
   const ex = lmExercise(id);
-  const { page, errors, close } = await openLm({ init: () => { navigator.mediaDevices.getUserMedia = async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); }; } });
-  await openUnit(page, 1);
   await openExercise(page, id);
   await click(page, '#lmDuoTap');
   await page.waitForFunction(() => document.getElementById('lmBody').dataset.readingStart, { timeout: STEP_TIMEOUT });
-  const start = Number(await page.$eval('#lmBody', b => b.dataset.readingStart));
+  const start = Number(await page.$eval('#lmBody', el => el.dataset.readingStart));
   const spb = 60 / ex.params.tempo;
-  for (const n of scoreTokens(ex.params.partitura).filter(t => !t.rest)) {
+  for (const beat of beats) {
     await page.evaluate(when => new Promise(res => setTimeout(() => {
       document.getElementById('lmTap').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       res();
-    }, Math.max(0, when - performance.now()))), start + n.start * spb * 1000);
+    }, Math.max(0, when - performance.now()))), start + beat * spb * 1000);
   }
-  await page.waitForSelector('#lmScores', { timeout: 20000 });
-  const r = (await lmState(page)).best[id];
-  assert.ok(r && r.pct >= 60, `lectura con toques: ${r && r.pct} %`);
+  await page.waitForSelector('#lmScores', { timeout: 30000 });
+  return (await lmState(page)).last[id];
+}
+
+test('lectura con toques: dar el pulso sin leer no aprueba; con repetición, una sola vuelta tampoco', async () => {
+  const { page, errors, close } = await openLm({ init: NO_MIC });
+  await openUnit(page, 1);
+  const u1 = lmExercise('lm1-u1-ritmo-a-facil').params;
+  const span = scoreTokens(u1.partitura).reduce((m, t) => Math.max(m, t.start + t.beats), 0);
+  const pulse = await tapReading(page, 'lm1-u1-ritmo-a-facil', Array.from({ length: span }, (_, i) => i));
+  assert.ok(pulse && pulse.pct < 60, `el pulso sin leer: ${pulse && pulse.pct} %`);
+  await click(page, '#lmToUnit');
+  await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
+  await page.$eval('[data-lm-back]', el => el.click());
+  await openUnit(page, 4);
+  const u4 = lmExercise('lm1-u4-ritmo-a-medio').params;
+  const once = await tapReading(page, 'lm1-u4-ritmo-a-medio', scoreTokens(u4.partitura).filter(t => !t.rest).map(t => t.start));
+  assert.ok(once && once.pct < 60, `una sola vuelta de dos: ${once && once.pct} %`);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('lectura rítmica respondida con toques en la pantalla (sin micrófono) y el Libro desde «En tu instrumento»', async () => {
+  const id = 'lm1-u1-ritmo-a-facil';
+  const ex = lmExercise(id);
+  const { page, errors, close } = await openLm({ init: NO_MIC });
+  await openUnit(page, 1);
+  const r = await tapReading(page, id, scoreTokens(ex.params.partitura).filter(t => !t.rest).map(t => t.start));
+  assert.ok(r && r.pct >= 95, `lectura con toques: ${r && r.pct} %`);
   assert.ok(await page.$('.lm-ten'), 'con su calificación sobre 10');
   await click(page, '#lmToUnit');
   await page.waitForSelector('#learn:not([hidden]) #lmUnitTitle', { timeout: STEP_TIMEOUT });
@@ -449,6 +474,48 @@ test('canción en el móvil: la nota que se canta está a la vista (U7 Media, do
   }
   await page.waitForSelector('#lmScores', { timeout: 5000 });
   assert.ok(seen > 20 && visible / seen >= 0.95, `a la vista ${visible} de ${seen}`);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('entonación a 320 px con la letra al 200 %: la nota que se canta está a la vista (U7 Media)', async () => {
+  const id = 'lm1-u7-entonacion-a-medio';
+  const { page, errors, close } = await openLm({ viewport: { width: 320, height: 640, deviceScaleFactor: 1, isMobile: true, hasTouch: true } });
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  await openUnit(page, 7);
+  await openExercise(page, id);
+  const started = Date.now();
+  let last = null;
+  let seen = 0;
+  let visible = 0;
+  const off = [];
+  while (Date.now() - started < SING_TIMEOUT_MS * 2) {
+    if (await page.$('#lmScores')) break;
+    const cur = await page.evaluate(() => {
+      const b = document.getElementById('lmBody');
+      const on = b.querySelector('.lm-sing-staff .lm-now');
+      return b.dataset.target && on ? `${on.dataset.i}:${b.dataset.target}` : null;
+    }).catch(() => null);
+    if (cur && cur !== last) {
+      last = cur;
+      const midi = Number(cur.split(':')[1]);
+      await page.evaluate(m => { window.__setTone(0); setTimeout(() => window.__setTone(440 * 2 ** ((m - 69) / 12)), 30); }, midi);
+      await sleep(150);
+      const v = await page.evaluate(() => {
+        const on = document.querySelector('.lm-sing-staff .lm-now svg');
+        if (!on) return null;
+        const r = on.getBoundingClientRect();
+        const bar = document.querySelector('.lm-sticky-controls');
+        const bottom = bar ? bar.getBoundingClientRect().top : innerHeight;
+        return { ok: r.top >= 0 && r.bottom <= bottom, at: `${on.closest('[data-i]').dataset.i}: ${Math.round(r.top)}–${Math.round(r.bottom)} / ${Math.round(bottom)} y${Math.round(scrollY)}` };
+      });
+      if (v !== null) { seen++; if (v.ok) visible++; else off.push(v.at); }
+    }
+    await sleep(15);
+  }
+  await page.waitForSelector('#lmScores', { timeout: 5000 });
+  assert.ok(seen > 15 && visible / seen >= 0.95, `a la vista ${visible} de ${seen}: ${off.join(' | ')}`);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'sin desplazamiento lateral');
   assert.deepEqual(errors, []);
   await close();
 });

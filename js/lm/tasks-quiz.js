@@ -296,8 +296,10 @@ async function nombrarNotas(host, item, env) {
   const want = item.respuesta.map(x => (solfaToName(x) || x)[0]);
   const given = [];
   const clef = CLEF[item.clave] || 'treble';
+  // con su compás se pintan las barras (sin silencios, las notas son todo el compás)
+  const meter = tokens.length === scoreTokens(item.partitura).length ? item.compas || null : null;
   const render = () => {
-    host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, current: given.length, under: given.map(l => letterText(l, env.nom)) });
+    host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, meter, current: given.length, under: given.map(l => letterText(l, env.nom)) });
   };
   host.innerHTML = `${headHtml(item)}<div class="lm-staff-box"></div>${nameButtons(undefined, env.nom)}
     <p class="muted small center" aria-live="polite" id="lmNameProg">Nota 1 de ${tokens.length}</p><div class="lm-feedback"></div>`;
@@ -311,7 +313,7 @@ async function nombrarNotas(host, item, env) {
   }
   host.querySelectorAll('[data-name]').forEach(b => { b.disabled = true; });
   const marks = want.map((w, i) => (given[i] === w ? 'ok' : 'bad'));
-  host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, marks, under: want.map((w, i) => (given[i] === w ? letterText(w, env.nom) : `${letterText(given[i], env.nom)} → ${letterText(w, env.nom)}`)) });
+  host.querySelector('.lm-staff-box').innerHTML = staffHtml(tokens, { clef, meter, marks, under: want.map((w, i) => (given[i] === w ? letterText(w, env.nom) : `${letterText(given[i], env.nom)} → ${letterText(w, env.nom)}`)) });
   const right = marks.filter(m => m === 'ok').length;
   const mark = right === want.length ? 'ok' : right * 2 >= want.length ? 'near' : 'bad';
   const wrongAt = marks.findIndex(m => m === 'bad');

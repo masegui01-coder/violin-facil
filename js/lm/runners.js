@@ -117,7 +117,7 @@ async function entonacion(host, ex, env) {
   const take = await singTask(host, {
     tokens, key: p.tonalidad, echo: !reading && ex.variant === 'facil', variant: ex.variant, meter: p.compas, bpm: p.tempo || 72, clef: CLEF[p.clave] || 'treble',
     intro: reading ? (ex.variant === 'facil' ? SUPPORT.lectura : SUPPORT.solo) : ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo,
-    hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null,
+    hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null, repeat: !!p.repeticion,
   }, env);
   return take && { ...singResult(take), labels: take.names.map(n => noteText(n, env.nom)), range: take.range };
 }

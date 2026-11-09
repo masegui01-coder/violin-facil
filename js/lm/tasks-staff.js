@@ -11,6 +11,10 @@ import { playNotes, stopSound } from './sound.js';
 const RHYTHM_STEP = { treble: 36, bass: 24 }; // Do5 / Mi3: la línea donde se escribe el ritmo sin altura
 const EXTRA_LISTEN_PENALTY = 5;
 const DEFAULT_STEP = { treble: 34, bass: 22 };
+// lo que se puede escribir en clave de sol: del do grave al la agudo (la nota fantasma no se va más allá)
+const WRITE_RANGE = { treble: ['C4', 'A5'] };
+export const writeLimits = clef => (WRITE_RANGE[clef] ? WRITE_RANGE[clef].map(stepOf) : STEP_LIMITS(clef));
+const RELEASE_MARGIN_PX = 24; // soltar el dedo más lejos de la celda cancela la nota fantasma
 
 const figLabel = f => (f.startsWith('R') ? REST_NAME[f.slice(1)] : FIGURE_NAME[f]);
 export const tokensToPlay = tokens => {
@@ -27,7 +31,8 @@ export const tokensToPlay = tokens => {
 // nom, say (anuncio para el lector de pantalla), meter, initial (notas de partida), extras () → { dynamics, pickup,
 // repeat } (lo que se dibuja además: matices, anacrusa, barra de repetición), breath (botón de coma de respiración)
 export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false } = {}) {
-  const [lo, hi] = STEP_LIMITS(clef);
+  const [lo, hi] = writeLimits(clef);
+  const clampStep = step => Math.max(lo, Math.min(hi, step));
   let meter = meter0;
   let tokens = initial.map(t => ({ ...t }));
   let figure = figures[0];
@@ -134,7 +139,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
     if (ins) {
       const svg = ins.querySelector('svg');
       // con el ratón o el dedo, la altura es donde se toca; con el teclado (clic sin posición), la del cursor
-      const step = e.detail && !rhythmOnly ? stepAtY(svg, e.clientY, clef) : cursor;
+      const step = e.detail && !rhythmOnly ? clampStep(stepAtY(svg, e.clientY, clef)) : cursor;
       cursor = step;
       add(step);
       return;
@@ -151,7 +156,7 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
   let dragging = null;
   const ghostAt = (ins, clientY) => {
     if (figure.startsWith('R')) return;
-    const step = stepAtY(ins.querySelector('svg'), clientY, clef);
+    const step = clampStep(stepAtY(ins.querySelector('svg'), clientY, clef));
     if (step === cursor && ins.dataset.step === String(step)) return;
     cursor = step;
     ins.innerHTML = noteCell({ clef, dur: figure, ghost: cursor, step: null });
@@ -177,9 +182,13 @@ export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhyth
     if (!dragging) return;
     const ins = dragging;
     dragging = null;
-    ghostAt(ins, e.clientY);
     placedByPointer = true; // el clic que llega después no añade otra (si no llega, se olvida enseguida)
     setTimeout(() => { placedByPointer = false; }, CLICK_AFTER_POINTER_MS);
+    // soltar fuera de la celda (con un margen) es arrepentirse: no se escribe nada
+    const r = ins.getBoundingClientRect();
+    const out = e.clientX < r.left - RELEASE_MARGIN_PX || e.clientX > r.right + RELEASE_MARGIN_PX || e.clientY < r.top - RELEASE_MARGIN_PX || e.clientY > r.bottom + RELEASE_MARGIN_PX;
+    if (out) { say('Nota cancelada'); return; }
+    ghostAt(ins, e.clientY);
     add(cursor);
   });
   box.addEventListener('pointercancel', () => { dragging = null; });
