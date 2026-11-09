@@ -372,7 +372,7 @@ test('lectura con D.S. al Coda de punta a punta: compases 1-8, vuelta al signo (
   const beats = tl.events.filter(e => !e.rest && !e.cont).map(e => e.beat);
   const r = await tapReading(page, id, beats, async () => {
     await page.waitForSelector('.lm-staff .lm-dsmark', { timeout: STEP_TIMEOUT });
-    assert.deepEqual(await page.$$eval('.lm-dsmark', g => g.map(x => `${x.dataset.dsLeft || ''}|${x.dataset.dsRight || ''}`)), ['𝄋|', '|al Coda 𝄌', '|D.S. al Coda', '𝄌 Coda|']);
+    assert.deepEqual(await page.$$eval('.lm-dsmark', g => g.map(x => { const t = c => { const e = x.querySelector(':scope > ' + c); return e ? (e.querySelector('[aria-label]')?.getAttribute('aria-label') || e.textContent.trim()) : ''; }; return `${t('.lm-ds-l')}|${t('.lm-ds-r')}`; })), ['Signo|', '|al Coda', '|D.S. al Coda', 'Coda|']);
   });
   assert.ok(r && r.pct >= 80, `la lectura con D.S. bien tocada: ${r && r.pct} %`);
   assert.deepEqual(errors, []);

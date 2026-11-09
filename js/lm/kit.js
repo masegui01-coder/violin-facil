@@ -34,10 +34,13 @@ function dynamicsByBar(matices = []) {
 // Pentagrama de una lista de notas: celdas en fila agrupadas por compases (un compás nunca se parte entre dos
 // líneas), corcheas unidas por su barra, matices y reguladores debajo, calderones y comas de respiración encima.
 // under: texto bajo cada nota (letra, nombre). dynamics: matices del catálogo. pickup: pulsos de la anacrusa.
-// Signos del D.S. al Coda sobre un compás: a la izquierda el signo (𝄋) o la Coda (𝄌); a la derecha «al Coda 𝄌» y «D.S. al Coda»
+// Signos del D.S. al Coda sobre un compás: a la izquierda el signo o la Coda; a la derecha «al Coda» y «D.S. al Coda».
+// El signo y la Coda se dibujan en SVG: los caracteres 𝄋 y 𝄌 no vienen en las fuentes de muchos móviles.
+const SEGNO_SVG = '<svg class="lm-ds-ico" viewBox="0 0 20 24" aria-hidden="true"><path d="M14 6.5c-.6-2-2.3-3-4.3-3-2.6 0-4.2 1.7-4.2 3.5 0 4.4 9 3.6 9 9 0 2.2-2 4-4.6 4-2 0-3.8-1-4.4-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3.5 21 16.5 3" stroke="currentColor" stroke-width="1.6"/><circle cx="4.5" cy="10" r="1.5" fill="currentColor"/><circle cx="15.5" cy="14" r="1.5" fill="currentColor"/></svg>';
+const CODA_SVG = '<svg class="lm-ds-ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="6.5" ry="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v22M2 12h20" stroke="currentColor" stroke-width="1.6"/></svg>';
 const dsMeta = m => ({
-  ...(m.segno ? { dsL: '𝄋' } : m.coda ? { dsL: '𝄌 Coda' } : {}),
-  ...(m.alCoda || m.ds ? { dsR: [m.alCoda ? 'al Coda 𝄌' : '', m.ds ? 'D.S. al Coda' : ''].filter(Boolean).join(' · ') } : {}),
+  ...(m.segno ? { dsL: SEGNO_SVG.replace('aria-hidden="true"', 'role="img" aria-label="Signo"') } : m.coda ? { dsL: `${CODA_SVG} Coda` } : {}),
+  ...(m.alCoda || m.ds ? { dsR: [m.alCoda ? `al Coda ${CODA_SVG}` : '', m.ds ? 'D.S. al Coda' : ''].filter(Boolean).join(' · ') } : {}),
 });
 export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false, armadura = 0, form = null, pulso = null, given = 0 } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
@@ -92,7 +95,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
   if (lastMark && lastMark.dc) groups[groups.length - 1].push('<span class="lm-dc" lang="it">D.C. al Fine</span>');
   const html = groups.map((g, k) => ({ g, m: meta[k] || {} })).filter(x => x.g.length).map(({ g, m }) => {
     const cls = ['lm-bargroup', m.volta ? `lm-volta${m.opens ? ' lm-volta-open' : ''}` : '', m.fine ? 'lm-fine' : '', m.dsL || m.dsR ? 'lm-dsmark' : ''].filter(Boolean).join(' ');
-    return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}${m.dsL ? ` data-ds-left="${m.dsL}"` : ''}${m.dsR ? ` data-ds-right="${m.dsR}"` : ''}>${g.join('')}</span>`;
+    return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}>${m.dsL ? `<span class="lm-ds lm-ds-l" lang="it">${m.dsL}</span>` : ''}${m.dsR ? `<span class="lm-ds lm-ds-r" lang="it">${m.dsR}</span>` : ''}${g.join('')}</span>`;
   }).join('');
   return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${armadura ? ` data-armadura="${armadura}"` : ''}${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
 }
