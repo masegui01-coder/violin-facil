@@ -161,7 +161,7 @@ async function doTheory(page, id) {
 test('el Nivel 3 está en la vista Lenguaje, abierto y con sus 8 unidades', async () => {
   const { page, errors, close } = await openLm();
   assert.equal(await page.$$eval('.lm-unit-card[data-level="3"]', b => b.length), 8);
-  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 1, 'solo el nivel 4 es «próximamente»');
+  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 0, 'el Nivel 4 ya está abierto: ningún nivel es «próximamente»');
   await openUnit(page, 6);
   assert.match(await page.$eval('#lmUnitTitle', h => h.textContent), /\S/);
   assert.deepEqual(errors, []);

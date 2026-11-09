@@ -306,7 +306,8 @@ async function emparejar(host, item, env) {
 
 // ---------- Ordenar ----------
 async function ordenar(host, item, env) {
-  const want = item.respuesta || item.items;
+  // Nivel 4: «respuesta» puede ser la lista de posiciones de «items» en el orden bueno ([2, 3, 0, 1])
+  const want = item.respuesta ? item.respuesta.map(x => (typeof x === 'number' ? item.items[x] : x)) : item.items;
   let order = shuffle(item.items, seedOf(item.id || item.q));
   if (order.every((x, i) => x === want[i]) && order.length > 1) order = [...order.slice(1), order[0]];
   const draw = focus => {

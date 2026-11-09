@@ -209,10 +209,11 @@ function chordSeries(p, count, r) {
   const types = p.tipos || TRIAD_TYPES;
   const out = [];
   for (let i = 0; i < count; i++) {
-    // los tipos se turnan para que salgan todos; la raíz es al azar
-    const tipo = types[(i + Math.floor(r() * 2)) % types.length];
-    const root = CHORD_ROOTS[Math.floor(r() * CHORD_ROOTS.length)];
-    out.push({ tipo, notes: triadFromRoot(root, tipo) });
+    // los tipos se turnan para que salgan todos; la raíz es al azar (sin dobles alteraciones: si la tríada no se puede escribir, otra raíz)
+    const tipo = types[i % types.length];
+    let notes = null;
+    for (let tries = 0; tries < 30 && !(notes && notes.every(Boolean)); tries++) notes = triadFromRoot(CHORD_ROOTS[Math.floor(r() * CHORD_ROOTS.length)], tipo);
+    out.push({ tipo, notes });
   }
   return out;
 }

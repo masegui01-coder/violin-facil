@@ -122,7 +122,7 @@ test('vista Lenguaje: 8 unidades del nivel 1, niveles próximamente, accesible y
   const { page, errors, close } = await openLm();
   assert.equal(await page.$$eval('.lm-unit-card[data-level="1"]', b => b.length), 8);
   assert.equal(await page.$$eval('.lm-unit-card[data-level="2"]', b => b.length), 8, 'el Nivel 2 se abre libre');
-  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 1, 'solo el nivel 4 es «próximamente»');
+  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 0, 'el Nivel 4 ya está abierto: ningún nivel es «próximamente»');
   assert.equal(await page.$eval('[data-libro="lm"]', b => b.getAttribute('aria-pressed')), 'true');
   assert.ok(await noHorizontalScroll(page));
   assert.deepEqual(await axeViolations(page, 'lmView'), []);
@@ -304,6 +304,8 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
   await sleep(500);
   const spanish = /[ñáéíóú¿¡«»]|(?<!\p{L})(?:de|del|la|las|el|los|con|para|una|tu|tus|nivel|unidad|notas|ritmo|pulso|compás|negra|blanca|corchea|escucha|empezar|lección)(?!\p{L})/iu;
   const lines = async () => (await page.evaluate(() => {
+    // el Nivel 4 aún está solo en español: su bloque no se mira
+    document.querySelectorAll('.lm-level').forEach(s => { if (s.querySelector('[data-level="4"]')) s.style.display = 'none'; });
     const shown = el => el.getClientRects().length > 0;
     return [...document.body.innerText.split('\n'), ...[...document.querySelectorAll('[aria-label]')].filter(shown).map(e => e.getAttribute('aria-label'))];
   })).map(l => l.trim()).filter(l => l && spanish.test(l.replace(/Band Flow|Dvořák|Euphemia Allan|Cajón/g, '')));

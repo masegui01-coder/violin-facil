@@ -99,7 +99,7 @@ async function construirAcorde(host, item, env) {
   host.innerHTML = `${headHtml(item)}<p class="muted small">Escribe las tres notas, de abajo arriba.</p><div class="lm-writer"></div>
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   host.querySelector('.lm-q').focus();
-  const w = createStaffWriter(host.querySelector('.lm-writer'), { clef, figures: ['w'], max: want.length, nom: env.nom, say: env.say, armadura, accidentals: wantsPalette(env, want, armadura) });
+  const w = createStaffWriter(host.querySelector('.lm-writer'), { clef, wide: true, figures: ['w'], max: want.length, nom: env.nom, say: env.say, armadura, accidentals: wantsPalette(env, want, armadura) });
   await onceClick(host, '[data-check]');
   const written = w.tokens().slice().sort((a, b) => a.step - b.step || tokenMidi(a) - tokenMidi(b));
   const sorted = [...want].sort((a, b) => stepOf(a) - stepOf(b));

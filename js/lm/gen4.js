@@ -45,8 +45,9 @@ function chordQuestions(options, count, seed, r) {
   return Array.from({ length: count }, (_, k) => {
     const a = pick(k);
     const tipo = norm(options[a]);
-    const root = ROOTS[Math.floor(r() * ROOTS.length)];
-    const notes = triadFromRoot(root, tipo);
+    // sin dobles alteraciones: si la tríada no se puede escribir, otra raíz
+    let notes = null;
+    for (let tries = 0; tries < 30 && !(notes && notes.every(Boolean)); tries++) notes = triadFromRoot(ROOTS[Math.floor(r() * ROOTS.length)], tipo);
     const together = r() < 0.5;
     return { tipo: 'escucharAcorde', id: `acorde4-${k}`, code: 'acorde', q: together ? 'Escucha el acorde: ¿de qué clase es?' : 'Escucha el arpegio: ¿de qué clase es la tríada?', options: options.map(cap), answer: a,
       play: { notas: notes, ...(together ? { acorde: true } : {}) },

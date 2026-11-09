@@ -86,7 +86,17 @@ async function setCount(page, n) {
   await page.$eval('.lm-item [data-count]', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); }, n);
   await click(page, '.lm-item [data-check]');
 }
-const notesOf = (names, armadura = 0) => names.map(n => ({ step: scoreTokens(`| ${n}w |`)[0].step, dur: 'w', acc: accFor(n, armadura) }));
+// Las alteraciones valen hasta el final de lo escrito (sin barras): un sol natural después de un sol♯ lleva su becuadro
+const notesOf = (names, armadura = 0) => {
+  const state = {};
+  return names.map(n => {
+    const step = scoreTokens(`| ${n}w |`)[0].step;
+    const acc = accOfName(n);
+    const cur = step in state ? state[step] : keyAcc(n[0], armadura);
+    state[step] = acc;
+    return { step, dur: 'w', acc: acc === cur ? null : acc === 1 ? '#' : acc === -1 ? 'b' : 'n' };
+  });
+};
 
 // Coloca la armadura: ♯ o ♭ y un clic real en el pentagrama a la altura de cada alteración, de izquierda a derecha
 async function placeKeySignature(page, item) {
@@ -120,7 +130,7 @@ async function answer(page, item) {
     }
   } else if (item.tipo === 'ordenar') {
     // cada elemento sube hasta su sitio con las flechas
-    const want = item.respuesta || item.items;
+    const want = item.respuesta ? item.respuesta.map(x => (typeof x === 'number' ? item.items[x] : x)) : item.items;
     for (let i = 0; i < want.length; i++) {
       for (;;) {
         const cur = await page.evaluate(() => [...document.querySelectorAll('.lm-order-text')].map(e => e.textContent));
@@ -298,3 +308,208 @@ for (const section of ['teoria', 'audicion']) {
   });
 }
 
+
+// Dictado rítmico completo: se escribe la partitura del catálogo y se espera el 100 %
+async function rhythmDictation(unit, id) {
+  const ex = lmExercise(id);
+  const { page, errors, close } = await openLm();
+  await openUnit(page, unit);
+  await openExercise(page, id);
+  await click(page, '#lmDictPlay');
+  assert.match(await page.$eval('.lm-w-staff', b => b.innerHTML), /lm-time/);
+  await writeNotes(page, scoreTokens(ex.params.partitura).map(t => ({ ...t, step: 36 })));
+  await click(page, '[data-check]');
+  await page.waitForSelector('.lm-feedback .lm-staff', { timeout: STEP_TIMEOUT });
+  await next(page);
+  await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+  assert.equal((await lmState(page)).best[id].pct, 100);
+  assert.deepEqual(errors, []);
+  await close();
+}
+// Agilidad: se lee la nota que se enseña y se pulsa su botón (en uno o dos pasos: número y especie, mayor y relativa)
+async function playAgility(page, id) {
+  await openExercise(page, id);
+  await click(page, '#lmAgGo');
+  const total = await page.$eval('#lmAgCount', el => Number(el.textContent.split('/')[1]));
+  for (let i = 0; i < total; i++) {
+    await page.waitForFunction(n => document.getElementById('lmAgCount')?.textContent.startsWith(`${n} /`), { timeout: STEP_TIMEOUT }, i + 1);
+    await page.waitForSelector('#lmAgNote[data-answer]', { timeout: STEP_TIMEOUT });
+    const ans = (await page.$eval('#lmAgNote', el => el.dataset.answer)).split('|');
+    await click(page, `[data-name="${ans[0]}"]`);
+    if (ans[1] !== undefined) await click(page, (await page.$('[data-esp]')) ? `[data-esp="${ans[1]}"]` : `[data-minor="${ans[1]}"]`);
+  }
+  await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+}
+// Toca la pantalla en los instantes dados (en pulsos desde la primera nota) y devuelve la nota guardada
+const NO_MIC = () => { navigator.mediaDevices.getUserMedia = async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); }; };
+async function tapReading(page, id, beats, before = null) {
+  const ex = lmExercise(id);
+  await openExercise(page, id);
+  if (before) await before();
+  await click(page, '#lmDuoTap');
+  await page.waitForFunction(() => document.getElementById('lmBody').dataset.readingStart, { timeout: STEP_TIMEOUT });
+  const start = Number(await page.$eval('#lmBody', el => el.dataset.readingStart));
+  const spb = 60 / ex.params.tempo;
+  for (const beat of beats) {
+    await page.evaluate(when => new Promise(res => setTimeout(() => {
+      document.getElementById('lmTap').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      res();
+    }, Math.max(0, when - performance.now()))), start + beat * spb * 1000);
+  }
+  await page.waitForSelector('#lmScores', { timeout: 40000 });
+  return (await lmState(page)).last[id];
+}
+
+
+test('tresillos de punta a punta: dictado rítmico con tresillos (U1 Fácil) y con silencio y negras (Media), 100 %', async () => {
+  assert.match(lmExercise('lm4-u1-dictado-a-facil').params.partitura, /e:3/);
+  await rhythmDictation(1, 'lm4-u1-dictado-a-facil');
+  assert.match(lmExercise('lm4-u1-dictado-a-medio').params.partitura, /Re:3.*q:3/);
+  await rhythmDictation(1, 'lm4-u1-dictado-a-medio');
+});
+
+test('el tresillo se dibuja con su 3 y su corchete y la lectura 5/8 lleva su compás', async () => {
+  const { page, errors, close } = await openLm();
+  await openUnit(page, 1);
+  await openExercise(page, 'lm4-u1-ritmo-a-medio');
+  await page.waitForSelector('.lm-staff .lm-tuplet', { timeout: STEP_TIMEOUT });
+  assert.ok(await page.$$eval('.lm-tuplet', t => t.length) >= 5, 'un 3 por tresillo');
+  assert.ok(await page.$$eval('.lm-tuplet-br', t => t.length) >= 1, 'corchete en los de negras o con silencio');
+  await backToUnit(page);
+  await click(page, '[data-lm-back]');
+  await openUnit(page, 5);
+  await openExercise(page, 'lm4-u5-ritmo-a-facil');
+  await page.waitForSelector('.lm-staff .lm-clefcell', { timeout: STEP_TIMEOUT });
+  assert.match(await page.$eval('.lm-clefcell', c => c.innerHTML), /lm-time/);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+for (const [unit, id] of [[5, 'lm4-u5-ritmo-a-facil'], [5, 'lm4-u5-ritmo-a-medio'], [6, 'lm4-u6-ritmo-a-facil'], [6, 'lm4-u6-ritmo-a-medio']]) {
+  test(`lectura rítmica de punta a punta ${id} (amalgama o cambios de compás), bien tocada`, async () => {
+    const ex = lmExercise(id);
+    const { page, errors, close } = await openLm({ init: NO_MIC });
+    await openUnit(page, unit);
+    const tl = readingTimeline(ex.params, scoreTokens(ex.params.partitura));
+    const beats = tl.events.filter(e => !e.rest && !e.cont).map(e => e.beat);
+    const r = await tapReading(page, id, beats);
+    assert.ok(r && r.pct >= 80, `${id}: ${r && r.pct} %`);
+    assert.deepEqual(errors, []);
+    await close();
+  });
+}
+
+test('cambio de compás: se dibuja la doble barra y las cifras nuevas', async () => {
+  const { page, errors, close } = await openLm();
+  await openUnit(page, 6);
+  await openExercise(page, 'lm4-u6-ritmo-a-facil');
+  await page.waitForSelector('.lm-timecell', { timeout: STEP_TIMEOUT });
+  assert.ok(await page.$$eval('.lm-timecell', c => c.length) >= 3);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('dictado con cinco bemoles en la armadura (re♭ mayor), de punta a punta, 100 %', async () => {
+  const id = 'lm4-u5-dictado-b-medio';
+  const ex = lmExercise(id);
+  assert.equal(ex.params.armadura, -5);
+  const { page, errors, close } = await openLm();
+  await openUnit(page, 5);
+  await openExercise(page, id);
+  await page.waitForSelector('.lm-w-staff .lm-clefcell', { timeout: STEP_TIMEOUT });
+  assert.equal(await page.$eval('.lm-w-staff .lm-clefcell', el => (el.innerHTML.match(/♭/g) || []).length), 5);
+  await click(page, '#lmDictPlay');
+  const toks = scoreTokens(ex.params.partitura);
+  await writeNotes(page, notesOf(toks.map(t => t.name), -5).map((n, i) => ({ ...n, dur: toks[i].dur })));
+  await click(page, '[data-check]');
+  await page.waitForSelector('.lm-feedback .lm-staff', { timeout: STEP_TIMEOUT });
+  await next(page);
+  await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+  assert.equal((await lmState(page)).best[id].pct, 100);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('dictado de grados y de acordes de punta a punta, 100 %', async () => {
+  const { page, errors, close } = await openLm();
+  for (const [unit, id] of [[1, 'lm4-u1-dictado-d-medio'], [4, 'lm4-u4-dictado-d-medio'], [8, 'lm4-u8-dictado-d-medio']]) {
+    await openUnit(page, unit);
+    await openExercise(page, id);
+    const p = lmExercise(id).params;
+    const want = p.tipo === 'acordes' ? p.progresion : p.respuestaGrados.map(String);
+    await page.waitForSelector('[data-slot]', { timeout: STEP_TIMEOUT });
+    for (let k = 0; k < want.length; k++) await page.select(`[data-slot="${k}"]`, want[k]);
+    await click(page, '[data-check]');
+    await next(page);
+    await page.waitForSelector('#lmScores', { timeout: STEP_TIMEOUT });
+    assert.equal((await lmState(page)).best[id].pct, 100, id);
+    await click(page, '#lmToUnit');
+    await page.waitForFunction(() => !document.documentElement.dataset.nav && !document.getElementById('learn').hidden, { timeout: STEP_TIMEOUT });
+    await page.waitForSelector('#learn #lmUnitTitle', { timeout: STEP_TIMEOUT });
+    await click(page, '[data-lm-back]');
+    await page.waitForSelector('.lm-unit-card');
+  }
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+for (const id of ['lm4-u1-agilidad-a-medio', 'lm4-u2-agilidad-a-medio', 'lm4-u4-agilidad-a-medio', 'lm4-u6-agilidad-b-facil', 'lm4-u6-agilidad-b-medio', 'lm4-u7-agilidad-a-facil', 'lm4-u7-agilidad-a-medio', 'lm4-u3-agilidad-a-facil']) {
+  test(`agilidad ${id}: grado, tríada, fundamental, claves de do y de fa, armaduras de ±7 y enarmónicas`, async () => {
+    const { page, errors, close } = await openLm();
+    await openUnit(page, Number(/-u(\d)/.exec(id)[1]));
+    await playAgility(page, id);
+    assert.equal((await lmState(page)).best[id].pct, 100, id);
+    assert.deepEqual(errors, []);
+    await close();
+  });
+}
+
+test('los acordes y los adornos se dibujan: acorde apilado, números romanos sobre la melodía y el signo del adorno', async () => {
+  const { page, errors, close } = await openLm();
+  await openUnit(page, 4);
+  await openExercise(page, 'lm4-u4-entonacion-b-facil');
+  await page.waitForSelector('.lm-sing-staff .lm-chordname', { timeout: STEP_TIMEOUT });
+  assert.ok(await page.$('.lm-sing-staff .lm-grace, .lm-sing-staff .lm-orn-tr'), 'el signo de un adorno');
+  await backToUnit(page);
+  await click(page, '[data-lm-back]');
+  await openUnit(page, 2);
+  const ex = lmExercise('lm4-u2-teoria-a-facil');
+  await openExercise(page, ex.id);
+  for (let k = 0; k < ex.params.ficha.length; k++) await next(page);
+  // la primera pregunta que dibuja un acorde apilado
+  for (const item of ex.params.items) {
+    await answer(page, item);
+    if (item.tipo === 'clasificarAcorde') assert.ok(await page.$('.lm-chordcell'));
+    await next(page);
+    if (item.tipo === 'clasificarAcorde') break;
+  }
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('el concierto y el diploma: con el repaso aprobado y el concierto entregado se emite el diploma', async () => {
+  // resultados de las piezas y del repaso, como si estuvieran hechos
+  const r = (id, pct) => ({ id, level: 4, unit: 8, section: id.split('-')[2], variant: id.endsWith('facil') ? 'facil' : 'medio', pct, stars: 2, seconds: 60, at: Date.now(), skills: {}, mistakes: [] });
+  const best = {};
+  ['lm4-u3-cancion-a-medio', 'lm4-u7-cancion-a-medio', 'lm4-u8-cancion-a-medio'].forEach((id, k) => { best[id] = r(id, 70 + k * 10); });
+  best['lm4-u8-repaso-a-medio'] = r('lm4-u8-repaso-a-medio', 72);
+  const { page, errors, close } = await openLm({ seed: { lm: { best, last: {}, days: {}, skills: {}, mistakes: {}, records: {}, voice: null, works: {} } } });
+  await openUnit(page, 8);
+  await page.waitForSelector('.lm-concert', { timeout: STEP_TIMEOUT });
+  assert.equal(await page.$$eval('.lm-concert-piece', p => p.length), 3);
+  assert.ok(await page.$('#lmDiplomaState'), 'aún sin diploma');
+  assert.match(await page.$eval('.lm-concert-grade', g => g.textContent), /Nota del concierto: [0-9]/);
+  // el orden de las piezas se puede cambiar
+  const first = await page.$eval('.lm-concert-piece', p => p.dataset.piece);
+  await click(page, '[data-concert-down="0"]');
+  assert.notEqual(await page.$eval('.lm-concert-piece', p => p.dataset.piece), first);
+  await click(page, '[data-concert-send]');
+  await page.waitForSelector('#lmDiploma', { timeout: STEP_TIMEOUT });
+  const lm = await lmState(page);
+  assert.equal(lm.diploma.level, 4);
+  assert.ok(lm.concierto.at);
+  assert.equal(lm.concierto.pct, 80);
+  assert.ok(await page.$('[data-diploma-pdf]'));
+  assert.deepEqual(errors, []);
+  await close();
+});

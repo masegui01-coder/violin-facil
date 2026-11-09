@@ -163,8 +163,10 @@ export function newNoteOf(desde, hasta) {
   const to = parseKey(hasta);
   const pc = n => parseNote(n).letter + ACC_TEXT[parseNote(n).acc];
   if (rel === 'dominante') return pc(noteOfDegree(hasta, 7, { harm: true }));
-  if (rel === 'subdominante') return pc(noteOfDegree(desde, 4));
-  if (rel === 'relativa') return to.minor ? pc(noteOfDegree(hasta, 7, { harm: true })) : pc(noteOfDegree(desde, 7, { harm: true }));
+  // subdominante: el 4.º grado del tono de llegada (si♭ de Fa M, mi♭ de Si♭ M); relativa: la sensible de la menor de llegada
+  // (sol♯ de La m) o, al volver a la mayor, el 7.º natural de la menor de salida (sol natural)
+  if (rel === 'subdominante') return pc(noteOfDegree(hasta, 4));
+  if (rel === 'relativa') return to.minor ? pc(noteOfDegree(hasta, 7, { harm: true })) : pc(noteOfDegree(desde, 7));
   return null;
 }
 

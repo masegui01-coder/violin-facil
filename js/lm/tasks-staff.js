@@ -19,7 +19,8 @@ const EXTRA_LISTEN_PENALTY = 5;
 const DEFAULT_STEP = { treble: 34, bass: 22, alto: 28, tenor: 28, baritone: 24 };
 // lo que se puede escribir: del do grave al la agudo en clave de sol; del do2 al sol4 en clave de fa
 const WRITE_RANGE = { treble: ['C4', 'A5'], bass: ['C2', 'G4'] };
-export const writeLimits = clef => (WRITE_RANGE[clef] ? WRITE_RANGE[clef].map(stepOf) : STEP_LIMITS(clef));
+// Nivel 4 (wide): la clave de sol llega hasta el sol3 (tríadas de si, re y fa graves)
+export const writeLimits = (clef, wide = false) => (clef === 'treble' && wide ? ['G3', 'A5'].map(stepOf) : WRITE_RANGE[clef] ? WRITE_RANGE[clef].map(stepOf) : STEP_LIMITS(clef));
 const RELEASE_MARGIN_PX = 24; // soltar el dedo más lejos de la celda cancela la nota fantasma
 const ACC_LABEL = { '#': 'Sostenido', b: 'Bemol', n: 'Becuadro' };
 const ACC_SIGN = { '#': '♯', b: '♭', n: '♮' };
@@ -41,8 +42,8 @@ export const tokensToPlay = tokens => {
 // pickup, repeat } (lo que se dibuja además: matices, anacrusa, barra de repetición), breath (botón de coma de respiración),
 // armadura (0, -1, 1: con un bemol, «si» ya es si♭), accidentals (paleta ♯ ♭ ♮), given (notas dadas: en gris, no se borran),
 // pulso ('q.' en 6/8), cursor (escalón inicial del cursor)
-export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false, armadura: armadura0 = 0, accidentals = false, given = [], pulso = null, cursor: cursor0 = null, slurs = false, ties = false, meters = null, agrupacion = null, agrupaciones = null, meterChanges = false } = {}) {
-  const [lo, hi] = writeLimits(clef);
+export function createStaffWriter(box, { clef = 'treble', figures = ['q'], rhythmOnly = false, max = 32, nom = 'eu', say = () => {}, meter: meter0 = null, initial = [], extras = () => ({}), breath = false, armadura: armadura0 = 0, accidentals = false, given = [], pulso = null, cursor: cursor0 = null, slurs = false, ties = false, meters = null, agrupacion = null, agrupaciones = null, meterChanges = false, wide = false } = {}) {
+  const [lo, hi] = writeLimits(clef, wide);
   const clampStep = step => Math.max(lo, Math.min(hi, step));
   let meter = meter0;
   let armadura = armadura0;
@@ -348,7 +349,7 @@ export async function tocarPentagrama(host, item, env) {
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   host.querySelector('.lm-q').focus();
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
-    clef, figures: ['w'], max: want.length + dada.length, nom: env.nom, say: env.say, armadura, given: dada, accidentals: wantsPalette(env, [...want, ...dada.map(t => t.name)], armadura),
+    clef, figures: ['w'], max: want.length + dada.length, nom: env.nom, say: env.say, armadura, given: dada, wide: env.level >= 4, accidentals: wantsPalette(env, [...want, ...dada.map(t => t.name)], armadura),
   });
   await onceClick(host, '[data-check]');
   const written = w.tokens();
@@ -429,7 +430,7 @@ export async function dictadoEscrito(host, p, env) {
     <div class="lm-writer"></div>${dynHtml}
     <div class="controls"><button type="button" class="btn" data-check>Comprobar</button></div><div class="lm-feedback"></div>`;
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
-    clef, figures, rhythmOnly, max: want.length + 4, nom: env.nom, say: env.say, meter: p.compas, armadura, pulso: p.pulso || null, ties: want.some(x => x.tie),
+    clef, wide: env.level >= 4, figures, rhythmOnly, max: want.length + 4, nom: env.nom, say: env.say, meter: p.compas, armadura, pulso: p.pulso || null, ties: want.some(x => x.tie),
     meters: (meterPlan(want, p.compas) || {}).meters || null, agrupacion: p.agrupacion || null, agrupaciones: p.agrupaciones || null,
     accidentals: !rhythmOnly && wantsPalette(env, want.filter(t => !t.rest).map(t => t.name), armadura),
   });

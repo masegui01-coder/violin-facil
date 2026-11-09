@@ -116,7 +116,7 @@ export function parseScore(text) {
     grace = [];
     // el tiempo se ajusta a la cuadrícula de 1/48 de negra: tres tresillos de corchea suman 1 y no 0,9999…
     beat = snapBeat(beat + beats);
-    if (tupletOpen) { const span = beat - tupletOpen.start; if (span >= 0.5 - 1e-6 && Math.abs(span * 2 - Math.round(span * 2)) < 1e-6) tupletOpen = null; }
+    if (tupletOpen) { const span = beat - tupletOpen.start; if ((span > 0.5 && Math.abs(span - Math.round(span)) < 1e-6) || (tok[3] === 's' && tuplet === 3 && Math.abs(span - 0.5) < 1e-6)) tupletOpen = null; }
   });
   closeBar();
   return { notes, bars, totalBeats: beat, ...(Object.keys(pending).length ? { endMarks: pending } : {}) };

@@ -162,7 +162,7 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
     if (edges) {
       const b = idx(before);
       barOf.push({ bar: b, first: Math.abs(before - edges[b]) < 1e-6 });
-      if (b !== idx(sum - 1e-6)) crosses = true;
+      if (b !== idx(sum - 1e-4)) crosses = true;
       return;
     }
     barOf.push({ bar: Math.floor(before / barBeats + 1e-9), first: Math.abs(before % barBeats) < 1e-6 });
