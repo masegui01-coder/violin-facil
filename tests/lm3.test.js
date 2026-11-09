@@ -301,9 +301,10 @@ test('D.S. al Coda: 1…coda−1, vuelta al signo hasta «al Coda» y salto a la
   const exp = expandForm(tokens, form, { barBeats: 2 });
   assert.deepEqual([...new Set(exp.map(t => `${t.pass}:${t.barNo}`))].map(x => Number(x.split(':')[1])), played);
   const html = staffHtml(tokens, { meter: '2/4', form });
-  assert.match(html, /data-ds-left="𝄋"/);
+  assert.match(html, /lm-ds-l[^>]*><svg[^>]*aria-label="Signo"/, 'el signo, dibujado en SVG');
   assert.match(html, /D\.S\. al Coda/);
-  assert.match(html, /𝄌 Coda/);
+  assert.match(html, /lm-ds-l[^>]*><svg[^>]*>.*?<\/svg> Coda/, 'la Coda, dibujada en SVG');
+  assert.ok(!/[𝄋𝄌]/u.test(html), 'sin los caracteres musicales (muchos móviles no los tienen)');
 });
 
 test('STOP del D.S.: «alinicio» vuelve al compás 1 y «sigue» no salta a la Coda', () => {

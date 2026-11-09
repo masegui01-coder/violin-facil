@@ -16,7 +16,7 @@ const SECTION_EN = {
 export const LM_EXACT = {
   ...FIG_EN, ...SECTION_EN,
   // ---------- Nivel 2: alteraciones, armadura, clave de fa, 6/8, casillas, D.C. e intervalos (los textos del contenido, solo en español por ahora) ----------
-  Sostenido: 'Sharp', Bemol: 'Flat', Becuadro: 'Natural', Alteración: 'Accidental', 'Sin alteración': 'No accidental',
+  Signo: 'Segno', Sostenido: 'Sharp', Bemol: 'Flat', Becuadro: 'Natural', Alteración: 'Accidental', 'Sin alteración': 'No accidental',
   'Silencio de negra con puntillo': 'Dotted quarter rest', 'Silencio de blanca con puntillo': 'Dotted half rest',
   'Esta melodía se escribe en clave de fa.': 'This melody is written in the bass clef.',
   'La armadura ya está puesta: con un bemol, el «si» que escribas es si♭.': 'The key signature is already there: with one flat, any B you write is B♭.',
@@ -296,6 +296,7 @@ export function lmPatterns({ tr, noteEn }) {
     // partitura con huecos para el lector de pantalla: «Negra Do4, hueco, Negra Fa4 | …»
     // partitura de «completar» para el lector de pantalla: con «hueco», o una lista de figuras con compases (« | »)
     [new RegExp(`^(?=.*(?:^|, )hueco(?:,|$| \\|)|(?:${FIG_RE})[^|]* \\| )(?:${FIG_RE}|hueco).*$`), m => m.split(' | ').map(bar => bar.split(', ').map(x => (x === 'hueco' ? 'gap' : tr(x))).join(', ')).join(' | ')],
+    [/^Escuchar el (\d+\/\d+)$/, (m, c) => `Listen to the ${c}`],
     [/^Escuchas: (\d+)$/, (m, n) => `Listens left: ${n}`],
     [/^Escucha extra: −(\d+) puntos cada una$/, (m, n) => `Extra listen: −${n} points each`],
     [/^Incluye −(\d+) puntos por las escuchas extra$/, (m, n) => `Includes −${n} points for extra listens`],

@@ -149,7 +149,7 @@ const STEPS = {
   armonica: [0, 2, 3, 5, 7, 8, 11, 12], melodica: [0, 2, 3, 5, 7, 9, 11, 12],
 };
 // Nombre de la forma del catálogo («menor armónica») → clave de STEPS
-export const MODE_KEY = { mayor: 'mayor', 'menor natural': 'menor', menor: 'menor', 'menor armónica': 'armonica', 'menor melódica': 'melodica', natural: 'menor', 'armónica': 'armonica', 'melódica': 'melodica' };
+export const MODE_KEY = { mayor: 'mayor', 'menor natural': 'menor', menor: 'menor', 'menor armónica': 'armonica', 'menor melódica': 'melodica', natural: 'menor', 'armónica': 'armonica', 'melódica': 'melodica', 'menor armonica': 'armonica', 'menor melodica': 'melodica', armonica: 'armonica', melodica: 'melodica' };
 export function scale(tonic, mode = 'mayor') {
   mode = MODE_KEY[mode] || mode;
   const t = parseNote(tonic);

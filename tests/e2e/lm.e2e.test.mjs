@@ -307,8 +307,6 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
     const shown = el => el.getClientRects().length > 0;
     return [...document.body.innerText.split('\n'), ...[...document.querySelectorAll('[aria-label]')].filter(shown).map(e => e.getAttribute('aria-label'))];
   })).map(l => l.trim()).filter(l => l && spanish.test(l.replace(/Band Flow|Dvořák|Euphemia Allan|Cajón/g, '')));
-  // el contenido del Nivel 3 aún no está en inglés (se traduce después): su bloque se oculta para esta comprobación
-  await page.evaluate(() => document.querySelectorAll('.lm-level').forEach(l => { if (l.querySelector('[data-level="3"]')) l.hidden = true; }));
   assert.deepEqual(await lines(), [], 'la vista, con el Nivel 2 traducido');
   await openUnit(page, 1);
   await sleep(300);
@@ -329,6 +327,17 @@ test('en inglés: la vista, la unidad y un ejercicio sin español visible', asyn
   await openExercise(page, 'lm2-u1-teoria-a-facil');
   await sleep(300);
   assert.deepEqual(await lines(), [], 'teoría del Nivel 2');
+  // Nivel 3: la unidad 1 y su teoría también en inglés
+  await page.$eval('[data-lm-back]', b => b.click());
+  await page.waitForSelector('.lm-unit-card[data-level="3"]', { timeout: STEP_TIMEOUT });
+  await page.waitForFunction(() => !document.documentElement.dataset.nav, { timeout: STEP_TIMEOUT });
+  await page.$eval('.lm-unit-card[data-level="3"]', b => b.click());
+  await page.waitForSelector('#lmUnitTitle', { timeout: STEP_TIMEOUT });
+  await sleep(300);
+  assert.deepEqual(await lines(), [], 'unidad 1 del Nivel 3');
+  await openExercise(page, 'lm3-u1-teoria-a-facil');
+  await sleep(300);
+  assert.deepEqual(await lines(), [], 'teoría del Nivel 3');
   assert.deepEqual(errors, []);
   await close();
 });
