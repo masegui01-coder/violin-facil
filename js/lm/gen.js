@@ -2,15 +2,18 @@
 // la lectura rítmica de la unidad, ritmos con las figuras permitidas y preguntas de discriminación auditiva.
 import { rng } from '../generate.js';
 import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens, keyAcc, attackTokens, MODE_KEY, scaleDown } from './notes.js';
+import { snapBeat } from '../music.js';
+import { choiceQuestions4 } from './gen4.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
 const withStarts = tokens => {
   let start = 0;
   // una nota ligada (merged) dura lo que suman sus partes: su duración no sale de la figura
-  return tokens.map(t => { const n = { ...t, start, beats: t.merged ? t.beats : FIGURE_BEATS[t.dur] ?? t.beats ?? 0 }; start += n.beats; return n; });
+  return tokens.map(t => { const n = { ...t, start, beats: t.merged ? t.beats : FIGURE_BEATS[t.dur] ?? t.beats ?? 0 }; start = snapBeat(start + n.beats); return n; });
 };
-const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false, dur, name: CLAP });
+// Con su escalón y su altura: así se dibuja (y se une con barras) sin más datos
+const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false, dur, name: CLAP, step: stepOf(CLAP), midi: midiOf(CLAP) });
 
 // ---------- STOP ----------
 // La lectura de la unidad suena con notas sostenidas (cada figura dura lo que vale) sobre un pulso suave, con sus
@@ -19,6 +22,46 @@ const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false,
 // «Rq>q» = calló una negra, «q>Rq» = sonó en un silencio).
 export const DYN_GAIN = { ppp: 0.2, pp: 0.28, p: 0.42, mp: 0.55, mf: 0.68, f: 0.85, ff: 1, fff: 1 };
 const DEFAULT_GAIN = DYN_GAIN.mf;
+// ----- Nivel 4: tresillos, síncopa, grupos de amalgama y cambios de compás -----
+// ¿Cae este instante en un pulso entero? (los tresillos dejan restos de 1e-16)
+const onBeat = s => { const f = ((s % 1) + 1) % 1; return f < EPS || 1 - f < EPS; };
+const trip3 = (ts, i) => [0, 1, 2].every(k => ts[i + k] && ts[i + k].dur === 'e:3');
+const notes3 = (ts, i) => [0, 1, 2].every(k => ts[i + k] && !ts[i + k].rest);
+const swapGroups = {
+  can: (ts, i) => !!ts[i + 1] && ts[i].bar === ts[i + 1].bar && !ts[i].rest && !ts[i + 1].rest && !ts[i].merged && !ts[i + 1].merged
+    && ((ts[i].dur === 'q.' && ts[i + 1].dur === 'q') || (ts[i].dur === 'q' && ts[i + 1].dur === 'q.')),
+  apply: (ts, i) => [{ ...ts[i], dur: ts[i + 1].dur }, { ...ts[i + 1], dur: ts[i].dur }], at: 1, span: 2,
+};
+const MUTATIONS4 = {
+  // tresillo tocado como dos corcheas / dos corcheas como tresillo / tresillo con la nota del medio muda
+  '3>2': { can: (ts, i) => trip3(ts, i) && notes3(ts, i) && onBeat(ts[i].start), apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i + 1], dur: 'e' }], at: 1 / 3, span: 3 },
+  '2>3': { can: (ts, i) => ts[i].dur === 'e' && !ts[i].rest && ts[i + 1] && ts[i + 1].dur === 'e' && !ts[i + 1].rest && onBeat(ts[i].start), apply: (ts, i) => [{ ...ts[i], dur: 'e:3' }, { ...ts[i + 1], dur: 'e:3' }, { ...ts[i + 1], dur: 'e:3' }], at: 1 / 3, span: 2 },
+  'e3>R': { can: (ts, i) => trip3(ts, i) && notes3(ts, i) && onBeat(ts[i].start), apply: (ts, i) => [ts[i], { ...ts[i + 1], rest: true }, ts[i + 2]], at: 1 / 3, span: 3 },
+  // tresillo de negras (tres en dos pulsos) tocado como tres negras
+  'q3>qqq': { can: (ts, i) => [0, 1, 2].every(k => ts[i + k] && ts[i + k].dur === 'q:3' && !ts[i + k].rest) && onBeat(ts[i].start), apply: (ts, i) => [0, 1, 2].map(k => ({ ...ts[i + k], dur: 'q' })), at: 2 / 3, span: 3 },
+  // síncopa abreviada (corchea–negra–corchea) tocada en el pulso (negra–negra) o a contratiempo (silencio–corchea–silencio–corchea)
+  sincopa: { can: (ts, i) => [0, 1, 2].every(k => ts[i + k] && !ts[i + k].rest) && ts[i].dur === 'e' && ts[i + 1].dur === 'q' && ts[i + 2].dur === 'e' && onBeat(ts[i].start), apply: (ts, i) => [{ ...ts[i], dur: 'q' }, { ...ts[i + 1], dur: 'q' }], at: 0.5, span: 3 },
+  contratiempo: { can: (ts, i) => [0, 1, 2].every(k => ts[i + k] && !ts[i + k].rest) && ts[i].dur === 'e' && ts[i + 1].dur === 'q' && ts[i + 2].dur === 'e' && onBeat(ts[i].start), apply: (ts, i) => [{ ...ts[i], rest: true }, { ...ts[i + 1], dur: 'e' }, { ...ts[i + 2], rest: true }, ts[i + 2]], at: 0, span: 3 },
+  // síncopa de blanca (negra–blanca–negra) tocada como cuatro negras
+  'qhq>qqqq': { can: (ts, i) => [0, 1, 2].every(k => ts[i + k] && !ts[i + k].rest) && ts[i].dur === 'q' && ts[i + 1].dur === 'h' && ts[i + 2].dur === 'q' && onBeat(ts[i].start), apply: (ts, i) => [ts[i], { ...ts[i + 1], dur: 'q' }, { ...ts[i + 1], dur: 'q' }, ts[i + 2]], at: 2, span: 3 },
+  // 5/8 y 7/8 agrupados al revés (3+2 → 2+3; 2+2+3 → 3+2+2…)
+  '5/8>2+3': swapGroups,
+  '7/8>agr': swapGroups,
+  // cambio de compás ignorado: el compás nuevo, más corto, sigue contando el anterior (le sobra lo que falta para igualarlo)
+  cambio: {
+    can: (ts, i, bar, ctx) => { const p = ctx && ctx.plan; return !!p && !ts[i].rest && !ts[i].merged && p.sizes[ts[i].bar] < p.sizes[ts[i].bar - 1] - EPS && !ts.some(t => t.bar === ts[i].bar && t.start > ts[i].start); },
+    apply: (ts, i, ctx) => { const d = ctx.plan.sizes[ts[i].bar - 1] - ctx.plan.sizes[ts[i].bar]; const dur = Object.keys(FIGURE_BEATS).find(k => Math.abs(FIGURE_BEATS[k] - d) < EPS) || 'q'; return [ts[i], { ...ts[i], dur }]; },
+    at: (ts, i) => ts[i].beats,
+  },
+  // 12/8 contado como dos 6/8 (le faltan el 3.er y 4.º pulso): el compás pierde su segunda mitad
+  '12/8>6/8': {
+    can: (ts, i, bar, ctx) => { const p = ctx && ctx.plan; return !!p && !ts[i].merged && Math.abs(p.sizes[ts[i].bar] - 6) < EPS && (i === 0 || ts[i - 1].bar !== ts[i].bar) && ts.some(t => t.bar === ts[i].bar && t.start - ts[i].start >= 3 - EPS); },
+    wholeBar: true,
+    apply: (ts, i) => ts.filter(t => t.bar === ts[i].bar && t.start - ts[i].start < 3 - EPS).map(t => (t.start - ts[i].start + t.beats > 3 + EPS ? { ...t, merged: true, beats: 3 - (t.start - ts[i].start) } : t)),
+    at: 3,
+  },
+};
+
 // Voz 1 de la lectura a dos voces: el ostinato del ejercicio (campo voz1) o, si no lo trae, uno de un compás
 const DEFAULT_OSTINATO = { 2: '| C4q C4e C4e |', 3: '| C4q C4e C4e C4q |', 4: '| C4q C4e C4e C4q C4e C4e |' };
 const OSTINATO_GAIN = 0.5;
@@ -94,6 +137,7 @@ export function scaleStep(midi, dir, armadura = 0) {
 const keyedAcc = (t, armadura) => (isNote(t) && t.name ? keyAcc(t.name[0], armadura) : 0);
 
 const MUTATIONS = {
+  ...MUTATIONS4,
   'q>ee': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i], dur: 'e' }], at: 0.5 },
   'ee>q': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'e' && ts[i + 1] && !ts[i + 1].rest && ts[i + 1].dur === 'e' && Math.abs(ts[i].start % 1) < EPS, apply: (ts, i) => [{ ...ts[i], dur: 'q' }], at: 0.5, span: 2 },
   'Rq>q': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], rest: true }], at: 0 },
@@ -183,6 +227,9 @@ const MUTATIONS = {
 export const KINDS_OF = [
   [/puntillo olvidado/, ['q.e>qq']], [/blanca con puntillo acortada/, ['h.>h']], [/semicorcheas↔corcheas/, ['ssss>ee']], [/grupo cambiado/, ['ess>sse']],
   [/casilla equivocada/, ['casilla']], [/6\/8 tocado como 3\/4/, ['6/8>3/4']], [/silencio con palmada/, ['R>e']], [/saltillo tocado/, ['e.s>ee']],
+  [/tresillo→dos corcheas/, ['3>2']], [/dos corcheas→tresillo/, ['2>3']], [/silencio en el tresillo/, ['e3>R']], [/tresillo de negras→tres negras/, ['q3>qqq']],
+  [/negra con puntillo→negra/, ['q.e>qq']], [/síncopa→en el pulso/, ['sincopa']], [/síncopa→contratiempo/, ['contratiempo']], [/blanca sincopada→dos negras/, ['qhq>qqqq']],
+  [/5\/8>2\+3/, ['5/8>2+3']], [/7\/8>agr/, ['7/8>agr']], [/^cambio$/, ['cambio']], [/12\/8>6\/8/, ['12/8>6/8']], [/6\/8→3\/4/, ['6/8>3/4']], [/^ds$/, ['ds']], [/^dc$/, ['dc']],
   [/D\.C\. olvidado/, ['dc']], [/D\.S\. olvidado/, ['ds']], [/ligadura olvidada/, ['liga']], [/sensible olvidada|becuadro olvidado/, ['sensible']],
   [/melódica bajada con sostenidos/, ['melodica']], [/9\/8 tocado como 6\/8/, ['9/8>6/8']], [/bemol olvidado|sostenido olvidado/, ['alteracion']], [/nota cambiada/, ['nota']],
   [/negra↔silencio/, ['Rq>q', 'q>Rq']], [/corcheas↔negra/, ['q>ee', 'ee>q']], [/blanca acortada/, ['h-corta']],
@@ -275,11 +322,16 @@ export function stopWindow(tolerancia, barBeats) {
 // ---------- Ritmos con las figuras de la unidad ----------
 // Una célula por su nombre: 'q', 'q.', 'h.', 'ee', 'eee', 'qe', 'q.e', 'ssss', 'ess', 'sse', 'e.s', 'Rq', 'Rq.', 'Ree'…
 // (R delante = silencio). Es el mismo vocabulario de los dictados («cells») del catálogo.
-const CELL_RE = /R?[whqes]\.?/g;
+// Nivel 4: «e:3», «Re:3» y «q:3» son figuras de tresillo
+const CELL_RE = /R?[whqes]\.?(?::3)?/g;
 export const cellTokens = name => (String(name).match(CELL_RE) || []).map(p => (p[0] === 'R' ? note(p.slice(1), true) : note(p)));
 // figuras: ['q','Rq','e','h'…]. Una figura suelta se completa como se escribe: 'e' va por parejas (en 6/8, de tres en tres),
 // 's' en grupos de cuatro, 'e.' con su semicorchea, 'Re' con una corchea y, en 6/8, 'q' con su corchea.
 function cellsFor(f, compound) {
+  // un tresillo entero: tres corcheas en un pulso (con la del medio muda) o tres negras en dos pulsos
+  if (f === 'e:3') return ['e:3e:3e:3'];
+  if (f === 'Re:3') return ['e:3Re:3e:3'];
+  if (f === 'q:3') return ['q:3q:3q:3'];
   if (f === 'e') return [compound ? 'eee' : 'ee'];
   if (f === 's') return ['ssss', 'ess', 'sse'];
   if (f === 'e.') return ['e.s'];
@@ -308,6 +360,21 @@ export function genRhythm({ figuras, barBeats, bars, seed, compound = false }) {
   if (out[0] && out[0].rest) out[0] = note(out[0].dur);
   if (out[out.length - 1].rest) out[out.length - 1] = note(out[out.length - 1].dur);
   return withStarts(out);
+}
+
+// Ritmo con cambios de compás (Nivel 4): un compás distinto cada dos compases, en el orden de «meters». Devuelve la partitura
+// en texto con sus «@time:» y las fichas
+export function genRhythmChanging({ figuras, meters, bars, seed }) {
+  const parts = [];
+  let prev = null;
+  for (let b = 0; b < bars; b++) {
+    const meter = meters[Math.floor(b / 2) % meters.length];
+    const [num, den] = meter.split('/').map(Number);
+    const tokens = genRhythm({ figuras, barBeats: (num * 4) / den, bars: 1, seed: seed + b * 7, compound: den === 8 && num % 3 === 0 });
+    parts.push(`${meter !== prev && b > 0 ? `@time:${meter} ` : ''}${tokens.map(x => (x.rest ? 'R' : x.name) + x.dur).join(' ')}`);
+    prev = meter;
+  }
+  return `| ${parts.join(' | ')} |`;
 }
 
 // Melodía corta con las notas de la unidad: se mueve de nota vecina en nota vecina (ordenadas de grave a agudo),
@@ -438,6 +505,9 @@ function movementQuestions(options, count, pick, seed) {
   });
 }
 export function choiceQuestions(p, count, seed) {
+  // Nivel 4: tresillos, tríadas, cadencias, adornos, amalgama, cambios de compás y modulación
+  const l4 = choiceQuestions4(p, count, seed);
+  if (l4) return l4;
   const r = rng(seed);
   const options = p.opciones;
   const pick = k => (k % 3 === 0 ? Math.floor(r() * options.length) : (Math.floor(r() * options.length) + k) % options.length);

@@ -5,6 +5,7 @@
 //   best: { id → resultado con más pct }   last: { id → último resultado }   days: { 'AAAA-MM-DD' → minutos }
 //   skills: { competencia → últimos porcentajes (20) }   mistakes: { código → veces }   records: { clave → récord }
 //   voice: { low, high } (registro de la voz, en midi)   works: { id → composición en texto }
+//   concierto: { at, order, pct } (Nivel 4, unidad 8)   diploma: { at, level: 4 } (concert.js)
 // onLmResult(fn) avisa de cada resultado nuevo (el Aula publica el resumen en la clase del alumno).
 import { getState, update, logPractice, today } from '../store.js';
 import { parseLmId, LM_SKILLS, lmUnit, lmLevel } from './catalog.js';
@@ -15,7 +16,7 @@ const MAX_SECONDS = 4 * 3600;
 const XP_BASE = 2;
 const listeners = new Set();
 
-export const EMPTY_LM = Object.freeze({ best: {}, last: {}, days: {}, skills: {}, mistakes: {}, records: {}, voice: null, works: {} });
+export const EMPTY_LM = Object.freeze({ best: {}, last: {}, days: {}, skills: {}, mistakes: {}, records: {}, voice: null, works: {}, concierto: null, diploma: null });
 export const lmState = (s = getState()) => ({ ...EMPTY_LM, ...(s.lm || {}) });
 
 // Resultado completo y saneado a partir de lo que devuelve un ejercicio

@@ -6,11 +6,17 @@ export const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const ACC_TEXT = { '-1': 'b', 0: '', 1: '#' };
 // Línea inferior del pentagrama: Mi4 en clave de sol y Sol2 en clave de fa (mismo escalón que note-writer.js)
-export const CLEF_BOTTOM = { treble: 30, bass: 18 };
+// Nivel 4: las claves de do en 3.ª (alto: fa3) y en 4.ª (tenor: re3) y la de fa en 3.ª (barítono: si2) también tienen su línea inferior
+export const CLEF_BOTTOM = { treble: 30, bass: 18, alto: 24, tenor: 22, baritone: 20 };
 // Duración en pulsos de negra de cada figura de los ejercicios
-export const FIGURE_BEATS = { w: 4, 'h.': 3, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25 };
-export const FIGURE_NAME = { w: 'Redonda', 'h.': 'Blanca con puntillo', h: 'Blanca', 'q.': 'Negra con puntillo', q: 'Negra', 'e.': 'Corchea con puntillo', e: 'Corchea', s: 'Semicorchea' };
-export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', 'h.': 'Silencio de blanca con puntillo', q: 'Silencio de negra', 'q.': 'Silencio de negra con puntillo', e: 'Silencio de corchea', s: 'Silencio de semicorchea' };
+// Nivel 4: «e:3» es una corchea de tresillo (tres en un pulso), «q:3» una negra de tresillo (tres en dos pulsos) y «s:3»
+// una semicorchea de tresillo (tres en medio pulso). Su «dur» lleva el sufijo «:3» y vale dos tercios de la figura.
+export const FIGURE_BEATS = { w: 4, 'h.': 3, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25, 'q:3': 2 / 3, 'e:3': 1 / 3, 's:3': 1 / 6 };
+export const FIGURE_NAME = { w: 'Redonda', 'h.': 'Blanca con puntillo', h: 'Blanca', 'q.': 'Negra con puntillo', q: 'Negra', 'e.': 'Corchea con puntillo', e: 'Corchea', s: 'Semicorchea', 'q:3': 'Negra de tresillo', 'e:3': 'Corchea de tresillo', 's:3': 'Semicorchea de tresillo' };
+export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', 'h.': 'Silencio de blanca con puntillo', q: 'Silencio de negra', 'q.': 'Silencio de negra con puntillo', e: 'Silencio de corchea', s: 'Silencio de semicorchea', 'q:3': 'Silencio de negra de tresillo', 'e:3': 'Silencio de corchea de tresillo', 's:3': 'Silencio de semicorchea de tresillo' };
+// Figura sin puntillo ni tresillo («q.» → «q», «e:3» → «e»): lo que se dibuja (cabeza, plica, corchetes)
+export const durBase = dur => String(dur).replace(/:3$/, '').replace('.', '');
+export const isTriplet = dur => /:3$/.test(String(dur));
 
 export const stepOf = name => diatonicStep(parseNote(name));
 export const nameOfStep = step => LETTERS[((step % 7) + 7) % 7] + Math.floor(step / 7);
@@ -188,12 +194,13 @@ export function voiceTonic(tonic, centerMidi) {
 }
 
 // Notas en texto («C4q D4h Rq») → [{ step, name, dur } | { rest: true, dur }]
-const TOKEN_RE = /^(R|[A-G][#b]?\d)(w|h\.|h|q\.|q|e\.|e|s)$/;
+const TOKEN_RE = /^(R|[A-G][#b]?\d)(w|h\.|h|q\.|q|e\.|e|s)(:3)?$/;
 export function parseTokens(text) {
   return String(text).trim().split(/\s+/).filter(Boolean).map(raw => {
     const m = TOKEN_RE.exec(raw);
     if (!m) throw new Error('Figura no válida: ' + raw);
-    return m[1] === 'R' ? { rest: true, dur: m[2] } : { step: stepOf(m[1]), name: m[1], dur: m[2] };
+    const dur = m[2] + (m[3] || '');
+    return m[1] === 'R' ? { rest: true, dur } : { step: stepOf(m[1]), name: m[1], dur };
   });
 }
 // Y al revés, para guardar o reproducir: [{ step, dur }] → «C4q D4h Rq»
@@ -213,14 +220,18 @@ export function tokensToNotes(tokens) {
 // Partitura del catálogo («| C4q E4q G4h |») → notas con escalón, figura, pulsos, inicio y compás (0, 1…)
 const ACC_NAME = { '-1': 'b', 0: '', 1: '#' };
 export function scoreTokens(text) {
-  const notes = parseScore(text).notes;
+  const parsed = parseScore(text);
+  const notes = parsed.notes;
+  // compás de cada compás escrito («@time:6/8»): solo los compases que lo han cambiado lo llevan
+  const meterOf = b => (parsed.bars[b] && parsed.bars[b].meter ? parsed.bars[b].meter.join('/') : null);
   return notes.map((n, i) => {
     const prev = notes[i - 1];
     // ligadura de prolongación: la nota liga con la siguiente si es la misma altura (la continuación no es un ataque nuevo)
     const tiedFrom = !!(prev && prev.tie && !n.rest && !prev.rest && prev.midi === n.midi);
     const tie = !!(n.tie && notes[i + 1] && !n.rest && notes[i + 1].midi === n.midi);
     return {
-      rest: n.rest, dur: n.dur + (n.dots ? '.'.repeat(n.dots) : ''), beats: n.beats, start: n.start, bar: n.bar,
+      rest: n.rest, dur: n.dur + (n.dots ? '.'.repeat(n.dots) : '') + (n.tuplet === 3 ? ':3' : ''), beats: n.beats, start: n.start, bar: n.bar,
+      ...(n.tuplet ? { tuplet: n.tuplet, tupletId: n.tupletId } : {}), ...(meterOf(n.bar) ? { barMeter: meterOf(n.bar) } : {}),
       ...(n.rest ? {} : { step: diatonicStep(n), name: n.letter + (ACC_NAME[n.acc] ?? '') + n.oct, midi: n.midi, acc: n.acc }),
       ...(tie ? { tie: true } : {}), ...(tiedFrom ? { tiedFrom: true } : {}),
       // ligadura de expresión «( … )»: la curva se dibuja de la primera a la última nota
@@ -242,13 +253,39 @@ export function attackTokens(tokens) {
 export const barBeatsOf = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return num * 4 / den; };
 // Compás compuesto (6/8, 9/8, 12/8): el pulso es la negra con puntillo (1,5 pulsos de negra); si no, la negra
 export const isCompound = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return den === 8 && num % 3 === 0 && num >= 6; };
-// El 3/8 se cuenta por defecto a la corchea (3 clics por compás); el 6/8 y el 9/8, a la negra con puntillo
-export const pulseBeatsOf = meter => (isCompound(meter) ? 1.5 : String(meter) === '3/8' ? 0.5 : 1);
+// Compás de amalgama (5/8, 7/8…): las corcheas se agrupan de dos en dos y de tres en tres, sin un pulso regular
+export const isAmalgam = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return den === 8 && num % 3 !== 0 && num >= 5; };
+// El 3/8 y los compases de amalgama se cuentan por defecto a la corchea; el 6/8, el 9/8 y el 12/8, a la negra con puntillo
+export const pulseBeatsOf = meter => (isCompound(meter) ? 1.5 : String(meter) === '3/8' || isAmalgam(meter) ? 0.5 : 1);
 // Pulso de un ejercicio: su campo «pulso» («q.» = 1,5, «e» = 0,5) o el del compás
 export const pulseOfParams = p => (p && p.pulso === 'q.' ? 1.5 : p && p.pulso === 'e' ? 0.5 : p && p.compas ? pulseBeatsOf(p.compas) : 1);
-// Grupo de las barras de corchea y semicorchea (y de las sílabas de apoyo): 1,5 en 6/8, 9/8 y 3/8 (las tres corcheas del
-// compás van unidas) o con «pulso: q.»; si no, la negra
+// Grupo de las barras de corchea y semicorchea (y de las sílabas de apoyo): 1,5 en 6/8, 9/8, 12/8 y 3/8 (las tres corcheas
+// del compás van unidas) o con «pulso: q.»; si no, la negra. En los compases de amalgama, ver groupingOf
 export const beamBeatsOf = (meter, pulso = null) => (pulso === 'q.' || isCompound(meter) || String(meter) === '3/8' ? 1.5 : 1);
+// Reparto de las corcheas de un compás en grupos (suma = corcheas del compás). Los compases de amalgama lo traen escrito
+// (agrupacion: [3, 2], agrupaciones: [[2, 2, 3], …] una por compás); los demás, el natural: 6/8 → 3+3, 3/4 → 2+2+2…
+const DEFAULT_GROUPS = { '5/8': [3, 2], '7/8': [2, 2, 3], '3/8': [3], '6/8': [3, 3], '9/8': [3, 3, 3], '12/8': [3, 3, 3, 3] };
+export function groupingOf(meter, p = {}, bar = 0) {
+  const per = p && p.agrupaciones && p.agrupaciones.length ? p.agrupaciones[Math.min(bar, p.agrupaciones.length - 1)] : null;
+  if (per) return per;
+  if (p && p.agrupacion && (!meter || p.agrupacion.reduce((s, x) => s + x, 0) === barBeatsOf(meter) * 2)) return p.agrupacion;
+  if (DEFAULT_GROUPS[meter]) return DEFAULT_GROUPS[meter];
+  return Array(Math.max(1, Math.round(barBeatsOf(meter)))).fill(2);
+}
+// Plan de compases de una partitura con cambios de compás: { sizes (pulsos de negra de cada compás), meters } o null si
+// no cambia nunca. Lo leen el dibujo, la línea de tiempo y el metrónomo. meter: el compás inicial del ejercicio.
+export function meterPlan(tokens, meter) {
+  if (!tokens.some(t => t.barMeter)) return null;
+  const last = tokens.reduce((m, t) => Math.max(m, t.bar ?? 0), 0);
+  const meters = [];
+  let now = meter || '4/4';
+  for (let b = 0; b <= last; b++) {
+    const tk = tokens.find(t => t.bar === b && t.barMeter);
+    if (tk) now = tk.barMeter;
+    meters.push(now);
+  }
+  return { meters, sizes: meters.map(barBeatsOf) };
+}
 // Nombres de nota en solfeo del contenido («sol4», «do») → letra («G4», «C»)
 const SOLFA = { do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' };
 export function solfaToName(text) {

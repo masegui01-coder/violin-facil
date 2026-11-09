@@ -45,7 +45,7 @@ function fitStaff(staff) {
   if (!groups.length) return;
   fitWidth(staff, groups);
   if (groups.length < 2) return;
-  const clef = staff.querySelector('.lm-clef.bass') ? 'bass' : 'treble';
+  const clef = staff.dataset.clef || (staff.querySelector('.lm-clef.bass') ? 'bass' : 'treble');
   const armadura = Number(staff.dataset.armadura || 0);
   let lineTop = groups[0].offsetTop;
   groups.slice(1).forEach(g => {
@@ -98,13 +98,15 @@ export function watchSystems(root) {
 
 const FOLLOW_MS = 60;
 // El compás que suena, resaltado y a la vista
-export function follow(host, beatAt, { barBeats, pickup }) {
+export function follow(host, beatAt, { barBeats, pickup, sizes = null }) {
+  // con cambios de compás, el compás que suena se busca por la medida de cada uno
+  const edges = sizes ? sizes.reduce((acc, s) => [...acc, acc[acc.length - 1] + s], [0]) : null;
   let shown = -1;
   const smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const timer = setInterval(() => {
     const beat = beatAt();
     if (beat < 0) return;
-    const bar = pickup ? (beat < pickup ? 0 : 1 + Math.floor((beat - pickup) / barBeats)) : Math.floor(beat / barBeats);
+    const bar = edges ? (edges.findIndex(e => e > beat + 1e-9) < 0 ? edges.length - 2 : Math.max(0, edges.findIndex(e => e > beat + 1e-9) - 1)) : pickup ? (beat < pickup ? 0 : 1 + Math.floor((beat - pickup) / barBeats)) : Math.floor(beat / barBeats);
     if (bar === shown) return;
     shown = bar;
     const cols = host.querySelectorAll('[data-sysbar], .lm-staff > .lm-bargroup');

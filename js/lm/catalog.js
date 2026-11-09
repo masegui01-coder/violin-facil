@@ -36,6 +36,15 @@ import W6 from './level3/u6.js';
 import W7 from './level3/u7.js';
 import W8 from './level3/u8.js';
 import META_3 from './level3/meta.js';
+import X1 from './level4/u1.js';
+import X2 from './level4/u2.js';
+import X3 from './level4/u3.js';
+import X4 from './level4/u4.js';
+import X5 from './level4/u5.js';
+import X6 from './level4/u6.js';
+import X7 from './level4/u7.js';
+import X8 from './level4/u8.js';
+import META_4 from './level4/meta.js';
 
 export const LM_SECTIONS = ['teoria', 'ritmo', 'agilidad', 'entonacion', 'dictado', 'cancion', 'audicion', 'creatividad', 'repaso'];
 export const LM_VARIANTS = ['facil', 'medio'];
@@ -46,13 +55,13 @@ export const SECTION_NAME = {
 };
 export const VARIANT_NAME = { facil: 'Fácil', medio: 'Media' };
 export const SKILL_NAME = { ritmo: 'Ritmo', entonacion: 'Entonación', lectura: 'Lectura', teoria: 'Teoría', dictado: 'Dictado', audicion: 'Audición' };
-export const LM_META = { 1: META_1, 2: META_2, 3: META_3 };
+export const LM_META = { 1: META_1, 2: META_2, 3: META_3, 4: META_4 };
 
 // «tool»: herramienta que ya existía (se abre con parámetros fijos); «lm»: tipo nuevo (pantalla del ejercicio, screen.js)
 export const TYPES = {
   'lectura-ritmica': 'tool',
   teoria: 'lm', stop: 'lm', agilidad: 'lm', entonacion: 'lm', 'cancion-cantada': 'lm', escribir: 'lm', discriminacion: 'lm',
-  audicion: 'lm', creatividad: 'lm', repaso: 'lm', intervalos: 'lm',
+  audicion: 'lm', creatividad: 'lm', repaso: 'lm', intervalos: 'lm', grados: 'lm',
 };
 
 // Orden de la unidad: lo que se aprende en Lenguaje se aplica en el instrumento en la misma unidad
@@ -70,7 +79,7 @@ export const unitKey = (level, unit) => `lm${level}-u${unit}`;
 function typeOf(section, ex) {
   const tool = (ex.herramienta && ex.herramienta.tool) || '';
   if (section === 'ritmo') return /stop/.test(tool) ? 'stop' : 'lectura-ritmica';
-  if (section === 'dictado') return /discriminacion/.test(tool) ? 'discriminacion' : /intervalos/.test(tool) ? 'intervalos' : 'escribir';
+  if (section === 'dictado') return /discriminacion/.test(tool) ? 'discriminacion' : /intervalos/.test(tool) ? 'intervalos' : /dictado-de-grados/.test(tool) ? 'grados' : 'escribir';
   if (section === 'cancion') return 'cancion-cantada';
   return section;
 }
@@ -82,7 +91,11 @@ function resolve(section, ex, raw) {
   // la base del STOP es una lectura de la unidad: rítmica (sección ritmo) o, en el STOP melódico, una lectura cantada (entonación)
   if (section === 'ritmo' && ex.base) return { ...ex, base: [...list, ...(raw.secciones.entonacion || [])].find(b => b.id === ex.base) || null };
   if (section === 'cancion' || (section === 'dictado' && ex.compases)) return { ...ex, cancion: raw.cancion };
-  if (section === 'audicion') return { ...ex, audicion: raw.audicion };
+  // Nivel 4: una audición extra (una canción tradicional) lleva su propia ficha, obra y fragmento en el ejercicio
+  if (section === 'audicion') {
+    const own = ex.fragmento ? { compositor: 'Canción tradicional', vida: '', pais: 'España y América Latina', epoca: 'Tradicional', genero: '', ficha: ex.ficha, obra: ex.obra, fragmento: ex.fragmento, verificacion: ex.verificacion, origen: ex.origen, letraTradicional: ex.letraTradicional, dominioPublico: ex.dominioPublico } : null;
+    return { ...ex, audicion: own || raw.audicion };
+  }
   if (section === 'dictado' || section === 'repaso') return { ...ex, figurasUnidad: raw.figuras || [] };
   return ex;
 }
@@ -119,12 +132,13 @@ const LEVEL_3 = {
   level: 3, title: 'Nivel 3', sub: '3/8 y 9/8, menores en tres formas, intervalos con especie, síncopa con ligadura, tres alteraciones, D.S. al Coda y dos voces',
   units: [W1, W2, W3, W4, W5, W6, W7, W8].map(u => expandUnit(3, u)),
 };
-// Nivel 4 (fase 2): aparece como «próximamente» en el curso
-const COMING = [
-  { level: 4, title: 'Nivel 4', sub: 'Todas las tonalidades, tresillos, síncopas, grados y acordes', units: [] },
-];
+// Nivel 4 (beta): también libre y solo en español por ahora; es el último nivel del curso
+const LEVEL_4 = {
+  level: 4, title: 'Nivel 4', sub: 'Todas las tonalidades, tresillos, síncopas, grados, acordes y cadencias, 5/8 y 7/8, cambios de compás, modulación y adornos',
+  units: [X1, X2, X3, X4, X5, X6, X7, X8].map(u => expandUnit(4, u)),
+};
 
-export const LM_LEVELS = [LEVEL_1, LEVEL_2, LEVEL_3, ...COMING];
+export const LM_LEVELS = [LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4];
 
 export const lmLevel = level => LM_LEVELS.find(l => l.level === Number(level)) || null;
 export const lmUnit = (level, unit) => (lmLevel(level)?.units || []).find(u => u.unit === Number(unit)) || null;
@@ -146,6 +160,7 @@ export const LM_MISTAKES = {
   ...META_1.codigosError,
   ...META_2.codigosError,
   ...META_3.codigosError,
+  ...META_4.codigosError,
   'fig-s': 'una semicorchea con otra figura', 'fig-e.': 'una corchea con puntillo con otra figura', 'fig-h.': 'una blanca con puntillo con otra figura',
   'r-intervalos': 'faltan los intervalos pedidos', 'r-alguna': 'faltan figuras nuevas distintas', 'r-matices': 'falta algún matiz',
   'r-distinta': 'la parte escrita repite la dada', 'r-tonalidad': 'no acaba en la tónica',
@@ -156,6 +171,8 @@ export const LM_MISTAKES = {
   'stop-pronto': 'paró antes del error', 'stop-tarde': 'paró tarde', 'stop-no': 'no paró la música',
   'barra-falta': 'faltó una barra de compás', 'barra-sobra': 'sobró una barra de compás', falta: 'faltó una nota', sobra: 'sobró una nota',
   altura: 'nota equivocada', 'r-longitud': 'número de compases', 'r-compases': 'compases incompletos', 'r-figuras': 'figura no permitida',
+  'r-tresillos': 'faltan tresillos', 'r-sincopas': 'faltan síncopas', 'r-sincopaBarra': 'falta una síncopa sobre la barra', 'r-agrupacion': 'falta un ataque al inicio de un grupo', 'r-cambiosCompas': 'faltan cambios de compás',
+  'r-acordes': 'los acordes o sus notas no encajan', 'r-cadencias': 'las cadencias pedidas no salen', 'r-cadenciaFinal': 'la cadencia final no es la pedida', 'r-modulacion': 'falta la nota nueva o el final en el tono de llegada',
   'r-notas': 'nota no permitida', 'r-final': 'final no pedido', 'r-saltos': 'salto no permitido', 'r-incluye': 'faltan figuras obligatorias', 'r-semitonos': 'faltan los semitonos',
 };
 // STOP: el error lo comete la app; al alumno se le apunta que no lo notó
@@ -167,7 +184,10 @@ const STOP_MISSED = {
   'q.e>qq': 'una negra con puntillo y su corchea tocadas como dos negras', 'h.>h': 'una blanca con puntillo acortada', 'ssss>ee': 'cuatro semicorcheas tocadas como dos corcheas',
   'ess>sse': 'un grupo de corchea y semicorcheas cambiado', 'e.s>ee': 'un saltillo tocado como dos corcheas', '6/8>3/4': 'un 6/8 tocado como 3/4', 'R>e': 'un silencio con palmada',
   casilla: 'la casilla 1 repetida en la 2.ª vuelta', dc: 'un D.C. olvidado', ds: 'un D.S. al Coda olvidado', liga: 'una nota ligada atacada otra vez',
-  '9/8>6/8': 'un 9/8 tocado como 6/8', sensible: 'una sensible cantada natural', melodica: 'la bajada de la melódica con los sostenidos de la subida', alteracion: 'una nota sin la alteración de la armadura', nota: 'una nota cambiada de altura',
+  '9/8>6/8': 'un 9/8 tocado como 6/8',
+  '3>2': 'un tresillo tocado como dos corcheas', '2>3': 'dos corcheas tocadas como un tresillo', 'e3>R': 'una nota de tresillo que quedó muda', 'q3>qqq': 'un tresillo de negras tocado como tres negras',
+  sincopa: 'una síncopa tocada en el pulso', contratiempo: 'una síncopa tocada a contratiempo', 'qhq>qqqq': 'una blanca sincopada tocada como dos negras', '5/8>2+3': 'un 5/8 agrupado al revés', '7/8>agr': 'un 7/8 agrupado de otra manera',
+  cambio: 'un cambio de compás que no se hizo', '12/8>6/8': 'un 12/8 contado como 6/8', sensible: 'una sensible cantada natural', melodica: 'la bajada de la melódica con los sostenidos de la subida', alteracion: 'una nota sin la alteración de la armadura', nota: 'una nota cambiada de altura',
 };
 const SPECIES_NAME = { M: 'mayor', m: 'menor', J: 'justa', A: 'aumentada', d: 'disminuida' };
 export function mistakeText(code) {
@@ -194,7 +214,9 @@ export function mistakeText(code) {
 
 // Pregunta de teoría o de audición por su id (bancos del repaso)
 export function lmQuestion(level, qid) {
-  for (const u of lmLevel(level)?.units || []) {
+  // el repaso final del Nivel 4 también trae preguntas de los niveles 1, 2 y 3: el nivel sale del propio id («lm2u3-t5»)
+  const own = /^lm([0-9])u/.exec(String(qid));
+  for (const u of lmLevel(own ? Number(own[1]) : level)?.units || []) {
     for (const ex of u.exercises) {
       const found = (ex.params.items || ex.params.preguntas || []).find(q => q.id === qid);
       if (found) return { ...found, unit: u.unit, section: ex.section };

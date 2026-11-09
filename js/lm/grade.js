@@ -147,15 +147,24 @@ const figKey = t => (t.rest ? `R${t.dur}` : t.dur);
 // intervals: números de intervalo (3, 5, 8…) que deben aparecer entre dos notas seguidas. any: { de: [figuras], distintas }.
 const isName = x => typeof x === 'string';
 const pitchIs = (t, x) => !t.rest && (isName(x) ? tokenMidi(t) === midiOf(x) : t.step === x);
-export function checkComposition(tokens, { barBeats, bars, figures = null, notes = null, endSteps = null, endPc = null, endFigure = null, maxLeap = null, mustFigures = null, semitones = null, pickup = 0, firstBeatNote = false, intervals = null, any = null, extra = [] }) {
+export function checkComposition(tokens, { barBeats, bars, figures = null, notes = null, endSteps = null, endPc = null, endFigure = null, maxLeap = null, mustFigures = null, semitones = null, pickup = 0, firstBeatNote = false, intervals = null, any = null, extra = [], sizes = null }) {
   const total = tokens.reduce((s, t) => s + (FIGURE_BEATS[t.dur] ?? 0), 0);
   const shift = pickup ? barBeats - pickup : 0;
   let sum = shift;
   let crosses = false;
   const barOf = [];
+  // Nivel 4: con cambios de compás, cada compás mide lo suyo (sizes: pulsos de negra de cada uno)
+  const edges = sizes ? sizes.reduce((acc, s) => [...acc, acc[acc.length - 1] + s], [0]) : null;
+  const idx = x => { let b = 0; while (b < edges.length - 2 && x >= edges[b + 1] - 1e-6) b++; return b; };
   tokens.forEach(t => {
     const before = sum;
     sum += FIGURE_BEATS[t.dur] ?? 0;
+    if (edges) {
+      const b = idx(before);
+      barOf.push({ bar: b, first: Math.abs(before - edges[b]) < 1e-6 });
+      if (b !== idx(sum - 1e-6)) crosses = true;
+      return;
+    }
     barOf.push({ bar: Math.floor(before / barBeats + 1e-9), first: Math.abs(before % barBeats) < 1e-6 });
     if (Math.floor(before / barBeats + 1e-9) !== Math.floor((sum - 1e-9) / barBeats)) crosses = true;
   });
@@ -163,7 +172,7 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
   // el final es la última nota que suena: un silencio detrás (| C4h Rh |) no lo cambia
   const last = [...tokens].reverse().find(t => !t.rest);
   const rules = [
-    { id: 'longitud', ok: Math.abs(total - barBeats * bars) < 1e-6 },
+    { id: 'longitud', ok: Math.abs(total - (edges ? edges[Math.min(bars, edges.length - 1)] : barBeats * bars)) < 1e-6 },
     { id: 'compases', ok: !crosses && tokens.length > 0 },
     { id: 'figuras', ok: !figures || tokens.every(t => figures.includes(figKey(t))) },
   ];

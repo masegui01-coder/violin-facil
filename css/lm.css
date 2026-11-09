@@ -317,3 +317,21 @@
 .lm-bargroup.lm-dsmark::after { content: attr(data-ds-right); position: absolute; top: 0; right: 0; font-size: .8rem; font-weight: 700; font-style: italic; }
 /* melisma: la línea de prolongación tras la sílaba */
 .lm-under.lm-melisma { color: transparent; border-bottom: 2px solid var(--muted); align-self: stretch; max-width: none; min-width: 1.8rem; margin-bottom: .55em; }
+
+/* Nivel 4: tresillos, adornos, acordes sobre el pentagrama, claves de do y compases que cambian */
+.lm-tuplet { font-family: var(--f-display); font-size: 13px; font-style: italic; font-weight: 700; fill: currentColor; }
+.lm-tuplet-br, .lm-cclef, .lm-orn { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.lm-orn-tr { font-family: var(--f-display); font-size: 14px; font-style: italic; font-weight: 800; fill: currentColor; }
+.lm-grace { fill: currentColor; stroke: currentColor; }
+.lm-grace-stem { stroke: currentColor; stroke-width: 1.2; fill: none; }
+.lm-chordname { font-family: var(--f-display); font-size: 13px; font-weight: 800; fill: var(--accent); }
+.lm-timecell .lm-time { font-size: 19px; }
+.lm-keysig .lm-keyslot, .lm-meterpick button { cursor: pointer; }
+.lm-ornoption { display: flex; align-items: center; justify-content: center; min-height: 3rem; }
+.lm-degrow { display: flex; flex-direction: column; gap: 6px; }
+.lm-verify { border: 2px solid var(--bad); border-radius: var(--r); padding: 10px 14px; color: var(--bad); font-weight: 700; }
+.lm-verify-tag { color: var(--bad); font-weight: 800; }
+.lm-diploma { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; border: 3px double var(--accent); border-radius: var(--r); padding: 28px 18px; background: var(--surface); }
+.lm-diploma h2 { font-size: 1.6rem; margin: 0; }
+.lm-concert-piece { display: flex; flex-direction: column; gap: 6px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+@media print { .lm-diploma { border-color: #000; color: #000; background: #fff; } }

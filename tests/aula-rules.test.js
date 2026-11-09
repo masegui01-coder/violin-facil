@@ -130,7 +130,7 @@ test('composiciones del curso: el alumno de la clase envía la suya («<uid>_<ej
   const doc = workDoc('u1', { nickname: 'Ana', exId: 'lm1-u3-creatividad-a-facil', title: 'Contesta a la llamada', score: 'G4q E4q C4h', meter: '4/4', pct: 80 });
   assert.deepEqual(Object.keys(doc), WORK_KEYS);
   assert.match(doc.exId, /^lm[0-9]+-u[0-9]+-creatividad-[a-c]-(facil|medio)$/);
-  assert.match(doc.score, /^[A-GR#b0-9whqes. ]+$/);
+  assert.match(doc.score, /^[A-GR#b0-9whqes.: ]+$/);
   assert.match(api, /'works', `\$\{user\.uid\}_\$\{work\.exId\}`/);
 });
 

@@ -2,13 +2,14 @@
 // leyenda y fichas de corrección (✓ ≈ ✕, como en Dictados), botones de nombres de nota y utilidades de espera.
 import { esc, icon } from '../ui.js';
 import { rng } from '../generate.js';
-import { noteCell, clefCell, gapCell, endCell, layoutTokens, repStartCell, repEndCell, NOTE_W } from './staff-lm.js';
-import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf, beamBeatsOf, accidentalSigns, ACC_SYMBOL, accOfName, keyAcc } from './notes.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens, repStartCell, repEndCell, timeCell, doubleBarCell, NOTE_W } from './staff-lm.js';
+import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf, beamBeatsOf, accidentalSigns, ACC_SYMBOL, accOfName, keyAcc, isTriplet, isAmalgam, groupingOf, meterPlan } from './notes.js';
 import { drawMarks, totalBars } from './form.js';
 
 export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
 export const MARK_TEXT = { ok: 'bien', near: 'casi', bad: 'mal' };
-export const CLEF = { sol: 'treble', fa: 'bass', treble: 'treble', bass: 'bass' };
+// Claves: sol, fa (4.ª) y, en el Nivel 4, do en 3.ª (alto), do en 4.ª (tenor) y fa en 3.ª (barítono)
+export const CLEF = { sol: 'treble', fa: 'bass', treble: 'treble', bass: 'bass', do3: 'alto', do4: 'tenor', fa3: 'baritone', alto: 'alto', tenor: 'tenor', baritone: 'baritone' };
 
 export const legendHtml = () => `<ul class="dict-legend lm-legend">
   <li><span class="dict-sw ok" aria-hidden="true">✓</span>Bien</li>
@@ -39,10 +40,33 @@ const dsMeta = m => ({
   ...(m.segno ? { dsL: '𝄋' } : m.coda ? { dsL: '𝄌 Coda' } : {}),
   ...(m.alCoda || m.ds ? { dsR: [m.alCoda ? 'al Coda 𝄌' : '', m.ds ? 'D.S. al Coda' : ''].filter(Boolean).join(' · ') } : {}),
 });
-export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false, armadura = 0, form = null, pulso = null, given = 0 } = {}) {
+// Nivel 4: chords (acordes sobre el pentagrama, uno por compás o una lista), ornaments (adornos), agrupacion y agrupaciones
+// (reparto de las corcheas en 5/8, 7/8…) y los cambios de compás (@time) y los tresillos, que salen de las propias fichas
+export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false, armadura = 0, form = null, pulso = null, given = 0, chords = null, ornaments = null, agrupacion = null, agrupaciones = null } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
   const pulse = meter ? beamBeatsOf(meter, pulso) : pulso === 'q.' ? 1.5 : 1;
-  const lay = layoutTokens(tokens, { barBeats, pickup, clef, pulse });
+  const plan = bars && meter ? meterPlan(tokens, meter) : null;
+  const groupP = { agrupacion, agrupaciones };
+  const meterAt = b => (plan ? plan.meters[b] : meter);
+  const grouping = bars && meter && (plan || isAmalgam(meter) || agrupacion || agrupaciones) ? b => (meterAt(b) ? groupingOf(meterAt(b), groupP, b) : null) : null;
+  const lay = layoutTokens(tokens, { barBeats, pickup, clef, pulse, plan, grouping });
+  // adornos: el nº de nota (sin contar los silencios) → ficha
+  const ornAt = {};
+  if (ornaments && ornaments.length) { let k = -1; tokens.forEach((tk, i) => { if (!tk.rest) { k++; const o = ornaments.find(x => x.indice === k); if (o) ornAt[i] = { signo: o.signo, direccion: o.direccion }; } }); }
+  // acordes: por compás (desde 1), uno o varios; cada uno va sobre la primera ficha que empieza a partir de su parte del compás
+  const chordAt = {};
+  if (chords && chords.length) {
+    const barOfI = i => lay[i].bar - (pickup ? 1 : 0);
+    const seen = {};
+    tokens.forEach((tk, i) => {
+      const b = barOfI(i);
+      const list = [].concat(chords[b] || []);
+      if (b < 0 || !list.length) return;
+      const barStart = tokens.find((x, j) => barOfI(j) === b).start ?? 0;
+      const size = plan ? plan.sizes[lay[i].bar] : barBeats || 4;
+      list.forEach((c, k) => { if (!seen[`${b}:${k}`] && (tk.start ?? 0) >= barStart + (k * size) / list.length - 1e-6) { seen[`${b}:${k}`] = true; chordAt[i] = chordAt[i] ? `${chordAt[i]} ${c}` : c; } });
+    });
+  }
   const dyn = dynamicsByBar(dynamics || []);
   // alteraciones que se dibujan (las de la armadura no) y largo de cada ligadura de prolongación
   const signs = accidentalSigns(tokens, lay.map(L => L.bar), armadura);
@@ -76,11 +100,12 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
       if (j > i) slurLen = (j - i) * NOTE_W + lay.slice(i, j).filter(x => x.barEnd).length * 14;
     }
     const tieLen = t.tie ? (tokens[i + 1] && lay[i + 1].bar !== L.bar ? NOTE_W + 14 : NOTE_W) : 0;
-    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: signs[i], tie: tieLen, slur: slurLen, given: i < given })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under${under[i] === '_' ? ' lm-melisma' : ''}">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
+    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: signs[i], tie: tieLen, slur: slurLen, given: i < given, tuplet: L.tuplet, chord: chordAt[i] || null, ornament: ornAt[i] || null })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under${under[i] === '_' ? ' lm-melisma' : ''}">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {
-      groups[groups.length - 1].push(`<span class="lm-sc">${fmark && fmark.end ? repEndCell() : gapCell(true, null, 14)}</span>`);
-      groups.push([]);
+      const changes = !!plan && plan.meters[L.bar + 1] !== undefined && plan.meters[L.bar + 1] !== plan.meters[L.bar];
+      groups[groups.length - 1].push(`<span class="lm-sc">${fmark && fmark.end ? repEndCell() : changes ? doubleBarCell(14) : gapCell(true, null, 14)}</span>`);
+      groups.push(changes ? [`<span class="lm-sc" data-meter="${plan.meters[L.bar + 1]}">${timeCell(plan.meters[L.bar + 1])}</span>`] : []);
       meta.push({});
       firstInBar = true;
     }
@@ -94,7 +119,7 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     const cls = ['lm-bargroup', m.volta ? `lm-volta${m.opens ? ' lm-volta-open' : ''}` : '', m.fine ? 'lm-fine' : '', m.dsL || m.dsR ? 'lm-dsmark' : ''].filter(Boolean).join(' ');
     return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}${m.dsL ? ` data-ds-left="${m.dsL}"` : ''}${m.dsR ? ` data-ds-right="${m.dsR}"` : ''}>${g.join('')}</span>`;
   }).join('');
-  return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${armadura ? ` data-armadura="${armadura}"` : ''}${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
+  return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) && !chords && !ornaments && !plan ? ' lm-tight' : ''}"${armadura ? ` data-armadura="${armadura}"` : ''} data-clef="${clef}"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
 }
 
 // Sistema de dos (o más) pentagramas unidos, compás a compás: la voz 1 arriba y la 2 abajo, con la clave, el compás
@@ -140,7 +165,7 @@ export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label =
 const TIGHT_LOW = stepOf('C4');
 const TIGHT_HIGH = stepOf('D5');
 export function tight(tokens, clef = 'treble', marks = [], dynamics = null) {
-  return clef === 'treble' && !(marks || []).some(Boolean) && !(dynamics && dynamics.length)
+  return clef === 'treble' && !(marks || []).some(Boolean) && !(dynamics && dynamics.length) && !tokens.some(t => isTriplet(t.dur))
     && tokens.every(t => t.rest || t.step === undefined || (t.step >= TIGHT_LOW && t.step <= TIGHT_HIGH));
 }
 

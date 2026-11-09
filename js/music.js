@@ -50,6 +50,8 @@ const TUPLET = { 3: 2 / 3, 5: 4 / 5, 6: 2 / 3, 7: 4 / 7 };
 const DIRECTION_TEXT = { rit: 'rit.', accel: 'accel.', atempo: 'a tempo', cresc: 'cresc.', dim: 'dim.', rall: 'rall.', 'poco_rit': 'poco rit.', niente: 'niente' };
 const NOTE_RE = /^(\(?)(R|[A-G](?:#|b)?\d)([whqest])(\.{0,2})(?::([3567]))?([>'_^UTx~]*)(\)?)$/;
 
+// Ajusta un instante a la cuadrícula de 1/48 de negra si está a menos de una millonésima (los tresillos suman 0,333…)
+export const snapBeat = x => { const k = Math.round(x * 48); return Math.abs(x * 48 - k) < 1e-6 ? k / 48 : x; };
 export const meterBeats = ([num, den]) => num * 4 / den;
 
 export function parseScore(text) {
@@ -112,8 +114,9 @@ export function parseScore(text) {
     notes.push(note);
     pending = {};
     grace = [];
-    beat += beats;
-    if (tupletOpen) { const span = beat - tupletOpen.start; if (span > 0.5 && Math.abs(span - Math.round(span)) < 1e-6) tupletOpen = null; }
+    // el tiempo se ajusta a la cuadrícula de 1/48 de negra: tres tresillos de corchea suman 1 y no 0,9999…
+    beat = snapBeat(beat + beats);
+    if (tupletOpen) { const span = beat - tupletOpen.start; if (span >= 0.5 - 1e-6 && Math.abs(span * 2 - Math.round(span * 2)) < 1e-6) tupletOpen = null; }
   });
   closeBar();
   return { notes, bars, totalBeats: beat, ...(Object.keys(pending).length ? { endMarks: pending } : {}) };

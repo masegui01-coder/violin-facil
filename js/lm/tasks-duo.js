@@ -13,7 +13,7 @@ import { gradeReading as gradeAll } from './reading-grade.js';
 import { dynamicsChecks } from './dynamics.js';
 import { accentContrast } from '../onsets.js';
 import { ostinatoTokens } from './gen.js';
-import { barBeatsOf, beamBeatsOf, scoreTokens } from './notes.js';
+import { barBeatsOf, beamBeatsOf, scoreTokens, meterPlan, groupingOf } from './notes.js';
 import { onceClick, staffHtml, tokenLabel, withBreaths, CLEF } from './kit.js';
 import { twoVoices } from './tasks-rhythm.js';
 import { follow } from './systems.js';
@@ -27,6 +27,7 @@ const LEGATO = 0.9;
 const AFTER_END_S = 0.8;
 const PULSE_LEVEL = 0.35;
 const DOWNBEAT_BOOST = 1.4;
+const GROUP_BOOST = 1.18;      // el inicio de cada grupo (5/8, 7/8, hemiola), algo más fuerte que el resto
 const SUB_LEVEL = 0.16;        // las corcheas de la subdivisión (6/8), más suaves que el pulso
 const MEASURE_WEIGHT = 0.15;   // matices o acento, cuando la variante los pide y se toca con palmas al micrófono
 const ACCENT_GOAL = 1.3;       // el 1.er tiempo, al menos un 30 % más fuerte que los demás
@@ -51,7 +52,7 @@ function scoreHtml(tokens, ostinato, p, env, marks = []) {
   const under = readingMode(p, env.variant).syllables ? syllablesOf(tokens, { pulse: beamBeatsOf(p.compas, p.pulso), pickup: p.anacrusa || 0 }) : [];
   return staffHtml(tokens, {
     clef: CLEF[p.clave] || 'treble', meter: p.compas, pickup: p.anacrusa || 0, marks, under, dynamics: p.matices || null,
-    armadura: p.armadura || 0, form: formOf(p), pulso: p.pulso || null,
+    armadura: p.armadura || 0, form: formOf(p), pulso: p.pulso || null, agrupacion: p.agrupacion || null, agrupaciones: p.agrupaciones || null,
     label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', '),
   });
 }
@@ -136,12 +137,18 @@ export async function lecturaDosVoces(host, ex, env) {
   // el 1.er tiempo de cada compás cuenta desde la anacrusa
   if (!ostinato) {
     const firstLen = tl.passStarts[1] ?? tl.total;
-    metronomeBeats({ length: firstLen, barBeats, pickup, pulse, metro: mode.metro, mute: mode.mute, subdivision: mode.subdivision }).forEach(c => {
-      clicks(1, bpm, { at: t0 + (offset + c.beat) * spb, level: c.level === 'down' ? PULSE_LEVEL * DOWNBEAT_BOOST : c.level === 'sub' ? SUB_LEVEL : PULSE_LEVEL });
+    // compases que cambian (@time) y reparto en grupos: el metrónomo sigue la medida de cada compás
+    const plan = meterPlan(tokens, p.compas);
+    const grouped = mode.metro === 'groups' || !!p.agrupacion || !!p.agrupaciones;
+    metronomeBeats({
+      length: firstLen, barBeats, pickup, pulse, metro: mode.metro, mute: mode.mute, subdivision: mode.subdivision,
+      ...(plan ? { sizes: plan.sizes, meters: plan.meters } : {}), ...(grouped ? { groups: (b, m) => groupingOf(m || p.compas, p, b) } : {}),
+    }).forEach(c => {
+      clicks(1, bpm, { at: t0 + (offset + c.beat) * spb, level: c.level === 'down' ? PULSE_LEVEL * DOWNBEAT_BOOST : c.level === 'group' ? PULSE_LEVEL * GROUP_BOOST : c.level === 'sub' ? SUB_LEVEL : PULSE_LEVEL });
     });
   }
   const end = t0 + (offset + tl.total) * spb;
-  const unfollow = follow(host, () => tl.scoreBeat((now() - t0) / spb - offset), { barBeats, pickup });
+  const unfollow = follow(host, () => tl.scoreBeat((now() - t0) / spb - offset), { barBeats, pickup, sizes: meterPlan(tokens, p.compas)?.sizes });
   host.querySelector('#lmDuoPhase').textContent = ostinato ? '¡Ahora! Tu voz es la de abajo' : '¡Ahora!';
   // calderón: la mano de la app indica que se mantiene y baja cuando se sigue; repetición: aviso de la 2.ª vuelta
   const held = tl.events.find(e => e.hold);

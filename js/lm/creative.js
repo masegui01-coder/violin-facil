@@ -13,6 +13,8 @@ import { lmExercise } from './catalog.js';
 import { staffHtml, continueButton, playButton, tokenLabel, GLYPH } from './kit.js';
 import { playEvents, playNotes, stopSound } from './sound.js';
 import { saveWork, workOf } from './results.js';
+import { armaduraOf, numeralProblem, cadenciaDe } from './harmony.js';
+import { tripletBeats, syncopations, groupsOk, meterChanges, chordRules, cadenceAt, modulationOk } from './rules4.js';
 
 const BPM = 80;
 const LEGATO = 0.92;
@@ -28,6 +30,8 @@ export const RULE_NAME = {
   tonalidad: 'Acaba en la tónica de la tonalidad',
   forma: 'La forma de la escala menor', ligaduras: 'Ligaduras de expresión', ligaduraPulso: 'Ligaduras que cruzan un pulso',
   movimiento: 'Movimiento contrario y oblicuo', debajo: 'La voz grave siempre por debajo',
+  tresillos: 'Tresillos', sincopas: 'Síncopas', sincopaBarra: 'Una síncopa sobre la barra de compás', agrupacion: 'Un ataque al inicio de cada grupo', cambiosCompas: 'Cambios de compás',
+  acordes: 'Un acorde por compás y sus notas', cadencias: 'Las cadencias pedidas', cadenciaFinal: 'La cadencia final', modulacion: 'La nota nueva y el final en el tono de llegada',
 };
 // Tonalidades del nivel 2 y su armadura (un bemol: fa mayor y re menor; un sostenido: sol mayor y mi menor)
 const TONE_ARM = {
@@ -107,13 +111,18 @@ export async function creatividad(host, ex, env) {
   const arms = String(rs.armadura ?? '0').split('|').map(Number);
   const tones = rs.tonalidad ? String(rs.tonalidad).split('|') : [];
   let tonalidad = tones[0] || null;
-  let armadura = tonalidad && TONE_ARM[tonalidad] !== undefined && arms.includes(TONE_ARM[tonalidad]) ? TONE_ARM[tonalidad] : arms[0];
+  const toneArm = t => (TONE_ARM[t] !== undefined ? TONE_ARM[t] : armaduraOf(t));
+  let armadura = tonalidad && arms.includes(toneArm(tonalidad)) ? toneArm(tonalidad) : arms[0];
   const tonicPc = () => (tonalidad ? ((keyTonic(tonalidad).midi % 12) + 12) % 12 : 0);
   const signs = rs.signos || (rs.mustInclude && rs.mustInclude.signos) || (rs.matices ? ['*'] : null);
   const figures = (rs.figuras || (given ? [...new Set(given.map(t => (t.rest ? `R${t.dur}` : t.dur)))] : ['q', 'h'])).map(normFig);
   const rhythmOnly = !rs.notas && !change && !paint;
   const bars = paint ? base.tokens[base.tokens.length - 1].bar + 1 : rs.compases || (given ? given[given.length - 1].bar + 1 : 2);
-  const state = { dyn: {}, fermata: false, repeat: false, pickup: 0 };
+  const state = { dyn: {}, fermata: false, repeat: false, pickup: 0, chords: rs.acordes && rs.acordes.fijos ? [...rs.acordes.fijos] : [], hasta: null, notaNueva: null };
+  // modulación: la opción elegida es la misma en las listas «hasta» y «notaNueva» (primera con primera)
+  const modList = key => (rs.modulacion ? String(rs.modulacion[key]).split('|') : []);
+  const pickMod = i => { state.hasta = modList('hasta')[i] || modList('hasta')[0]; state.notaNueva = modList('notaNueva')[i] || modList('notaNueva')[0]; };
+  if (rs.modulacion) pickMod(0);
   const dynamics = () => [...Object.entries(state.dyn).filter(([, v]) => v).map(([b, v]) => ({ compas: Number(b), signo: v })), ...(state.fermata ? [{ compas: bars, signo: 'calderon' }] : [])];
 
   const barSelect = n => `<fieldset class="lm-dynpick"><legend>Matices de cada compás</legend>${Array.from({ length: n }, (_, b) => `<label><span>Compás ${b + 1}</span>
@@ -125,8 +134,11 @@ export async function creatividad(host, ex, env) {
     ${tones.length > 1 ? `<div class="setting"><label for="lmTone">Tonalidad</label><select id="lmTone">${tones.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>` : ''}
     ${arms.length > 1 && tones.length < 2 ? `<div class="setting"><label for="lmArm">Armadura</label><select id="lmArm">${arms.map(a => `<option value="${a}">${a === 0 ? 'Sin alteraciones' : `${Math.abs(a)} ${a < 0 ? (a === -1 ? 'bemol' : 'bemoles') : (a === 1 ? 'sostenido' : 'sostenidos')}`}</option>`).join('')}</select></div>` : (armadura ? `<p class="lm-notice">${keyNotice(armadura)}</p>` : '')}
     ${clef === 'bass' ? '<p class="lm-notice">Escribes en clave de fa.</p>' : ''}
+    ${rs.cambiosCompas ? `<div class="setting"><span id="lmNextLbl">Cambiar de compás desde el compás siguiente</span><div class="seg ${meters.length === 2 ? 'two' : 'three'}" role="group" aria-labelledby="lmNextLbl">${meters.map(m => `<button type="button" data-nextmeter="${m}" aria-pressed="false">${m}</button>`).join('')}</div><p class="muted small" id="lmNextNote" aria-live="polite"></p></div>` : ''}
+    ${rs.modulacion && modList('hasta').length > 1 ? `<div class="setting"><label for="lmMod">Modulo a</label><select id="lmMod">${modList('hasta').map((h, i) => `<option value="${i}">${esc(h)}</option>`).join('')}</select></div>` : ''}
     ${rs.anacrusa ? '<div class="setting"><span id="lmPickLbl">Anacrusa</span><div class="seg three" role="group" aria-labelledby="lmPickLbl"><button type="button" data-pick="0" aria-pressed="true">Sin anacrusa</button><button type="button" data-pick="1" aria-pressed="false">1 pulso</button><button type="button" data-pick="2" aria-pressed="false">2 pulsos</button></div></div>' : ''}
     <p class="dict-staff-label">${paint ? esc(base.from) : change ? 'La melodía (cambia el final)' : 'Tu composición'}</p><div class="lm-writer"></div>
+    ${rs.acordes ? '<fieldset class="lm-chordpick"></fieldset>' : ''}
     ${signs ? barSelect(bars) : ''}
     ${rs.repeticion ? '<label class="lm-check"><input type="checkbox" data-repeat> <span>Barra de repetición al final</span></label>' : ''}
     ${rs.notas ? `<p class="muted small"><span>Notas:</span> <span>${rs.notas.map(n => noteText(n, env.nom)).join(', ')}</span></p>` : ''}
@@ -137,14 +149,26 @@ export async function creatividad(host, ex, env) {
   const initial = paint ? base.tokens.map(plain) : change ? given.map(plain) : [];
   const aviso = host.querySelector('.setting + .lm-notice, .lm-notice');
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
-    slurs: !!rs.ligaduras, ties: !!rs.ligaduraPulso,
+    slurs: !!rs.ligaduras, ties: !!rs.ligaduraPulso, meterChanges: !!rs.cambiosCompas, agrupacion: rs.agrupacion || null,
     figures, rhythmOnly, max: paint ? initial.length : 64, nom: env.nom, say: env.say, meter, initial, extras, breath: !!rs.comas, clef, armadura,
     accidentals: !rhythmOnly && (armadura !== 0 || arms.length > 1 || (rs.notas || []).some(n => /[#b]/.test(n)) || (env.level >= 2 && env.unit >= 6) || env.level >= 3), cursor: clef === 'bass' ? 22 : null,
   });
   const retune = () => { w.setArmadura(armadura); if (aviso) aviso.textContent = armadura ? keyNotice(armadura) : 'Sin alteraciones en la armadura.'; };
+  // acordes: un selector por compás con los números romanos que valen en la tonalidad (o los fijos del ejercicio)
+  const drawChords = () => {
+    const box = host.querySelector('.lm-chordpick');
+    if (!box) return;
+    if (rs.acordes.fijos) { box.innerHTML = `<legend>Acordes de cada compás</legend><p><b>${esc(rs.acordes.fijos.join(' – '))}</b></p>`; return; }
+    const allowed = (rs.acordes.permitidos || []).filter(n => !tonalidad || !numeralProblem(tonalidad, n));
+    box.innerHTML = `<legend>Acorde de cada compás</legend>${Array.from({ length: bars }, (_, b) => `<label><span>Compás ${b + 1}</span><select data-chordbar="${b}"><option value="">—</option>${allowed.map(n => `<option value="${esc(n)}"${state.chords[b] === n ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>`).join('')}`;
+  };
+  drawChords();
   if (paint) host.querySelector('.lm-writer').classList.add('lm-locked-notes');
   host.addEventListener('change', e => {
-    if (e.target.id === 'lmTone') { tonalidad = e.target.value; if (TONE_ARM[tonalidad] !== undefined) armadura = TONE_ARM[tonalidad]; retune(); }
+    if (e.target.id === 'lmTone') { tonalidad = e.target.value; if (arms.includes(toneArm(tonalidad))) armadura = toneArm(tonalidad); retune(); if (rs.acordes && !rs.acordes.fijos) { state.chords = []; drawChords(); } }
+    if (e.target.id === 'lmMod') pickMod(Number(e.target.value));
+    const cb = e.target.closest('[data-chordbar]');
+    if (cb) state.chords[Number(cb.dataset.chordbar)] = cb.value;
     if (e.target.id === 'lmArm') { armadura = Number(e.target.value); retune(); }
     const sel = e.target.closest('[data-dynbar]');
     if (sel) state.dyn[sel.dataset.dynbar] = sel.value;
@@ -155,6 +179,12 @@ export async function creatividad(host, ex, env) {
   host.addEventListener('click', e => {
     const m = e.target.closest('[data-meter]');
     const pk = e.target.closest('[data-pick]');
+    const nm = e.target.closest('[data-nextmeter]');
+    if (nm) {
+      w.setNextMeter(nm.dataset.nextmeter);
+      host.querySelectorAll('[data-nextmeter]').forEach(b => b.setAttribute('aria-pressed', String(b === nm)));
+      host.querySelector('#lmNextNote').textContent = `El próximo compás que empieces irá en ${nm.dataset.nextmeter} (si el anterior está completo).`;
+    }
     if (m) { meter = m.dataset.meter; host.querySelectorAll('[data-meter]').forEach(b => b.setAttribute('aria-pressed', String(b === m))); w.setMeter(meter); }
     if (pk) { state.pickup = Number(pk.dataset.pick); host.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', String(b === pk))); w.refresh(); }
   });
@@ -186,13 +216,15 @@ export async function creatividad(host, ex, env) {
   const tokens = w.tokens();
   const barBeats = barBeatsOf(meter);
   const lyrics = host.querySelector('#lmLyrics')?.value.trim() || '';
+  const plan4 = rs.cambiosCompas ? w.plan() : null;
   const finalText = rs.final || p.final;
   const c = checkComposition(tokens, {
     barBeats, bars, figures: paint ? null : figures, notes: rs.notas || null,
     endSteps: finalText && finalText !== 'tonica' ? String(finalText).split('|') : null, endPc: finalText === 'tonica' ? [tonicPc()] : null, endFigure: rs.finalFigura || null,
     intervals: rs.incluyeIntervalos || null, any: rs.incluyeAlguna || null,
     maxLeap: rs.saltoMax ?? null, mustFigures: mustOf(rs.mustInclude), semitones: rs.mustInclude && rs.mustInclude.semitonos ? rs.mustInclude.semitonos.map(x => x.split('-').map(stepOf)) : null,
-    pickup: state.pickup, firstBeatNote: (rs.reglas || []).some(r => /primer tiempo/.test(r)), extra: extraRules({ rs, p, tokens, given, signs, state, lyrics, barBeats, bars, dyn: dynamics(), tonicPc: tonalidad ? tonicPc() : null, meter }),
+    pickup: state.pickup, firstBeatNote: (rs.reglas || []).some(r => /primer tiempo/.test(r)), sizes: rs.cambiosCompas && plan4 ? plan4.sizes : null,
+    extra: [...extraRules({ rs, p, tokens, given, signs, state, lyrics, barBeats, bars, dyn: dynamics(), tonicPc: tonalidad ? tonicPc() : null, meter }), ...extraRules4({ rs, tokens, meter, plan: plan4, state, tonalidad })],
   });
   saveWork(ex.id, `${tokensText(tokens)}${lyrics ? `\n${lyrics}` : ''}`);
   w.lock();
@@ -201,6 +233,29 @@ export async function creatividad(host, ex, env) {
   host.querySelector('.lm-feedback').innerHTML = `<h2 class="lm-q">Lo que pedía el ejercicio</h2><ul class="lm-rules">${c.rules.map(r => `<li class="${r.ok ? 'ok' : 'bad'}"><span class="dict-sw ${r.ok ? 'ok' : 'bad'}" aria-hidden="true">${GLYPH[r.ok ? 'ok' : 'bad']}</span> <span>${esc(RULE_NAME[r.id] || r.id)}</span><span class="sr-only">: ${r.ok ? 'cumplida' : 'sin cumplir'}</span></li>`).join('')}</ul>`;
   await continueButton(host, 'Ver el resultado');
   return { pct: c.pct, noGrade: true, rulesOk: c.rules.filter(r => r.ok).length, rulesTotal: c.rules.length, marks: c.rules.map(r => (r.ok ? 'ok' : 'bad')), labels: c.rules.map(r => RULE_NAME[r.id] || r.id), mistakes: c.mistakes, note: 'Tu composición queda guardada. Si estás en una clase, envíasela a tu profesor: la escuchará y le pondrá nota.', work: tokensText(tokens), lyrics, meter };
+}
+
+// ---------- Nivel 4: reglas nuevas (sin DOM, se prueban aparte) ----------
+// Tresillos, síncopas (detector métrico), reparto en grupos, cambios de compás, acordes por compás, cadencias y modulación.
+// plan: { sizes, meters } cuando el compás cambia. state.chords: el numeral elegido en cada compás
+export function extraRules4({ rs, tokens, meter, plan = null, state, tonalidad }) {
+  const out = [];
+  if (rs.tresillos) out.push({ id: 'tresillos', ok: tripletBeats(tokens) >= (rs.tresillos.minimo || 1) });
+  if (rs.sincopas || rs.sincopaBarra) {
+    const s = syncopations(tokens, meter, plan);
+    if (rs.sincopas) out.push({ id: 'sincopas', ok: s.length >= (rs.sincopas.minimo || 1) });
+    if (rs.sincopaBarra) out.push({ id: 'sincopaBarra', ok: s.some(x => x.crossesBar) });
+  }
+  if (rs.agrupacion) out.push({ id: 'agrupacion', ok: groupsOk(tokens, meter, { agrupacion: rs.agrupacion }, plan) });
+  if (rs.cambiosCompas) out.push({ id: 'cambiosCompas', ok: meterChanges(plan) >= (rs.cambiosCompas.minimo || 1) });
+  if (rs.acordes) {
+    const r = chordRules(tokens, state.chords, rs.acordes, tonalidad, meter, plan);
+    out.push({ id: 'acordes', ok: r.permitidos && r.fijos && r.notas && r.primer });
+  }
+  if (rs.cadencias) out.push({ id: 'cadencias', ok: rs.cadencias.every(c => cadenceAt(state.chords, c.compas) === c.tipo) });
+  if (rs.cadenciaFinal) out.push({ id: 'cadenciaFinal', ok: state.chords.length > 0 && state.chords.every(Boolean) && cadenciaDe(state.chords) === rs.cadenciaFinal });
+  if (rs.modulacion) out.push({ id: 'modulacion', ok: modulationOk(tokens, { hasta: state.hasta, notaNueva: state.notaNueva }) });
+  return out;
 }
 
 // ---------- Nivel 3: reglas nuevas (sin DOM, se prueban aparte) ----------
