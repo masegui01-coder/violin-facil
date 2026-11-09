@@ -4,7 +4,9 @@
 import { esc } from '../ui.js';
 import { createStaffWriter, tokensToPlay } from './tasks-staff.js';
 import { checkComposition } from './grade.js';
-import { scoreTokens, barBeatsOf, stepOf, noteText, tokensText, FIGURE_BEATS } from './notes.js';
+import { scoreTokens, barBeatsOf, stepOf, noteText, tokensText, FIGURE_BEATS, attackTokens } from './notes.js';
+import { keyTonic } from './tasks-voice.js';
+import { lmSong } from './catalog.js';
 import { gainsFor } from './gen.js';
 import { lmExercise } from './catalog.js';
 import { staffHtml, continueButton, playButton, tokenLabel, GLYPH } from './kit.js';
@@ -21,7 +23,11 @@ export const RULE_NAME = {
   letra: 'Letra', eco: 'El eco repite la llamada', cambiar: 'Solo cambia el final', empieza: 'Empieza igual que la pregunta',
   llamada: 'La llamada acaba en la nota que pide', pregunta: 'La pregunta acaba en el aire (no en do)', respuesta: 'La respuesta acaba en do',
   formaB: 'La parte B es distinta de la A',
+  intervalos: 'Los intervalos pedidos', alguna: 'Figuras nuevas distintas', matices: 'Al menos un matiz', distinta: 'La parte B es distinta de la dada',
+  tonalidad: 'Acaba en la tónica de la tonalidad',
 };
+// Tonalidades del nivel 2 y su armadura (un bemol: fa mayor y re menor; un sostenido: sol mayor y mi menor)
+const TONE_ARM = { 'Do M': 0, 'La m': 0, 'Fa M': -1, 'Re m': -1, 'Sol M': 1, 'Mi m': 1 };
 const SOLFA_INDEX = { do: 0, re: 1, mi: 2, fa: 3, sol: 4, la: 5, si: 6 };
 const letterOf = step => (((step - stepOf('C4')) % 7) + 7) % 7;
 // Final de una frase en su último compás: la última nota que suena, sin los silencios del final y sin la anacrusa
@@ -46,7 +52,7 @@ const endsOn = (bar, letter, pickup = 0) => [pickup, 0].some(k => { const t = ph
 const MIN_B_CHANGES = 2; // compases de B distintos de los de A para que B sea «otra parte»
 const DYN = [['pp', 'pp'], ['p', 'p'], ['mp', 'mp'], ['mf', 'mf'], ['f', 'f'], ['ff', 'ff'], ['cresc', 'cresc.'], ['dim', 'dim.']];
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
-const plain = t => ({ rest: !!t.rest, dur: t.dur, ...(t.rest ? {} : { step: t.step }) });
+const plain = t => ({ rest: !!t.rest, dur: t.dur, ...(t.rest ? {} : { step: t.step, ...(t.acc !== undefined ? { acc: t.acc } : {}) }) });
 const same = (a, b) => a.length === b.length && a.every((t, i) => t.rest === b[i].rest && t.dur === b[i].dur && (t.rest || t.step === b[i].step));
 
 // Notas por compás (desde 0), con anacrusa
@@ -90,7 +96,14 @@ export async function creatividad(host, ex, env) {
   const given = p.dada || rs.dada ? scoreTokens(p.dada || rs.dada) : null;
   const meters = paint ? [base.meter] : String(rs.compas || (given ? `${given.filter(t => t.bar === 0).reduce((s, t) => s + t.beats, 0)}/4` : '4/4')).split('|');
   let meter = meters[0];
-  const signs = rs.signos || (rs.mustInclude && rs.mustInclude.signos) || null;
+  // Nivel 2: clave de fa, armadura (fija o a elegir), tonalidad (a elegir: da la armadura y la tónica del final) y matices
+  const clef = rs.clave === 'fa' ? 'bass' : 'treble';
+  const arms = String(rs.armadura ?? '0').split('|').map(Number);
+  const tones = rs.tonalidad ? String(rs.tonalidad).split('|') : [];
+  let tonalidad = tones[0] || null;
+  let armadura = tonalidad && TONE_ARM[tonalidad] !== undefined && arms.includes(TONE_ARM[tonalidad]) ? TONE_ARM[tonalidad] : arms[0];
+  const tonicPc = () => (tonalidad ? ((keyTonic(tonalidad).midi % 12) + 12) % 12 : 0);
+  const signs = rs.signos || (rs.mustInclude && rs.mustInclude.signos) || (rs.matices ? ['*'] : null);
   const figures = (rs.figuras || (given ? [...new Set(given.map(t => (t.rest ? `R${t.dur}` : t.dur)))] : ['q', 'h'])).map(normFig);
   const rhythmOnly = !rs.notas && !change && !paint;
   const bars = paint ? base.tokens[base.tokens.length - 1].bar + 1 : rs.compases || (given ? given[given.length - 1].bar + 1 : 2);
@@ -101,8 +114,11 @@ export async function creatividad(host, ex, env) {
     <select data-dynbar="${b + 1}"><option value="">—</option>${DYN.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>`).join('')}
     <label class="lm-check"><input type="checkbox" data-fermata> <span>Calderón al final</span></label></fieldset>`;
   host.innerHTML = `<p>${esc(p.consigna || '')}</p>
-    ${given && !change ? `<p class="dict-staff-label">${p.dada || rs.dada ? 'La llamada de la app' : ''}</p>${staffHtml(given, { meter, label: given.map(t => tokenLabel(t, env.nom)).join(', ') })}${playButton('lmGivenPlay', 'Escuchar la llamada')}` : ''}
+    ${given && !change ? `<p class="dict-staff-label">${rs.distintaDeDada ? 'La parte A, de la app' : p.dada || rs.dada ? 'La llamada de la app' : ''}</p>${staffHtml(given, { clef, meter, armadura: arms.length === 1 ? arms[0] : 0, label: given.map(t => tokenLabel(t, env.nom)).join(', ') })}${playButton('lmGivenPlay', 'Escuchar la parte dada')}` : ''}
     ${meters.length > 1 ? `<div class="setting"><span id="lmMeterLbl">Compás</span><div class="seg ${meters.length === 2 ? 'two' : 'three'}" role="group" aria-labelledby="lmMeterLbl">${meters.map((m, i) => `<button type="button" data-meter="${m}" aria-pressed="${i === 0}">${m}</button>`).join('')}</div></div>` : ''}
+    ${tones.length > 1 ? `<div class="setting"><label for="lmTone">Tonalidad</label><select id="lmTone">${tones.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>` : ''}
+    ${arms.length > 1 && tones.length < 2 ? `<div class="setting"><label for="lmArm">Armadura</label><select id="lmArm">${arms.map(a => `<option value="${a}">${a < 0 ? 'Un bemol' : a > 0 ? 'Un sostenido' : 'Sin alteraciones'}</option>`).join('')}</select></div>` : (armadura ? `<p class="lm-notice">${armadura < 0 ? 'Armadura de un bemol: el si es si♭.' : 'Armadura de un sostenido: el fa es fa♯.'}</p>` : '')}
+    ${clef === 'bass' ? '<p class="lm-notice">Escribes en clave de fa.</p>' : ''}
     ${rs.anacrusa ? '<div class="setting"><span id="lmPickLbl">Anacrusa</span><div class="seg three" role="group" aria-labelledby="lmPickLbl"><button type="button" data-pick="0" aria-pressed="true">Sin anacrusa</button><button type="button" data-pick="1" aria-pressed="false">1 pulso</button><button type="button" data-pick="2" aria-pressed="false">2 pulsos</button></div></div>' : ''}
     <p class="dict-staff-label">${paint ? esc(base.from) : change ? 'La melodía (cambia el final)' : 'Tu composición'}</p><div class="lm-writer"></div>
     ${signs ? barSelect(bars) : ''}
@@ -114,10 +130,14 @@ export async function creatividad(host, ex, env) {
   const extras = () => ({ dynamics: dynamics(), pickup: state.pickup, repeat: state.repeat });
   const initial = paint ? base.tokens.map(plain) : change ? given.map(plain) : [];
   const w = createStaffWriter(host.querySelector('.lm-writer'), {
-    figures, rhythmOnly, max: paint ? initial.length : 64, nom: env.nom, say: env.say, meter, initial, extras, breath: !!rs.comas,
+    figures, rhythmOnly, max: paint ? initial.length : 64, nom: env.nom, say: env.say, meter, initial, extras, breath: !!rs.comas, clef, armadura,
+    accidentals: !rhythmOnly && (armadura !== 0 || arms.length > 1 || (rs.notas || []).some(n => /[#b]/.test(n)) || (env.level >= 2 && env.unit >= 6)), cursor: clef === 'bass' ? 22 : null,
   });
+  const retune = () => { w.setArmadura(armadura); };
   if (paint) host.querySelector('.lm-writer').classList.add('lm-locked-notes');
   host.addEventListener('change', e => {
+    if (e.target.id === 'lmTone') { tonalidad = e.target.value; if (TONE_ARM[tonalidad] !== undefined) armadura = TONE_ARM[tonalidad]; retune(); }
+    if (e.target.id === 'lmArm') { armadura = Number(e.target.value); retune(); }
     const sel = e.target.closest('[data-dynbar]');
     if (sel) state.dyn[sel.dataset.dynbar] = sel.value;
     if (e.target.closest('[data-fermata]')) state.fermata = e.target.checked;
@@ -130,8 +150,25 @@ export async function creatividad(host, ex, env) {
     if (m) { meter = m.dataset.meter; host.querySelectorAll('[data-meter]').forEach(b => b.setAttribute('aria-pressed', String(b === m))); w.setMeter(meter); }
     if (pk) { state.pickup = Number(pk.dataset.pick); host.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', String(b === pk))); w.refresh(); }
   });
-  host.querySelector('#lmGivenPlay')?.addEventListener('click', () => { stopSound(); playNotes(tokensToPlay(given.map(plain)), BPM); });
-  host.querySelector('#lmMinePlay').addEventListener('click', () => { stopSound(); playEvents(eventsOf(w.tokens(), meter, state.pickup, dynamics(), rhythmOnly)); });
+  host.querySelector('#lmGivenPlay')?.addEventListener('click', () => { stopSound(); playNotes(tokensToPlay(attackTokens(given)), BPM); });
+  // lo que suena al escuchar: lo escrito; con una parte dada (A), A – B – A; con acompañamiento, la canción y el bajo juntos
+  const listen = () => {
+    const mine = eventsOf(w.tokens(), meter, state.pickup, dynamics(), rhythmOnly);
+    const spb = 60 / BPM;
+    if (rs.distintaDeDada && given) {
+      const a = eventsOf(attackTokens(given), meter, 0, [], false);
+      const lenA = given.reduce((s, t) => s + t.beats, 0) * spb;
+      const lenB = w.tokens().reduce((s, t) => s + (FIGURE_BEATS[t.dur] || 0), 0) * spb;
+      return [...a, ...mine.map(e => ({ ...e, at: e.at + lenA })), ...a.map(e => ({ ...e, at: e.at + lenA + lenB }))];
+    }
+    if (rs.acompana) {
+      const song = lmSong(env.level, rs.acompana);
+      const melody = song ? attackTokens(scoreTokens(song.partitura)).filter(t => !t.rest).map(t => ({ midi: t.midi + 12, at: t.start * spb, dur: t.beats * spb * LEGATO, gain: 0.8 })) : [];
+      return [...melody, ...mine];
+    }
+    return mine;
+  };
+  host.querySelector('#lmMinePlay').addEventListener('click', () => { stopSound(); playEvents(listen()); });
   if (workOf(ex.id)) env.say('Tienes una composición guardada de otra vez: puedes escribir una nueva');
 
   await new Promise(r => host.querySelector('[data-check]').addEventListener('click', r, { once: true }));
@@ -139,9 +176,11 @@ export async function creatividad(host, ex, env) {
   const tokens = w.tokens();
   const barBeats = barBeatsOf(meter);
   const lyrics = host.querySelector('#lmLyrics')?.value.trim() || '';
+  const finalText = rs.final || p.final;
   const c = checkComposition(tokens, {
-    barBeats, bars, figures: paint ? null : figures, notes: rs.notas ? rs.notas.map(stepOf) : null,
-    endSteps: (rs.final || p.final) ? String(rs.final || p.final).split('|').map(stepOf) : null, endFigure: rs.finalFigura || null,
+    barBeats, bars, figures: paint ? null : figures, notes: rs.notas || null,
+    endSteps: finalText && finalText !== 'tonica' ? String(finalText).split('|') : null, endPc: finalText === 'tonica' ? [tonicPc()] : null, endFigure: rs.finalFigura || null,
+    intervals: rs.incluyeIntervalos || null, any: rs.incluyeAlguna || null,
     maxLeap: rs.saltoMax ?? null, mustFigures: mustOf(rs.mustInclude), semitones: rs.mustInclude && rs.mustInclude.semitonos ? rs.mustInclude.semitonos.map(x => x.split('-').map(stepOf)) : null,
     pickup: state.pickup, firstBeatNote: (rs.reglas || []).some(r => /primer tiempo/.test(r)), extra: extraRules({ rs, p, tokens, given, signs, state, lyrics, barBeats, bars, dyn: dynamics() }),
   });
@@ -164,10 +203,14 @@ function mustOf(mi) {
 // Reglas que no son de notas: matices, barra de repetición, coma, anacrusa, letra, eco, «solo el final», «empieza igual»
 export function extraRules({ rs, p, tokens, given, signs, state, lyrics, barBeats, bars, dyn }) {
   const out = [];
-  if (signs) {
+  if (signs && !rs.matices) {
     const used = new Set(dyn.map(m => m.signo));
     out.push({ id: 'signos', ok: signs.every(s => used.has(s)) });
   }
+  // «matices: { minimo }»: al menos ese número de matices escritos (cualquiera; el calderón no cuenta)
+  if (rs.matices) out.push({ id: 'matices', ok: dyn.filter(m => m.signo !== 'calderon').length >= (rs.matices.minimo || 1) });
+  // «distintaDeDada»: la parte escrita no repite la dada
+  if (rs.distintaDeDada && given) out.push({ id: 'distinta', ok: tokens.length > 0 && !same(tokens.map(plain), given.map(plain)) });
   if (rs.repeticion) out.push({ id: 'repeticion', ok: !!state.repeat });
   if (rs.comas) out.push({ id: 'comas', ok: tokens.some(t => t.breath) });
   if (rs.anacrusa) out.push({ id: 'anacrusa', ok: state.pickup > 0 });
@@ -217,7 +260,7 @@ function eventsOf(tokens, meter, pickup, dyn, clap) {
   const gains = gainsFor(withBars, dyn);
   const fermata = dyn.some(m => m.signo === 'calderon');
   return withBars.filter(t => !t.rest).map((t, i, arr) => ({
-    midi: clap ? 72 : stepMidi(t.step), at: t.start * spb,
+    midi: clap ? 72 : (t.midi ?? stepMidi(t.step)), at: t.start * spb,
     dur: t.beats * spb * LEGATO * (fermata && i === arr.length - 1 ? FERMATA : 1), gain: gains[withBars.indexOf(t)],
   }));
 }

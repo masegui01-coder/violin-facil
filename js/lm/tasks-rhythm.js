@@ -3,11 +3,13 @@
 import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
-import { barBeatsOf } from './notes.js';
-import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton } from './kit.js';
+import { barBeatsOf, pulseOfParams } from './notes.js';
+import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton, CLEF } from './kit.js';
+import { formOf, expandForm } from './form.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 import { outputLatency } from '../audio.js';
 import { follow } from './systems.js';
+import { toleranceMs } from './rhythm-plan.js';
 
 const TAP_TOLERANCE_MS = { facil: 120, medio: 80 };
 const AFTER_END_S = 0.8;
@@ -16,14 +18,20 @@ const STOP_NAMES = {
   'q>Rq': 'Sonó una negra donde había un silencio', 'h-corta': 'Una blanca duró solo un pulso', 'w-corta': 'Una redonda se cortó a la mitad',
   'Rw-salto': 'Se saltó el silencio', compas: 'Un compás tuvo un pulso de más', matiz: 'Un compás sonó con el matiz cambiado',
   calderon: 'No esperó en el calderón', voz: 'Una nota del ostinato (voz 1) cambió de altura', anacrusa: 'La anacrusa cayó en la parte fuerte',
+  'q.e>qq': 'Una negra con puntillo y su corchea sonaron como dos negras', 'h.>h': 'Una blanca con puntillo duró solo dos pulsos',
+  'ssss>ee': 'Cuatro semicorcheas sonaron como dos corcheas', 'ess>sse': 'Un grupo de corchea y dos semicorcheas cambió de orden',
+  'e.s>ee': 'Un saltillo sonó como dos corcheas iguales', '6/8>3/4': 'El 6/8 sonó como un 3/4 (tres negras en lugar de dos con puntillo)',
+  'R>e': 'Sonó un silencio de corchea o de negra con puntillo', casilla: 'En la 2.ª vuelta no saltó la casilla 1',
+  dc: 'No volvió al principio (D.C.) o no paró en el Fine', alteracion: 'Una nota sonó sin la alteración de la armadura', nota: 'Una nota sonó un escalón más arriba o más abajo',
 };
 
 // Lo que se lee en el STOP: la lectura con sus matices, calderón y anacrusa; si el error es de voz, encima va el
 // ostinato que toca la app (voz 1), con su propio ritmo repetido, y debajo la voz del alumno (voz 2)
 function stopScore(tokens, ostinato, base, env) {
   const meter = base.compas || '4/4';
-  const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0 };
-  const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
+  const opts = { meter, dynamics: base.matices || [], pickup: base.anacrusa || 0, clef: CLEF[base.clave] || 'treble', armadura: base.armadura || 0, form: formOf(base), pulso: base.pulso || null };
+  // en el STOP melódico se ven las alturas (el error puede estar en una nota)
+  const rhythm = staffHtml(tokens, { ...opts, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: !!base.melodic })).join(', ') });
   if (!ostinato) return rhythm;
   return twoVoices(tokens, ostinato, base, env);
 }
@@ -31,8 +39,12 @@ function stopScore(tokens, ostinato, base, env) {
 // Las dos voces como un sistema: voz 1 (el ostinato de la app) arriba y voz 2 (la del alumno) abajo, compás a compás
 export function twoVoices(tokens, ostinato, base, env, marks = []) {
   const label = `Voz 1, la app: ${ostinato.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}. Voz 2, tú: ${tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ')}`;
-  return `<p class="lm-system-legend">Arriba, voz 1: la app (el ostinato, se repite) · Abajo, voz 2: tú</p>
-    ${systemHtml([{ tokens: ostinato }, { tokens, marks }], { meter: base.compas || '4/4', pickup: base.anacrusa || 0, label })}`;
+  // la voz 1 puede ir en clave de fa (un bajo): gran pentagrama con la voz del alumno (clave de sol) arriba y la de la app abajo
+  const bass = base.voz1Clave === 'fa' || base.voz1Clave === 'bass';
+  const voices = bass ? [{ tokens, marks }, { tokens: ostinato, clef: 'bass' }] : [{ tokens: ostinato }, { tokens, marks }];
+  const legend = bass ? 'Arriba, voz 2: tú (clave de sol) · Abajo, voz 1: la app (el bajo, en clave de fa, se repite)' : 'Arriba, voz 1: la app (el ostinato, se repite) · Abajo, voz 2: tú';
+  return `<p class="lm-system-legend">${legend}</p>
+    ${systemHtml(voices, { meter: base.compas || '4/4', pickup: base.anacrusa || 0, label, armadura: base.armadura || 0, pulso: base.pulso || null })}`;
 }
 
 const PULSE_LEVEL = 0.25;
@@ -66,13 +78,20 @@ export async function stopGame(host, p, env) {
   const spb = 60 / bpm;
   const window = stopWindow(p.tolerancia, barBeats);
   const kinds = stopKinds(p.errores);
+  const pulse = pulseOfParams(p.base);
+  const counts = Math.max(1, Math.round(barBeats / pulse));
+  const pickup0 = p.base.anacrusa || 0;
+  const form = formOf(p.base);
+  // lo que suena: la lectura en el orden de su forma (repeticiones, casillas, D.C.); lo que se ve, la partitura escrita
+  const playBase = form ? expandForm(tokens, form, { pickup: pickup0, barBeats }) : tokens;
+  const ctx = { armadura: p.base.armadura || 0, melodic: !!p.base.melodic, form, up: p.base.clave === 'fa' ? 12 : 0 };
   const ostinato = kinds.includes('voz') ? ostinatoTokens(tokens, p.base) : null;
   const rounds = [];
   const played = new Set(); // rondas ya jugadas: no se repite la misma
   const total = p.rondas || 3;
   for (let k = 0; k < total; k++) {
     if (!env.alive()) return null;
-    const round = stopRoundOf(tokens, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played, round: k, ostinato });
+    const round = stopRoundOf(playBase, { kinds, seed: env.seed + k * 101, barBeats, matices: p.base.matices || [], pickup: p.base.anacrusa || 0, avoid: played, round: k, ostinato, ctx });
     played.add(round.key);
     host.innerHTML = `<p class="eyebrow">Ronda ${k + 1} de ${total}</p>
       <p class="muted">La app toca este ritmo sobre el pulso, pero se equivocará en algún momento. ¡Pulsa STOP en cuanto lo notes!</p>
@@ -86,11 +105,17 @@ export async function stopGame(host, p, env) {
     stopBtn.focus();
     const phase = text => { host.querySelector('#lmStopPhase').textContent = text; };
     phase('Claqueta…');
-    const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
+    const t0 = clicks(counts, bpm / pulse, { accentEvery: counts });
     const { end, beats } = playStopRound(round, { t0, spb, barBeats, pickup: p.base.anacrusa || 0 });
-    // el compás que suena, resaltado y a la vista (con el STOP fijo abajo)
-    const unfollow = follow(host, () => (now() - t0) / spb - round.offset, { barBeats, pickup: p.base.anacrusa || 0 });
-    clicks(Math.ceil(beats), bpm, { at: t0, accentEvery: barBeats, level: PULSE_LEVEL });
+    // el compás que suena, resaltado y a la vista (con el STOP fijo abajo); con forma, el compás escrito que corresponde
+    const scoreBeat = beat => {
+      if (!form) return beat;
+      let e = null;
+      for (const t of round.played) { if (t.start <= beat + 1e-9) e = t; else break; }
+      return e && e.scoreStart !== undefined ? e.scoreStart + Math.min(Math.max(0, beat - e.start), e.beats) : beat;
+    };
+    const unfollow = follow(host, () => scoreBeat((now() - t0) / spb - round.offset), { barBeats, pickup: p.base.anacrusa || 0 });
+    clicks(Math.ceil(beats / pulse), bpm / pulse, { at: t0, accentEvery: counts, level: PULSE_LEVEL });
     const lat = outputLatency();
     const pressed = await new Promise(resolve => {
       const done = beat => { clearInterval(timer); resolve(beat); };
@@ -127,7 +152,9 @@ export async function stopGame(host, p, env) {
 export async function tapRhythm(host, p, env) {
   const barBeats = barBeatsOf(p.meter);
   const spb = 60 / p.bpm;
-  const tol = (TAP_TOLERANCE_MS[env.variant] || TAP_TOLERANCE_MS.facil) / 1000;
+  const pulse = p.pulso === 'q.' ? 1.5 : 1; // en 6/8 la claqueta marca la negra con puntillo
+  const counts = Math.max(1, Math.round(barBeats / pulse));
+  const tol = toleranceMs(env.variant, p.tokens, p.bpm) / 1000;
   host.innerHTML = `<p class="muted">Toca el botón con el ritmo de la partitura (o pulsa la barra espaciadora). Primero suena un compás de claqueta.</p>
     ${staffHtml(p.tokens, { meter: p.meter, label: p.tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') })}
     <p class="lm-stop-phase" id="lmTapPhase" aria-live="polite">Preparado</p>
@@ -143,11 +170,11 @@ export async function tapRhythm(host, p, env) {
   pad.addEventListener('pointerdown', onTap);
   pad.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') onTap(e); });
   pad.addEventListener('click', e => e.preventDefault());
-  const t0 = clicks(barBeats, p.bpm, { accentEvery: barBeats });
+  const t0 = clicks(counts, p.bpm / pulse, { accentEvery: counts });
   const last = p.tokens[p.tokens.length - 1];
   const end = t0 + (last.start + last.beats) * spb;
   // metrónomo suave en cada pulso mientras se toca (Fácil)
-  if (env.variant === 'facil') clicks(Math.round((end - t0) / spb), p.bpm, { at: t0, accentEvery: barBeats });
+  if (env.variant === 'facil') clicks(Math.round((end - t0) / spb / pulse), p.bpm / pulse, { at: t0, accentEvery: counts });
   host.querySelector('#lmTapPhase').textContent = '¡Ahora!';
   await wait((end - now() + AFTER_END_S) * 1000);
   pad.disabled = true;

@@ -1,6 +1,6 @@
 // Lenguaje musical: corrección de los ejercicios nuevos (sin DOM). Cada marca es «ok» (verde ✓), «near» (amarillo ≈)
 // o «bad» (rojo ✕), el mismo patrón de los dictados; el porcentaje da las estrellas con los mismos escalones.
-import { FIGURE_BEATS, midiOf, nameOfStep } from './notes.js';
+import { FIGURE_BEATS, midiOf, nameOfStep, tokenMidi, tokenName } from './notes.js';
 import { spell } from '../music.js';
 
 // Estrellas del contrato: 1 desde el 60 %, 2 desde el 80 % y 3 desde el 90 %
@@ -49,17 +49,18 @@ export function gradeSung(targets, sung, { tolerance = SING_TOLERANCE.facil } = 
 
 // ---------- Escribir en el pentagrama ----------
 // token: { step } (nota) o { rest: true }, y dur ('q', 'h'…). Altura y figura bien: ok; una de las dos: near.
+// La altura se compara por la nota real (midi): fa♯ no es fa. Una ficha sin nombre usa su escalón sin alteración.
 export function writtenMark(want, got) {
   if (!got) return 'bad';
-  const pitch = want.rest ? !!got.rest : !got.rest && got.step === want.step;
+  const pitch = want.rest ? !!got.rest : !got.rest && got.step !== undefined && tokenMidi(got) === tokenMidi(want);
   const figure = got.dur === want.dur;
   return pitch && figure ? 'ok' : pitch || figure ? 'near' : 'bad';
 }
 export function gradeWriting(target, written, { pitchOnly = false } = {}) {
-  const marks = target.map((w, i) => (pitchOnly && written[i] ? (written[i].step === w.step ? 'ok' : 'bad') : writtenMark(w, written[i])));
+  const marks = target.map((w, i) => (pitchOnly && written[i] ? (!written[i].rest && tokenMidi(written[i]) === tokenMidi(w) ? 'ok' : 'bad') : writtenMark(w, written[i])));
   const extra = Math.max(0, written.length - target.length);
-  // qué nota era y cuál se escribió («E4>F4»), o la figura que tocaba
-  const pitchCode = (w, got) => (w.rest || got.rest || got.step === undefined || w.step === undefined ? 'nota' : `${nameOfStep(w.step)}>${nameOfStep(got.step)}`);
+  // qué nota era y cuál se escribió («E4>F4», «B4>Bb4»), o la figura que tocaba
+  const pitchCode = (w, got) => (w.rest || got.rest || got.step === undefined || w.step === undefined ? 'nota' : `${tokenName(w)}>${tokenName(got)}`);
   const mistakes = target.map((w, i) => (marks[i] === 'ok' ? null : !written[i] ? 'falta'
     : written[i].dur !== w.dur ? `fig-${w.dur}` : pitchCode(w, written[i])));
   return { marks, extra, pct: pctOf(marks, extra), mistakes: mistakeCodes([...mistakes, extra ? 'sobra' : null]) };
@@ -141,7 +142,12 @@ const figKey = t => (t.rest ? `R${t.dur}` : t.dur);
 // pickup: pulsos de la anacrusa (los compases se cuentan desde ahí). mustFigures admite figuras («h», «Rw»), notas
 // («D5») y «en cada compás» (esa figura en todos los compases). firstBeatNote: cada compás empieza con nota.
 // extra: reglas ya comprobadas fuera ({ id, ok }: signos, coma, barra de repetición, eco…)
-export function checkComposition(tokens, { barBeats, bars, figures = null, notes = null, endSteps = null, endFigure = null, maxLeap = null, mustFigures = null, semitones = null, pickup = 0, firstBeatNote = false, extra = [] }) {
+// Las notas permitidas, el final y las obligatorias se dan como nombres con altura real («Bb4», «F#4»): se comparan por
+// midi (o, con números, por escalón, como antes). endPc: el final puede ser cualquier octava de esas notas (tónica elegida).
+// intervals: números de intervalo (3, 5, 8…) que deben aparecer entre dos notas seguidas. any: { de: [figuras], distintas }.
+const isName = x => typeof x === 'string';
+const pitchIs = (t, x) => !t.rest && (isName(x) ? tokenMidi(t) === midiOf(x) : t.step === x);
+export function checkComposition(tokens, { barBeats, bars, figures = null, notes = null, endSteps = null, endPc = null, endFigure = null, maxLeap = null, mustFigures = null, semitones = null, pickup = 0, firstBeatNote = false, intervals = null, any = null, extra = [] }) {
   const total = tokens.reduce((s, t) => s + (FIGURE_BEATS[t.dur] ?? 0), 0);
   const shift = pickup ? barBeats - pickup : 0;
   let sum = shift;
@@ -161,17 +167,28 @@ export function checkComposition(tokens, { barBeats, bars, figures = null, notes
     { id: 'compases', ok: !crosses && tokens.length > 0 },
     { id: 'figuras', ok: !figures || tokens.every(t => figures.includes(figKey(t))) },
   ];
-  if (notes) rules.push({ id: 'notas', ok: sounding.length > 0 && sounding.every(t => notes.includes(t.step)) });
-  if (endSteps) rules.push({ id: 'final', ok: !!last && endSteps.includes(last.step) && (!endFigure || last.dur === endFigure) });
+  if (notes) rules.push({ id: 'notas', ok: sounding.length > 0 && sounding.every(t => notes.some(x => pitchIs(t, x))) });
+  if (endSteps || endPc) {
+    const okPitch = !!last && (endPc ? endPc.includes(((tokenMidi(last) % 12) + 12) % 12) : endSteps.some(x => pitchIs(last, x)));
+    rules.push({ id: 'final', ok: okPitch && (!endFigure || last.dur === endFigure) });
+  } else if (endFigure) rules.push({ id: 'final', ok: !!last && last.dur === endFigure });
   if (maxLeap !== null) rules.push({ id: 'saltos', ok: sounding.every((t, i) => i === 0 || Math.abs(t.step - sounding[i - 1].step) <= maxLeap) });
   if (mustFigures) {
-    const has = (t, k) => (/^[A-G][#b]?\d$/.test(k) ? !t.rest && nameOfStep(t.step) === k : figKey(t) === k);
+    const has = (t, k) => (/^[A-G][#b]?\d$/.test(k) ? !t.rest && tokenMidi(t) === midiOf(k) : figKey(t) === k);
     const barsIn = new Set(barOf.map(b => b.bar));
     rules.push({ id: 'incluye', ok: Object.entries(mustFigures).every(([k, n]) => (typeof n === 'string'
       ? [...barsIn].every(b => tokens.some((t, i) => barOf[i].bar === b && has(t, k)))
       : tokens.filter(t => has(t, k)).length >= n)) });
   }
   if (firstBeatNote) rules.push({ id: 'tiempo1', ok: tokens.length > 0 && tokens.every((t, i) => !barOf[i].first || !t.rest) });
+  if (intervals) {
+    const found = new Set(sounding.slice(1).map((t, i) => Math.abs(t.step - sounding[i].step) + 1));
+    rules.push({ id: 'intervalos', ok: intervals.every(n => found.has(n)) });
+  }
+  if (any) {
+    const kinds = new Set(tokens.filter(t => any.de.includes(figKey(t))).map(figKey));
+    rules.push({ id: 'alguna', ok: kinds.size >= (any.distintas || 1) });
+  }
   extra.forEach(r => rules.push(r));
   if (semitones) {
     const pairs = sounding.slice(1).map((t, i) => [sounding[i].step, t.step].sort((a, b) => a - b).join('-'));

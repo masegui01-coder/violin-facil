@@ -1,7 +1,7 @@
 // Generadores puros del curso (sin DOM, con semilla: toda la clase recibe lo mismo): rondas del juego STOP a partir de
 // la lectura rítmica de la unidad, ritmos con las figuras permitidas y preguntas de discriminación auditiva.
 import { rng } from '../generate.js';
-import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens } from './notes.js';
+import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens, keyAcc } from './notes.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
@@ -62,7 +62,8 @@ export function ostinatoTokens(reading, { voz1 = null, compas = '4/4', anacrusa 
 }
 
 // Interpretación correcta de la lectura: volumen por compás (matices y reguladores) y calderón
-export function stopBase(base, { matices = [] } = {}) {
+// melodic: las notas suenan en su altura (STOP melódico); up: octavas de más (la clave de fa se oye una octava más arriba)
+export function stopBase(base, { matices = [], melodic = false, up = 0 } = {}) {
   const ts = withStarts(base);
   const gains = gainsFor(ts, matices);
   const fermata = (matices.find(m => m.signo === 'calderon') || {}).compas;
@@ -71,10 +72,23 @@ export function stopBase(base, { matices = [] } = {}) {
     const gain = gains[j];
     const lastInBar = !ts.some(x => x.bar === t.bar && x.start > t.start);
     const hold = fermata && bar === fermata && lastInBar && !t.rest ? t.beats : 0;
-    const midi = t.rest ? 0 : 72;
+    const midi = t.rest ? 0 : melodic && t.midi ? t.midi + up : 72;
     return { ...t, gain, hold, midi };
   });
 }
+
+// ----- Nivel 2: contexto de la ronda (armadura, forma, melodía) y errores nuevos -----
+const isNote = t => !t.rest;
+const same = (a, b, d) => a && b && !a.rest && !b.rest && a.dur === d && b.dur === d;
+// Notas de la escala de la tonalidad (por la armadura: fa mayor / re menor, do mayor / la menor, sol mayor / mi menor)
+const SCALE_PCS = { '-1': [5, 7, 9, 10, 0, 2, 4], 0: [0, 2, 4, 5, 7, 9, 11], 1: [7, 9, 11, 0, 2, 4, 6] };
+export function scaleStep(midi, dir, armadura = 0) {
+  const pcs = SCALE_PCS[armadura] || SCALE_PCS[0];
+  for (let m = midi + dir; Math.abs(m - midi) < 6; m += dir) if (pcs.includes(((m % 12) + 12) % 12)) return m;
+  return midi + 2 * dir;
+}
+// Alteración que pone la armadura a una nota (si la tiene): -1 (bemol) o 1 (sostenido)
+const keyedAcc = (t, armadura) => (isNote(t) && t.name ? keyAcc(t.name[0], armadura) : 0);
 
 const MUTATIONS = {
   'q>ee': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q', apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i], dur: 'e' }], at: 0.5 },
@@ -91,8 +105,51 @@ const MUTATIONS = {
   calderon: { can: (ts, i) => ts[i].hold > 0, apply: (ts, i) => [{ ...ts[i], hold: 0 }], at: 'end' },
   // voz cambiada: una nota del ostinato suena a otra altura
   voz: { can: (ts, i) => !ts[i].rest && ts[i].midi > 0, apply: (ts, i) => [{ ...ts[i], midi: ts[i].midi + WRONG_STEP }], at: 0 },
+  // puntillo olvidado: negra con puntillo + corchea suena como dos negras (el mismo largo de compás)
+  'q.e>qq': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'q.' && ts[i + 1] && !ts[i + 1].rest && ts[i + 1].dur === 'e', apply: (ts, i) => [{ ...ts[i], dur: 'q' }, { ...ts[i + 1], dur: 'q' }], at: 1, span: 2 },
+  // blanca con puntillo cortada: blanca + silencio de negra (con la nota sostenida para que se oiga)
+  'h.>h': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'h.', apply: (ts, i) => [{ ...ts[i], dur: 'h' }, { ...ts[i], dur: 'q', rest: true }], at: 2 },
+  // cuatro semicorcheas tocadas como dos corcheas
+  'ssss>ee': { can: (ts, i) => [0, 1, 2, 3].every(k => ts[i + k] && !ts[i + k].rest && ts[i + k].dur === 's') && Math.abs(ts[i].start % 1) < EPS, apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i + 2], dur: 'e' }], at: 0.25, span: 4 },
+  // corchea + dos semicorcheas ↔ dos semicorcheas + corchea (el grupo cambiado)
+  'ess>sse': {
+    can: (ts, i) => [0, 1, 2].every(k => ts[i + k] && !ts[i + k].rest) && Math.abs(ts[i].start % 1) < EPS
+      && ((ts[i].dur === 'e' && ts[i + 1].dur === 's' && ts[i + 2].dur === 's') || (ts[i].dur === 's' && ts[i + 1].dur === 's' && ts[i + 2].dur === 'e')),
+    apply: (ts, i) => { const d = ts[i].dur === 'e' ? ['s', 's', 'e'] : ['e', 's', 's']; return [0, 1, 2].map(k => ({ ...ts[i + k], dur: d[k] })); }, at: 0.25, span: 3,
+  },
+  // saltillo (corchea con puntillo + semicorchea) tocado como dos corcheas
+  'e.s>ee': { can: (ts, i) => !ts[i].rest && ts[i].dur === 'e.' && ts[i + 1] && !ts[i + 1].rest && ts[i + 1].dur === 's', apply: (ts, i) => [{ ...ts[i], dur: 'e' }, { ...ts[i + 1], dur: 'e' }], at: 0.5, span: 2 },
+  // 6/8 tocado como 3/4: dos negras con puntillo suenan como tres negras
+  // (o una blanca con puntillo de compás entero, que se parte en tres pulsos)
+  '6/8>3/4': {
+    can: (ts, i) => !ts[i].rest && Math.abs(ts[i].start % 3) < EPS && ((ts[i].dur === 'q.' && ts[i + 1] && ts[i + 1].dur === 'q.') || ts[i].dur === 'h.'),
+    apply: (ts, i) => (ts[i].dur === 'h.' ? [0, 1, 2].map(() => ({ ...ts[i], dur: 'q' })) : [{ ...ts[i], dur: 'q' }, { ...ts[i], dur: 'q' }, { ...ts[i + 1], dur: 'q' }]),
+    at: 1, span: (ts, i) => (ts[i].dur === 'h.' ? 1 : 2),
+  },
+  // silencio con palmada: un silencio de corchea o de negra con puntillo suena
+  'R>e': { can: (ts, i) => ts[i].rest && (ts[i].dur === 'e' || ts[i].dur === 'q.'), apply: (ts, i) => [{ ...ts[i], rest: false, midi: (ts[i - 1] && ts[i - 1].midi) || (ts[i + 1] && ts[i + 1].midi) || 72 }], at: 0 },
+  // STOP melódico: la nota de la armadura suena natural (el bemol o el sostenido olvidado)
+  alteracion: { can: (ts, i, bar, ctx) => !!ctx.armadura && keyedAcc(ts[i], ctx.armadura) !== 0, apply: (ts, i, ctx) => [{ ...ts[i], midi: ts[i].midi - keyedAcc(ts[i], ctx.armadura) }], at: 0 },
+  // …o una nota un escalón más arriba o más abajo dentro de la tonalidad
+  nota: { can: (ts, i, bar, ctx) => isNote(ts[i]) && !!ctx.melodic && i > 0, apply: (ts, i, ctx) => [{ ...ts[i], midi: scaleStep(ts[i].midi, (i % 2 ? 1 : -1), ctx.armadura || 0) }], at: 0 },
+  // casillas: en la 2.ª vuelta suena otra vez la casilla 1 (en lugar de saltar a la 2)
+  casilla: {
+    can: (ts, i, bar, ctx) => !!ctx.form && ctx.form.kind === 'casillas' && ts[i].pass === 1 && ts[i].barNo === ctx.form.casilla2[0] && (i === 0 || ts[i - 1].barNo !== ts[i].barNo),
+    span: (ts, i, ctx) => ts.filter(t => t.pass === 1 && t.barNo >= ctx.form.casilla2[0] && t.barNo <= ctx.form.casilla2[1]).length,
+    apply: (ts, i, ctx) => ts.filter(t => t.pass === 0 && t.barNo >= ctx.form.casilla1[0] && t.barNo <= ctx.form.casilla1[1]).map(t => ({ ...t, pass: 1 })), at: 0,
+  },
+  // D.C.: no vuelve al principio (la música acaba antes de tiempo) o no para en el Fine (sigue hasta el final)
+  dc: {
+    can: (ts, i, bar, ctx) => !!ctx.form && ctx.form.kind === 'dc' && ts[i].pass === 1 && (i === 0 || ts[i - 1].pass === 0),
+    span: ts => ts.filter(t => t.pass === 1).length,
+    apply: (ts, i, ctx) => (ctx.variant === 'sigue' ? [...ts.slice(i), ...ts.filter(t => t.pass === 0 && t.barNo > ctx.form.dc.fine).map(t => ({ ...t, pass: 1 }))] : []),
+    at: 0, atEnd: (ts, i, ctx) => ctx.variant === 'sigue',
+  },
 };
-const KINDS_OF = [
+export const KINDS_OF = [
+  [/puntillo olvidado/, ['q.e>qq']], [/blanca con puntillo acortada/, ['h.>h']], [/semicorcheas↔corcheas/, ['ssss>ee']], [/grupo cambiado/, ['ess>sse']],
+  [/casilla equivocada/, ['casilla']], [/6\/8 tocado como 3\/4/, ['6/8>3/4']], [/silencio con palmada/, ['R>e']], [/saltillo tocado/, ['e.s>ee']],
+  [/D\.C\. olvidado/, ['dc']], [/bemol olvidado|sostenido olvidado/, ['alteracion']], [/nota cambiada/, ['nota']],
   [/negra↔silencio/, ['Rq>q', 'q>Rq']], [/corcheas↔negra/, ['q>ee', 'ee>q']], [/blanca acortada/, ['h-corta']],
   [/redonda acortada/, ['w-corta']], [/silencio de compás/, ['Rw-salto']], [/compás de 4/, ['compas']],
   [/matiz/, ['matiz']], [/calderón/, ['calderon']], [/voz cambiada/, ['voz']], [/anacrusa/, ['anacrusa']],
@@ -103,23 +160,40 @@ export function stopKinds(errores = []) {
   return kinds.length ? [...new Set(kinds)] : ['q>ee', 'ee>q'];
 }
 
+// Los sitios donde puede caer cada tipo de error en una lectura: [{ k, i, variant? }] (para la ronda y para las pruebas)
+export function stopOptions(ts, kinds, barBeats = 4, ctx = {}) {
+  const out = [];
+  kinds.forEach(k => {
+    if (k === 'anacrusa') { if (ctx.pickup) out.push({ k, i: 0 }); return; }
+    const m = MUTATIONS[k];
+    if (!m) return;
+    ts.forEach((t, i) => {
+      if (k === 'dc') { if (m.can(ts, i, barBeats, ctx)) out.push({ k, i, variant: 'omite' }, { k, i, variant: 'sigue' }); return; }
+      // la primera figura no se toca (nadie sabe aún por dónde va), salvo en los errores de altura o de forma
+      if ((i > 0 || m.at > 0 || k === 'alteracion' || k === 'casilla') && m.can(ts, i, barBeats, ctx)) out.push({ k, i });
+    });
+  });
+  return out;
+}
+
 // Una ronda: lo que suena (con el error), el pulso donde empieza el error, el código y dónde. offset: pulsos de
 // silencio antes de la primera nota (la anacrusa entra en el último pulso de la claqueta: offset = compás − anacrusa).
 // avoid: rondas ya jugadas («código:posición»), para no repetir la misma.
 // round: número de ronda. Se sortea primero el TIPO de error (los de la unidad por turnos, así salen todos) y
-// después la posición
-export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set(), round = null, ostinato = null }) {
-  const ts = stopBase(base, { matices });
+// después la posición. ctx: { armadura, melodic, form, up } (STOP melódico y forma con casillas o D.C.)
+export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pickup = 0, avoid = new Set(), round = null, ostinato = null, ctx: ctx0 = {} }) {
+  const ctx = { ...ctx0, pickup };
+  const ts = stopBase(base, { matices, melodic: !!ctx.melodic, up: ctx.up || 0 });
   // el error «voz cambiada» cae en el ostinato de la app (voz 1); los demás, en la lectura (voz 2)
   const ost = ostinato || (kinds.includes('voz') ? ostinatoTokens(ts, { compas: `${barBeats}/4`, anacrusa: pickup }) : null);
   const target = k => (k === 'voz' ? ost || [] : ts);
   const r = rng(seed);
   const offset = pickup ? barBeats - pickup : 0;
-  const options = kinds.flatMap(k => (k === 'anacrusa' ? (pickup ? [{ k, i: 0 }] : [])
-    : target(k).map((t, i) => (i > 0 && MUTATIONS[k].can(target(k), i, barBeats) ? { k, i } : null)).filter(Boolean)));
+  const options = kinds.flatMap(k => stopOptions(target(k), [k], barBeats, ctx));
   const fallback = ts.map((t, i) => (i > 0 && MUTATIONS['q>ee'].can(ts, i) ? { k: 'q>ee', i } : null)).filter(Boolean);
   const all = options.length ? options : fallback;
-  let fresh = all.filter(o => !avoid.has(`${o.k}:${o.i}`));
+  const keyOf = o => `${o.k}:${o.i}${o.variant ? `:${o.variant}` : ''}`;
+  let fresh = all.filter(o => !avoid.has(keyOf(o)));
   if (round !== null && fresh.length) {
     const offered = kinds.filter(k => fresh.some(o => o.k === k));
     if (offered.length) {
@@ -129,17 +203,23 @@ export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pic
   }
   // si los errores de la unidad ya se han jugado todos, una figura cambiada nueva antes que repetir una ronda
   const generic = ['q>ee', 'ee>q', 'h-corta', 'Rq>q'].flatMap(k => ts.map((t, i) => (i > 0 && MUTATIONS[k].can(ts, i, barBeats) ? { k, i } : null)).filter(Boolean))
-    .filter(o => !avoid.has(`${o.k}:${o.i}`));
+    .filter(o => !avoid.has(keyOf(o)));
   const pool = fresh.length ? fresh : generic.length ? generic : all;
-  const { k, i } = pool[Math.floor(r() * pool.length)];
-  const key = `${k}:${i}`;
+  const picked = pool[Math.floor(r() * pool.length)];
+  const { k, i } = picked;
+  const key = keyOf(picked);
   // anacrusa en tiempo fuerte: la anacrusa cae en el primer pulso, todo se adelanta y los acentos cambian de sitio
   if (k === 'anacrusa') return { played: withStarts(ts), ostinato: ost, offset: 0, errorBeat: 0, code: k, index: 0, bar: 0, key };
   const m = MUTATIONS[k];
   const src = target(k);
-  const span = m.wholeBar ? src.filter(t => t.bar === src[i].bar).length : (m.span || 1);
-  const mutated = [...src.slice(0, i), ...m.apply(src, i), ...src.slice(i + span)];
-  const errorBeat = offset + (m.at === 'end' ? src[i].start + src[i].beats : src[i].start + m.at);
+  const mctx = { ...ctx, variant: picked.variant };
+  const spanOf = typeof m.span === 'function' ? m.span(src, i, mctx) : m.span || 1;
+  const span = m.wholeBar ? src.filter(t => t.bar === src[i].bar).length : spanOf;
+  const mutated = [...src.slice(0, i), ...m.apply(src, i, mctx), ...src.slice(i + span)];
+  // D.C. que no para en el Fine: el error empieza donde debía parar (el final de la 2.ª vuelta)
+  const atEnd = !!(m.atEnd && m.atEnd(src, i, mctx));
+  const finePoint = atEnd ? ts.filter(t => t.pass === 1 && t.barNo <= ctx.form.dc.fine).reduce((e, t) => Math.max(e, t.start + t.beats), 0) : null;
+  const errorBeat = offset + (atEnd ? finePoint : m.at === 'end' ? src[i].start + src[i].beats : src[i].start + m.at);
   if (k === 'voz') return { played: ts, ostinato: mutated, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
   return { played: withStarts(mutated), ostinato: ost, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
 }
@@ -153,10 +233,23 @@ export function stopWindow(tolerancia, barBeats) {
 }
 
 // ---------- Ritmos con las figuras de la unidad ----------
-// figuras: ['q','Rq','e','h'…] ('e' se usa siempre por parejas en el pulso)
-export function genRhythm({ figuras, barBeats, bars, seed }) {
+// Una célula por su nombre: 'q', 'q.', 'h.', 'ee', 'eee', 'qe', 'q.e', 'ssss', 'ess', 'sse', 'e.s', 'Rq', 'Rq.', 'Ree'…
+// (R delante = silencio). Es el mismo vocabulario de los dictados («cells») del catálogo.
+const CELL_RE = /R?[whqes]\.?/g;
+export const cellTokens = name => (String(name).match(CELL_RE) || []).map(p => (p[0] === 'R' ? note(p.slice(1), true) : note(p)));
+// figuras: ['q','Rq','e','h'…]. Una figura suelta se completa como se escribe: 'e' va por parejas (en 6/8, de tres en tres),
+// 's' en grupos de cuatro, 'e.' con su semicorchea, 'Re' con una corchea y, en 6/8, 'q' con su corchea.
+function cellsFor(f, compound) {
+  if (f === 'e') return [compound ? 'eee' : 'ee'];
+  if (f === 's') return ['ssss', 'ess', 'sse'];
+  if (f === 'e.') return ['e.s'];
+  if (f === 'Re') return [compound ? 'Reee' : 'Ree'];
+  if (f === 'q' && compound) return ['qe'];
+  return [f];
+}
+export function genRhythm({ figuras, barBeats, bars, seed, compound = false }) {
   const r = rng(seed);
-  const cells = figuras.map(f => (f === 'e' ? [note('e'), note('e')] : f.startsWith('R') ? [note(f.slice(1), true)] : [note(f)]));
+  const cells = figuras.flatMap(f => cellsFor(f, compound)).map(name => cellTokens(name));
   const len = c => c.reduce((s, t) => s + FIGURE_BEATS[t.dur], 0);
   const out = [];
   for (let b = 0; b < bars; b++) {
@@ -165,7 +258,8 @@ export function genRhythm({ figuras, barBeats, bars, seed }) {
     for (let guard = 0; left > EPS && guard < 40; guard++) {
       let fit = cells.filter(c => len(c) <= left + EPS);
       if (last && left === barBeats) fit = fit.filter(c => !c[0].rest) || fit;
-      const cell = fit.length ? fit[Math.floor(r() * fit.length)] : [note('q')];
+      // lo que no cabe en ninguna célula se rellena con corcheas (un compás nunca se pasa)
+      const cell = fit.length ? fit[Math.floor(r() * fit.length)] : left >= 0.5 - EPS ? [note('e')] : [note('s')];
       out.push(...cell);
       left -= len(cell);
     }
@@ -188,7 +282,7 @@ export function genMelody({ notas, bars, barBeats, seed, figures = ['q', 'h'], t
     let left = barBeats;
     while (left > EPS) {
       const fit = figures.filter(f => FIGURE_BEATS[f] <= left + EPS);
-      const dur = fit[Math.floor(r() * fit.length)] || 'q';
+      const dur = fit[Math.floor(r() * fit.length)] || (left >= 0.5 - EPS ? 'e' : 's');
       idx = Math.max(0, Math.min(order.length - 1, idx + Math.floor(r() * 3) - 1));
       out.push({ rest: false, dur, name: order[idx], bar: b });
       left -= FIGURE_BEATS[dur];
@@ -255,5 +349,46 @@ export function songQuestions(songs, count, seed) {
     const bars = songs[pick].partitura.split('|').map(x => x.trim()).filter(Boolean).slice(0, 4);
     return { tipo: 'escucharForma', id: `cancion-${k}`, code: 'cancion', q: '¿Qué canción es? Escucha su ritmo', options: songs.map(s => s.titulo), answer: pick,
       play: { partitura: `| ${bars.join(' | ')} |`, clap: true, tempo: songs[pick].tempo || 84 }, why: `Era «${songs[pick].titulo}».` };
+  });
+}
+
+// ---------- Discriminación con las opciones escritas en el catálogo (Nivel 2) ----------
+// opciones: ritmo de un pulso («s s s s», «e s s», «e. s», «e e»), compás («3/4», «6/8») o modo con armadura («Fa mayor», «Re menor»)
+const RHYTHM_OPTION = /^([es]\.?)( [es]\.?)*$/;
+const cellOf = text => (String(text).match(/[es]\.?/g) || []).map(d => `C5${d}`).join(' ');
+export function choiceQuestions(p, count, seed) {
+  const r = rng(seed);
+  const options = p.opciones;
+  const pick = k => (k % 3 === 0 ? Math.floor(r() * options.length) : (Math.floor(r() * options.length) + k) % options.length);
+  // 1) células de ritmo dentro de un pulso: la app palmea la célula cuatro compases y se elige cuál era
+  if (options.every(o => RHYTHM_OPTION.test(o))) {
+    return Array.from({ length: count }, (_, k) => {
+      const a = pick(k);
+      const bar = `${cellOf(options[a])} ${cellOf(options[a])}`;
+      return { tipo: 'escucharForma', id: `ritmo-${k}`, code: 'ritmo', q: 'Escucha el ritmo de un pulso: ¿cuál es?', options: [...options], answer: a,
+        play: { partitura: `| ${Array(4).fill(bar).join(' | ')} |`, clap: true, tempo: 76 }, why: `Era «${options[a]}».` };
+    });
+  }
+  // 2) 3/4 o 6/8: seis corcheas con el apoyo (el golpe grave) cada dos o cada tres
+  if (options.length === 2 && options.every(o => /^[36]\/[48]$/.test(o))) {
+    return Array.from({ length: count }, (_, k) => {
+      const a = pick(k);
+      const six = options[a] === '6/8' ? ['C3e', 'G4e', 'G4e', 'C3e', 'G4e', 'G4e'] : ['C3e', 'G4e', 'C3e', 'G4e', 'C3e', 'G4e'];
+      return { tipo: 'escucharCompas', id: `compas-${k}`, code: '6/8>3/4', q: 'Escucha dónde cae el apoyo: ¿3/4 o 6/8?', options: [...options], answer: a,
+        play: { partitura: `| ${Array(4).fill(six.join(' ')).join(' | ')} |`, compas: options[a], tempo: 138 },
+        why: options[a] === '6/8' ? 'El apoyo llega cada tres corcheas: dos grandes pulsos.' : 'El apoyo llega cada dos corcheas: tres pulsos.' };
+    });
+  }
+  // 3) mayor o menor con armadura: fa mayor frente a re menor
+  const major = scale('F4');
+  const minor = scale('D4', 'menor');
+  return Array.from({ length: count }, (_, k) => {
+    const a = pick(k);
+    const isMinor = /menor/i.test(options[a]);
+    const shape = SHAPES[(k * 2 + Math.floor(r() * SHAPES.length)) % SHAPES.length];
+    const notes = shape.map(d => (isMinor ? minor : major)[d - 1]);
+    const toks = notes.map((n, i) => `${n}${i === notes.length - 1 ? 'h' : 'q'}`);
+    return { tipo: 'escucharModo', id: `modo-${k}`, code: 'modo', q: 'Escucha: ¿en qué tonalidad está?', options: [...options], answer: a,
+      play: { partitura: `| ${toks.join(' ')} |`, tempo: 84, armadura: -1 }, why: isMinor ? 'Re menor: suena más oscuro (re-fa-la).' : 'Fa mayor: luminoso (fa-la-do).' };
   });
 }

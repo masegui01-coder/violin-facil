@@ -2,8 +2,9 @@
 // leyenda y fichas de corrección (✓ ≈ ✕, como en Dictados), botones de nombres de nota y utilidades de espera.
 import { esc, icon } from '../ui.js';
 import { rng } from '../generate.js';
-import { noteCell, clefCell, gapCell, endCell, layoutTokens } from './staff-lm.js';
-import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf } from './notes.js';
+import { noteCell, clefCell, gapCell, endCell, layoutTokens, repStartCell, repEndCell, NOTE_W } from './staff-lm.js';
+import { FIGURE_NAME, REST_NAME, letterText, LETTERS, noteText, barBeatsOf, stepOf, pulseBeatsOf, accidentalSigns, ACC_SYMBOL, accOfName, keyAcc } from './notes.js';
+import { drawMarks, totalBars } from './form.js';
 
 export const GLYPH = { ok: '✓', near: '≈', bad: '✕' };
 export const MARK_TEXT = { ok: 'bien', near: 'casi', bad: 'mal' };
@@ -18,7 +19,7 @@ export const legendHtml = () => `<ul class="dict-legend lm-legend">
 export function tokenLabel(t, nom, { pitch = true } = {}) {
   if (t.rest) return REST_NAME[t.dur.replace('.', '')] || 'Silencio';
   const fig = FIGURE_NAME[t.dur] || 'Nota';
-  return pitch && t.name ? `${fig} ${noteText(t.name, nom)}` : fig;
+  return pitch && t.name ? `${fig} ${noteText(t.name, nom)}${t.tiedFrom ? ' (ligada)' : ''}` : fig;
 }
 
 // Pentagrama de una lista de notas: celdas en fila con barras de compás; under: texto bajo cada nota (letra, nombre)
@@ -33,15 +34,27 @@ function dynamicsByBar(matices = []) {
 // Pentagrama de una lista de notas: celdas en fila agrupadas por compases (un compás nunca se parte entre dos
 // líneas), corcheas unidas por su barra, matices y reguladores debajo, calderones y comas de respiración encima.
 // under: texto bajo cada nota (letra, nombre). dynamics: matices del catálogo. pickup: pulsos de la anacrusa.
-export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false } = {}) {
+export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], under = [], under2 = null, current = -1, bars = true, label = '', dynamics = null, pickup = 0, repeat = false, armadura = 0, form = null, pulso = null, given = 0 } = {}) {
   const barBeats = bars && meter ? barBeatsOf(meter) : null;
-  const lay = layoutTokens(tokens, { barBeats, pickup, clef });
+  const pulse = pulso === 'q.' ? 1.5 : meter ? pulseBeatsOf(meter) : 1;
+  const lay = layoutTokens(tokens, { barBeats, pickup, clef, pulse });
   const dyn = dynamicsByBar(dynamics || []);
-  const groups = [[`<span class="lm-sc">${clefCell(clef, meter)}</span>`]];
+  // alteraciones que se dibujan (las de la armadura no) y largo de cada ligadura de prolongación
+  const signs = accidentalSigns(tokens, lay.map(L => L.bar), armadura);
+  const total = form ? totalBars(tokens, pickup) : 0;
+  const fm = form ? drawMarks(form, total) : {};
+  const groups = [[`<span class="lm-sc">${clefCell(clef, meter, armadura)}</span>`]];
+  const meta = [{}];
   let firstInBar = true;
   tokens.forEach((t, i) => {
     const L = lay[i];
     const barNo = L.bar + 1;
+    const fnum = pickup ? L.bar : L.bar + 1; // número de compás en la forma (0 = anacrusa)
+    const fmark = fm[fnum] || null;
+    if (firstInBar && fmark) {
+      Object.assign(meta[meta.length - 1], fmark.volta ? { volta: fmark.volta, opens: fmark.voltaOpens } : {}, fmark.fine ? { fine: true } : {});
+      if (fmark.start) groups[groups.length - 1].push(`<span class="lm-sc">${repStartCell()}</span>`);
+    }
     const lastOfBar = L.barEnd || i === tokens.length - 1;
     const signs = firstInBar ? (dyn[barNo] || []).filter(m => m.signo !== 'calderon') : [];
     const fermata = lastOfBar && (dyn[barNo] || []).some(m => m.signo === 'calderon');
@@ -49,34 +62,46 @@ export function staffHtml(tokens, { clef = 'treble', meter = null, marks = [], u
     // cresc. / dim. con «hasta»: la línea de guiones sigue bajo cada nota hasta el último compás que abarca
     const swell = !signs.length && (dynamics || []).some(m => DYN_TEXT[m.signo] && m.hasta && barNo >= m.compas && barNo <= m.hasta);
     const dynHtml = signs.length ? `<span class="lm-dyn" lang="it">${signs.map(m => esc(DYN_TEXT[m.signo] || m.signo)).join(' ')}</span>` : swell ? '<span class="lm-dyn lm-dyn-ext" aria-hidden="true">- - -</span>' : '';
-    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
+    // la ligadura llega hasta la nota que sigue (si cruza la barra de compás, también el hueco de la barra)
+    const tieLen = t.tie ? (tokens[i + 1] && lay[i + 1].bar !== L.bar ? NOTE_W + 14 : NOTE_W) : 0;
+    groups[groups.length - 1].push(`<span class="${cls}" data-i="${i}">${noteCell({ ...t, clef, mark: marks[i] || null, beam: L.beam, up: L.up, fermata, breath: !!t.breath, acc: signs[i], tie: tieLen, given: i < given })}${dynHtml}${under[i] !== undefined ? `<span class="lm-under">${esc(under[i])}</span>` : ''}${under2 && under2[i] !== undefined ? `<span class="lm-under lm-under2">${esc(under2[i])}</span>` : ''}</span>`);
     firstInBar = false;
     if (L.barEnd) {
-      groups[groups.length - 1].push(`<span class="lm-sc">${gapCell(true, null, 14)}</span>`);
+      groups[groups.length - 1].push(`<span class="lm-sc">${fmark && fmark.end ? repEndCell() : gapCell(true, null, 14)}</span>`);
       groups.push([]);
+      meta.push({});
       firstInBar = true;
     }
   });
-  groups[groups.length - 1].push(`<span class="lm-sc">${endCell(repeat)}</span>`);
-  const html = groups.filter(g => g.length).map(g => `<span class="lm-bargroup">${g.join('')}</span>`).join('');
-  return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
+  const lastMark = form ? fm[pickup ? lay[lay.length - 1]?.bar : (lay[lay.length - 1]?.bar ?? 0) + 1] : null;
+  if (lastMark && (lastMark.volta || lastMark.fine)) Object.assign(meta[meta.length - 1], lastMark.volta ? { volta: lastMark.volta, opens: lastMark.voltaOpens } : {}, lastMark.fine ? { fine: true } : {});
+  groups[groups.length - 1].push(`<span class="lm-sc">${endCell(repeat || !!(lastMark && lastMark.end))}</span>`);
+  if (lastMark && lastMark.dc) groups[groups.length - 1].push('<span class="lm-dc" lang="it">D.C. al Fine</span>');
+  const html = groups.map((g, k) => ({ g, m: meta[k] || {} })).filter(x => x.g.length).map(({ g, m }) => {
+    const cls = ['lm-bargroup', m.volta ? `lm-volta${m.opens ? ' lm-volta-open' : ''}` : '', m.fine ? 'lm-fine' : ''].filter(Boolean).join(' ');
+    return `<span class="${cls}"${m.volta ? ` data-volta="${m.opens ? m.volta : ''}"` : ''}${m.fine ? ' data-fine="Fine"' : ''}>${g.join('')}</span>`;
+  }).join('');
+  return `<div class="lm-staff${tight(tokens, clef, marks, dynamics) ? ' lm-tight' : ''}"${armadura ? ` data-armadura="${armadura}"` : ''}${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>${html}</div>`;
 }
 
 // Sistema de dos (o más) pentagramas unidos, compás a compás: la voz 1 arriba y la 2 abajo, con la clave, el compás
 // y una llave al principio de cada renglón, y la barra de compás a la misma altura en las dos voces (cada compás es
 // una columna). voices: [{ tokens, label, marks }]. Es lo que se lee a dos voces (ostinato de la app + voz del alumno).
-export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label = '' } = {}) {
+export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label = '', armadura = 0, pulso = null } = {}) {
   const barBeats = meter ? barBeatsOf(meter) : null;
+  const pulse = pulso === 'q.' ? 1.5 : meter ? pulseBeatsOf(meter) : 1;
   const key = x => Math.round(x * 1000);
   // cada voz: sus notas por compás con el instante en que suenan (las notas a la vez van en la misma columna)
   const voiceBars = voices.map(v => {
-    const lay = layoutTokens(v.tokens, { barBeats, pickup, clef });
+    const vc = v.clef || clef;
+    const lay = layoutTokens(v.tokens, { barBeats, pickup, clef: vc, pulse });
+    const signs = accidentalSigns(v.tokens, lay.map(L => L.bar), armadura);
     let at = 0;
     const bars = [];
     v.tokens.forEach((t, i) => {
       const start = t.start ?? at;
       at = start + (t.beats ?? 0);
-      (bars[lay[i].bar] ||= []).push({ start, html: `<span class="lm-sc ${(v.marks || [])[i] || ''}">${noteCell({ ...t, clef, mark: (v.marks || [])[i] || null, beam: lay[i].beam, up: lay[i].up, breath: !!t.breath })}</span>` });
+      (bars[lay[i].bar] ||= []).push({ start, html: `<span class="lm-sc ${(v.marks || [])[i] || ''}">${noteCell({ ...t, clef: vc, mark: (v.marks || [])[i] || null, beam: lay[i].beam, up: lay[i].up, breath: !!t.breath, acc: signs[i] })}</span>`, });
     });
     return bars;
   });
@@ -85,10 +110,11 @@ export function systemHtml(voices, { meter, pickup = 0, clef = 'treble', label =
     const last = b === count - 1;
     // rejilla común del compás: todos los instantes en que empieza alguna nota de alguna voz
     const slots = [...new Set(voiceBars.flatMap(bars => (bars[b] || []).map(n => key(n.start))))].sort((x, y) => x - y);
-    const rows = voiceBars.map(bars => {
+    const rows = voiceBars.map((bars, vi) => {
+      const vc = voices[vi].clef || clef;
       const by = new Map((bars[b] || []).map(n => [key(n.start), n.html]));
       const cells = slots.map(k => by.get(k) || `<span class="lm-sc lm-syshole" aria-hidden="true">${noteCell({ step: null })}</span>`).join('');
-      return `<span class="lm-sysrow">${b === 0 ? `<span class="lm-sc">${clefCell(clef, meter)}</span>` : ''}${cells}<span class="lm-sc">${last ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
+      return `<span class="lm-sysrow" data-clef="${vc}">${b === 0 ? `<span class="lm-sc">${clefCell(vc, meter, armadura)}</span>` : ''}${cells}<span class="lm-sc">${last ? endCell(false) : gapCell(true, null, 14)}</span></span>`;
     }).join('');
     return `<span class="lm-sysbar${b === 0 ? ' lm-sysstart' : ''}" data-sysbar="${b}">${rows}</span>`;
   }).join('');
@@ -118,9 +144,15 @@ export function chipsHtml(marks, labels = []) {
   return `<div class="dict-chips lm-chips" role="list">${marks.map((m, i) => `<span role="listitem" class="dict-chip ${m}" aria-label="${esc(`${labels[i] || `${i + 1}`}: ${MARK_TEXT[m]}`)}"><span aria-hidden="true">${GLYPH[m]}</span><small aria-hidden="true">${i + 1}</small></span>`).join('')}</div>`;
 }
 
-// Botones con los nombres de nota (Do Re Mi… o C D E…)
+// Nombre de una nota sin octava, con su alteración («B», «Bb», «F#») para el alumno: Si, Si♭, Fa♯ (o B, B♭, F♯)
+const ACC_GLYPH = { '#': '♯', b: '♭' };
+export const nameText = (name, nom) => letterText(name[0], nom) + (ACC_GLYPH[name[1]] || '');
+// Las siete notas con la armadura puesta: con un bemol, el «si» es si♭; con un sostenido, el «fa» es fa♯
+export const namesFor = (armadura = 0) => LETTERS.map(l => l + ({ '-1': 'b', 0: '', 1: '#' })[keyAcc(l, armadura)]);
+
+// Botones con los nombres de nota (Do Re Mi… o C D E…); cada uno puede llevar su alteración («Bb»)
 export function nameButtons(letters = LETTERS, nom = 'eu', attr = 'data-name') {
-  return `<div class="lm-names" role="group" aria-label="Nombres de nota">${letters.map(l => `<button type="button" class="lm-name" ${attr}="${l}">${esc(letterText(l, nom))}</button>`).join('')}</div>`;
+  return `<div class="lm-names" role="group" aria-label="Nombres de nota">${letters.map(l => `<button type="button" class="lm-name" ${attr}="${l}">${esc(nameText(l, nom))}</button>`).join('')}</div>`;
 }
 
 export const playButton = (id, text = 'Escuchar') => `<button type="button" class="btn ghost lm-play" id="${id}"><span class="ic">${icon('speaker')}</span>${esc(text)}</button>`;

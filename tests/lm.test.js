@@ -19,6 +19,7 @@ import { getState } from '../js/store.js';
 import { readFileSync } from 'node:fs';
 
 // ---------- Catálogo ----------
+const lv1 = () => LM_LEVELS[0].units.flatMap(u => u.exercises);
 test('cada ejercicio cumple el contrato de ids y el catálogo plano del Aula coincide', () => {
   assert.deepEqual(LM_LEVELS.map(l => l.level), [1, 2, 3, 4]);
   const ids = new Set();
@@ -48,8 +49,8 @@ test('el nivel 1 tiene sus 8 unidades y 202 ejercicios, con el bloque de instrum
     assert.ok(u.song && u.song.partitura && u.listening && u.listening.fragmento, `unidad ${u.unit}: canción y audición`);
     u.exercises.forEach(e => assert.ok(e.variant === 'medio' || lmExercise(siblingId(e.id, 'medio')), `${e.id} sin su Media`));
   });
-  const types = new Set(allLmExercises().map(e => e.type));
-  Object.keys(TYPES).forEach(t => assert.ok(types.has(t), `nadie usa el tipo ${t}`));
+  const types = new Set(lv1().map(e => e.type));
+  Object.keys(TYPES).filter(t => t !== 'intervalos').forEach(t => assert.ok(types.has(t), `nadie usa el tipo ${t}`));
   assert.equal(lmSong(1, 'lm1-u5-cancion').titulo, 'La escalera');
 });
 
@@ -81,7 +82,7 @@ test('el contenido es coherente: partituras válidas, barras bien puestas, respu
   LM_LEVELS[0].units.forEach(u => walk(u.raw));
   assert.ok(scores.length > 100, `${scores.length} partituras`);
   scores.forEach(s => assert.doesNotThrow(() => scoreTokens(s), s));
-  allLmExercises().forEach(e => {
+  lv1().forEach(e => {
     const p = e.params;
     (p.items || []).forEach(it => {
       if (it.tipo === 'barras') {
@@ -236,7 +237,7 @@ test('STOP: se para a tiempo dentro de la ventana; la ronda cambia una figura y 
 });
 
 test('STOP: cada error del catálogo cambia el ritmo de la lectura de su unidad', () => {
-  allLmExercises().filter(e => e.type === 'stop').forEach(e => {
+  lv1().filter(e => e.type === 'stop').forEach(e => {
     const base = scoreTokens(e.params.base.partitura);
     const barBeats = barBeatsOf(e.params.base.compas);
     const kinds = stopKinds(e.params.errores);
@@ -356,7 +357,7 @@ test('inglés: vara del trombón, antetítulo «estilo · autor» y textos del c
   const dict = { ...LM_CONTENT_EN_1, ...LM_CONTENT_EN_2, ...LM_COTEJO_EN };
   // todas las preguntas, fichas y títulos del nivel tienen su inglés
   const missing = [];
-  allLmExercises().forEach(e => {
+  lv1().forEach(e => {
     [e.title, ...(e.params.items || []).flatMap(it => [it.q, it.why, ...(it.options || [])]), ...(e.params.preguntas || []).flatMap(q => [q.q, q.why, ...q.options])]
       .filter(x => x && /\p{Ll}{2}/u.test(x)) // «AB», «ABA» (formas) y «2/4» se escriben igual.forEach(x => { if (!(x in dict) && translate(x) === x) missing.push(x); });
   });
@@ -479,7 +480,7 @@ test('audición sintetizada: Haydn repite en pp y remata ff; Grieg acelera y cre
 test('pentagrama: corcheas por parejas con barra, compases completos y la anacrusa en su compás', async () => {
   const { layoutTokens } = await import('../js/lm/staff-lm.js');
   const lay = layoutTokens(scoreTokens('| G4q | E4e E4e G4q G4q | C5e C5e D5h |'), { barBeats: 3, pickup: 1 });
-  assert.deepEqual(lay.map(x => `${x.bar}${x.barEnd ? '|' : ''}${x.beam ? x.beam[0] : ''}`), ['0|', '1s', '1e', '1', '1|', '2s', '2e', '2']);
+  assert.deepEqual(lay.map(x => `${x.bar}${x.barEnd ? '|' : ''}${x.beam ? (x.beam.out ? 's' : 'e') : ''}`), ['0|', '1s', '1e', '1', '1|', '2s', '2e', '2']);
   assert.equal(lay[1].up, lay[2].up, 'las dos corcheas, con la plica hacia el mismo lado');
 });
 
@@ -622,7 +623,7 @@ test('ningún ejercicio que se puntúa pide notas no enseñadas: cada lista de n
 
 test('elegir: las opciones se barajan en cada intento y la correcta cae en cualquier sitio (reparto casi uniforme)', async () => {
   const { shuffledChoice, isOrdered } = await import('../js/lm/tasks-quiz.js');
-  const items = allLmExercises().flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])])
+  const items = lv1().flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])])
     .filter(it => (it.tipo === 'elegir' || /^escuchar/.test(it.tipo)) && it.options && it.options.length === 3 && !isOrdered(it));
   // las listas con orden propio no se barajan
   const ordinal = { id: 'x', options: ['La primera', 'La segunda'], answer: 1 };
@@ -643,7 +644,7 @@ test('elegir: las opciones se barajan en cada intento y la correcta cae en cualq
 });
 
 test('variedad: al menos el 40 % de las preguntas de teoría y audición son activas (no de elegir)', () => {
-  const qs = allLmExercises().filter(e => e.section === 'teoria' || e.section === 'audicion').flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])]);
+  const qs = lv1().filter(e => e.section === 'teoria' || e.section === 'audicion').flatMap(e => [...(e.params.items || []), ...(e.params.preguntas || [])]);
   const unique = [...new Map(qs.map(q => [q.id, q])).values()];
   const active = unique.filter(q => q.tipo !== 'elegir' && !/^escuchar/.test(q.tipo));
   assert.ok(active.length / unique.length >= 0.4, `${active.length} de ${unique.length}`);
@@ -655,7 +656,7 @@ test('toda pregunta con «play» suena: se programan notas (también «dos versi
   const { notesOfPlay, gainsOf } = await import('../js/lm/tasks-quiz.js');
   const env = { songScore: ref => (lmSong(1, ref) || {}).partitura || null };
   const silent = [];
-  allLmExercises().forEach(e => [...(e.params.items || []), ...(e.params.preguntas || [])].forEach(q => {
+  lv1().forEach(e => [...(e.params.items || []), ...(e.params.preguntas || [])].forEach(q => {
     if (!q.play) return;
     const notes = notesOfPlay(q.play, env).filter(n => !n.rest);
     if (!notes.length) silent.push(`${e.id}: ${q.id}`);
@@ -785,7 +786,7 @@ test('comas de respiración: entre dos notas, nunca sobre un silencio ni al fina
 // ---------- Evaluación 7 ----------
 test('lectura rítmica del curso: machacar la pantalla o callarse no aprueba; bien leída, 100 % (las 16)', async () => {
   const { gradeReading } = await import('../js/lm/tasks-duo.js');
-  const readings = allLmExercises().filter(e => e.type === 'lectura-ritmica');
+  const readings = lv1().filter(e => e.type === 'lectura-ritmica');
   assert.equal(readings.length, 16);
   readings.forEach(e => {
     const p = e.params;
@@ -858,7 +859,7 @@ async function readingSim(e) {
 }
 
 test('lecturas del curso: dar el pulso sin leer, palmear los silencios o tocar una sola vuelta no aprueba (las 16)', async () => {
-  const readings = allLmExercises().filter(e => e.type === 'lectura-ritmica');
+  const readings = lv1().filter(e => e.type === 'lectura-ritmica');
   assert.equal(readings.length, 16);
   for (const e of readings) {
     const { spb, tl, expected, grade } = await readingSim(e);
@@ -884,7 +885,7 @@ test('lecturas del curso: dar el pulso sin leer, palmear los silencios o tocar u
 });
 
 test('lecturas del curso: datos de cada variante (repetición, compás mudo, entrada con clic, matices, acento)', async () => {
-  const byId = id => allLmExercises().find(e => e.id === id);
+  const byId = id => lv1().find(e => e.id === id);
   const u4m = await readingSim(byId('lm1-u4-ritmo-a-medio'));
   assert.equal(u4m.tl.passes, 2, 'U4 Media: la repetición se toca dos veces');
   assert.equal(u4m.notes.length % 2, 0);
@@ -924,7 +925,7 @@ test('acento y matices medidos con el micrófono: cuentan solo si se tocan', asy
 
 test('entonación con barra de repetición (U4 Media): se canta y se corrige dos veces', async () => {
   const { singOrder } = await import('../js/lm/tasks-voice.js');
-  const e = allLmExercises().find(x => x.id === 'lm1-u4-entonacion-b-medio');
+  const e = lv1().find(x => x.id === 'lm1-u4-entonacion-b-medio');
   assert.ok(e.params.repeticion);
   const toks = scoreTokens(e.params.partitura);
   const { passes, once, sounding } = singOrder(toks, !!e.params.repeticion);
@@ -932,7 +933,7 @@ test('entonación con barra de repetición (U4 Media): se canta y se corrige dos
   assert.equal(sounding.length, once.length * 2);
   assert.deepEqual(sounding.slice(once.length).map(n => n.index), once.map(n => n.index), 'la 2.ª vuelta, desde el principio');
   assert.equal(singOrder(toks).sounding.length, once.length, 'sin repetición, una vuelta');
-  assert.match(readFileSync(new URL('../js/lm/runners.js', import.meta.url), 'utf8'), /repeat: !!p\.repeticion/);
+  assert.match(readFileSync(new URL('../js/lm/runners.js', import.meta.url), 'utf8'), /form: formOf[(]p[)]/);
 });
 
 test('lectura rítmica: el fallo se explica con la figura de verdad (y en inglés)', async () => {

@@ -14,7 +14,8 @@ function fitWidth(staff, groups) {
   const room = staff.clientWidth;
   const cell = staff.querySelector('.lm-cell');
   if (!room || !cell) return;
-  const clefW = cell.getBoundingClientRect().height * CLEF_RATIO;
+  const arm = Math.abs(Number(staff.dataset.armadura || 0));
+  const clefW = cell.getBoundingClientRect().height * CLEF_RATIO * (1 + 0.3 * arm);
   const widest = Math.max(...groups.map((g, i) => g.getBoundingClientRect().width + (i ? clefW : 0)));
   if (widest > room) staff.style.setProperty('--lm-fit', String(Math.max(MIN_FIT, Math.floor(room / widest * 100) / 100)));
 }
@@ -45,11 +46,12 @@ function fitStaff(staff) {
   fitWidth(staff, groups);
   if (groups.length < 2) return;
   const clef = staff.querySelector('.lm-clef.bass') ? 'bass' : 'treble';
+  const armadura = Number(staff.dataset.armadura || 0);
   let lineTop = groups[0].offsetTop;
   groups.slice(1).forEach(g => {
     if (g.offsetTop <= lineTop + 2) return;
     lineTop = g.offsetTop;
-    g.insertAdjacentHTML('afterbegin', `<span class="lm-sc lm-sysclef" aria-hidden="true">${clefCell(clef)}</span>`);
+    g.insertAdjacentHTML('afterbegin', `<span class="lm-sc lm-sysclef" aria-hidden="true">${clefCell(clef, null, armadura)}</span>`);
   });
 }
 
@@ -66,7 +68,7 @@ function fitSystem(sys) {
     if (c.offsetTop <= lineTop + 2) return;
     lineTop = c.offsetTop;
     c.classList.add('lm-sysstart');
-    c.querySelectorAll(':scope > .lm-sysrow').forEach(r => r.insertAdjacentHTML('afterbegin', `<span class="lm-sc lm-sysclef" aria-hidden="true">${clefCell('treble')}</span>`));
+    c.querySelectorAll(':scope > .lm-sysrow').forEach(r => r.insertAdjacentHTML('afterbegin', `<span class="lm-sc lm-sysclef" aria-hidden="true">${clefCell(r.dataset.clef || 'treble')}</span>`));
   });
 }
 

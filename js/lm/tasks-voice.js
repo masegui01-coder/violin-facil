@@ -3,7 +3,8 @@
 // canta primero cada compás y el alumno lo repite (eco); sin apoyo (Media), solo da la tónica y la primera nota.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
-import { centsAnyOctave, noteText, letterText } from './notes.js';
+import { centsAnyOctave, noteText, letterText, attackTokens } from './notes.js';
+import { passesOf, totalBars, formOf, barNumber } from './form.js';
 import { freqToMidi } from '../music.js';
 import { gradeSung, singMark, SING_TOLERANCE } from './grade.js';
 import { staffHtml, CLEF, onceClick } from './kit.js';
@@ -107,16 +108,31 @@ export function groupsOf(notes, by) {
   const out = [];
   notes.forEach(n => {
     const last = out[out.length - 1];
-    if (last && last[0].bar === n.bar) last.push(n); else out.push([n]);
+    if (last && last[0].bar === n.bar && last[0].pass === n.pass) last.push(n); else out.push([n]);
   });
   return out;
 }
 
-// Las notas que se cantan, en orden: con barra de repetición, dos vueltas (se corrigen las dos, sobre la misma partitura)
-export function singOrder(tokens, repeat = false) {
-  const passes = repeat ? 2 : 1;
-  const once = tokens.map((t, i) => ({ ...t, index: i })).filter(t => !t.rest);
-  return { passes, once, sounding: Array.from({ length: passes }, (_, pass) => once.map(t => ({ ...t, pass }))).flat() };
+// Las notas que se cantan, en el orden en que suenan: con barra de repetición, casillas de 1.ª y 2.ª vez o D.C. al Fine
+// (form: ver form.js; true = todo dos veces), las vueltas que toquen (se corrigen todas, sobre la misma partitura). Una
+// nota ligada es UNA sola (dura lo que sus ligaduras suman). Cada nota lleva su «index» en la partitura y su «pass».
+export function singOrder(tokens, form = null, pickup = 0) {
+  const f = form === true ? { kind: 'repeat', desde: 1, hasta: null } : form || null;
+  const attacks = attackTokens(tokens).filter(t => !t.rest);
+  const ps = passesOf(f, totalBars(tokens, pickup), !!pickup);
+  const sounding = ps.flatMap((bars, pass) => bars.flatMap(b => attacks.filter(t => barNumber(t, pickup) === b).map(t => ({ ...t, pass }))));
+  return { passes: ps.length, once: attacks, sounding };
+}
+
+// Tónica y modo de una tonalidad escrita («Fa M», «La m», «Re m y Fa M»): midi cerca del do central
+const TONIC_PC = { do: 0, re: 2, mi: 4, fa: 5, sol: 7, la: 9, si: 11 };
+export function keyTonic(key) {
+  const m = /^(do|re|mi|fa|sol|la|si)\s*(M|m|menor|mayor)?/i.exec(String(key || '').trim());
+  const minor = !!m && /^(m|menor)$/.test(m[2] || '');
+  if (!m) return { midi: 60, minor: false };
+  let midi = 60 + TONIC_PC[m[1].toLowerCase()];
+  if (midi > 66) midi -= 12;
+  return { midi, minor };
 }
 
 // opts: tokens (scoreTokens), key ('Do M'|'La m'), echo, variant, under (texto bajo cada nota: letra o nombres),
@@ -124,7 +140,10 @@ export function singOrder(tokens, repeat = false) {
 export async function singTask(host, opts, env) {
   const { tokens, echo = false, variant = 'facil', meter = null, bpm = 72, clef = 'treble' } = opts;
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
-  const { passes, once, sounding } = singOrder(tokens, opts.repeat);
+  const pickup = opts.pickup || 0;
+  const { passes, once, sounding } = singOrder(tokens, opts.form ?? opts.repeat ?? null, pickup);
+  // la clave de fa se canta una octava más arriba: lo que suena (referencias y eco) sube una octava; la voz vale en cualquier octava
+  const up = clef === 'bass' || clef === 'fa' ? 12 : 0;
   const got = [];
   // hideNames: lectura cantada (se lee el pentagrama: ni el nombre debajo ni la app lo dice)
   const hide = !!opts.hideNames;
@@ -148,7 +167,7 @@ export async function singTask(host, opts, env) {
       // ordenamiento con notas que aún no se leen: se canta de oído, con los nombres (sin pentagrama)
       box.innerHTML = opts.noStaff
         ? `<ol class="lm-names-row">${once.map(n => `<li class="${marks[n.index] || ''}" data-i="${n.index}">${esc(noteText(n.name, env.nom))}</li>`).join('')}</ol>`
-        : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, dynamics: opts.dynamics || null, repeat: passes > 1 });
+        : staffHtml(tokens, { clef: CLEF[clef] || clef, meter, marks, under, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, pulso: opts.pulso || null, form: typeof (opts.form ?? opts.repeat) === 'object' ? (opts.form ?? opts.repeat) : passes > 1 ? formOf({ repeticion: true }) : null });
       if (current < 0) return;
     }
     box.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
@@ -166,7 +185,7 @@ export async function singTask(host, opts, env) {
     const w = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal.width : 0;
     svg.insertAdjacentHTML('beforeend', `<text class="lm-mark" x="${w / 2}" y="12" text-anchor="middle">${MARK_SIGN[mark]}</text>`);
   };
-  host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}
+  host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${up ? '<p class="lm-notice">Está escrito en clave de fa: se canta una octava más arriba.</p>' : ''}
     ${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
@@ -179,11 +198,11 @@ export async function singTask(host, opts, env) {
     host.querySelector('#lmSingNote').textContent = note;
   };
   const first = sounding[0];
-  host.querySelector('#lmSingRef').addEventListener('click', () => { playingUntil = playPitch(first.midi, 1) + AFTER_PLAY_S; });
+  host.querySelector('#lmSingRef').addEventListener('click', () => { playingUntil = playPitch(first.midi + up, 1) + AFTER_PLAY_S; });
   host.querySelector('#lmSingHelp')?.addEventListener('click', () => {
     if (!currentNote) return;
     helped.add(currentNote.index);
-    playingUntil = playPitch(currentNote.midi, 0.8) + AFTER_PLAY_S;
+    playingUntil = playPitch(currentNote.midi + up, 0.8) + AFTER_PLAY_S;
   });
   const VOL_GAIN = 6;
   const showLevel = l => { const v = host.querySelector('#lmVol'); if (v) v.style.width = `${Math.min(100, Math.round(l * VOL_GAIN * 100))}%`; };
@@ -192,27 +211,27 @@ export async function singTask(host, opts, env) {
   audio.setVoiceInput(true);
   try {
     // Situarse: acorde de la tonalidad y primera nota
-    const minor = /m$|menor/i.test(opts.key || '');
-    const tonic = minor ? 57 : 60;
+    const { minor, midi: tonic } = keyTonic(opts.key);
     phase('Escucha la tonalidad');
     playingUntil = playChordNow((minor ? MINOR_TRIAD : MAJOR_TRIAD).map(x => tonic + x), 1.2) + 0.1;
     await wait(1300);
     phase('Tu primera nota:', noteText(first.name, env.nom));
-    playingUntil = playPitch(first.midi, 1) + AFTER_PLAY_S;
+    playingUntil = playPitch(first.midi + up, 1) + AFTER_PLAY_S;
     await wait(1200);
     const spb = 60 / bpm;
     const sungMidis = [];
     let silent = 0;
     let gaveUp = false;
+    let pass = 0;
     for (const group of groupsOf(sounding, echo)) {
-      if (passes > 1 && group[0] === sounding[once.length]) { phase('2.ª vuelta: desde el principio'); await wait(SECOND_PASS_MS); }
+      if (group[0].pass !== pass) { pass = group[0].pass; phase(opts.form && opts.form.kind === 'casillas' ? '2.ª vuelta: casilla 2' : opts.form && opts.form.kind === 'dc' ? 'D.C.: otra vez desde el principio' : '2.ª vuelta: desde el principio'); await wait(SECOND_PASS_MS); }
       if (!env.alive()) return null;
       if (gaveUp) break;
       if (echo) {
         phase('Escucha y repite');
         draw(group[0].index);
         const g0 = group[0].start;
-        const r = playNotes(group.map(n => ({ midi: n.midi, start: n.start - g0, beats: n.beats, rest: false })), bpm);
+        const r = playNotes(group.map(n => ({ midi: n.midi + up, start: n.start - g0, beats: n.beats, rest: false })), bpm);
         playingUntil = r.end + AFTER_PLAY_S;
         await wait((playingUntil - now()) * 1000);
       }
@@ -267,7 +286,7 @@ export function lyricsUnder(tokens, letra, nom, names = false, words = '') {
   if (names || !letra) return tokens.map(t => (t.rest ? '' : letterText(t.name[0], nom)));
   const counters = {};
   const syl = tokens.map(t => {
-    if (t.rest) return '';
+    if (t.rest || t.tiedFrom) return '';
     const k = counters[t.bar] = (counters[t.bar] ?? -1) + 1;
     return (letra[t.bar] || [])[k] ?? '';
   });

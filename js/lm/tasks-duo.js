@@ -1,8 +1,10 @@
-// Lectura rítmica en la pantalla del curso: a una voz (con sus sílabas de apoyo, comas, matices, calderón y barra de
-// repetición) o a dos voces (U7 Media: la app toca SIEMPRE la voz 1, el ostinato, y el alumno la voz 2, leídas en un
-// sistema compás a compás). Mientras suena, el compás que toca se resalta y se mantiene a la vista, y el botón de
-// tocar queda fijo abajo. Micrófono: solo con auriculares (si no, se toca la pantalla). La corrección (sin DOM) está
-// en reading-grade.js: retraso del alumno compensado, silencios corregidos y golpes de más penalizados.
+// Lectura rítmica en la pantalla del curso: a una voz (con sus sílabas de apoyo, comas, matices, calderón, barra de
+// repetición, casillas de 1.ª y 2.ª vez y D.C. al Fine) o a dos voces (la app toca SIEMPRE la voz 1, el ostinato, y el
+// alumno la voz 2, leídas en un sistema compás a compás; la voz 1 puede ir en clave de fa). Mientras suena, el compás que
+// toca se resalta y se mantiene a la vista, y el botón de tocar queda fijo abajo. Micrófono: solo con auriculares (si no,
+// se toca la pantalla). En 6/8 el pulso es la negra con puntillo (pulso: 'q.'): el metrónomo marca ese pulso y, si pide
+// subdivisión, las corcheas más suaves. La corrección (sin DOM) está en reading-grade.js: retraso del alumno compensado,
+// silencios y ligaduras corregidos y golpes de más penalizados. El plan (línea de tiempo, metrónomo) está en rhythm-plan.js.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
 import { getState } from '../store.js';
@@ -12,20 +14,22 @@ import { dynamicsChecks } from './dynamics.js';
 import { accentContrast } from '../onsets.js';
 import { ostinatoTokens } from './gen.js';
 import { barBeatsOf, scoreTokens } from './notes.js';
-import { onceClick, staffHtml, tokenLabel, withBreaths } from './kit.js';
+import { onceClick, staffHtml, tokenLabel, withBreaths, CLEF } from './kit.js';
 import { twoVoices } from './tasks-rhythm.js';
 import { follow } from './systems.js';
+import { formOf } from './form.js';
+import { readingTimeline, metronomeBeats, syllablesOf, toleranceMs, pulseOf } from './rhythm-plan.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 
-const TOLERANCE_MS = { facil: 120, medio: 80 };
+export { readingTimeline };
 const OSTINATO_GAIN = 0.45;
 const LEGATO = 0.9;
 const AFTER_END_S = 0.8;
 const PULSE_LEVEL = 0.35;
 const DOWNBEAT_BOOST = 1.4;
+const SUB_LEVEL = 0.16;        // las corcheas de la subdivisión (6/8), más suaves que el pulso
 const MEASURE_WEIGHT = 0.15;   // matices o acento, cuando la variante los pide y se toca con palmas al micrófono
 const ACCENT_GOAL = 1.3;       // el 1.er tiempo, al menos un 30 % más fuerte que los demás
-const SYLLABLE = { q: 'ta', e: 'ti', h: 'taa-a', w: 'taa-a-a-a' };
 
 // Compatibilidad (pruebas de dos voces): instantes sueltos en segundos → corrección completa
 export function gradeReading({ expected, hits, tol, mic = false, ostinatoTimes = [], rests = [], tempo = false }) {
@@ -33,39 +37,23 @@ export function gradeReading({ expected, hits, tol, mic = false, ostinatoTimes =
 }
 
 // Lo que pide cada variante, escrito en los datos (campo «lectura»): metrónomo (todos los pulsos, solo el 1.º o
-// ninguno), compases sin metrónomo, entrada (un compás de claqueta o un solo clic un pulso antes) y qué se mide
-// además de los ataques (matices o acento, solo con el micrófono). Sílabas de apoyo en Fácil si hay vocablos
+// ninguno), compases sin metrónomo, entrada (un compás de claqueta o un solo clic un pulso antes), subdivisión (las
+// corcheas, suaves) y qué se mide además de los ataques (matices o acento, solo con el micrófono). Sílabas de apoyo en Fácil si hay vocablos
 export function readingMode(p, variant) {
   const l = p.lectura || {};
-  return { metro: l.metro || 'all', mute: l.mudo || [], click: l.entrada === 'clic', measure: l.medir || null, syllables: variant === 'facil' && !!p.vocablos };
-}
-
-// La lectura en el tiempo: cada figura con su pulso de comienzo, con las dos vueltas si hay barra de repetición y la
-// espera del calderón (la nota dura el doble)
-export function readingTimeline(p, tokens) {
-  const pickup = p.anacrusa || 0;
-  const passes = p.repeticion ? 2 : 1;
-  const fermata = (p.matices || []).find(m => m.signo === 'calderon');
-  const barOf = t => t.bar + (pickup ? 0 : 1);
-  const span = tokens.reduce((m, t) => Math.max(m, t.start + t.beats), 0);
-  const events = [];
-  let shift = 0;
-  for (let pass = 0; pass < passes; pass++) {
-    tokens.forEach((t, i) => {
-      const lastOfBar = !tokens[i + 1] || barOf(tokens[i + 1]) !== barOf(t);
-      const hold = fermata && barOf(t) === fermata.compas && lastOfBar && !t.rest ? t.beats : 0;
-      events.push({ ...t, pass, beat: pass * span + t.start + shift, beats: t.beats + hold, hold });
-      shift += hold;
-    });
-  }
-  return { events, total: passes * span + shift, span, passes };
+  return { metro: l.metro || 'all', mute: l.mudo || [], click: l.entrada === 'clic', measure: l.medir || null, syllables: variant === 'facil' && !!p.vocablos, subdivision: !!l.subdivision };
 }
 
 function scoreHtml(tokens, ostinato, p, env, marks = []) {
-  const base = { compas: p.compas, anacrusa: p.anacrusa || 0 };
+  const base = { compas: p.compas, anacrusa: p.anacrusa || 0, voz1Clave: p.voz1Clave, pulso: p.pulso, armadura: p.armadura || 0 };
   if (ostinato) return twoVoices(tokens, ostinato, base, env, marks);
-  const under = readingMode(p, env.variant).syllables ? tokens.map(t => (t.rest ? 'sh' : SYLLABLE[String(t.dur).replace('.', '')] || 'ta')) : [];
-  return staffHtml(tokens, { meter: p.compas, pickup: p.anacrusa || 0, marks, under, dynamics: p.matices || null, repeat: !!p.repeticion, label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', ') });
+  const pulse = pulseOf(p);
+  const under = readingMode(p, env.variant).syllables ? syllablesOf(tokens, { pulse, pickup: p.anacrusa || 0 }) : [];
+  return staffHtml(tokens, {
+    clef: CLEF[p.clave] || 'treble', meter: p.compas, pickup: p.anacrusa || 0, marks, under, dynamics: p.matices || null,
+    armadura: p.armadura || 0, form: formOf(p), pulso: p.pulso || null,
+    label: tokens.map(t => tokenLabel(t, env.nom, { pitch: false })).join(', '),
+  });
 }
 
 // Matices o acento con la fuerza de cada palmada (micrófono): parte de 0 a 1 (null si no se puede medir)
@@ -95,11 +83,13 @@ export async function lecturaDosVoces(host, ex, env) {
   const tokens = withBreaths(scoreTokens(p.partitura), p.comas || [], p.anacrusa || 0);
   const ostinato = p.voz1 ? ostinatoTokens(tokens, p) : null;
   const barBeats = barBeatsOf(p.compas || '4/4');
+  const pulse = pulseOf(p);
   const bpm = p.tempo || 72;
   const spb = 60 / bpm;
-  const tol = (TOLERANCE_MS[env.variant] || TOLERANCE_MS.facil) / 1000;
+  const tol = toleranceMs(env.variant, tokens, bpm) / 1000;
   const mode = readingMode(p, env.variant);
   const tl = readingTimeline(p, tokens);
+  const form = formOf(p);
   host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>
     ${scoreHtml(tokens, ostinato, p, env)}
     <div class="lm-phones" id="lmPhones"><label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
@@ -134,26 +124,24 @@ export async function lecturaDosVoces(host, ex, env) {
     pad.focus();
   }
   if (useMic) audio.startOnsetCapture(found => found.forEach(h => hits.push({ time: h.time - (getState().percLatency || 0), strength: h.strength || null })));
-  // entrada: un compás de claqueta, o (sin cuenta previa) un solo clic justo un pulso antes de la primera nota
+  // entrada: un compás de claqueta (un clic por pulso: en 6/8, dos), o (sin cuenta previa) un solo clic justo un pulso antes de la primera nota
   const pickup = p.anacrusa || 0;
-  const t0 = clicks(mode.click ? 1 : barBeats, bpm, { accentEvery: barBeats });
+  const counts = Math.max(1, Math.round(barBeats / pulse));
+  const t0 = mode.click ? clicks(1, bpm / pulse, { accentEvery: 1 }) : clicks(counts, bpm / pulse, { accentEvery: counts });
   const offset = mode.click ? 0 : pickup ? barBeats - pickup : 0;
   const at = e => t0 + (offset + e.beat) * spb;
   host.dataset.readingStart = String(Math.round(performance.now() + (t0 - now() + offset * spb) * 1000));
   if (ostinato) playEvents(ostinato.filter(t => !t.rest).map(t => ({ midi: t.midi, at: (offset + t.start) * spb, dur: t.beats * spb * LEGATO, gain: OSTINATO_GAIN })), { at: t0 });
   // metrónomo de la variante en la primera vuelta (la de la repetición va sin él), salvo en los compases mudos;
   // el 1.er tiempo de cada compás cuenta desde la anacrusa
-  if (!ostinato && mode.metro !== 'none') {
-    for (let b = 0; b < tl.span; b++) {
-      const bar = pickup ? (b < pickup ? 0 : 1 + Math.floor((b - pickup) / barBeats)) : 1 + Math.floor(b / barBeats);
-      const downbeat = (((b - pickup) % barBeats) + barBeats) % barBeats === 0;
-      if (mode.mute.includes(bar) || (mode.metro === 'first' && !downbeat)) continue;
-      clicks(1, bpm, { at: t0 + (offset + b) * spb, level: downbeat ? PULSE_LEVEL * DOWNBEAT_BOOST : PULSE_LEVEL });
-    }
+  if (!ostinato) {
+    const firstLen = tl.passStarts[1] ?? tl.total;
+    metronomeBeats({ length: firstLen, barBeats, pickup, pulse, metro: mode.metro, mute: mode.mute, subdivision: mode.subdivision }).forEach(c => {
+      clicks(1, bpm, { at: t0 + (offset + c.beat) * spb, level: c.level === 'down' ? PULSE_LEVEL * DOWNBEAT_BOOST : c.level === 'sub' ? SUB_LEVEL : PULSE_LEVEL });
+    });
   }
   const end = t0 + (offset + tl.total) * spb;
-  const loop = tl.passes > 1 ? tl.total / tl.passes : Infinity;
-  const unfollow = follow(host, () => ((now() - t0) / spb - offset) % loop, { barBeats, pickup });
+  const unfollow = follow(host, () => tl.scoreBeat((now() - t0) / spb - offset), { barBeats, pickup });
   host.querySelector('#lmDuoPhase').textContent = ostinato ? '¡Ahora! Tu voz es la de abajo' : '¡Ahora!';
   // calderón: la mano de la app indica que se mantiene y baja cuando se sigue; repetición: aviso de la 2.ª vuelta
   const held = tl.events.find(e => e.hold);
@@ -161,15 +149,19 @@ export async function lecturaDosVoces(host, ex, env) {
     phaseAt(host, env, at(held) + (held.beats - held.hold) * spb, '✋ Calderón: mantén… hasta que la mano baje', true);
     phaseAt(host, env, at(held) + held.beats * spb, '👇 ¡Sigue!', true);
   }
-  if (tl.passes > 1) phaseAt(host, env, t0 + (offset + tl.total / 2) * spb, '2.ª vuelta, sin metrónomo');
+  if (tl.passes > 1) {
+    const text = !form ? '2.ª vuelta, sin metrónomo' : form.kind === 'casillas' ? '2.ª vuelta: salta la casilla 1 y toca la casilla 2' : form.kind === 'dc' ? 'D.C.: otra vez desde el principio hasta Fine' : '2.ª vuelta, sin metrónomo';
+    phaseAt(host, env, t0 + (offset + tl.passStarts[1]) * spb, text);
+  }
   await wait((end - now() + AFTER_END_S) * 1000);
   unfollow();
   if (useMic) audio.stopOnsetCapture();
   stopSound();
   if (pad) pad.disabled = true;
   if (!env.alive()) return null;
-  const notes = tl.events.filter(e => !e.rest);
-  const rests = tl.events.filter(e => e.rest).map(e => ({ from: at(e), to: at(e) + e.beats * spb, dur: e.dur }));
+  // una nota ligada es un solo ataque: su continuación es como un silencio (una palmada ahí es error «liga»)
+  const notes = tl.events.filter(e => !e.rest && !e.cont);
+  const rests = tl.events.filter(e => e.rest || e.cont).map(e => ({ from: at(e), to: at(e) + e.beats * spb, dur: e.dur, ...(e.cont ? { code: 'liga' } : {}) }));
   const g = gradeAll({
     notes: notes.map(e => ({ at: at(e), dur: e.dur })), rests, hits: hits.map(h => h.time), tol, mic: useMic,
     ostinatoTimes: ostinato ? ostinato.filter(t => !t.rest).map(t => t0 + (offset + t.start) * spb) : [], tempo: mode.metro === 'none' && !ostinato,
@@ -184,7 +176,7 @@ export async function lecturaDosVoces(host, ex, env) {
     else note = mode.measure === 'matices' ? 'Los matices se miden solo con palmas al micrófono (con auriculares).' : 'El acento del 1.er tiempo se mide solo con palmas al micrófono (con auriculares).';
   }
   // marcas en la partitura: las de la primera vuelta (la segunda se corrige igual)
-  const firstMarks = tokens.map(t => { if (t.rest) return null; const k = notes.findIndex(e => e.pass === 0 && e.start === t.start); return g.marks[k] ?? null; });
+  const firstMarks = tokens.map((t, i) => { if (t.rest || t.tiedFrom) return null; const k = notes.findIndex(e => e.pass === 0 && e.index === i); return g.marks[k] ?? null; });
   const fresh = scoreHtml(tokens, ostinato, p, env, firstMarks);
   host.querySelector('.lm-system, .lm-staff').outerHTML = ostinato ? fresh.replace(/^[\s\S]*?(<div class="lm-system")/, '$1') : fresh;
   const graded = g.marks.filter(Boolean);

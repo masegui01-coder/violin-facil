@@ -2,16 +2,18 @@
 // como sus sílabas átonas vecinas (o en una nota más larga). Acento en español: la tilde manda; si no, las palabras acabadas
 // en vocal, n o s son llanas (penúltima) y las demás, agudas (última). Las sílabas son las que se cantan (con sus
 // sinalefas, «ce el»), y las palabras salen de la letra seguida (SONG_WORDS).
-import { scoreTokens, barBeatsOf } from './notes.js';
+import { scoreTokens, barBeatsOf, isCompound, attackTokens } from './notes.js';
 
 const ACCENTED = /[áéíóú]/i;
 // Letras sin tildes ni signos (la ñ cuenta como una letra)
 const plain = s => String(s).toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z\u0001]/g, '');
 
 // Peso métrico de un instante del compás: 3 el primer tiempo, 2 el tercero del 4/4, 1 los demás pulsos, 0 a contratiempo
-export function beatWeight(pos, barBeats) {
+// En 6/8 (compound): peso 3 en el 0, 2 en el 1,5 (el 2.º pulso) y 0 en las demás corcheas
+export function beatWeight(pos, barBeats, compound = false) {
   const p = ((pos % barBeats) + barBeats) % barBeats;
   if (Math.abs(p) < 1e-6) return 3;
+  if (compound) return Math.abs(p - 1.5) < 1e-6 ? 2 : 0;
   if (barBeats === 4 && Math.abs(p - 2) < 1e-6) return 2;
   return Math.abs(p - Math.round(p)) < 1e-6 ? 1 : 0;
 }
@@ -46,7 +48,9 @@ function stressedPiece(word, pieces) {
 //  - la letra tiene que casar letra a letra con la letra seguida (si no, se avisa)
 export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words) {
   const barBeats = barBeatsOf(compas);
-  const tokens = scoreTokens(partitura);
+  const compound = isCompound(compas);
+  // una nota ligada es una sola: su continuación no lleva sílaba y suma su duración a la nota
+  const tokens = attackTokens(scoreTokens(partitura));
   const byBar = {};
   tokens.forEach(t => { if (!t.rest) (byBar[t.bar] ||= []).push(t); });
   const syl = [];
@@ -70,7 +74,7 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
       if (left === 0) { w++; left = w < wordList.length ? plain(wordList[w]).length : 0; }
     }
   });
-  const weight = x => beatWeight(x.start - anacrusa, barBeats);
+  const weight = x => beatWeight(x.start - anacrusa, barBeats, compound);
   // tónica de cada sílaba cantada y sílabas hechas solo de palabras átonas
   const stressed = new Set();
   const onlyUnstressed = new Map();

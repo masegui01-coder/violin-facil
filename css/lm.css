@@ -287,3 +287,26 @@
 .lm-phones { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 /* el navegador no «ancla» el desplazamiento mientras se lee o se canta: deshacía el que mantiene la nota a la vista */
 #lmBody { overflow-anchor: none; }
+
+/* Nivel 2: alteraciones, armadura, ligaduras, casillas, Fine y D.C., nota dada y avisos */
+.lm-acc { font-family: var(--f-music), "Noto Music", "Segoe UI Symbol", serif; font-size: 22px; fill: currentColor; }
+.lm-tie { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.lm-given { opacity: .55; }
+.lm-note-btn.given { cursor: default; }
+.lm-bargroup.lm-volta { position: relative; padding-top: 1.1rem; }
+.lm-bargroup.lm-volta::before { content: attr(data-volta); position: absolute; top: .25rem; left: 0; right: 0; height: .85rem; border-top: 2px solid currentColor; font-size: .78rem; font-weight: 700; line-height: 1.2; padding-left: .3rem; }
+.lm-bargroup.lm-volta.lm-volta-open::before { border-left: 2px solid currentColor; }
+.lm-bargroup.lm-fine::after { content: attr(data-fine); position: absolute; top: 0; right: 0; font-size: .8rem; font-style: italic; font-weight: 700; }
+.lm-bargroup.lm-fine { position: relative; padding-top: 1rem; }
+.lm-dc { align-self: flex-start; font-size: .8rem; font-style: italic; font-weight: 700; margin-left: .3rem; }
+.lm-notice { border-left: 4px solid var(--accent); padding: .35rem .7rem; margin: .5rem 0; background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 8px 8px 0; font-size: .92rem; }
+.lm-acc-palette { display: flex; gap: .4rem; margin: .4rem 0; }
+.lm-acc-palette .lm-acc-btn { min-width: 2.75rem; min-height: 2.75rem; font-size: 1.4rem; line-height: 1; }
+.lm-compare { margin-top: .6rem; }
+.lmf-pending { border: 1px dashed currentColor; border-radius: 10px; padding: .6rem .8rem; font-size: .85rem; opacity: .8; }
+.lm-ag-grand { display: flex; flex-direction: column; }
+.lm-ag-row { display: flex; align-items: center; }
+.lm-ag-grand .lm-cell { height: 6rem; }
+.lm-flag-tag { position: absolute; top: 0; right: 0; font-size: .8rem; font-style: italic; font-weight: 700; }
+.lm-bar-btn { position: relative; }
+.lm-numbers .lm-name { min-width: 3.2rem; }

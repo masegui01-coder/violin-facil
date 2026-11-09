@@ -2,15 +2,19 @@
 // la afinación (en cualquier octava, como en la entonación) y el ataque (cuándo empieza respecto a su sitio).
 // Fácil: la app canta cada compás y el alumno lo repite a tempo tras un compás de claqueta (eco).
 // Media: un compás de claqueta y toda la canción seguida, sin voz guía.
+// La canción se canta en el orden en que suena (form.js): barra de repetición, casillas de 1.ª y 2.ª vez, D.C. al Fine,
+// cada vuelta con su letra (letra / letra2). Una nota ligada es una sola nota. En 6/8 la claqueta marca la negra con
+// puntillo. En clave de fa, la app suena una octava más arriba y se canta ahí.
 import { esc } from '../ui.js';
 import * as audio from '../audio.js';
-import { centsAnyOctave, noteText, barBeatsOf } from './notes.js';
+import { centsAnyOctave, noteText, barBeatsOf, attackTokens, pulseOfParams } from './notes.js';
 import { gradeSung, singMark, SING_TOLERANCE, pctOf, mistakeCodes } from './grade.js';
 import { staffHtml, CLEF } from './kit.js';
 import { playEvents, playChordNow, clicks, stopSound, wait, now } from './sound.js';
-import { MIC_GATE, openMic, groupsOf } from './tasks-voice.js';
+import { MIC_GATE, openMic, groupsOf, keyTonic } from './tasks-voice.js';
 import { dynamicsChecks } from './dynamics.js';
 import { keepInView } from './systems.js';
+import { passesOf, totalBars, barNumber } from './form.js';
 
 const TICK_MS = 25;
 // Ataque a tiempo: ±180 ms en Fácil y ±120 ms en Media (la voz arranca más despacio que una palmada)
@@ -55,30 +59,58 @@ export function gradeTimedTake(notes, frames, { t0, spb, tolerance, attackTol })
   });
 }
 
+// Las vueltas de la canción: [{ notes, bars, length }]. Cada nota (las ligadas, fundidas en una) con su «start» DENTRO de la
+// vuelta (los compases que se saltan no cuentan), su «index» en la partitura y su «pass». length: pulsos de la vuelta.
+export function songPasses(tokens, { form = null, pickup = 0, meter = '4/4' } = {}) {
+  const barBeats = barBeatsOf(meter);
+  const attacks = attackTokens(tokens).filter(t => !t.rest);
+  const f = form === true ? { kind: 'repeat', desde: 1, hasta: null } : form;
+  return passesOf(f, totalBars(tokens, pickup), !!pickup).map((bars, pass) => {
+    let at = 0;
+    const notes = [];
+    bars.forEach(b => {
+      const beats = b === 0 ? pickup : barBeats;
+      const scoreStart = b === 0 ? 0 : pickup + (b - 1) * barBeats;
+      attacks.filter(t => barNumber(t, pickup) === b).forEach(t => notes.push({ ...t, pass, start: at + (t.start - scoreStart), barAt: at, barLen: beats }));
+      at += beats;
+    });
+    return { notes, bars, length: at, pass };
+  });
+}
+
 // Acompañamiento de la canción: acorde de tónica o de dominante en cada compás (el que mejor encaja con sus notas),
-// en el registro grave; en la habanera, con su ritmo (corchea con puntillo, semicorchea y dos corcheas)
-const DOMINANT_LETTERS = new Set(['B', 'D', 'F']);
+// en el registro grave y en la tonalidad de la canción; en la habanera, con su ritmo (corchea con puntillo, semicorchea y
+// dos corcheas). bars: números de compás de la partitura (desde 0) que suenan, en orden (por defecto, todos)
 const HABANERA = [[0, 0.75], [0.75, 0.25], [1, 0.5], [1.5, 0.5]];
 const ACCOMP_GAIN = 0.32;
-export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, fromBar = 0, toBar = Infinity }) {
+export function accompaniment(tokens, { meter, bpm, key = '', habanera = false, fromBar = 0, toBar = Infinity, bars = null, pickup = 0 }) {
   const barBeats = barBeatsOf(meter);
   const spb = 60 / bpm;
-  const minor = /m$|menor|La m/i.test(key);
-  const I = minor ? [45, 48, 52] : [48, 52, 55];   // La2-Do3-Mi3 / Do3-Mi3-Sol3
-  const V = minor ? [40, 44, 47] : [43, 47, 50];   // Mi2-Sol#2-Si2 / Sol2-Si2-Re3
-  const bars = Math.max(0, ...tokens.map(t => t.bar)) + 1;
+  const { minor, midi: top } = keyTonic(key);
+  const root = top - 12;                                  // la tónica, en el registro grave
+  const I = [root, root + (minor ? 3 : 4), root + 7];
+  const V = [root - 5, root - 1, root + 2];               // el acorde de dominante, una quinta por debajo
+  const total = Math.max(0, ...tokens.map(t => t.bar)) + 1;
+  const list = bars || Array.from({ length: Math.min(total, toBar + 1) - Math.max(0, fromBar) }, (_, i) => Math.max(0, fromBar) + i);
   const events = [];
-  for (let b = Math.max(0, fromBar); b < Math.min(bars, toBar + 1); b++) {
+  let at = 0;
+  list.forEach(b => {
     const notes = tokens.filter(t => t.bar === b && !t.rest);
-    const dominant = notes.filter(t => DOMINANT_LETTERS.has(t.name[0])).length > notes.filter(t => !DOMINANT_LETTERS.has(t.name[0])).length;
+    // las notas que solo caben en el acorde de dominante (sensible, 2.º y 4.º grado)
+    const dom = n => [11, 2, 5].includes((((n.midi - top) % 12) + 12) % 12);
+    const dominant = notes.filter(dom).length > notes.filter(n => !dom(n)).length;
     const chord = dominant ? V : I;
-    const start = (b - fromBar) * barBeats;
-    const pattern = habanera ? HABANERA.flatMap(([at, len]) => (barBeats >= 2 ? [[at, len]] : [])) : [[0, barBeats]];
-    pattern.forEach(([at, len], k) => {
-      const midis = habanera ? [k === 0 ? chord[0] : chord[(k % 2) + 1]] : chord;
-      midis.forEach(m => events.push({ midi: m, at: (start + at) * spb, dur: len * spb * 0.9, gain: ACCOMP_GAIN }));
-    });
-  }
+    const isPickup = !!pickup && b === 0;
+    const len = isPickup ? pickup : barBeats;
+    if (!isPickup) {
+      const pattern = habanera ? HABANERA.flatMap(([a, l]) => (barBeats >= 2 ? [[a, l]] : [])) : [[0, barBeats]];
+      pattern.forEach(([a, l], k) => {
+        const midis = habanera ? [k === 0 ? chord[0] : chord[(k % 2) + 1]] : chord;
+        midis.forEach(m => events.push({ midi: m, at: (at + a) * spb, dur: l * spb * 0.9, gain: ACCOMP_GAIN }));
+      });
+    }
+    at += len;
+  });
   return events;
 }
 
@@ -87,23 +119,28 @@ export async function singSong(host, opts, env) {
   const tolerance = SING_TOLERANCE[variant] || SING_TOLERANCE.facil;
   const attackTol = ATTACK_TOLERANCE_S[variant] || ATTACK_TOLERANCE_S.facil;
   const barBeats = barBeatsOf(meter);
+  const pulse = opts.pulso === 'q.' ? 1.5 : pulseOfParams({ compas: meter });
   const spb = 60 / bpm;
-  const sounding = tokens.map((t, i) => ({ ...t, index: i })).filter(t => !t.rest);
+  const pickup = opts.pickup || 0;
+  const clef = CLEF[opts.clave] || 'treble';
+  // la clave de fa se canta una octava más arriba
+  const up = clef === 'bass' ? 12 : 0;
+  // con 2.ª estrofa (letra2) y sin forma escrita, la barra de repetición al final: dos vueltas
+  const form = opts.form || (opts.under2 ? { kind: 'repeat', desde: 1, hasta: null } : null);
+  const passes = songPasses(tokens, { form, pickup, meter });
   const marks = [];
-  host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${MIC_GATE}
+  host.innerHTML = `${opts.intro ? `<p class="muted">${esc(opts.intro)}</p>` : ''}${up ? '<p class="lm-notice">Está escrita en clave de fa: se canta una octava más arriba.</p>' : ''}${MIC_GATE}
     <div class="lm-sing-staff"></div>
     <div class="lm-sing-now lm-sticky-controls" aria-live="polite"><span id="lmSingPhase">Preparado</span> <b id="lmSingNote"></b></div>
     <div class="lm-vol" aria-hidden="true"><span>Volumen</span><span class="lm-vol-track"><i id="lmVol"></i></span></div>
     <div class="controls"><button type="button" class="btn ghost" id="lmSongHear">Escuchar la canción con acompañamiento</button><button type="button" class="btn big" id="lmSongGo">Empezar a cantar</button></div>
     <p class="muted small">${echo ? 'Con apoyo: la app canta cada compás con su acompañamiento y tú lo repites a tempo.' : 'Sin apoyo: un compás de claqueta y cantas toda la canción a capela.'}</p>`;
-  // Con 2.ª estrofa (letra2): barra de repetición al final, las dos letras debajo y se canta dos veces
-  const passes = opts.under2 ? 2 : 1;
   // Pintado completo solo al principio y al corregir (marcas); mientras se canta, solo se mueve la marca de la nota
   // que toca sobre el pentagrama ya pintado (repintar a cada nota cortaba el desplazamiento que la mantiene a la vista)
   const draw = current => {
     const staff = host.querySelector('.lm-sing-staff');
     if (current < 0 || !staff.querySelector('[data-i]')) {
-      staff.innerHTML = staffHtml(tokens, { clef: CLEF.treble, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, repeat: passes > 1 });
+      staff.innerHTML = staffHtml(tokens, { clef, meter, marks, under: opts.under, under2: opts.under2 || null, current, dynamics: opts.dynamics || null, pickup, armadura: opts.armadura || 0, form, pulso: opts.pulso || null });
       if (current < 0) return;
     }
     staff.querySelectorAll('.lm-now').forEach(e => e.classList.remove('lm-now'));
@@ -112,11 +149,17 @@ export async function singSong(host, opts, env) {
   };
   const phase = (text, note = '') => { host.querySelector('#lmSingPhase').textContent = text; host.querySelector('#lmSingNote').textContent = note; };
   draw(-1);
+  // lo que suena de una vuelta: la melodía y el acompañamiento, compás a compás en el orden de la vuelta
+  const passEvents = pass => [
+    ...pass.notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
+    ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: pass.bars.map(b => (pickup ? b : b - 1)), pickup }),
+  ];
   host.querySelector('#lmSongHear').addEventListener('click', () => {
     stopSound();
-    const span = tokens.reduce((s, t) => s + t.beats, 0) * spb;
-    const once = [...sounding.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })), ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera })];
-    playEvents(Array.from({ length: passes }, (_, k) => once.map(e => ({ ...e, at: e.at + k * span }))).flat());
+    let offset = 0;
+    const all = [];
+    passes.forEach(pass => { passEvents(pass).forEach(e => all.push({ ...e, at: e.at + offset * spb })); offset += pass.length; });
+    playEvents(all);
   });
   host.querySelector('#lmSongGo').focus();
   await new Promise(r => host.querySelector('#lmSongGo').addEventListener('click', r, { once: true }));
@@ -126,61 +169,63 @@ export async function singSong(host, opts, env) {
   if (!(await openMic(host, env))) return null;
   audio.setVoiceInput(true);
   const results = [];
+  const counts = Math.max(1, Math.round(barBeats / pulse));
   try {
-    const minor = /m$|menor/i.test(opts.key || '');
+    const { minor, midi: tonic } = keyTonic(opts.key);
     phase('Escucha la tonalidad');
-    playChordNow((minor ? MINOR_TRIAD : MAJOR_TRIAD).map(x => (minor ? 57 : 60) + x), 1.2);
+    playChordNow((minor ? MINOR_TRIAD : MAJOR_TRIAD).map(x => tonic + x), 1.2);
     await wait(1400);
-    for (let pass = 0; pass < passes; pass++) {
-    const words = pass ? opts.under2 : opts.under;
-    if (pass) { phase('Ahora, la 2.ª estrofa (la letra de abajo)'); env.say('Segunda estrofa'); await wait(1200); }
-    for (const group of groupsOf(sounding, echo)) {
-      if (!env.alive()) return null;
-      const g0 = echo ? group[0].bar * barBeats : 0;
-      const notes = group.map(n => ({ midi: n.midi, start: n.start - g0, beats: n.beats, rest: false, index: n.index }));
-      const length = echo ? barBeats : tokens.reduce((s, t) => s + t.beats, 0);
-      if (echo) {
-        phase('Escucha y repite');
-        const bar = group[0].bar;
-        const r = playEvents([...notes.map(n => ({ midi: n.midi, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
-          ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, fromBar: bar, toBar: bar })]);
-        await wait((r.end - now() + 0.2) * 1000);
+    for (const pass of passes) {
+      const words = pass.pass ? opts.under2 || opts.under : opts.under;
+      if (pass.pass) { phase(form && form.kind === 'casillas' ? '2.ª vuelta: casilla 2' : form && form.kind === 'dc' ? 'D.C.: otra vez desde el principio' : 'Ahora, la 2.ª estrofa (la letra de abajo)'); env.say('Segunda vuelta'); await wait(1200); }
+      for (const group of groupsOf(pass.notes, echo)) {
+        if (!env.alive()) return null;
+        // en el eco, cada compás se repite desde su principio; si no, la vuelta entera seguida
+        const barStart = echo ? group[0].barAt : 0;
+        const notes = group.map(n => ({ midi: n.midi, start: n.start - barStart, beats: n.beats, rest: false, index: n.index }));
+        const length = echo ? group[0].barLen : pass.length;
+        if (echo) {
+          phase('Escucha y repite');
+          const b = group[0].bar;
+          const r = playEvents([...notes.map(n => ({ midi: n.midi + up, at: n.start * spb, dur: n.beats * spb * 0.92, gain: 1 })),
+            ...accompaniment(tokens, { meter, bpm, key: opts.key, habanera: opts.habanera, bars: [b], pickup })]);
+          await wait((r.end - now() + 0.2) * 1000);
+        }
+        // claqueta de un compás y a cantar: los fotogramas del micrófono se guardan con su instante
+        phase('Claqueta…');
+        const t0 = clicks(counts, bpm / pulse, { accentEvery: counts });
+        const frames = [];
+        const end = t0 + length * spb + TAIL_S;
+        while (env.alive() && now() < end) {
+          await wait(TICK_MS);
+          const t = now();
+          if (t < t0 - 0.1) continue;
+          const p = audio.readPitch();
+          frames.push({ t: t - audio.outputLatency(), freq: p && p.freq ? p.freq : null, level: p ? p.level || 0 : 0 });
+          const vol = host.querySelector('#lmVol');
+          if (vol) vol.style.width = `${Math.min(100, Math.round((p ? p.level || 0 : 0) * 600))}%`;
+          const beat = (t - t0) / spb;
+          const cur = notes.find(n => beat >= n.start && beat < n.start + n.beats);
+          if (cur) {
+            if (host.dataset.index !== String(cur.index)) {
+              host.dataset.index = String(cur.index);
+              host.dataset.target = String(cur.midi);
+              draw(cur.index);
+              phase('Canta:', (words && words[cur.index]) || (opts.hideNames ? '' : noteText(tokens[cur.index].name, env.nom)));
+            }
+          } else if (beat >= 0 && host.dataset.target) { delete host.dataset.target; delete host.dataset.index; }
+        }
+        if (!env.alive()) return null;
+        const graded = gradeTimedTake(notes, frames, { t0, spb, tolerance, attackTol });
+        graded.forEach((g, k) => {
+          const n = notes[k];
+          const from = t0 + n.start * spb;
+          const lv = frames.filter(f => f.freq !== null && f.t >= from && f.t <= from + n.beats * spb).map(f => f.level);
+          marks[n.index] = g.pitch;
+          results.push({ ...g, name: tokens[n.index].name, bar: tokens[n.index].bar, level: lv.length ? median(lv) : null });
+        });
+        draw(-1);
       }
-      // claqueta de un compás y a cantar: los fotogramas del micrófono se guardan con su instante
-      phase('Claqueta…');
-      const t0 = clicks(barBeats, bpm, { accentEvery: barBeats });
-      const frames = [];
-      const end = t0 + length * spb + TAIL_S;
-      while (env.alive() && now() < end) {
-        await wait(TICK_MS);
-        const t = now();
-        if (t < t0 - 0.1) continue;
-        const p = audio.readPitch();
-        frames.push({ t: t - audio.outputLatency(), freq: p && p.freq ? p.freq : null, level: p ? p.level || 0 : 0 });
-        const vol = host.querySelector('#lmVol');
-        if (vol) vol.style.width = `${Math.min(100, Math.round((p ? p.level || 0 : 0) * 600))}%`;
-        const beat = (t - t0) / spb;
-        const cur = notes.find(n => beat >= n.start && beat < n.start + n.beats);
-        if (cur) {
-          if (host.dataset.index !== String(cur.index)) {
-            host.dataset.index = String(cur.index);
-            host.dataset.target = String(cur.midi);
-            draw(cur.index);
-            phase('Canta:', (words && words[cur.index]) || (opts.hideNames ? '' : noteText(tokens[cur.index].name, env.nom)));
-          }
-        } else if (beat >= 0 && host.dataset.target) { delete host.dataset.target; delete host.dataset.index; }
-      }
-      if (!env.alive()) return null;
-      const graded = gradeTimedTake(notes, frames, { t0, spb, tolerance, attackTol });
-      graded.forEach((g, k) => {
-        const n = notes[k];
-        const from = t0 + n.start * spb;
-        const lv = frames.filter(f => f.freq !== null && f.t >= from && f.t <= from + n.beats * spb).map(f => f.level);
-        marks[n.index] = g.pitch;
-        results.push({ ...g, name: tokens[n.index].name, bar: tokens[n.index].bar, level: lv.length ? median(lv) : null });
-      });
-      draw(-1);
-    }
     }
     phase('¡Hecho!');
     delete host.dataset.target;
@@ -202,3 +247,4 @@ export async function singSong(host, opts, env) {
     stopSound();
   }
 }
+

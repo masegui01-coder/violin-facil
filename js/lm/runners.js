@@ -2,16 +2,17 @@
 // y devuelve { pct, marks?, labels?, mistakes, skills?, note? } para el resultado (screen.js lo registra y lo enseña).
 import { esc } from '../ui.js';
 import { QUIZ_KINDS, playQuestion } from './tasks-quiz.js';
-import { tocarPentagrama, barras, dictadoEscrito } from './tasks-staff.js';
-import { singTask, lyricsUnder, singResult, SONG_WORDS, SONG_WORDS2 } from './tasks-voice.js';
+import { tocarPentagrama, barras, dictadoEscrito, dictadoIntervalos } from './tasks-staff.js';
+import { singTask, lyricsUnder, singResult, SONG_WORDS, SONG_WORDS2, keyTonic } from './tasks-voice.js';
 import { singSong } from './tasks-song.js';
 import { stopGame, tapRhythm } from './tasks-rhythm.js';
 import { agilityTask } from './tasks-agility.js';
 import { lecturaDosVoces } from './tasks-duo.js';
-import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, genRhythm, genMelody, gainsFor } from './gen.js';
+import { meterQuestions, semitoneQuestions, modeQuestions, songQuestions, choiceQuestions, genRhythm, genMelody, gainsFor } from './gen.js';
 import { pctOf, mistakeCodes } from './grade.js';
 import { creatividad } from './creative.js';
-import { scoreTokens, barBeatsOf, noteText, solfaToName } from './notes.js';
+import { scoreTokens, barBeatsOf, noteText, solfaToName, attackTokens, isCompound, midiOf, keyAcc } from './notes.js';
+import { formOf } from './form.js';
 import { lmExercise, lmQuestion, lmSong, lmUnit } from './catalog.js';
 import { staffHtml, continueButton, playButton, shuffle, CLEF, tokenLabel, withBreaths } from './kit.js';
 import { playEvents, stopSound } from './sound.js';
@@ -48,20 +49,28 @@ const bigText = () => parseFloat(getComputedStyle(document.documentElement).font
 const reduceMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 function cardFigure(card, i, env, still) {
   const dibujo = card.dibujo || CARD_FIGURE[`lm${env.level}-u${env.unit}-${i + 1}`];
-  return figureHtml(dibujo, { lang: currentLang(), nom: env.nom, still: still || reduceMotion(), big: bigText() });
+  const drawn = figureHtml(dibujo, { lang: currentLang(), nom: env.nom, still: still || reduceMotion(), big: bigText() });
+  // Nivel 2: las ilustraciones aún se están dibujando; mientras, la tarjeta enseña qué dibujo lleva (su descripción)
+  return drawn || (card.dibujoTexto ? `<figure class="lmf lmf-pending" data-fig="${esc(dibujo || '')}" role="img" aria-label="${esc(card.dibujoTexto)}"><figcaption>${esc(card.dibujoTexto)}</figcaption></figure>` : '');
 }
 const playFigure = env => (score, { dyn, sound }) => playQuestion({ partitura: score, dyn, sound }, env);
 // El ejemplo de la tarjeta con su compás (el suyo o el primero de la unidad), sus barras y, si la hay, su anacrusa
-function cardExample(card, env, text = card.ejemplo) {
+function cardExample(card, env, text = card.ejemplo, meterOverride = null) {
   const ex = withBreaths(scoreTokens(text), card.comas || [], card.anacrusa || 0);
-  const meter = card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
-  return staffHtml(ex, { meter, pickup: card.anacrusa || 0, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
+  const meter = meterOverride || card.compas || (lmUnit(env.level, env.unit)?.meters || [])[0] || '4/4';
+  return staffHtml(ex, { clef: CLEF[card.clave] || 'treble', meter, pickup: card.anacrusa || 0, armadura: card.armadura || 0, form: meterOverride ? null : formOf(card), pulso: card.pulso || null, label: ex.map(t => tokenLabel(t, env.nom)).join(', ') });
+}
+// Dos pentagramas para comparar (3/4 frente a 6/8: las mismas corcheas, agrupadas de otra manera)
+function compared(card, env) {
+  const c = card.ejemploComparado;
+  if (!c) return '';
+  return `<div class="lm-card-ex lm-compare"><p class="dict-staff-label">${esc(c.compas)}</p>${cardExample(card, env, c.partitura, c.compas)}${playButton('lmCardPlayCmp', `Escuchar el ${c.compas}`)}</div>`;
 }
 function cardHtml(card, i, env) {
   const example = card.ejemplo ? `<div class="lm-card-ex">${cardExample(card, env)}${playButton('lmCardPlay', 'Escuchar el ejemplo')}</div>` : '';
   // ejemploCompleto: la escala o la idea entera, solo para mirarla (puede pasar de las notas que ya se leen)
   const whole = card.ejemploCompleto ? `<div class="lm-card-ex lm-card-ex2"><p class="dict-staff-label">Entera, solo para mirarla</p>${cardExample(card, env, card.ejemploCompleto)}${playButton('lmCardPlay2', 'Escuchar entera')}</div>` : '';
-  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}${whole}</div>`;
+  return `<h2 class="lm-q" tabindex="-1">${esc(card.titulo)}</h2><div class="lm-card-art">${cardFigure(card, i, env, false)}</div><div class="lm-card-text"><p>${esc(card.texto)}</p>${example}${compared(card, env)}${whole}</div>`;
 }
 async function showCards(host, cards, env, summary) {
   const unitColor = `--unit:var(--u${((env.unit - 1) % 8) + 1})`;
@@ -81,7 +90,9 @@ async function showCards(host, cards, env, summary) {
     bindFigures(host, playFigure(env));
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
-    if (play) play.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemplo }, env));
+    const c = cards[i];
+    if (play) play.addEventListener('click', () => playQuestion({ partitura: c.ejemplo, repeticion: c.repeticion, dc: c.dc, compas: c.compas, anacrusa: c.anacrusa }, env));
+    host.querySelector('#lmCardPlayCmp')?.addEventListener('click', () => playQuestion({ partitura: c.ejemploComparado.partitura, compas: c.ejemploComparado.compas }, env));
     host.querySelector('#lmCardPlay2')?.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemploCompleto }, env));
     await continueButton(host, i + 1 < cards.length ? 'Siguiente' : 'A practicar');
   }
@@ -98,7 +109,8 @@ async function teoria(host, ex, env) {
 async function stop(host, ex, env) {
   const base = ex.params.base;
   if (!base) return { pct: 0, mistakes: [] };
-  return stopGame(host, { ...ex.params, base: { ...base, tokens: scoreTokens(base.partitura) } }, env);
+  // STOP melódico: la base es una lectura cantada de la unidad (entonación) y el error también puede ser de altura
+  return stopGame(host, { ...ex.params, base: { ...base, melodic: /-entonacion-/.test(base.id || ''), tokens: scoreTokens(base.partitura) } }, env);
 }
 
 // ---------- Agilidad ----------
@@ -116,8 +128,9 @@ async function entonacion(host, ex, env) {
   const noStaff = !reading && taught.length > 0 && tokens.some(t => !t.rest && !taught.includes(t.name));
   const take = await singTask(host, {
     tokens, key: p.tonalidad, echo: !reading && ex.variant === 'facil', variant: ex.variant, meter: p.compas, bpm: p.tempo || 72, clef: CLEF[p.clave] || 'treble',
+    pickup: p.anacrusa || 0, armadura: p.armadura || 0, pulso: p.pulso || null, form: formOf(p),
     intro: reading ? (ex.variant === 'facil' ? SUPPORT.lectura : SUPPORT.solo) : ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo,
-    hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null, repeat: !!p.repeticion,
+    hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null,
   }, env);
   return take && { ...singResult(take), labels: take.names.map(n => noteText(n, env.nom)), range: take.range };
 }
@@ -135,10 +148,12 @@ async function cancionCantada(host, ex, env) {
   const take = await singSong(host, {
     tokens, key: song.tonalidad, echo: ex.variant === 'facil', variant: ex.variant, meter: song.compas, bpm: song.tempo || 72,
     // «con nombre de notas»: los nombres se leen en el pentagrama, no se escriben debajo (ni los dice la app)
-    under: names ? [] : lyricsUnder(tokens, song.letra, env.nom, false, SONG_WORDS[song.titulo] || ''), hideNames: names, intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
-    // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición), siempre con su letra
-    under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, SONG_WORDS2[song.titulo] || '') : null,
+    // la letra seguida (para los guiones) viene en los datos (palabras / palabras2) o, en el Nivel 1, de SONG_WORDS
+    under: names ? [] : lyricsUnder(tokens, song.letra, env.nom, false, song.palabras || SONG_WORDS[song.titulo] || ''), hideNames: names, intro: ex.params.consigna || '', habanera: /habanera/i.test(song.estilo || ''),
+    // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición, casillas o D.C.), siempre con su letra
+    under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, song.palabras2 || SONG_WORDS2[song.titulo] || '') : null,
     dynamics: Array.isArray(song.matices) ? song.matices : null,
+    clave: song.clave, armadura: song.armadura || 0, form: formOf(song), pulso: song.pulso || null, pickup: song.anacrusa || 0,
   }, env);
   return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
 }
@@ -146,6 +161,12 @@ async function cancionCantada(host, ex, env) {
 // ---------- Dictado escrito ----------
 async function escribir(host, ex, env) {
   const r = await dictadoEscrito(host, ex.params, env);
+  return r && { pct: r.pct, marks: r.marks, mistakes: r.mistakes };
+}
+
+// ---------- Dictado de intervalos ----------
+async function intervalos(host, ex, env) {
+  const r = await dictadoIntervalos(host, ex.params, env);
   return r && { pct: r.pct, marks: r.marks, mistakes: r.mistakes };
 }
 
@@ -157,10 +178,11 @@ async function discriminacion(host, ex, env) {
     const rhythmOnly = /ritmo de los compases/.test(p.descripcion || '') && !/notas/.test(p.descripcion || '');
     return escribir(host, { ...ex, params: { partitura: `| ${bars.join(' | ')} |`, compas: p.cancion.compas, tempo: p.cancion.tempo, escuchas: 3, tipo: rhythmOnly ? 'ritmico' : 'melodico' } }, env);
   }
-  const count = p.cantidad || 8;
+  const count = p.rondas || p.cantidad || 8;
   const t = `${ex.title} ${p.descripcion || ''}`;
   let items;
-  if (/ternario|binario/i.test(t)) items = meterQuestions(count, env.seed);
+  if (p.opciones) items = choiceQuestions(p, count, env.seed); // las opciones están escritas en el catálogo (Nivel 2)
+  else if (/ternario|binario/i.test(t)) items = meterQuestions(count, env.seed);
   else if (/semitono/i.test(t)) items = semitoneQuestions(count, env.seed);
   else if (/mayor o menor/i.test(t)) items = modeQuestions(count, env.seed);
   else {
@@ -181,7 +203,7 @@ export function workEvents(frag) {
   const bpm0 = frag.tempo || 80;
   const bpm1 = frag.tempoFinal || bpm0;
   const bpmOf = k => (rep > 1 ? bpm0 + (bpm1 - bpm0) * k / (rep - 1) : bpm0);
-  const voices = frag.voces.map(v => scoreTokens(v.partitura));
+  const voices = frag.voces.map(v => attackTokens(scoreTokens(v.partitura)));
   const repBeats = Math.max(...voices.map(v => v.reduce((sum, t) => sum + t.beats, 0)));
   const repBars = Math.max(...voices.map(v => (v.length ? v[v.length - 1].bar : 0) + 1));
   const repStart = k => Array.from({ length: k }, (_, j) => repBeats * 60 / bpmOf(j)).reduce((x, y) => x + y, 0);
@@ -236,18 +258,38 @@ async function audicion(host, ex, env) {
 
 // ---------- Repaso por competencias ----------
 const normFig = f => (f === 'ee' ? 'e' : f === 'rq' ? 'Rq' : f);
-// Tonalidad de la unidad y su tónica entre las notas que se usan (do; la en la menor; si no hay, sol)
+// Tonalidad de la unidad y su tónica entre las notas que se usan (do; la en la menor; si no hay, sol). En el Nivel 2 la
+// tónica sale de la tonalidad (fa, re, sol, mi…); en clave de fa (low), la más grave
 const unitKeyOf = ex => (lmUnit(ex.level, ex.unit) || {}).key || 'Do M';
-function tonicOf(ex, notas) {
-  const minor = /^La m/.test(unitKeyOf(ex));
-  return [minor ? 'A4' : 'C4', minor ? 'A3' : 'C5', 'G4'].find(n => notas.includes(n)) || notas[0];
+function tonicOf(ex, notas, low = false) {
+  const key = unitKeyOf(ex);
+  if (/^(Do M|La m)/.test(key)) {
+    const minor = /^La m/.test(key);
+    return [minor ? 'A4' : 'C4', minor ? 'A3' : 'C5', 'G4'].find(n => notas.includes(n)) || notas[0];
+  }
+  const pc = ((keyTonic(key).midi % 12) + 12) % 12;
+  const cands = notas.filter(n => midiOf(n) % 12 === pc).sort((a, b) => midiOf(a) - midiOf(b));
+  const mid = cands.find(n => midiOf(n) >= 60 && midiOf(n) < 72);
+  return (low ? cands[0] : mid || cands[0]) || notas[0];
 }
 
 // Figuras de una nota por pulso o más largas (las melodías generadas no parten pulsos); si la unidad aún no tiene
-// la blanca, solo negras
-function longFigures(figs = []) {
-  const ok = (figs || []).map(normFig).filter(f => ['q', 'h', 'w'].includes(f));
-  return ok.length ? ok : ['q'];
+// la blanca, solo negras. En 6/8 el pulso es la negra con puntillo
+function longFigures(figs = [], compound = false) {
+  const wanted = compound ? ['q.', 'h.'] : ['q', 'h', 'w', 'h.'];
+  const ok = (figs || []).map(normFig).filter(f => wanted.includes(f));
+  return ok.length ? ok : compound ? ['q.'] : ['q'];
+}
+// Las notas de la unidad en una clave, con la armadura puesta (con un bemol, el si es si♭)
+function poolFor(notas, clef, armadura) {
+  const c4 = midiOf('C4');
+  let pool = notas.filter(n => (clef === 'bass' ? midiOf(n) <= c4 : midiOf(n) >= c4));
+  if (!pool.length) pool = clef === 'bass' ? ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4'] : ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+  if (armadura) {
+    const acc = armadura < 0 ? 'b' : '#';
+    pool = pool.map(n => (keyAcc(n[0], armadura) !== 0 && !/[#b]/.test(n) ? n[0] + acc + n.slice(1) : n));
+  }
+  return [...new Set(pool)];
 }
 // Notas con figura y compás → partitura en texto con barras
 function scoreText(tokens, barBeats) {
@@ -274,8 +316,9 @@ async function repasoPart(host, part, ex, env) {
   switch (part.competencia) {
     case 'ritmo': {
       const meter = (pp.compas || ['4/4'])[0];
-      const tokens = genRhythm({ figuras: (pp.figuras || ['q']).map(normFig), barBeats: barBeatsOf(meter), bars: Math.min(pp.compases || 4, 4), seed });
-      return tapRhythm(host, { tokens, meter, bpm: pp.tempo || 72 }, sub);
+      const compound = isCompound(meter);
+      const tokens = genRhythm({ figuras: (pp.figuras || ['q']).map(normFig), barBeats: barBeatsOf(meter), bars: Math.min(pp.compases || 4, 4), seed, compound });
+      return tapRhythm(host, { tokens, meter, bpm: pp.tempo || 72, pulso: pp.pulso || (compound ? 'q.' : null) }, sub);
     }
     case 'entonacion': {
       // el ordenamiento entero y, después, una lectura cantada nueva con las notas y figuras de la unidad
@@ -283,22 +326,32 @@ async function repasoPart(host, part, ex, env) {
       const lect = pp.lectura || {};
       const takes = [];
       if (order) {
-        const otoks = scoreTokens(order.params.partitura);
+        const op = order.params;
+        const otoks = scoreTokens(op.partitura);
         const noStaff = otoks.some(t => !t.rest && !(env.unitNotes || []).includes(t.name));
-        const t1 = await singTask(host, { tokens: otoks, key: unitKeyOf(ex), echo: ex.variant === 'facil', variant: ex.variant, bpm: order.params.tempo || 72, meter: order.params.compas, noStaff, intro: noStaff ? 'Ordenamiento de la unidad, de oído: canta los nombres.' : 'Ordenamiento de la unidad.' }, sub);
+        const t1 = await singTask(host, {
+          tokens: otoks, key: op.tonalidad || unitKeyOf(ex), echo: ex.variant === 'facil', variant: ex.variant, bpm: op.tempo || 72, meter: op.compas, noStaff, clef: CLEF[op.clave] || 'treble',
+          armadura: op.armadura || 0, pulso: op.pulso || null, pickup: op.anacrusa || 0, form: formOf(op),
+          intro: noStaff ? 'Ordenamiento de la unidad, de oído: canta los nombres.' : 'Ordenamiento de la unidad.',
+        }, sub);
         if (!t1) return null;
         takes.push(singResult(t1));
         await continueButton(host, 'Ahora, una lectura nueva');
       }
       const meter = (order && order.params.compas) || '4/4';
+      const compound = isCompound(meter);
+      const clef = lect.clave === 'fa' ? 'bass' : 'treble';
       const pool = lect.notas || env.unitNotes || ['G4', 'E4'];
-      const melody = genMelody({ notas: pool, bars: Math.min(lect.compases || 2, 4), barBeats: barBeatsOf(meter), seed, figures: longFigures(lect.figuras), tonic: tonicOf(ex, pool) });
-      const t2 = await singTask(host, { tokens: melody, key: unitKeyOf(ex), echo: false, variant: ex.variant, bpm: 72, meter, hideNames: true, help: ex.variant === 'facil', intro: 'Lectura cantada: lee las notas en el pentagrama.' }, sub);
+      const melody = genMelody({ notas: pool, bars: Math.min(lect.compases || 2, 4), barBeats: barBeatsOf(meter), seed, figures: longFigures(lect.figuras, compound), tonic: tonicOf(ex, pool, clef === 'bass') });
+      const t2 = await singTask(host, {
+        tokens: melody, key: unitKeyOf(ex), echo: false, variant: ex.variant, bpm: 72, meter, hideNames: true, help: ex.variant === 'facil', clef, armadura: lect.armadura || 0,
+        pulso: compound ? 'q.' : null, intro: 'Lectura cantada: lee las notas en el pentagrama.',
+      }, sub);
       if (!t2) return null;
       takes.push(singResult(t2));
       return { pct: Math.round(takes.reduce((s, x) => s + x.pct, 0) / takes.length), mistakes: mistakeCodes(takes.flatMap(x => x.mistakes)) };
     }
-    case 'lectura': return agilityTask(host, { notas: pp.notas, cantidad: pp.cantidad, segundosPorNota: pp.segundosPorNota, clave: 'sol', modo: 'nombrar' }, sub);
+    case 'lectura': return agilityTask(host, { notas: pp.notas, cantidad: pp.cantidad, segundosPorNota: pp.segundosPorNota, clave: pp.clave || 'sol', armadura: pp.armadura || 0, modo: 'nombrar' }, sub);
     case 'dictado': {
       // dictado rítmico (las figuras de la unidad) y dictado melódico (sus notas), los dos con la paleta de la unidad
       const rit = pp.ritmico || {};
@@ -307,16 +360,23 @@ async function repasoPart(host, part, ex, env) {
       const figures = (ex.params.figurasUnidad || []).map(normFig);
       const parts = [];
       if (rit.level || rit.cells) {
-        const rhythm = genRhythm({ figuras: (rit.cells || figures).map(normFig).filter(f => f !== 'qq'), barBeats: barBeatsOf(meter), bars: Math.min(rit.bars || 2, 4), seed });
-        const r1 = await dictadoEscrito(host, { partitura: scoreText(rhythm, barBeatsOf(meter)), compas: meter, tempo: 72, escuchas: 3, tipo: 'ritmico', figurasUnidad: figures }, sub);
+        // las células del catálogo («ee», «ssss», «q.e»…) se entienden tal cual; una figura suelta se completa sola
+        const cells = (rit.cells || figures).map(f => (f.replace('R', '').length > 2 || /^[es]{2,}/.test(f) ? f : normFig(f))).filter(f => f !== 'qq');
+        const rhythm = genRhythm({ figuras: cells, barBeats: barBeatsOf(meter), bars: Math.min(rit.bars || 2, 4), seed, compound: isCompound(meter) });
+        const r1 = await dictadoEscrito(host, { partitura: scoreText(rhythm, barBeatsOf(meter)), compas: meter, tempo: 72, escuchas: 3, tipo: 'ritmico', figurasUnidad: figures, pulso: isCompound(meter) ? 'q.' : null }, sub);
         if (!r1) return null;
         parts.push(r1);
       }
-      // las notas que ya conoce la unidad (y su tónica: la en la unidad en la menor)
-      const notas = mel.notas || env.unitNotes || ['C4', 'D4', 'E4'];
+      // las notas que ya conoce la unidad (y su tónica: la en la unidad en la menor), en su clave y con su armadura
+      const melMeter = mel.meter || meter;
+      const clef = mel.clef === 'bass' ? 'bass' : 'treble';
+      const armadura = mel.key === 'F' ? -1 : mel.key === 'G' ? 1 : 0;
+      const notas = mel.notas || (armadura || clef === 'bass' ? poolFor(env.unitNotes || [], clef, armadura) : env.unitNotes || ['C4', 'D4', 'E4']);
       const bars = Array.isArray(mel.compases) ? mel.compases[0] : mel.bars || 2;
-      const tokens = genMelody({ notas, bars, barBeats: barBeatsOf(mel.meter || meter), seed: seed + 1, figures: longFigures(mel.figuras || figures), tonic: tonicOf(ex, notas) });
-      const r2 = await dictadoEscrito(host, { partitura: scoreText(tokens, barBeatsOf(mel.meter || meter)), compas: mel.meter || meter, tempo: 72, escuchas: 3, tipo: 'melodico', figurasUnidad: figures }, sub);
+      const home = armadura ? (armadura < 0 ? 'F4' : 'G4') : null;
+      const tonic = home && notas.includes(home) ? home : tonicOf(ex, notas, clef === 'bass');
+      const tokens = genMelody({ notas, bars, barBeats: barBeatsOf(melMeter), seed: seed + 1, figures: longFigures(mel.figuras || figures, isCompound(melMeter)), tonic });
+      const r2 = await dictadoEscrito(host, { partitura: scoreText(tokens, barBeatsOf(melMeter)), compas: melMeter, tempo: 72, escuchas: 3, tipo: 'melodico', figurasUnidad: figures, clave: clef === 'bass' ? 'fa' : 'sol', armadura, pulso: isCompound(melMeter) ? 'q.' : null }, sub);
       if (!r2) return null;
       parts.push(r2);
       return { pct: Math.round(parts.reduce((s, x) => s + x.pct, 0) / parts.length), mistakes: mistakeCodes(parts.flatMap(x => x.mistakes)) };
@@ -366,5 +426,5 @@ async function repaso(host, ex, env) {
 
 export const RUNNERS = {
   'lectura-ritmica': lecturaDosVoces, // solo la de dos voces (voz1); las demás, en el ensayo rítmico (launcher)
-  teoria, stop, agilidad, entonacion, 'cancion-cantada': cancionCantada, escribir, discriminacion, audicion, creatividad, repaso,
+  teoria, stop, agilidad, entonacion, 'cancion-cantada': cancionCantada, escribir, discriminacion, audicion, creatividad, repaso, intervalos,
 };

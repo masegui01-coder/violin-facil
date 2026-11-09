@@ -10,11 +10,78 @@ export const CLEF_BOTTOM = { treble: 30, bass: 18 };
 // Duración en pulsos de negra de cada figura de los ejercicios
 export const FIGURE_BEATS = { w: 4, 'h.': 3, h: 2, 'q.': 1.5, q: 1, 'e.': 0.75, e: 0.5, s: 0.25 };
 export const FIGURE_NAME = { w: 'Redonda', 'h.': 'Blanca con puntillo', h: 'Blanca', 'q.': 'Negra con puntillo', q: 'Negra', 'e.': 'Corchea con puntillo', e: 'Corchea', s: 'Semicorchea' };
-export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', q: 'Silencio de negra', e: 'Silencio de corchea' };
+export const REST_NAME = { w: 'Silencio de redonda', h: 'Silencio de blanca', 'h.': 'Silencio de blanca con puntillo', q: 'Silencio de negra', 'q.': 'Silencio de negra con puntillo', e: 'Silencio de corchea' };
 
 export const stepOf = name => diatonicStep(parseNote(name));
 export const nameOfStep = step => LETTERS[((step % 7) + 7) % 7] + Math.floor(step / 7);
 export const midiOf = name => parseNote(name).midi;
+
+// ---------- Altura real: alteraciones y armadura ----------
+// La corrección compara la altura (midi) y no el escalón del pentagrama: Fa♯ y Fa no son la misma nota.
+// armadura: 0 (sin alteraciones), -1 (un bemol: si♭), 1 (un sostenido: fa♯)… hasta ±7 (orden de bemoles y de sostenidos)
+const FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+const SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+export const ACC_SYMBOL = { '-1': '♭', 0: '♮', 1: '♯' };
+// Alteración que la armadura pone a una letra (-1, 0 o 1)
+export function keyAcc(letter, armadura = 0) {
+  if (!armadura) return 0;
+  return armadura < 0 ? (FLAT_ORDER.slice(0, -armadura).includes(letter) ? -1 : 0) : (SHARP_ORDER.slice(0, armadura).includes(letter) ? 1 : 0);
+}
+// Nombre de una nota por su escalón: alteración explícita (-1, 0, 1) o, si no la hay, la de la armadura
+export function pitchName(step, armadura = 0, acc = null) {
+  const letter = LETTERS[((step % 7) + 7) % 7];
+  const a = acc === null || acc === undefined ? keyAcc(letter, armadura) : acc;
+  return letter + (ACC_TEXT[a] ?? '') + Math.floor(step / 7);
+}
+// Altura (midi) de una ficha de la partitura: la suya, o la de su nombre, o la de su escalón (sin alteración)
+export const tokenMidi = t => (t.midi ?? midiOf(t.name || nameOfStep(t.step)));
+// Escalón (posición en el pentagrama) de una ficha con nombre o con escalón
+export const tokenStep = t => (t.step ?? stepOf(t.name));
+// Nombre con alteración de una ficha escrita en el pentagrama
+export const tokenName = t => t.name || nameOfStep(t.step);
+// Alteración escrita en el nombre de una nota («Bb4» → -1)
+export const accOfName = name => { const m = /^[A-G]([#b]?)[0-9]/.exec(name); return m ? (m[1] === '#' ? 1 : m[1] === 'b' ? -1 : 0) : 0; };
+// Ficha escrita en el pentagrama (escalón + alteración opcional + armadura) → nombre y altura reales. Las alteraciones
+// valen hasta la barra de compás, para la misma nota (y octava); «bars»: compás de cada ficha
+export function resolvePitches(tokens, { armadura = 0, bars = null } = {}) {
+  let state = {};
+  let bar = null;
+  return tokens.map((t, i) => {
+    if (t.rest || t.step === undefined || t.step === null) return t;
+    const b = bars ? bars[i] : 0;
+    if (b !== bar) { state = {}; bar = b; }
+    const explicit = t.acc === '#' ? 1 : t.acc === 'b' ? -1 : t.acc === 'n' ? 0 : (t.acc === 1 || t.acc === -1 || t.acc === 0) ? t.acc : null;
+    const letter = LETTERS[((t.step % 7) + 7) % 7];
+    const key = t.step;
+    const acc = explicit !== null ? explicit : (key in state ? state[key] : keyAcc(letter, armadura));
+    state[key] = acc;
+    const name = letter + (ACC_TEXT[acc] ?? '') + Math.floor(t.step / 7);
+    return { ...t, name, midi: midiOf(name) };
+  });
+}
+// Alteración que hay que DIBUJAR delante de cada nota (null = ninguna): la que la armadura no pone ya, la que contradice
+// una alteración anterior del mismo compás y, de cortesía, el becuadro (o la alteración) de una nota que el compás
+// anterior llevó alterada. bars: compás de cada ficha. Devuelve '#' | 'b' | 'n' | null por ficha
+export function accidentalSigns(tokens, bars, armadura = 0) {
+  let state = {};
+  let before = {};
+  let bar = null;
+  return tokens.map((t, i) => {
+    if (t.rest || t.step === undefined || t.step === null) return null;
+    if (bars[i] !== bar) { before = bar === null ? {} : state; state = {}; bar = bars[i]; }
+    const letter = LETTERS[((t.step % 7) + 7) % 7];
+    const acc = accOfName(t.name || nameOfStep(t.step));
+    const current = t.step in state ? state[t.step] : keyAcc(letter, armadura);
+    const signOf = a => (a === 1 ? '#' : a === -1 ? 'b' : 'n');
+    let sign = null;
+    if (acc !== current) sign = signOf(acc);
+    else if (!(t.step in state) && t.step in before && before[t.step] !== acc) sign = signOf(acc); // cortesía
+    state[t.step] = acc;
+    return sign;
+  });
+}
+// Coinciden dos fichas en altura real (las dos con nombre o con escalón)
+export const samePitch = (a, b) => !!a && !!b && !a.rest && !b.rest && tokenMidi(a) === tokenMidi(b);
 
 // Nombre de la nota para el alumno: Do, Re, Mi… (o C4, D4… con la notación en letras)
 export const noteText = (name, nom) => noteLabel(parseNote(name), nom);
@@ -102,7 +169,7 @@ export function parseTokens(text) {
   });
 }
 // Y al revés, para guardar o reproducir: [{ step, dur }] → «C4q D4h Rq»
-export const tokensText = tokens => tokens.map(t => (t.rest ? 'R' : nameOfStep(t.step)) + t.dur).join(' ');
+export const tokensText = tokens => tokens.map(t => (t.rest ? 'R' : t.name || nameOfStep(t.step)) + t.dur).join(' ');
 
 // Partitura para playScore: [{ midi, start, beats, rest }]
 export function tokensToNotes(tokens) {
@@ -118,13 +185,36 @@ export function tokensToNotes(tokens) {
 // Partitura del catálogo («| C4q E4q G4h |») → notas con escalón, figura, pulsos, inicio y compás (0, 1…)
 const ACC_NAME = { '-1': 'b', 0: '', 1: '#' };
 export function scoreTokens(text) {
-  return parseScore(text).notes.map(n => ({
-    rest: n.rest, dur: n.dur + (n.dots ? '.'.repeat(n.dots) : ''), beats: n.beats, start: n.start, bar: n.bar,
-    ...(n.rest ? {} : { step: diatonicStep(n), name: n.letter + (ACC_NAME[n.acc] ?? '') + n.oct, midi: n.midi }),
-  }));
+  const notes = parseScore(text).notes;
+  return notes.map((n, i) => {
+    const prev = notes[i - 1];
+    // ligadura de prolongación: la nota liga con la siguiente si es la misma altura (la continuación no es un ataque nuevo)
+    const tiedFrom = !!(prev && prev.tie && !n.rest && !prev.rest && prev.midi === n.midi);
+    const tie = !!(n.tie && notes[i + 1] && !n.rest && notes[i + 1].midi === n.midi);
+    return {
+      rest: n.rest, dur: n.dur + (n.dots ? '.'.repeat(n.dots) : ''), beats: n.beats, start: n.start, bar: n.bar,
+      ...(n.rest ? {} : { step: diatonicStep(n), name: n.letter + (ACC_NAME[n.acc] ?? '') + n.oct, midi: n.midi, acc: n.acc }),
+      ...(tie ? { tie: true } : {}), ...(tiedFrom ? { tiedFrom: true } : {}),
+    };
+  });
+}
+// Las notas que se tocan o se cantan: una nota ligada es UNA sola (su duración suma la de sus continuaciones).
+// Cada ficha devuelta lleva «index» (su posición en la lista de fichas que se pintan)
+export function attackTokens(tokens) {
+  const out = [];
+  tokens.forEach((t, i) => {
+    if (t.tiedFrom && out.length) { out[out.length - 1].beats += t.beats; return; }
+    out.push({ ...t, index: i });
+  });
+  return out;
 }
 // Pulsos por compás de un compás escrito («3/4» → 3, «6/8» → 3)
 export const barBeatsOf = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return num * 4 / den; };
+// Compás compuesto (6/8, 9/8, 12/8): el pulso es la negra con puntillo (1,5 pulsos de negra); si no, la negra
+export const isCompound = meter => { const [num, den] = String(meter || '4/4').split('/').map(Number); return den === 8 && num % 3 === 0 && num >= 6; };
+export const pulseBeatsOf = meter => (isCompound(meter) ? 1.5 : 1);
+// Pulso de un ejercicio: su campo «pulso» («q.») o el del compás
+export const pulseOfParams = p => (p && p.pulso === 'q.' ? 1.5 : p && p.compas ? pulseBeatsOf(p.compas) : 1);
 // Nombres de nota en solfeo del contenido («sol4», «do») → letra («G4», «C»)
 const SOLFA = { do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' };
 export function solfaToName(text) {

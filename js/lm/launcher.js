@@ -49,7 +49,7 @@ export function openInstrumentTool(h, unit = null) {
   const lesson = extra => ({ noRecord: true, nextAction: () => toUnit, ...extra });
   switch (h.tool) {
     case 'longtone': go('longtone', { secs: p.segundos || 8, dynamics: p.dinamica || null, routine: toUnit }); return;
-    case 'chord': go('chord', { lm: { root: CHORD_ROOT[p.acorde] || 60, interval: CHORD_DEGREE[p.nota] || 'M3', hits: 3 } }); return;
+    case 'chord': go('chord', { lm: { root: CHORD_ROOT[p.acorde || p.root] || 60, interval: p.interval ? CHORD_BY_NUMBER[p.interval] || 'M3' : CHORD_DEGREE[p.nota] || 'M3', hits: 3 } }); return;
     case 'gym': {
       const song = inst.rhythmOnly ? null : technique(p.kind || 'scale', p.key || 'C', inst, p.bpm || 60, p.figure || 'q');
       if (!song) { go('gym'); return; }
@@ -70,7 +70,7 @@ export function openInstrumentTool(h, unit = null) {
     case 'dictation.melodicDictation': go('dictation', { lm: { level: p.level, meter: p.meter, bars: p.bars } }); return;
     case 'free': {
       // De memoria: la canción de la unidad, tocada sin partitura y comparada nota a nota
-      const tune = p.obra ? lmSong(1, p.obra) : null;
+      const tune = p.obra ? lmSong(unit?.level || 1, p.obra) : null;
       if (!tune) { go('free', {}); return; }
       const song = { id: `lm-song-${tune.titulo}`.replace(/\W+/g, '-').slice(0, 60), title: tune.titulo, by: 'Band Flow', style: null, key: 'C', time: barBeatsOf(tune.compas), bpm: tune.tempo || 80, score: tune.partitura };
       launch(lesson({ id: song.id, kind: 'song', song, octaveShift: octaveShiftFor(song, inst) ?? 0 }), { mode: 'memory', from: 'lm' });
@@ -101,7 +101,7 @@ export function openInstrumentTool(h, unit = null) {
 function unitReading(unit, seed) {
   const meter = (unit.meters && unit.meters[0]) || '4/4';
   const barBeats = barBeatsOf(meter);
-  const tokens = genRhythm({ figuras: unit.raw.figuras.map(f => (f === 'ee' ? 'e' : f)), barBeats, bars: 8, seed });
+  const tokens = genRhythm({ figuras: unit.raw.figuras.map(f => (f === 'ee' ? 'e' : f)), barBeats, bars: 8, seed, compound: meter === '6/8' });
   const bars = [];
   let cur = [];
   let sum = 0;
@@ -124,6 +124,7 @@ export function toolLabel(h) {
   return TOOL_BASE[h.tool] || h.tool;
 }
 const CHORD_ROOT = { C: 60, F: 65, G: 55, Bb: 58, Eb: 63 };
+const CHORD_BY_NUMBER = { 3: 'M3', 5: 'P5', 6: 'M6' };
 const CHORD_DEGREE = { tercera: 'M3', 'tónica': 'root', quinta: 'P5', sexta: 'M6' };
 
 // Herramientas que valen para la familia del instrumento del alumno («para» vacío: todas)

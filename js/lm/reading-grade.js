@@ -80,7 +80,8 @@ export function gradeReading({ notes, rests = [], hits, tol, mic = false, ostina
   if (rests.length >= MIN_RESTS_FOR_PASS && (rests.length - restBad) / rests.length < REST_PASS) pct = Math.min(pct, PASS_CAP);
   const mistakes = [
     ...notes.map((n, i) => (marks[i] === 'bad' ? `falta-${n.dur}` : null)),
-    ...rests.map((r, i) => (restMarks[i] === 'bad' ? `sil-${r.dur}` : null)),
+    // un silencio con palmada; en la continuación de una ligadura, «liga» (volvió a atacar la nota ligada)
+    ...rests.map((r, i) => (restMarks[i] === 'bad' ? (r.code || `sil-${r.dur}`) : null)),
     extra ? 'golpe-mas' : null,
   ];
   return { marks, restMarks, extra, pct, mistakes };
