@@ -370,3 +370,23 @@ test('armaduras de 7 alteraciones dentro del pentagrama en todas las claves y cl
     for (const n of [-7, 7]) assert.ok(keyRelPositions(n, clef).every(r => r >= 0 && r <= 9), `${clef} ${n}`);
   for (const clef of ['alto', 'tenor']) assert.doesNotMatch(clefCell(clef), /lm-dot/, `clave de do (${clef}) sin los puntos de la de fa`);
 });
+
+test('inglés: la introducción de la entonación (consigna + forma + apoyo) y el aviso de armadura salen traducidos', async () => {
+  // como translate() en la app, con el diccionario de contenido ya descargado (en node no se descarga)
+  const { EXACT } = await import('../js/i18n-en.js');
+  const { CONTENT } = await import('../js/i18n-en-content.js');
+  const { lmPatterns } = await import('../js/i18n-en-lm.js');
+  const translate = s => EXACT[s] ?? CONTENT[s] ?? patterns.map(([re, fn]) => { const m = re.exec(s); return m && fn(...m); }).find(x => x != null) ?? s;
+  const patterns = lmPatterns({ tr: x => translate(x), noteEn: x => x });
+  const SUPPORTS = ['Con apoyo: la app canta cada compás y tú lo repites (eco).', 'Lectura con apoyo: la app da la tonalidad y la primera nota; si dudas, puedes oír la nota que toca (cuenta como «casi»).', 'Sin apoyo: la app da el acorde de la tonalidad y la primera nota; después cantas tú solo.'];
+  const spanish = /[ñáéíóú¿¡]|(?<!\p{L})(?:la|el|los|con|para|una|tú|nota|apoyo|compás)(?!\p{L})/iu;
+  const consignas = L4.units.flatMap(u => u.exercises).filter(e => e.section === 'entonacion' && e.params?.consigna).map(e => e.params);
+  assert.ok(consignas.length > 5);
+  for (const p of consignas) for (const s of SUPPORTS) {
+    const intro = `${p.consigna} ${p.forma ? `Forma de la escala: menor ${p.forma}. ` : ''}${s}`;
+    const en = translate(intro);
+    assert.doesNotMatch(en.replace(/«[^»]*»|“[^”]*”/g, ''), spanish, `${intro} → ${en}`);
+  }
+  assert.equal(translate('Armadura de 5 alteraciones.'), 'Key signature with 5 accidentals.');
+  assert.equal(translate('Con adorno'), 'With an ornament');
+});

@@ -30,6 +30,7 @@ export const LM_EXACT = {
   'D.C.: otra vez desde el principio hasta Fine': 'D.C.: again from the beginning to Fine',
   'Escucha la primera nota y el intervalo, y escribe la segunda nota.': 'Listen to the first note and the interval, and write the second note.',
   'Escuchar el intervalo': 'Listen to the interval', 'Escuchar la parte dada': 'Listen to the given part', 'La parte A, de la app': "The app's part A",
+  'Con adorno': 'With an ornament', 'Sin adorno': 'Without an ornament',
   Tonalidad: 'Key', Armadura: 'Key signature', 'Un bemol': 'One flat', 'Un sostenido': 'One sharp', 'Sin alteraciones': 'No accidentals',
   'Armadura de un bemol: el si es si♭.': 'One-flat key signature: B is B♭.', 'Armadura de un sostenido: el fa es fa♯.': 'One-sharp key signature: F is F♯.',
   'Escribes en clave de fa.': 'You write in the bass clef.',
@@ -399,6 +400,9 @@ export function lmPatterns({ tr, noteEn }) {
     [/^Casilla (\d+)(, vacía: toca la línea o el espacio donde va la alteración|: (?:sostenido|bemol), .+)$/, (m, n, rest) => `Slot ${n}${rest.startsWith(', vac') ? ', empty: tap the line or space where the accidental goes' : `: ${/sostenido/.test(rest) ? 'sharp' : 'flat'}, ${tr(rest.replace(/^: (?:sostenido|bemol), /, ''))}`}`],
     [/^Armadura (\d+): (.+)$/, (m, n, x) => `Key signature ${n}: ${tr(x.replace(/\.$/, '') + '.')}`],
     [/^Forma de la escala: menor (.+)\. (.+)$/, (m, f, rest) => `Scale form: ${({ armónica: 'harmonic', melódica: 'melodic', natural: 'natural' })[f] || f} minor. ${tr(rest)}`],
+    // introducción de la entonación: consigna + forma de la escala + apoyo, cada frase con su traducción
+    [/^(.+?) ((?:Forma de la escala: |Con apoyo: |Lectura con apoyo: |Sin apoyo: ).+)$/, (m, a, b) => `${tr(a)} ${tr(b)}`],
+    [/^Armadura de (\d+) alteraciones\.$/, (m, n) => `Key signature with ${n} accidentals.`],
     [/^Escucha dónde cae el apoyo: (.+)$/, (m, x) => `Listen to where the accent falls: ${x}`],
     [/^(\d+)\.ª (mayor|menor|justa|aumentada|disminuida)$/, (m, n, q) => `${n}th ${({ mayor: 'major', menor: 'minor', justa: 'perfect', aumentada: 'augmented', disminuida: 'diminished' })[q]}`],
     [/^Era una (\d)\.ª (mayor|menor|justa|aumentada|disminuida) (hacia arriba|hacia abajo): (.+)$/, (m, n, q, d, x) => `It was a ${({ mayor: 'major', menor: 'minor', justa: 'perfect', aumentada: 'augmented', disminuida: 'diminished' })[q]} ${n}th ${d === 'hacia arriba' ? 'going up' : 'going down'}: ${noteOr(x)}`],
