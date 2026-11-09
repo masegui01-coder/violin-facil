@@ -13,11 +13,11 @@ import { gradeReading as gradeAll } from './reading-grade.js';
 import { dynamicsChecks } from './dynamics.js';
 import { accentContrast } from '../onsets.js';
 import { ostinatoTokens } from './gen.js';
-import { barBeatsOf, scoreTokens } from './notes.js';
+import { barBeatsOf, beamBeatsOf, scoreTokens } from './notes.js';
 import { onceClick, staffHtml, tokenLabel, withBreaths, CLEF } from './kit.js';
 import { twoVoices } from './tasks-rhythm.js';
 import { follow } from './systems.js';
-import { formOf } from './form.js';
+import { formOf, passText } from './form.js';
 import { readingTimeline, metronomeBeats, syllablesOf, toleranceMs, pulseOf } from './rhythm-plan.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
 
@@ -48,7 +48,7 @@ function scoreHtml(tokens, ostinato, p, env, marks = []) {
   const base = { compas: p.compas, anacrusa: p.anacrusa || 0, voz1Clave: p.voz1Clave, pulso: p.pulso, armadura: p.armadura || 0 };
   if (ostinato) return twoVoices(tokens, ostinato, base, env, marks);
   const pulse = pulseOf(p);
-  const under = readingMode(p, env.variant).syllables ? syllablesOf(tokens, { pulse, pickup: p.anacrusa || 0 }) : [];
+  const under = readingMode(p, env.variant).syllables ? syllablesOf(tokens, { pulse: beamBeatsOf(p.compas, p.pulso), pickup: p.anacrusa || 0 }) : [];
   return staffHtml(tokens, {
     clef: CLEF[p.clave] || 'treble', meter: p.compas, pickup: p.anacrusa || 0, marks, under, dynamics: p.matices || null,
     armadura: p.armadura || 0, form: formOf(p), pulso: p.pulso || null,
@@ -90,7 +90,7 @@ export async function lecturaDosVoces(host, ex, env) {
   const mode = readingMode(p, env.variant);
   const tl = readingTimeline(p, tokens);
   const form = formOf(p);
-  host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>
+  host.innerHTML = `<p class="muted">${esc(p.modo || 'La app toca la voz 1 y tú la voz 2')}</p>${p.consigna ? `<p>${esc(p.consigna)}</p>` : ''}
     ${scoreHtml(tokens, ostinato, p, env)}
     <div class="lm-phones" id="lmPhones"><label class="lm-check"><input type="checkbox" id="lmDuoPhones"> <span>Llevo auriculares (para dar palmas al micrófono)</span></label>
     <p class="muted small lm-phones-note">Sin auriculares, el micrófono oiría también a la app: toca la pantalla.${mode.measure ? ' <span>Los matices y el acento solo se miden con palmas al micrófono.</span>' : ''}</p>
@@ -149,10 +149,7 @@ export async function lecturaDosVoces(host, ex, env) {
     phaseAt(host, env, at(held) + (held.beats - held.hold) * spb, '✋ Calderón: mantén… hasta que la mano baje', true);
     phaseAt(host, env, at(held) + held.beats * spb, '👇 ¡Sigue!', true);
   }
-  if (tl.passes > 1) {
-    const text = !form ? '2.ª vuelta, sin metrónomo' : form.kind === 'casillas' ? '2.ª vuelta: salta la casilla 1 y toca la casilla 2' : form.kind === 'dc' ? 'D.C.: otra vez desde el principio hasta Fine' : '2.ª vuelta, sin metrónomo';
-    phaseAt(host, env, t0 + (offset + tl.passStarts[1]) * spb, text);
-  }
+  for (let k = 1; k < tl.passes; k++) phaseAt(host, env, t0 + (offset + tl.passStarts[k]) * spb, passText(form, k));
   await wait((end - now() + AFTER_END_S) * 1000);
   unfollow();
   if (useMic) audio.stopOnsetCapture();

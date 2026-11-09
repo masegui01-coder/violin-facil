@@ -108,7 +108,7 @@ async function answer(page, item) {
 test('el Nivel 2 está en la vista Lenguaje, abierto y con sus 8 unidades', async () => {
   const { page, errors, close } = await openLm();
   assert.equal(await page.$$eval('.lm-unit-card[data-level="2"]', b => b.length), 8);
-  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 2, 'solo los niveles 3 y 4 son «próximamente»');
+  assert.equal(await page.$$eval('.lm-level.soon', b => b.length), 1, 'solo el nivel 4 es «próximamente»');
   await openUnit(page, 4);
   assert.match(await page.$eval('#lmUnitTitle', h => h.textContent), /\S/);
   assert.deepEqual(errors, []);

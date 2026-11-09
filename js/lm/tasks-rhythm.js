@@ -3,7 +3,8 @@
 import { esc } from '../ui.js';
 import { gradeStop, stopMark, pctOf, mistakeCodes } from './grade.js';
 import { stopKinds, stopRoundOf, stopWindow, ostinatoTokens } from './gen.js';
-import { barBeatsOf, pulseOfParams } from './notes.js';
+import { barBeatsOf, pulseOfParams, attackTokens } from './notes.js';
+import { keyTonic } from './tasks-voice.js';
 import { staffHtml, systemHtml, onceClick, GLYPH, tokenLabel, continueButton, CLEF } from './kit.js';
 import { formOf, expandForm } from './form.js';
 import { playEvents, clicks, stopSound, now, wait } from './sound.js';
@@ -22,7 +23,9 @@ const STOP_NAMES = {
   'ssss>ee': 'Cuatro semicorcheas sonaron como dos corcheas', 'ess>sse': 'Un grupo de corchea y dos semicorcheas cambió de orden',
   'e.s>ee': 'Un saltillo sonó como dos corcheas iguales', '6/8>3/4': 'El 6/8 sonó como un 3/4 (tres negras en lugar de dos con puntillo)',
   'R>e': 'Sonó un silencio de corchea o de negra con puntillo', casilla: 'En la 2.ª vuelta no saltó la casilla 1',
-  dc: 'No volvió al principio (D.C.) o no paró en el Fine', alteracion: 'Una nota sonó sin la alteración de la armadura', nota: 'Una nota sonó un escalón más arriba o más abajo',
+  dc: 'No volvió al principio (D.C.) o no paró en el Fine', ds: 'No volvió al signo (D.S.) o no saltó a la Coda',
+  '9/8>6/8': 'Un compás de 9/8 perdió su tercer pulso (sonó como 6/8)', liga: 'Una nota ligada se volvió a atacar',
+  sensible: 'La sensible sonó un semitono más baja (natural)', melodica: 'Al bajar sonó la nota de la subida de la melódica', alteracion: 'Una nota sonó sin la alteración de la armadura', nota: 'Una nota sonó un escalón más arriba o más abajo',
 };
 
 // Lo que se lee en el STOP: la lectura con sus matices, calderón y anacrusa; si el error es de voz, encima va el
@@ -83,8 +86,9 @@ export async function stopGame(host, p, env) {
   const pickup0 = p.base.anacrusa || 0;
   const form = formOf(p.base);
   // lo que suena: la lectura en el orden de su forma (repeticiones, casillas, D.C.); lo que se ve, la partitura escrita
-  const playBase = form ? expandForm(tokens, form, { pickup: pickup0, barBeats }) : tokens;
-  const ctx = { armadura: p.base.armadura || 0, melodic: !!p.base.melodic, form, up: p.base.clave === 'fa' ? 12 : 0 };
+  const playBase = form ? expandForm(tokens, form, { pickup: pickup0, barBeats }) : attackTokens(tokens); // una nota ligada suena entera
+  const tone = keyTonic(p.base.tonalidad);
+  const ctx = { armadura: p.base.armadura || 0, melodic: !!p.base.melodic, form, up: p.base.clave === 'fa' ? 12 : 0, minor: tone.minor, tonicPc: ((tone.midi % 12) + 12) % 12 };
   const ostinato = kinds.includes('voz') ? ostinatoTokens(tokens, p.base) : null;
   const rounds = [];
   const played = new Set(); // rondas ya jugadas: no se repite la misma
@@ -152,7 +156,7 @@ export async function stopGame(host, p, env) {
 export async function tapRhythm(host, p, env) {
   const barBeats = barBeatsOf(p.meter);
   const spb = 60 / p.bpm;
-  const pulse = p.pulso === 'q.' ? 1.5 : 1; // en 6/8 la claqueta marca la negra con puntillo
+  const pulse = pulseOfParams({ compas: p.meter, pulso: p.pulso }); // en 6/8 la claqueta marca la negra con puntillo; en 3/8, la corchea
   const counts = Math.max(1, Math.round(barBeats / pulse));
   const tol = toleranceMs(env.variant, p.tokens, p.bpm) / 1000;
   host.innerHTML = `<p class="muted">Toca el botón con el ritmo de la partitura (o pulsa la barra espaciadora). Primero suena un compás de claqueta.</p>

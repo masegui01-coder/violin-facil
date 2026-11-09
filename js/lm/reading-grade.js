@@ -81,7 +81,7 @@ export function gradeReading({ notes, rests = [], hits, tol, mic = false, ostina
   const mistakes = [
     ...notes.map((n, i) => (marks[i] === 'bad' ? `falta-${n.dur}` : null)),
     // un silencio con palmada; en la continuación de una ligadura, «liga» (volvió a atacar la nota ligada)
-    ...rests.map((r, i) => (restMarks[i] === 'bad' ? (r.code || `sil-${r.dur}`) : null)),
+    ...rests.map((r, i) => (restMarks[i] === 'bad' ? (r.code || (r.dur === 's' ? 'Rs>s' : `sil-${r.dur}`)) : null)),
     extra ? 'golpe-mas' : null,
   ];
   return { marks, restMarks, extra, pct, mistakes };

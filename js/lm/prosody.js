@@ -9,11 +9,14 @@ const ACCENTED = /[áéíóú]/i;
 const plain = s => String(s).toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z\u0001]/g, '');
 
 // Peso métrico de un instante del compás: 3 el primer tiempo, 2 el tercero del 4/4, 1 los demás pulsos, 0 a contratiempo
-// En 6/8 (compound): peso 3 en el 0, 2 en el 1,5 (el 2.º pulso) y 0 en las demás corcheas
+// En 6/8 (compound): peso 3 en el 0, 2 en el 1,5 (el 2.º pulso) y 0 en las demás corcheas. En 9/8: 3 en el 0, 1 en el 1,5 y
+// el 3 (los otros dos pulsos) y 0 en las corcheas. En 3/8 (1,5 pulsos de negra) el pulso es la corchea: 3 en el 0, 1 en
+// el 0,5 y el 1 y 0 en las semicorcheas
 export function beatWeight(pos, barBeats, compound = false) {
   const p = ((pos % barBeats) + barBeats) % barBeats;
   if (Math.abs(p) < 1e-6) return 3;
-  if (compound) return Math.abs(p - 1.5) < 1e-6 ? 2 : 0;
+  if (Math.abs(barBeats - 1.5) < 1e-6) return Math.abs(p * 2 - Math.round(p * 2)) < 1e-6 ? 1 : 0;
+  if (compound) return Math.abs(p % 1.5) < 1e-6 || Math.abs((p % 1.5) - 1.5) < 1e-6 ? (barBeats > 3 ? 1 : 2) : 0;
   if (barBeats === 4 && Math.abs(p - 2) < 1e-6) return 2;
   return Math.abs(p - Math.round(p)) < 1e-6 ? 1 : 0;
 }
@@ -54,7 +57,13 @@ export function prosodyIssues({ partitura, compas, anacrusa = 0 }, letra, words)
   const byBar = {};
   tokens.forEach(t => { if (!t.rest) (byBar[t.bar] ||= []).push(t); });
   const syl = [];
-  letra.forEach((bar, b) => bar.forEach((text, i) => { const n = (byBar[b] || [])[i]; if (n) syl.push({ text, start: n.start, beats: n.beats, bar: b }); }));
+  // melisma: «_» es una nota que sigue cantando la sílaba anterior (sin sílaba nueva; alarga la anterior)
+  letra.forEach((bar, b) => bar.forEach((text, i) => {
+    const n = (byBar[b] || [])[i];
+    if (!n) return;
+    if (text === '_' && syl.length) syl[syl.length - 1].beats += n.beats;
+    else syl.push({ text, start: n.start, beats: n.beats, bar: b });
+  }));
   const wordList = String(words).split(/\s+/).filter(w => plain(w));
   const barName = b => (anacrusa && b === 0 ? 'anacrusa' : b + (anacrusa ? 0 : 1));
   const issues = [];

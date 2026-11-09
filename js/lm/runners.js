@@ -91,7 +91,7 @@ async function showCards(host, cards, env, summary) {
     host.querySelector('.lm-q').focus();
     const play = host.querySelector('#lmCardPlay');
     const c = cards[i];
-    if (play) play.addEventListener('click', () => playQuestion({ partitura: c.ejemplo, repeticion: c.repeticion, dc: c.dc, compas: c.compas, anacrusa: c.anacrusa }, env));
+    if (play) play.addEventListener('click', () => playQuestion({ partitura: c.ejemplo, repeticion: c.repeticion, dc: c.dc, ds: c.ds, compas: c.compas, anacrusa: c.anacrusa }, env));
     host.querySelector('#lmCardPlayCmp')?.addEventListener('click', () => playQuestion({ partitura: c.ejemploComparado.partitura, compas: c.ejemploComparado.compas }, env));
     host.querySelector('#lmCardPlay2')?.addEventListener('click', () => playQuestion({ partitura: cards[i].ejemploCompleto }, env));
     await continueButton(host, i + 1 < cards.length ? 'Siguiente' : 'A practicar');
@@ -129,7 +129,8 @@ async function entonacion(host, ex, env) {
   const take = await singTask(host, {
     tokens, key: p.tonalidad, echo: !reading && ex.variant === 'facil', variant: ex.variant, meter: p.compas, bpm: p.tempo || 72, clef: CLEF[p.clave] || 'treble',
     pickup: p.anacrusa || 0, armadura: p.armadura || 0, pulso: p.pulso || null, form: formOf(p),
-    intro: reading ? (ex.variant === 'facil' ? SUPPORT.lectura : SUPPORT.solo) : ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo,
+    partner: p.voz1 ? partnerOf(p.voz1, p, env, 'Voz 1 (la de la app)', CLEF[p.voz1Clave] || 'treble') : null,
+    intro: `${p.consigna ? `${p.consigna} ` : ''}${p.forma ? `Forma de la escala: menor ${p.forma}. ` : ''}${reading ? (ex.variant === 'facil' ? SUPPORT.lectura : SUPPORT.solo) : ex.variant === 'facil' ? SUPPORT.eco : SUPPORT.solo}`,
     hideNames: reading, help: reading && ex.variant === 'facil', noStaff, dynamics: Array.isArray(p.matices) ? p.matices : null,
   }, env);
   return take && { ...singResult(take), labels: take.names.map(n => noteText(n, env.nom)), range: take.range };
@@ -140,8 +141,16 @@ const SUPPORT = {
   lectura: 'Lectura con apoyo: la app da la tonalidad y la primera nota; si dudas, puedes oír la nota que toca (cuenta como «casi»).',
   solo: 'Sin apoyo: la app da el acorde de la tonalidad y la primera nota; después cantas tú solo.',
 };
+// La otra voz, solo para mirarla (y oírla): su pentagrama de lectura y sus notas
+function partnerOf(score, p, env, label, clef = 'treble') {
+  const tokens = scoreTokens(score);
+  return { tokens, notes: attackTokens(tokens).filter(t => !t.rest), html: `<p class="dict-staff-label">${esc(label)}</p>${staffHtml(tokens, { clef, meter: p.compas, pickup: p.anacrusa || 0, armadura: p.armadura || 0, pulso: p.pulso || null, form: formOf(p), label: `${label}: ${tokens.map(t => tokenLabel(t, env.nom)).join(', ')}` })}` };
+}
 async function cancionCantada(host, ex, env) {
-  const song = ex.params.cancion;
+  const song0 = ex.params.cancion;
+  // canción a dos voces: en Fácil se canta la 1.ª voz y la app toca la 2.ª; en Media, al revés
+  const two = song0.voz2 ? (ex.variant === 'facil' ? { sung: song0, other: song0.voz2, label: '2.ª voz (la toca la app)' } : { sung: { ...song0, ...song0.voz2 }, other: song0, label: '1.ª voz (la toca la app)' }) : null;
+  const song = two ? { ...two.sung, voz2: undefined } : song0;
   const tokens = withBreaths(scoreTokens(song.partitura), song.comas || [], song.anacrusa || 0);
   const names = /nombre de notas/.test(ex.params.modo || '');
   // a tempo: afinación (entonación) y ataques (ritmo) de cada nota, cada una con su porcentaje
@@ -153,7 +162,8 @@ async function cancionCantada(host, ex, env) {
     // 2.ª estrofa: debajo de la 1.ª y cantada en la segunda vuelta (barra de repetición, casillas o D.C.), siempre con su letra
     under2: song.letra2 ? lyricsUnder(tokens, song.letra2, env.nom, false, song.palabras2 || SONG_WORDS2[song.titulo] || '') : null,
     dynamics: Array.isArray(song.matices) ? song.matices : null,
-    clave: song.clave, armadura: song.armadura || 0, form: formOf(song), pulso: song.pulso || null, pickup: song.anacrusa || 0,
+    clave: song.clave, armadura: song.armadura || 0, form: formOf(song0), pulso: song.pulso || null, pickup: song.anacrusa || 0,
+    partner: two ? partnerOf(two.other.partitura, song0, env, two.label) : null,
   }, env);
   return take && { ...take, labels: take.names.map(n => noteText(n, env.nom)) };
 }

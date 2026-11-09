@@ -1,13 +1,14 @@
 // Generadores puros del curso (sin DOM, con semilla: toda la clase recibe lo mismo): rondas del juego STOP a partir de
 // la lectura rítmica de la unidad, ritmos con las figuras permitidas y preguntas de discriminación auditiva.
 import { rng } from '../generate.js';
-import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens, keyAcc } from './notes.js';
+import { FIGURE_BEATS, scale, midiOf, stepOf, scoreTokens, keyAcc, attackTokens, MODE_KEY, scaleDown } from './notes.js';
 
 const CLAP = 'C5';
 const EPS = 1e-6;
 const withStarts = tokens => {
   let start = 0;
-  return tokens.map(t => { const n = { ...t, start, beats: FIGURE_BEATS[t.dur] ?? t.beats ?? 0 }; start += n.beats; return n; });
+  // una nota ligada (merged) dura lo que suman sus partes: su duración no sale de la figura
+  return tokens.map(t => { const n = { ...t, start, beats: t.merged ? t.beats : FIGURE_BEATS[t.dur] ?? t.beats ?? 0 }; start += n.beats; return n; });
 };
 const note = (dur, rest = false) => (rest ? { rest: true, dur } : { rest: false, dur, name: CLAP });
 
@@ -81,9 +82,11 @@ export function stopBase(base, { matices = [], melodic = false, up = 0 } = {}) {
 const isNote = t => !t.rest;
 const same = (a, b, d) => a && b && !a.rest && !b.rest && a.dur === d && b.dur === d;
 // Notas de la escala de la tonalidad (por la armadura: fa mayor / re menor, do mayor / la menor, sol mayor / mi menor)
-const SCALE_PCS = { '-1': [5, 7, 9, 10, 0, 2, 4], 0: [0, 2, 4, 5, 7, 9, 11], 1: [7, 9, 11, 0, 2, 4, 6] };
+// Con cualquier armadura de −7 a 7: la mayor empieza en la nota de la armadura por quintas (+7 semitonos por sostenido)
+const MAJOR_PCS = [0, 2, 4, 5, 7, 9, 11];
+const scalePcs = armadura => { const tonic = (((armadura * 7) % 12) + 12) % 12; return MAJOR_PCS.map(x => (x + tonic) % 12); };
 export function scaleStep(midi, dir, armadura = 0) {
-  const pcs = SCALE_PCS[armadura] || SCALE_PCS[0];
+  const pcs = scalePcs(armadura);
   for (let m = midi + dir; Math.abs(m - midi) < 6; m += dir) if (pcs.includes(((m % 12) + 12) % 12)) return m;
   return midi + 2 * dir;
 }
@@ -127,7 +130,38 @@ const MUTATIONS = {
     at: 1, span: (ts, i) => (ts[i].dur === 'h.' ? 1 : 2),
   },
   // silencio con palmada: un silencio de corchea o de negra con puntillo suena
-  'R>e': { can: (ts, i) => ts[i].rest && (ts[i].dur === 'e' || ts[i].dur === 'q.'), apply: (ts, i) => [{ ...ts[i], rest: false, midi: (ts[i - 1] && ts[i - 1].midi) || (ts[i + 1] && ts[i + 1].midi) || 72 }], at: 0 },
+  'R>e': { can: (ts, i) => ts[i].rest && (ts[i].dur === 'e' || ts[i].dur === 'q.' || ts[i].dur === 's'), apply: (ts, i) => [{ ...ts[i], rest: false, midi: (ts[i - 1] && ts[i - 1].midi) || (ts[i + 1] && ts[i + 1].midi) || 72 }], at: 0 },
+  // 9/8 tocado como 6/8: el compás pierde su tercer pulso (suena como un 6/8) y todo lo que sigue llega antes
+  '9/8>6/8': {
+    can: (ts, i, bar, ctx) => !ts[i].merged && Math.abs((((ts[i].start - (ctx.pickup || 0)) % 4.5) + 4.5) % 4.5) < EPS && bar === 4.5
+      && ts.some(t => t.bar === ts[i].bar && t.start - ts[i].start >= 3 - EPS),
+    wholeBar: true,
+    apply: (ts, i) => ts.filter(t => t.bar === ts[i].bar && t.start - ts[i].start < 3 - EPS).map(t => (t.start - ts[i].start + t.beats > 3 + EPS ? { ...t, merged: true, beats: 3 - (t.start - ts[i].start) } : t)),
+    at: 3,
+  },
+  // sensible olvidada (menor armónica) o becuadro olvidado (do menor): el 7.º grado suena un semitono más bajo
+  sensible: { can: (ts, i, bar, ctx) => isNote(ts[i]) && ctx.minor && ctx.tonicPc !== undefined && ((ts[i].midi % 12) + 12) % 12 === (ctx.tonicPc + 11) % 12, apply: (ts, i) => [{ ...ts[i], midi: ts[i].midi - 1 }], at: 0 },
+  // menor melódica bajada con los sostenidos de la subida: el 6.º o el 7.º grado suenan elevados al bajar
+  melodica: {
+    can: (ts, i, bar, ctx) => isNote(ts[i]) && ctx.minor && ctx.tonicPc !== undefined && i > 0 && isNote(ts[i - 1]) && ts[i].midi < ts[i - 1].midi
+      && [8, 10].includes((((ts[i].midi - ctx.tonicPc) % 12) + 12) % 12),
+    apply: (ts, i) => [{ ...ts[i], midi: ts[i].midi + 1 }], at: 0,
+  },
+  // ligadura olvidada: la nota ligada se vuelve a atacar donde empieza su continuación
+  liga: {
+    can: (ts, i) => !!ts[i].merged && !ts[i].rest && ts[i].head > 0,
+    apply: (ts, i) => [{ ...ts[i], beats: ts[i].head }, { ...ts[i], merged: true, head: undefined, beats: ts[i].beats - ts[i].head }], at: (ts, i) => ts[i].head,
+  },
+  // D.S. al Coda: vuelve al principio en lugar de al signo («alinicio») o no salta a la Coda y sigue («sigue»)
+  ds: {
+    can: (ts, i, bar, ctx) => !!ctx.form && ctx.form.kind === 'ds' && ts[i].pass === 1 && (i === 0 || ts[i - 1].pass === 0),
+    span: ts => ts.filter(t => t.pass === 1).length,
+    apply: (ts, i, ctx) => {
+      const { segno, alCoda, coda } = ctx.form.ds;
+      return ts.filter(t => t.pass === 0 && (ctx.variant === 'sigue' ? t.barNo >= segno && t.barNo < coda : t.barNo <= alCoda)).map(t => ({ ...t, pass: 1 }));
+    },
+    at: 0, errorAt: (ts, i, ctx) => (ctx.variant === 'sigue' ? ts.filter(t => t.pass === 1).reduce((e, t) => Math.max(e, t.start + t.beats), 0) - ts[i].start : 0),
+  },
   // STOP melódico: la nota de la armadura suena natural (el bemol o el sostenido olvidado)
   alteracion: { can: (ts, i, bar, ctx) => !!ctx.armadura && keyedAcc(ts[i], ctx.armadura) !== 0, apply: (ts, i, ctx) => [{ ...ts[i], midi: ts[i].midi - keyedAcc(ts[i], ctx.armadura) }], at: 0 },
   // …o una nota un escalón más arriba o más abajo dentro de la tonalidad
@@ -149,7 +183,8 @@ const MUTATIONS = {
 export const KINDS_OF = [
   [/puntillo olvidado/, ['q.e>qq']], [/blanca con puntillo acortada/, ['h.>h']], [/semicorcheas↔corcheas/, ['ssss>ee']], [/grupo cambiado/, ['ess>sse']],
   [/casilla equivocada/, ['casilla']], [/6\/8 tocado como 3\/4/, ['6/8>3/4']], [/silencio con palmada/, ['R>e']], [/saltillo tocado/, ['e.s>ee']],
-  [/D\.C\. olvidado/, ['dc']], [/bemol olvidado|sostenido olvidado/, ['alteracion']], [/nota cambiada/, ['nota']],
+  [/D\.C\. olvidado/, ['dc']], [/D\.S\. olvidado/, ['ds']], [/ligadura olvidada/, ['liga']], [/sensible olvidada|becuadro olvidado/, ['sensible']],
+  [/melódica bajada con sostenidos/, ['melodica']], [/9\/8 tocado como 6\/8/, ['9/8>6/8']], [/bemol olvidado|sostenido olvidado/, ['alteracion']], [/nota cambiada/, ['nota']],
   [/negra↔silencio/, ['Rq>q', 'q>Rq']], [/corcheas↔negra/, ['q>ee', 'ee>q']], [/blanca acortada/, ['h-corta']],
   [/redonda acortada/, ['w-corta']], [/silencio de compás/, ['Rw-salto']], [/compás de 4/, ['compas']],
   [/matiz/, ['matiz']], [/calderón/, ['calderon']], [/voz cambiada/, ['voz']], [/anacrusa/, ['anacrusa']],
@@ -161,6 +196,7 @@ export function stopKinds(errores = []) {
 }
 
 // Los sitios donde puede caer cada tipo de error en una lectura: [{ k, i, variant? }] (para la ronda y para las pruebas)
+const MERGED_OK = new Set(['liga', 'nota', 'alteracion', 'sensible', 'melodica', 'voz', 'matiz', 'calderon']);
 export function stopOptions(ts, kinds, barBeats = 4, ctx = {}) {
   const out = [];
   kinds.forEach(k => {
@@ -169,8 +205,11 @@ export function stopOptions(ts, kinds, barBeats = 4, ctx = {}) {
     if (!m) return;
     ts.forEach((t, i) => {
       if (k === 'dc') { if (m.can(ts, i, barBeats, ctx)) out.push({ k, i, variant: 'omite' }, { k, i, variant: 'sigue' }); return; }
+      if (k === 'ds') { if (m.can(ts, i, barBeats, ctx)) out.push({ k, i, variant: 'alinicio' }, { k, i, variant: 'sigue' }); return; }
+      // una nota ligada (suma de varias figuras) solo admite los errores que no dependen de su figura
+      if (t.merged && !MERGED_OK.has(k)) return;
       // la primera figura no se toca (nadie sabe aún por dónde va), salvo en los errores de altura o de forma
-      if ((i > 0 || m.at > 0 || k === 'alteracion' || k === 'casilla') && m.can(ts, i, barBeats, ctx)) out.push({ k, i });
+      if ((i > 0 || typeof m.at === 'function' || m.at > 0 || ['alteracion', 'casilla', 'sensible', 'melodica'].includes(k)) && m.can(ts, i, barBeats, ctx)) out.push({ k, i });
     });
   });
   return out;
@@ -219,7 +258,8 @@ export function stopRoundOf(base, { kinds, seed, barBeats = 4, matices = [], pic
   // D.C. que no para en el Fine: el error empieza donde debía parar (el final de la 2.ª vuelta)
   const atEnd = !!(m.atEnd && m.atEnd(src, i, mctx));
   const finePoint = atEnd ? ts.filter(t => t.pass === 1 && t.barNo <= ctx.form.dc.fine).reduce((e, t) => Math.max(e, t.start + t.beats), 0) : null;
-  const errorBeat = offset + (atEnd ? finePoint : m.at === 'end' ? src[i].start + src[i].beats : src[i].start + m.at);
+  const at = typeof m.at === 'function' ? m.at(src, i, mctx) : m.at;
+  const errorBeat = offset + (atEnd ? finePoint : m.errorAt ? src[i].start + m.errorAt(src, i, mctx) : at === 'end' ? src[i].start + src[i].beats : src[i].start + at);
   if (k === 'voz') return { played: ts, ostinato: mutated, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
   return { played: withStarts(mutated), ostinato: ost, offset, errorBeat, code: k, index: i, bar: src[i].bar ?? 0, key };
 }
@@ -354,8 +394,49 @@ export function songQuestions(songs, count, seed) {
 
 // ---------- Discriminación con las opciones escritas en el catálogo (Nivel 2) ----------
 // opciones: ritmo de un pulso («s s s s», «e s s», «e. s», «e e»), compás («3/4», «6/8») o modo con armadura («Fa mayor», «Re menor»)
-const RHYTHM_OPTION = /^([es]\.?)( [es]\.?)*$/;
-const cellOf = text => (String(text).match(/[es]\.?/g) || []).map(d => `C5${d}`).join(' ');
+// Nivel 3: también ligaduras entre figuras («e e~e e»: la 2.ª y la 3.ª corcheas ligadas)
+const RHYTHM_OPTION = /^([es]\.?)((\s|~)[es]\.?)*$/;
+const cellOf = text => [...String(text).matchAll(/([es]\.?)(~?)/g)].map(m => `C5${m[1]}${m[2]}`).join(' ');
+const beatsOfCell = text => [...String(text).matchAll(/[es]\.?/g)].reduce((s, m) => s + FIGURE_BEATS[m[0]], 0);
+// Apoyo de cada corchea (F fuerte, m medio, d débil): el compás se oye por dónde caen los golpes graves
+const PITCH_OF = { F: 'C3', m: 'G3', d: 'G4' };
+const BEAT_PATTERN = {
+  '2/4': 'Fddd', '3/8': 'Fdd', '6/8': 'Fddmdd', '3/4': 'Fdmdmd', '9/8': 'Fddmddmdd',
+};
+const METER_WHY = {
+  '2/4': 'El apoyo llega cada cuatro corcheas: dos pulsos de dos.', '3/8': 'El apoyo llega cada tres corcheas: un solo pulso por compás.',
+  '6/8': 'El apoyo llega cada seis corcheas, con uno menor en la cuarta: dos pulsos de tres.', '3/4': 'Un apoyo suave cada dos corcheas: tres pulsos de dos.',
+  '9/8': 'Un apoyo suave cada tres corcheas: tres pulsos de tres.',
+};
+const METER_CODE = { '3/8': '3/8>2/4', '9/8': '9/8>6/8', '6/8': '6/8>3/4' };
+// Movimiento entre dos voces: paralelo (misma dirección e intervalo), contrario (direcciones opuestas) y oblicuo (una voz tenida)
+const NATURALS = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5', 'A5'];
+export function motionVoices(kind, r) {
+  const up = r() < 0.5;
+  const steps = [1, r() < 0.5 ? 2 : 1, 1].map(x => (up ? x : -x));
+  const gap = kind === 'contrario' ? 7 : [2, 4, 7][Math.floor(r() * 3)];
+  const a0 = 11 + Math.floor(r() * 4);
+  const path = (s0, dirs) => dirs.reduce((acc, d) => [...acc, acc[acc.length - 1] + d], [s0]);
+  const name = i => NATURALS[Math.max(0, Math.min(NATURALS.length - 1, i))];
+  let upper;
+  let lower;
+  if (kind === 'paralelo') { upper = path(a0, steps); lower = path(a0 - gap, steps); }
+  // contrario: la voz aguda sube y la grave baja (se separan)
+  else if (kind === 'contrario') { upper = path(a0, steps.map(Math.abs)); lower = path(a0 - gap, steps.map(x => -Math.abs(x))); }
+  // oblicuo: una voz se mueve y la otra se queda tenida (a veces la grave, a veces la aguda)
+  else if (r() < 0.5) { upper = path(a0, steps.map(Math.abs)); lower = path(a0 - gap, [0, 0, 0]); } else { upper = path(a0, [0, 0, 0]); lower = path(a0 - gap, steps.map(x => -Math.abs(x))); }
+  return { voz1: upper.map(name), voz2: lower.map(name) };
+}
+function movementQuestions(options, count, pick, seed) {
+  return Array.from({ length: count }, (_, k) => {
+    const a = pick(k);
+    const kind = options[a].toLowerCase();
+    const v = motionVoices(kind, rng(seed * 31 + k + 1));
+    return { tipo: 'escucharMovimiento', id: `movimiento-${k}`, code: 'movimiento', q: 'Escucha las dos voces: ¿cómo se mueven?', options: options.map(o => o[0].toUpperCase() + o.slice(1)), answer: a,
+      play: { partitura: `| ${v.voz1.map(n => `${n}q`).join(' ')} |`, voz2: `| ${v.voz2.map(n => `${n}q`).join(' ')} |`, compas: '4/4', tempo: 72 },
+      why: kind === 'paralelo' ? 'Las dos voces suben o bajan a la vez, con la misma distancia.' : kind === 'contrario' ? 'Una voz sube mientras la otra baja.' : 'Una voz se mueve y la otra se queda quieta.' };
+  });
+}
 export function choiceQuestions(p, count, seed) {
   const r = rng(seed);
   const options = p.opciones;
@@ -364,11 +445,43 @@ export function choiceQuestions(p, count, seed) {
   if (options.every(o => RHYTHM_OPTION.test(o))) {
     return Array.from({ length: count }, (_, k) => {
       const a = pick(k);
-      const bar = `${cellOf(options[a])} ${cellOf(options[a])}`;
-      return { tipo: 'escucharForma', id: `ritmo-${k}`, code: 'ritmo', q: 'Escucha el ritmo de un pulso: ¿cuál es?', options: [...options], answer: a,
-        play: { partitura: `| ${Array(4).fill(bar).join(' | ')} |`, clap: true, tempo: 76 }, why: `Era «${options[a]}».` };
+      // una célula de un pulso se dobla hasta llenar un compás de 2/4; las de dos pulsos o más (con ligadura) ya son el compás
+      const whole = beatsOfCell(options[a]) >= 2;
+      const bar = whole ? cellOf(options[a]) : `${cellOf(options[a])} ${cellOf(options[a])}`;
+      return { tipo: 'escucharForma', id: `ritmo-${k}`, code: /~/.test(options.join()) ? 'liga' : 'ritmo', q: whole ? 'Escucha el compás con su pulso: ¿cuál es?' : 'Escucha el ritmo de un pulso: ¿cuál es?', options: [...options], answer: a,
+        play: { partitura: `| ${Array(4).fill(bar).join(' | ')} |`, ...(whole ? { pulso: true } : {}), clap: true, tempo: 76 }, why: `Era «${options[a]}».` };
     });
   }
+  // 1b) Nivel 3: 2/4, 3/8 y 6/8 (doce corcheas) o 3/4, 6/8 y 9/8 (dos compases): el apoyo grave marca el compás
+  if (options.length >= 2 && options.every(o => BEAT_PATTERN[o]) && (options.includes('3/8') || options.includes('9/8') || options.includes('2/4'))) {
+    const twoBars = options.includes('9/8');
+    return Array.from({ length: count }, (_, k) => {
+      const a = pick(k);
+      const pat = BEAT_PATTERN[options[a]];
+      const bars = [];
+      const n = twoBars ? 2 : Math.round(12 / pat.length);
+      for (let i = 0; i < n; i++) bars.push(pat.split('').map(c => `${PITCH_OF[c]}e`).join(' '));
+      return { tipo: 'escucharCompas', id: `compas-${k}`, code: METER_CODE[options[a]] || 'compas', q: `Escucha dónde cae el apoyo: ${options.join(', ')}`, options: [...options], answer: a,
+        play: { partitura: `| ${bars.join(' | ')} |`, compas: options[a], tempo: 138 }, why: METER_WHY[options[a]] };
+    });
+  }
+  // 1c) Nivel 3: las formas de la menor (y la mayor) tocadas subiendo y bajando desde una tónica al azar
+  if (options.every(o => /^(mayor|menor natural|menor armónica|menor melódica)$/i.test(o))) {
+    const tonics = ['C4', 'D4', 'E4', 'G4', 'A3', 'B3'];
+    return Array.from({ length: count }, (_, k) => {
+      const a = pick(k);
+      const mode = options[a].toLowerCase();
+      const tonic = tonics[Math.floor(r() * tonics.length)];
+      const up = scale(tonic, mode);
+      const down = scaleDown(tonic, mode).slice(1);
+      const toks = [...up, ...down].map((n, i) => `${n}${i === up.length - 1 || i === up.length + down.length - 1 ? 'h' : 'q'}`);
+      return { tipo: 'escucharModo', id: `forma-${k}`, code: mode === 'mayor' ? 'modo' : 'melodica', q: 'Escucha la escala, subiendo y bajando: ¿cuál es?', options: options.map(o => o[0].toUpperCase() + o.slice(1)), answer: a,
+        play: { partitura: `| ${toks.join(' ')} |`, tempo: 112 },
+        why: mode === 'mayor' ? 'Mayor: el 3.er grado está a un tono del 2.º (suena luminosa).' : mode === 'menor natural' ? 'Menor natural: el 7.º grado queda a un tono de la tónica (también al subir).' : mode === 'menor armónica' ? 'Menor armónica: al subir y al bajar, el 7.º grado a un semitono (la sensible); entre el 6.º y el 7.º hay una 2.ª aumentada.' : 'Menor melódica: sube con el 6.º y el 7.º elevados y baja como la natural.' };
+    });
+  }
+  // 1d) Nivel 3: movimiento de dos voces
+  if (options.every(o => /^(paralelo|contrario|oblicuo)$/i.test(o))) return movementQuestions(options, count, pick, seed);
   // 2) 3/4 o 6/8: seis corcheas con el apoyo (el golpe grave) cada dos o cada tres
   if (options.length === 2 && options.every(o => /^[36]\/[48]$/.test(o))) {
     return Array.from({ length: count }, (_, k) => {

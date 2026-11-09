@@ -22,6 +22,11 @@ const KEY_FLATS = [4, 7, 3, 6, 2, 5, 1];   // si mi la re sol do fa
 const KEY_SHARPS = [8, 5, 9, 6, 3, 7, 4];  // fa do sol re la mi si
 const KEY_W = 12;
 
+// Escalón de cada alteración de una armadura (n > 0 sostenidos, n < 0 bemoles) en su clave: el orden fijo del pentagrama
+export function keySignatureSteps(armadura, clef = 'treble') {
+  const spots = (armadura < 0 ? KEY_FLATS : KEY_SHARPS).slice(0, Math.abs(armadura));
+  return spots.map(rel => CLEF_BOTTOM[clef] + rel - (clef === 'bass' ? 2 : 0));
+}
 export const yOf = (step, clef = 'treble') => BOTTOM - (step - CLEF_BOTTOM[clef]) * HALF;
 const r1 = v => Math.round(v * 10) / 10;
 
@@ -38,7 +43,7 @@ function ledgers(rel, cx) {
 
 // beam: 'start' | 'end' (corcheas unidas por una barra: la barra llega al borde de la celda y sigue en la de al lado)
 // up: dirección de la plica impuesta (las dos corcheas de una pareja, igual)
-function noteSvg(step, dur, clef, cx, { beam: beam0 = null, up: forcedUp = null, w = NOTE_W, acc = null, tie = 0 } = {}) {
+function noteSvg(step, dur, clef, cx, { beam: beam0 = null, up: forcedUp = null, w = NOTE_W, acc = null, tie = 0, slur = 0 } = {}) {
   const beam = typeof beam0 === 'string' ? (beam0 === 'start' ? { out: true } : { in: true }) : beam0;
   const rel = step - CLEF_BOTTOM[clef];
   const y = yOf(step, clef);
@@ -78,6 +83,13 @@ function noteSvg(step, dur, clef, cx, { beam: beam0 = null, up: forcedUp = null,
     const yb = y + (up ? 8 : -8);
     arc = `<path class="lm-tie" d="M${r1(cx + 2)} ${r1(yb)} Q ${r1(cx + tie / 2)} ${r1(yb + (up ? 9 : -9))} ${r1(cx + tie - 2)} ${r1(yb)}"/>`;
   }
+  // ligadura de expresión: una curva más alta que la de prolongación, de la primera a la última nota del grupo (por el lado
+  // contrario a la plica)
+  if (slur) {
+    const yb = y + (up ? 10 : -10);
+    const lift = Math.min(16, 7 + slur / 18);
+    arc += `<path class="lm-tie lm-slur" d="M${r1(cx)} ${r1(yb)} Q ${r1(cx + slur / 2)} ${r1(yb + (up ? lift : -lift) * 1.6)} ${r1(cx + slur)} ${r1(yb)}"/>`;
+  }
   return ledgers(rel, cx) + sign + head + stem + dot + arc;
 }
 
@@ -91,14 +103,16 @@ function restBody(base, cx) {
   if (base === 'w') return `<rect class="lm-rest" x="${cx - 7}" y="${BOTTOM - 6 * HALF}" width="14" height="5"/>`;
   if (base === 'h') return `<rect class="lm-rest" x="${cx - 7}" y="${BOTTOM - 4 * HALF - 5}" width="14" height="5"/>`;
   if (base === 'e') return `<circle class="lm-rest" cx="${cx - 3}" cy="${BOTTOM - 5 * HALF}" r="2.6"/><path class="lm-rest-line" d="M${cx - 3} ${BOTTOM - 5 * HALF + 1} q 5 2 8 -3 l -6 18"/>`;
+  // silencio de semicorchea: como el de corchea con un segundo gancho
+  if (base === 's') return `<circle class="lm-rest" cx="${cx - 3}" cy="${BOTTOM - 5 * HALF}" r="2.6"/><circle class="lm-rest" cx="${cx - 5}" cy="${BOTTOM - 4 * HALF + 1}" r="2.6"/><path class="lm-rest-line" d="M${cx - 3} ${BOTTOM - 5 * HALF + 1} q 5 2 8 -3 l -8 24"/>`;
   return `<path class="lm-rest-line q" d="M${cx - 3} ${BOTTOM - 7 * HALF} l 6 7 l -6 6 l 6 7 q -8 -3 -6 6"/>`;
 }
 
 // Celda de nota o silencio. extra: marca de corrección encima (✓ ≈ ✕) o un fantasma (nota a punto de ponerse)
 // fermata: calderón encima; breath: coma de respiración después de la nota
-export function noteCell({ step = null, rest = false, dur = 'q', clef = 'treble', mark = null, ghost = null, w = NOTE_W, beam = null, up = null, fermata = false, breath = false, acc = null, tie = 0, given = false } = {}) {
+export function noteCell({ step = null, rest = false, dur = 'q', clef = 'treble', mark = null, ghost = null, w = NOTE_W, beam = null, up = null, fermata = false, breath = false, acc = null, tie = 0, slur = 0, given = false } = {}) {
   const cx = w / 2;
-  const inner = (rest ? restSvg(dur, cx) : step === null ? '' : noteSvg(step, dur, clef, cx, { beam, up, w, acc, tie }));
+  const inner = (rest ? restSvg(dur, cx) : step === null ? '' : noteSvg(step, dur, clef, cx, { beam, up, w, acc, tie, slur }));
   const body = (given ? `<g class="lm-given">${inner}</g>` : inner)
     + (fermata ? `<path class="lm-fermata" d="M${cx - 8} 26 a8 7 0 0 1 16 0"/><circle class="lm-dot" cx="${cx}" cy="23" r="1.8"/>` : '')
     + (breath ? `<text class="lm-breath" x="${w - 6}" y="${BOTTOM - 8 * HALF - 2}" text-anchor="middle">,</text>` : '');
@@ -119,6 +133,12 @@ export function clefCell(clef = 'treble', meter = null, armadura = 0) {
   const spots = (armadura < 0 ? KEY_FLATS : KEY_SHARPS).slice(0, n);
   const key = spots.map((rel, i) => `<text class="lm-acc" x="${34 + KEY_W * i}" y="${BOTTOM - (rel - (clef === 'bass' ? 2 : 0)) * HALF + 6}">${armadura < 0 ? '♭' : '♯'}</text>`).join('');
   return `<svg class="lm-cell lm-clefcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${glyph}${key}${time}</svg>`;
+}
+
+// Casilla del pentagrama donde se coloca UNA alteración de la armadura (ejercicio «armadura»): sin nota, con el signo a la altura elegida
+export function accSlotCell(step = null, sym = '♯', w = 26) {
+  const sign = step === null ? '' : `<text class="lm-acc" x="${w / 2 - 6}" y="${r1(yOf(step, 'treble') + 6)}">${sym}</text>`;
+  return `<svg class="lm-cell lm-slotcell" viewBox="0 0 ${w} ${CELL_H}" aria-hidden="true" focusable="false">${lines(w)}${sign}</svg>`;
 }
 
 // Barra de repetición al principio (|:) y al final de la casilla 1 (:|)
