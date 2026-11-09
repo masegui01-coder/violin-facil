@@ -399,3 +399,12 @@ test('Nivel 2: toda pregunta de teoría y audición tiene respuesta dentro de su
     });
   }));
 });
+
+test('el pentagrama dibuja las alteraciones aunque el compás lleve matiz (sin «undefined»)', async () => {
+  const { staffHtml } = await import('../js/lm/kit.js');
+  const { scoreTokens } = await import('../js/lm/notes.js');
+  const html = staffHtml(scoreTokens('F#4q G4q A4q B4q | C#5h D5h'), { meter: '4/4', dynamics: [{ compas: 1, signo: 'mf' }, { compas: 2, signo: 'f' }] });
+  assert.ok(!/undefined/.test(html), 'sin texto «undefined»');
+  assert.equal((html.match(/class="lm-acc"[^>]*>♯</g) || []).length, 2, 'los dos sostenidos');
+  assert.match(html, /lm-dyn[^>]*>mf</);
+});
