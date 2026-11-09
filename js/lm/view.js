@@ -51,7 +51,8 @@ function levelsHtml() {
       const p = levelProgress(l.level);
       return `<section class="lm-level"><h3>${esc(l.title)}</h3><p class="muted small">${esc(l.sub)}</p>
         <p class="small"><span>${p.done}/${p.total}</span> <span>ejercicios</span> · <span>${p.stars}</span> <span>estrellas</span></p>
-        <div class="lm-units">${l.units.map(unitCard).join('')}</div></section>`;
+        <div class="lm-units">${l.units.map(unitCard).join('')}</div>
+        <div class="controls"><button type="button" class="btn ghost small" data-lm-level-pdf="${l.level}">${esc(`${l.title} completo en PDF`)}</button></div></section>`;
     }).join('')}`;
 }
 
@@ -177,6 +178,14 @@ export function bindLm() {
       const block = u.blocks.find(b => b.kind === 'instrument');
       const inst = instrumentById(getState().instrument);
       openInstrumentTool(toolsFor(block.tools, familyOf(inst), inst)[Number(tool.dataset.instTool)], u);
+      return;
+    }
+    const levelBtn = e.target.closest('[data-lm-level-pdf]');
+    if (levelBtn) {
+      levelBtn.disabled = true;
+      import('./pdf.js').then(m => m.levelPdf(lmLevel(Number(levelBtn.dataset.lmLevelPdf))))
+        .catch(() => toast('No se ha podido crear el PDF'))
+        .finally(() => { levelBtn.disabled = false; });
       return;
     }
     if (e.target.closest('[data-lm-pdf]')) {
