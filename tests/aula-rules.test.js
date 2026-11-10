@@ -131,6 +131,11 @@ test('composiciones del curso: el alumno de la clase envía la suya («<uid>_<ej
   assert.deepEqual(Object.keys(doc), WORK_KEYS);
   assert.match(doc.exId, /^lm[0-9]+-u[0-9]+-creatividad-[a-c]-(facil|medio)$/);
   assert.match(doc.score, /^[A-GR#b0-9whqes.: ]+$/);
+  // Nivel 4: los tresillos («e:3») pasan la regla tal como está escrita en firestore.rules
+  const scoreRe = new RegExp(`^${flat.match(/d\.score\.matches\('([^']+)'\)/)[1]}$`);
+  const triplets = workDoc('u1', { nickname: 'Ana', exId: 'lm4-u1-creatividad-a-medio', title: 'Tresillos', score: 'C4e:3 D4e:3 E4e:3 C4q', meter: '2/4', pct: 90 });
+  assert.match(triplets.exId, /^lm[0-9]+-u[0-9]+-creatividad-[a-c]-(facil|medio)$/);
+  assert.match(triplets.score, scoreRe);
   assert.match(api, /'works', `\$\{user\.uid\}_\$\{work\.exId\}`/);
 });
 
